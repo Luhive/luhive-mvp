@@ -9,18 +9,17 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import manrope400Url from "./assets/fonts/manrope-v20-latin_latin-ext-regular.woff2?url";
+import manrope500Url from "./assets/fonts/manrope-v20-latin_latin-ext-500.woff2?url";
+import manrope600Url from "./assets/fonts/manrope-v20-latin_latin-ext-600.woff2?url";
+import manrope700Url from "./assets/fonts/manrope-v20-latin_latin-ext-700.woff2?url";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-  },
+  // Preload local Manrope font files for faster first paint
+  { rel: "preload", href: manrope400Url, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+  { rel: "preload", href: manrope500Url, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+  { rel: "preload", href: manrope600Url, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+  { rel: "preload", href: manrope700Url, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
