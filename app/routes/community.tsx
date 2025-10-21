@@ -1,9 +1,15 @@
 import type { Route } from "./+types/community";
+import { useLoaderData, Link, useNavigation } from "react-router";
+import { createClient } from "~/lib/supabase.server";
+import type { Database } from "~/models/database.types";
+import { useSubmit } from 'react-router'
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import { Badge } from "~/components/ui/badge"
+import { Spinner } from "~/components/ui/spinner"
+import { toast } from "sonner"
 import {
   Twitter,
   Facebook,
@@ -19,21 +25,202 @@ import {
   LayoutDashboard,
   BadgeCheck,
   Heart,
+  LogOut,
+  Settings,
+  Bell,
+  Share2,
+  MoreVertical,
+  Zap,
+  Crown,
+  Star,
+  Link as LinkIcon,
+  LucideLogOut,
 } from "lucide-react"
 
 import LuhiveLogo from "~/assets/images/LuhiveLogo.png";
+import { Activity } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip";
+import { TooltipProvider } from "~/components/ui/tooltip";
 
+type Community = Database['public']['Tables']['communities']['Row'];
 
-export function meta({}: Route.MetaArgs) {
+type LoaderData = {
+  community: Community | null;
+  isOwner: boolean;
+  user: { id: string } | null;
+};
+
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { supabase, headers } = createClient(request);
+
+  // Get current user session
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Get slug from params (it will be undefined on index route)
+  const slug = (params as { slug?: string }).slug;
+
+  // If no slug parameter, return default/demo data
+  if (!slug) {
+    return {
+      community: null,
+      isOwner: false,
+      user: user || null,
+    };
+  }
+
+  // Fetch community by slug
+  const { data: community, error } = await supabase
+    .from('communities')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+
+  if (error || !community) {
+    throw new Response('Community not found', { status: 404 });
+  }
+
+  // Check if user is the owner
+  const isOwner = user ? community.created_by === user.id : false;
+
+  return {
+    community,
+    isOwner,
+    user: user || null,
+  };
+}
+
+export function meta({ data }: { data?: LoaderData }) {
+  const community = data?.community;
   return [
-    { title: "Community Page" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: community ? `${community.name} - Luhive` : "Community Page - Luhive" },
+    { name: "description", content: community?.description || "Build Communities that Matter" },
   ];
 }
 
 export default function Community() {
+  const { community, isOwner, user } = useLoaderData<typeof loader>();
+
+  const submit = useSubmit()
+  const navigation = useNavigation()
+
+  // Check if logout is in progress
+  const isLoggingOut = navigation.state === "submitting" &&
+    navigation.formAction === "/logout"
+
+  // Use community data if available, otherwise use default demo data
+  const displayName = community?.name || "You Community Name";
+  const displayTagline = community?.tagline || "Community Tagline";
+  const displayDescription = community?.description || "Community Description";
+  const displayLogo = community?.logo_url || LuhiveLogo;
+  const displayVerified = community?.verified || false;
+
+  // Parse stats if available
+  const stats = community?.stats as { members?: number; events?: number } | null;
+  const memberCount = stats?.members || 0;
+  const eventCount = stats?.events || 0;
+
   return (
     <div className="min-h-screen bg-background">
+
+      <Activity mode={isOwner ? "visible" : "hidden"}>
+        <div className="fixed top-4 right-4 z-50">
+          <div className="flex flex-col gap-2">
+            <TooltipProvider delayDuration={200}>
+              {/* Dashboard Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="group h-10 w-10 rounded-md shadow-sm hover:shadow-md transition-all duration-200 bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/50"
+                    aria-label="Community Dashboard"
+                  >
+                    <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="bg-popover rounded-md border border-border mr-1 shadow-lg">
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-sm">Dashboard</p>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+
+
+              {/* Get Public URL Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="group h-10 w-10 rounded-md shadow-sm hover:shadow-md transition-all duration-200 bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/50"
+                    aria-label="Get Public URL"
+                    onClick={() => {
+                      const url = window.location.href;
+                      navigator.clipboard.writeText(url);
+                      toast.success("Public URL copied to clipboard!");
+                    }}
+                  >
+                    <LinkIcon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="bg-popover rounded-md border border-border mr-1 shadow-lg">
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-sm">Get Public URL</p>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+
+              {/* Logout Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="group h-10 w-10 rounded-md shadow-sm hover:shadow-md transition-all duration-200 bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-label={isLoggingOut ? "Signing out..." : "Logout"}
+                    disabled={isLoggingOut}
+                    onClick={() => {
+                      submit(null, {
+                        method: "post",
+                        action: "/logout"
+                      })
+                    }}
+                  >
+                    {isLoggingOut ? (
+                      <Spinner className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <LogOut className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="bg-popover rounded-md border border-border mr-1 shadow-lg">
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    {isLoggingOut ? (
+                      <Spinner className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <LogOut className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-medium text-sm">
+                        {isLoggingOut ? "Signing out..." : "Logout"}
+                      </p>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+          </div>
+        </div>
+      </Activity>
+      {/* Owner Dashboard Icon */}
+
       <main className="w-full py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]">
@@ -41,14 +228,16 @@ export default function Community() {
             <Card className="md:col-span-2 lg:col-span-2 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none">
               <CardContent className="p-8 flex flex-col items-center justify-center text-center h-full space-y-4">
                 <Avatar className="h-24 w-24 border-1">
-                  <AvatarImage src={LuhiveLogo} alt="GDG Baku" className="transform scale-60" />
-                  <AvatarFallback className="text-2xl bg-primary/10 text-primary">Luhive</AvatarFallback>
+                  <AvatarImage src={displayLogo} alt={displayName} className="transform scale-60" />
+                  <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                    {displayName.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
-                  <h1 className="text-4xl font-black text-foreground tracking-tight">Luhive</h1>
-                  <p className="text-lg text-primary font-medium">Build Communities that Matter</p>
+                  <h1 className="text-4xl font-black text-foreground tracking-tight">{displayName}</h1>
+                  <p className="text-lg text-primary font-medium">{displayTagline}</p>
                   <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
-                    a community builder and hub platform that engages people and communities together 
+                    {displayDescription}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -59,13 +248,15 @@ export default function Community() {
                     <Heart className="h-3.5 w-3.5" />
                     First Adopter
                   </Badge>
-                  <Badge
-                    variant="outline"
-                    className="flex items-center gap-1 border-emerald-400/40 text-emerald-600 dark:text-emerald-400 px-3 py-1.5"
-                  >
-                    <BadgeCheck className="h-3.5 w-3.5" />
-                    Verified by Luhive
-                  </Badge>
+                  {displayVerified && (
+                    <Badge
+                      variant="outline"
+                      className="flex items-center gap-1 border-emerald-400/40 text-emerald-600 dark:text-emerald-400 px-3 py-1.5"
+                    >
+                      <BadgeCheck className="h-3.5 w-3.5" />
+                      Verified by Luhive
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex justify-center gap-2 flex-wrap pt-2">
                   <Button
@@ -124,7 +315,7 @@ export default function Community() {
             <Card className="border hover:border-primary/30 transition-colors shadow-none">
               <CardContent className="p-6 flex flex-col items-center justify-center h-full text-center space-y-2">
                 <Users className="h-10 w-10 text-primary" />
-                <p className="text-3xl font-bold text-foreground">2.5K+</p>
+                <p className="text-3xl font-bold text-foreground">{memberCount >= 1000 ? `${(memberCount / 1000).toFixed(1)}K+` : memberCount}</p>
                 <p className="text-sm text-muted-foreground">Members</p>
               </CardContent>
             </Card>
@@ -133,7 +324,7 @@ export default function Community() {
             <Card className="border hover:border-primary/30 shadow-none">
               <CardContent className="p-6 flex flex-col items-center justify-center h-full text-center space-y-2">
                 <Calendar className="h-10 w-10 text-primary" />
-                <p className="text-3xl font-bold text-foreground">48</p>
+                <p className="text-3xl font-bold text-foreground">{eventCount}</p>
                 <p className="text-sm text-muted-foreground">Events</p>
               </CardContent>
             </Card>

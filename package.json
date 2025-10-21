@@ -7,13 +7,15 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "prepare": "react-router typegen"
+    "prepare": "react-router typegen",
+    "supabase-types": "npx supabase gen types typescript --local > app/models/database.types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "@react-router/node": "^7.9.2",
     "@react-router/serve": "^7.9.2",
     "@supabase/ssr": "^0.7.0",
@@ -23,10 +25,12 @@
     "clsx": "^2.1.1",
     "isbot": "^5.1.31",
     "lucide-react": "^0.545.0",
+    "next-themes": "^0.4.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.65.0",
     "react-router": "^7.9.2",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.1.12"
   },

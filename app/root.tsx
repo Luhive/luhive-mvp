@@ -13,6 +13,7 @@ import manrope400Url from "./assets/fonts/manrope-v20-latin_latin-ext-regular.wo
 import manrope500Url from "./assets/fonts/manrope-v20-latin_latin-ext-500.woff2?url";
 import manrope600Url from "./assets/fonts/manrope-v20-latin_latin-ext-600.woff2?url";
 import manrope700Url from "./assets/fonts/manrope-v20-latin_latin-ext-700.woff2?url";
+import { Toaster } from "sonner";
 
 export const links: Route.LinksFunction = () => [
   // Preload local Manrope font files for faster first paint
@@ -33,6 +34,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <Toaster position="bottom-right" />
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -41,6 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+
   return <Outlet />;
 }
 
