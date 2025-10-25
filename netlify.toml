@@ -1,0 +1,3 @@
+[build]
+  command = "react-router build"
+  publish = "build/client"
