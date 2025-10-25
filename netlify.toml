@@ -1,3 +1,6 @@
 [build]
   command = "react-router build"
   publish = "build/client"
+
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "build/client"
