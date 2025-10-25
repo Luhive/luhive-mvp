@@ -26,15 +26,9 @@ import {
   BadgeCheck,
   Heart,
   LogOut,
-  Settings,
-  Bell,
-  Share2,
-  MoreVertical,
-  Zap,
-  Crown,
-  Star,
   Link as LinkIcon,
-  LucideLogOut,
+  Globe,
+
 } from "lucide-react"
 
 import LuhiveLogo from "~/assets/images/LuhiveLogo.png";
@@ -67,13 +61,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       user: user || null,
     };
   }
-
   // Fetch community by slug
   const { data: community, error } = await supabase
     .from('communities')
     .select('*')
     .eq('slug', slug)
-    .single();
+    .single()
 
   if (error || !community) {
     throw new Response('Community not found', { status: 404 });
@@ -107,11 +100,15 @@ export default function Community() {
   const isLoggingOut = navigation.state === "submitting" &&
     navigation.formAction === "/logout"
 
+  // Check if navigating to dashboard - for global loading state
+  const isDashboardLoading = navigation.state === "loading" &&
+    navigation.location?.pathname.includes('/dashboard/')
+
   // Use community data if available, otherwise use default demo data
   const displayName = community?.name || "You Community Name";
   const displayTagline = community?.tagline || "Community Tagline";
   const displayDescription = community?.description || "Community Description";
-  const displayLogo = community?.logo_url || LuhiveLogo;
+  const displayLogo = community?.logo_url || '';
   const displayVerified = community?.verified || false;
 
   // Parse stats if available
@@ -119,8 +116,25 @@ export default function Community() {
   const memberCount = stats?.members || 0;
   const eventCount = stats?.events || 0;
 
+  // Parse social links if available
+  const socialLinks = community?.social_links as {
+    website?: string;
+    instagram?: string;
+    linkedin?: string;
+  } | null;
+
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Global Loading Overlay for Dashboard Navigation */}
+      {isDashboardLoading && (
+        <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Spinner className="h-8 w-8 text-primary" />
+            <p className="text-sm font-medium text-muted-foreground">Loading Dashboard...</p>
+          </div>
+        </div>
+      )}
 
       <Activity mode={isOwner ? "visible" : "hidden"}>
         <div className="fixed top-4 right-4 z-50">
@@ -134,8 +148,11 @@ export default function Community() {
                     variant="outline"
                     className="group h-10 w-10 rounded-md shadow-sm hover:shadow-md transition-all duration-200 bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/50"
                     aria-label="Community Dashboard"
+                    asChild
                   >
-                    <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
+                    <Link to={`/dashboard/${community?.slug || 'luhive'}`} prefetch="intent">
+                      <LayoutDashboard className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="bg-popover rounded-md border border-border mr-1 shadow-lg">
@@ -228,7 +245,7 @@ export default function Community() {
             <Card className="md:col-span-2 lg:col-span-2 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none">
               <CardContent className="p-8 flex flex-col items-center justify-center text-center h-full space-y-4">
                 <Avatar className="h-24 w-24 border-1">
-                  <AvatarImage src={displayLogo} alt={displayName} className="transform scale-60" />
+                  <AvatarImage src={displayLogo} alt={displayName} />
                   <AvatarFallback className="text-2xl bg-primary/10 text-primary">
                     {displayName.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
@@ -259,54 +276,41 @@ export default function Community() {
                   )}
                 </div>
                 <div className="flex justify-center gap-2 flex-wrap pt-2">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                    aria-label="Twitter"
-                  >
-                    <Twitter className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                    aria-label="Facebook"
-                  >
-                    <Facebook className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                    aria-label="Instagram"
-                  >
-                    <Instagram className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                    aria-label="LinkedIn"
-                  >
-                    <Linkedin className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                    aria-label="Telegram"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                    aria-label="Discord"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </Button>
+                  <Activity mode={socialLinks?.website ? "visible" : "hidden"}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                      aria-label="Website"
+                      onClick={() => window.open(socialLinks?.website, '_blank', 'noopener,noreferrer')}
+                    >
+                      <Globe className="h-4 w-4" />
+                    </Button>
+                  </Activity>
+
+                  <Activity mode={socialLinks?.instagram ? "visible" : "hidden"}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                      aria-label="Instagram"
+                      onClick={() => window.open(socialLinks?.instagram, '_blank', 'noopener,noreferrer')}
+                    >
+                      <Instagram className="h-4 w-4" />
+                    </Button>
+                  </Activity>
+
+                  <Activity mode={socialLinks?.linkedin ? "visible" : "hidden"}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                      aria-label="LinkedIn"
+                      onClick={() => window.open(socialLinks?.linkedin, '_blank', 'noopener,noreferrer')}
+                    >
+                      <Linkedin className="h-4 w-4" />
+                    </Button>
+                  </Activity>
                 </div>
               </CardContent>
             </Card>

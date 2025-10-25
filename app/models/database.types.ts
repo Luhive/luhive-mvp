@@ -10,188 +10,191 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
-  }
+    PostgrestVersion: "13.0.5";
+  };
   public: {
     Tables: {
       communities: {
         Row: {
-          created_at: string | null
-          created_by: string
-          description: string | null
-          id: string
-          logo_url: string | null
-          name: string
-          page_config: Json | null
-          parent_community_id: string | null
-          settings: Json | null
-          slug: string
-          stats: Json | null
-          tagline: string | null
-          updated_at: string | null
-          verified: boolean | null
-        }
+          created_at: string | null;
+          created_by: string;
+          description: string | null;
+          id: string;
+          logo_url: string | null;
+          name: string;
+          page_config: Json | null;
+          parent_community_id: string | null;
+          settings: Json | null;
+          slug: string;
+          social_links: Json | null;
+          stats: Json | null;
+          tagline: string | null;
+          updated_at: string | null;
+          verified: boolean | null;
+        };
         Insert: {
-          created_at?: string | null
-          created_by: string
-          description?: string | null
-          id?: string
-          logo_url?: string | null
-          name: string
-          page_config?: Json | null
-          parent_community_id?: string | null
-          settings?: Json | null
-          slug: string
-          stats?: Json | null
-          tagline?: string | null
-          updated_at?: string | null
-          verified?: boolean | null
-        }
+          created_at?: string | null;
+          created_by: string;
+          description?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name: string;
+          page_config?: Json | null;
+          parent_community_id?: string | null;
+          settings?: Json | null;
+          slug: string;
+          social_links?: Json | null;
+          stats?: Json | null;
+          tagline?: string | null;
+          updated_at?: string | null;
+          verified?: boolean | null;
+        };
         Update: {
-          created_at?: string | null
-          created_by?: string
-          description?: string | null
-          id?: string
-          logo_url?: string | null
-          name?: string
-          page_config?: Json | null
-          parent_community_id?: string | null
-          settings?: Json | null
-          slug?: string
-          stats?: Json | null
-          tagline?: string | null
-          updated_at?: string | null
-          verified?: boolean | null
-        }
+          created_at?: string | null;
+          created_by?: string;
+          description?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name?: string;
+          page_config?: Json | null;
+          parent_community_id?: string | null;
+          settings?: Json | null;
+          slug?: string;
+          social_links?: Json | null;
+          stats?: Json | null;
+          tagline?: string | null;
+          updated_at?: string | null;
+          verified?: boolean | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "communities_parent_community_id_fkey"
-            columns: ["parent_community_id"]
-            isOneToOne: false
-            referencedRelation: "communities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+            foreignKeyName: "communities_parent_community_id_fkey";
+            columns: ["parent_community_id"];
+            isOneToOne: false;
+            referencedRelation: "communities";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       community_members: {
         Row: {
-          community_id: string | null
-          custom_title: string | null
-          id: string
-          joined_at: string | null
-          metadata: Json | null
-          role: string | null
-          user_id: string | null
-        }
+          community_id: string | null;
+          custom_title: string | null;
+          id: string;
+          joined_at: string | null;
+          metadata: Json | null;
+          role: string | null;
+          user_id: string | null;
+        };
         Insert: {
-          community_id?: string | null
-          custom_title?: string | null
-          id?: string
-          joined_at?: string | null
-          metadata?: Json | null
-          role?: string | null
-          user_id?: string | null
-        }
+          community_id?: string | null;
+          custom_title?: string | null;
+          id?: string;
+          joined_at?: string | null;
+          metadata?: Json | null;
+          role?: string | null;
+          user_id?: string | null;
+        };
         Update: {
-          community_id?: string | null
-          custom_title?: string | null
-          id?: string
-          joined_at?: string | null
-          metadata?: Json | null
-          role?: string | null
-          user_id?: string | null
-        }
+          community_id?: string | null;
+          custom_title?: string | null;
+          id?: string;
+          joined_at?: string | null;
+          metadata?: Json | null;
+          role?: string | null;
+          user_id?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "community_members_community_id_fkey"
-            columns: ["community_id"]
-            isOneToOne: false
-            referencedRelation: "communities"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+            foreignKeyName: "community_members_community_id_fkey";
+            columns: ["community_id"];
+            isOneToOne: false;
+            referencedRelation: "communities";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       demo_requests: {
         Row: {
-          community_description: string
-          community_name: string
-          created_at: string | null
-          email_address: string
-          full_name: string
-          id: string
-          status: string | null
-          updated_at: string | null
-        }
+          community_description: string;
+          community_name: string;
+          created_at: string | null;
+          email_address: string;
+          full_name: string;
+          id: string;
+          status: string | null;
+          updated_at: string | null;
+        };
         Insert: {
-          community_description: string
-          community_name: string
-          created_at?: string | null
-          email_address: string
-          full_name: string
-          id?: string
-          status?: string | null
-          updated_at?: string | null
-        }
+          community_description: string;
+          community_name: string;
+          created_at?: string | null;
+          email_address: string;
+          full_name: string;
+          id?: string;
+          status?: string | null;
+          updated_at?: string | null;
+        };
         Update: {
-          community_description?: string
-          community_name?: string
-          created_at?: string | null
-          email_address?: string
-          full_name?: string
-          id?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+          community_description?: string;
+          community_name?: string;
+          created_at?: string | null;
+          email_address?: string;
+          full_name?: string;
+          id?: string;
+          status?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string | null
-          full_name: string | null
-          gamification: Json | null
-          id: string
-          settings: Json | null
-          updated_at: string | null
-        }
+          avatar_url: string | null;
+          bio: string | null;
+          created_at: string | null;
+          full_name: string | null;
+          gamification: Json | null;
+          id: string;
+          settings: Json | null;
+          updated_at: string | null;
+        };
         Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          gamification?: Json | null
-          id: string
-          settings?: Json | null
-          updated_at?: string | null
-        }
+          avatar_url?: string | null;
+          bio?: string | null;
+          created_at?: string | null;
+          full_name?: string | null;
+          gamification?: Json | null;
+          id: string;
+          settings?: Json | null;
+          updated_at?: string | null;
+        };
         Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          gamification?: Json | null
-          id?: string
-          settings?: Json | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-    }
+          avatar_url?: string | null;
+          bio?: string | null;
+          created_at?: string | null;
+          full_name?: string | null;
+          gamification?: Json | null;
+          id?: string;
+          settings?: Json | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Enums: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 

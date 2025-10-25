@@ -14,6 +14,7 @@ import manrope500Url from "./assets/fonts/manrope-v20-latin_latin-ext-500.woff2?
 import manrope600Url from "./assets/fonts/manrope-v20-latin_latin-ext-600.woff2?url";
 import manrope700Url from "./assets/fonts/manrope-v20-latin_latin-ext-700.woff2?url";
 import { Toaster } from "sonner";
+import ErrorComponent from "./routes/Error";
 
 export const links: Route.LinksFunction = () => [
   // Preload local Manrope font files for faster first paint
@@ -58,20 +59,10 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       error.status === 404
         ? "The requested page could not be found."
         : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+  } else if (import.meta.env.DEV && error && error instanceof ErrorComponent) {
+    details = (error as Error).message || details;
+    stack = (error as Error).stack;
   }
 
-  return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
-  );
+  return <ErrorComponent message={message} details={details} stack={stack} />;
 }

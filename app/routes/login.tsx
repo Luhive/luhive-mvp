@@ -11,7 +11,7 @@ import LuhiveLogo from '~/assets/images/LuhiveLogo.svg'
 import { Spinner } from '~/components/ui/spinner'
 import { toast } from 'sonner'
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ }: Route.MetaArgs) {
   return [
     { title: "Sign In Page - Luhive" },
     { name: "description", content: "Welcome to React Router!" },
@@ -70,7 +70,7 @@ export async function action({ request }: Route.ActionArgs) {
     return Response.json({ success: false, error: 'Unable to start OAuth flow.' }, { headers });
   }
 
-// Password login
+  // Password login
   const { error } = await supabase.auth.signInWithPassword({
     email: formData.get('email') as string,
     password: formData.get('password') as string,
@@ -125,16 +125,16 @@ const Login = () => {
         <Form method="post" className="flex flex-col gap-4">
           <input type="hidden" name="intent" value="password" />
           <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" placeholder="you@example.com" required />
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password</Label>
               <Link className="text-xs" to="/forgot-password">
                 Forgot your password?
-            </Link>
-          </div>
+              </Link>
+            </div>
             <Input id="password" type="password" name="password" placeholder="Your password" required />
           </div>
           <Button disabled={isSubmitting} type="submit">
@@ -151,7 +151,15 @@ const Login = () => {
         <Form method="post" className="flex" replace>
           <input type="hidden" name="intent" value="oauth" />
           <input type="hidden" name="provider" value="google" />
-          <Button disabled variant="outline" className="w-full hover:bg-muted hover:text-foreground" type="submit">
+          <div className="w-full hover:bg-muted hover:text-foreground" onClick={() => toast.info("Coming Soon 🚀", {
+            description: "We are currently working on this feature",
+            position: 'bottom-center'
+          })}>
+            <Button
+              disabled
+              variant="outline"
+              className="w-full hover:bg-muted hover:text-foreground"
+              type="submit">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 48 48"
@@ -166,7 +174,8 @@ const Login = () => {
             </svg>
             Continue with Google
           </Button>
-      </Form>
+          </div>
+        </Form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           No account?{' '}

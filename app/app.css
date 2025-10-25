@@ -37,7 +37,6 @@
   src: url('./assets/fonts/manrope-v20-latin_latin-ext-700.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
 }
 
-
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
@@ -176,5 +175,14 @@ body {
   }
   body {
     @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }
