@@ -12,11 +12,6 @@ import {
   Calendar,
   BadgeCheck,
   Heart,
-  ArrowRight,
-  ArrowRightCircle,
-  ArrowBigDown,
-  ArrowRightCircleIcon,
-  Sparkles,
   Sparkle,
 } from "lucide-react";
 import { IconArrowBigLeft } from "@tabler/icons-react";
@@ -122,14 +117,14 @@ export default function Hub() {
                           <div className="flex items-center gap-2 mt-2">
                             <Badge
                               variant="outline"
-                              className="flex items-center gap-1 border-emerald-400/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs"
+                              className="flex items-center gap-1 py-1 border-emerald-400/40 text-emerald-600 dark:text-emerald-400 px-2 text-xs"
                             >
                               <BadgeCheck className="h-3 w-3" />
                               Verified
                             </Badge>
                             <Badge
                               variant="outline"
-                              className="flex items-center gap-1 border-primary/30 text-primary px-2 py-0.5 text-xs"
+                              className="flex items-center gap-1 border-primary/30 text-primary px-2 py-1 text-xs"
                             >
                               <Heart className="h-3 w-3" />
                               First Adopter

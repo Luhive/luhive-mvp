@@ -2,8 +2,8 @@ import type { Route } from "./+types/community";
 import { useLoaderData, Link, useNavigation } from "react-router";
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
-import { useSubmit } from 'react-router'
-import { UAParser } from 'ua-parser-js';
+import { useSubmit } from 'react-router';
+import { useEffect } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
@@ -12,8 +12,6 @@ import { Badge } from "~/components/ui/badge"
 import { Spinner } from "~/components/ui/spinner"
 import { toast } from "sonner"
 import {
-  Twitter,
-  Facebook,
   Instagram,
   Linkedin,
   Send,
@@ -26,11 +24,9 @@ import {
   LayoutDashboard,
   BadgeCheck,
   Heart,
-  LogOut,
   Link as LinkIcon,
   Globe,
   Link2,
-  MessageCircleCode,
 
 } from "lucide-react"
 
@@ -38,6 +34,10 @@ import LuhiveLogo from "~/assets/images/LuhiveLogo.png";
 import { Activity } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip";
 import { TooltipProvider } from "~/components/ui/tooltip";
+import { getUserAgent } from "~/lib/userAgent";
+import { getIpLocation } from "~/lib/getIpLocation";
+import { prepareVisitAnalytics, type VisitAnalytics } from "~/lib/visitTracker";
+import { getSessionId, shouldTrackVisit, isFirstVisit } from "~/lib/sessionTracker";
 
 type Community = Database['public']['Tables']['communities']['Row'];
 
@@ -45,18 +45,16 @@ type LoaderData = {
   community: Community | null;
   isOwner: boolean;
   user: { id: string } | null;
+  analytics: VisitAnalytics;
 };
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase, headers } = createClient(request);
 
-  const userAgent = request.headers.get('User-Agent') || '';
-  const { browser, cpu, device } = UAParser(userAgent);
-
-  console.log(browser.name);
-  console.log(cpu.architecture);
-  console.log(device.type);
-  console.log(device.model);    
+  // Collect analytics data server-side
+  const userAgent = getUserAgent(request);
+  const location = getIpLocation(request);
+  const analytics = prepareVisitAnalytics(userAgent, location, false); // isFirstVisit will be determined client-side
 
   // Get current user session
   const { data: { user } } = await supabase.auth.getUser();
@@ -70,14 +68,16 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       community: null,
       isOwner: false,
       user: user || null,
+      analytics,
     };
   }
+
   // Fetch community by slug
   const { data: community, error } = await supabase
     .from('communities')
     .select('*')
     .eq('slug', slug)
-    .single()
+    .single();
 
   if (error || !community) {
     throw new Response('Community not found', { status: 404 });
@@ -90,7 +90,47 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     community,
     isOwner,
     user: user || null,
+    analytics,
   };
+}
+
+export async function action({ request }: Route.ActionArgs) {
+  const { supabase } = createClient(request);
+
+  const formData = await request.formData();
+  const intent = formData.get('intent');
+
+  if (intent === 'track_visit') {
+    try {
+      const communityId = formData.get('communityId') as string;
+      const sessionId = formData.get('sessionId') as string;
+      const analyticsData = formData.get('analytics') as string;
+      const analytics: VisitAnalytics = JSON.parse(analyticsData);
+
+      // Get current user (will be null for anonymous)
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Insert visit record (non-blocking - we don't await)
+      supabase.from('community_visits').insert({
+        community_id: communityId,
+        session_id: sessionId,
+        user_id: user?.id || null,
+        metadata: analytics as unknown as Database['public']['Tables']['community_visits']['Insert']['metadata'],
+      }).then(({ error }) => {
+        if (error) {
+          console.error('Failed to track visit:', error);
+        }
+      });
+
+      // Return immediately (non-blocking)
+      return { success: true };
+    } catch (error) {
+      console.error('Visit tracking error:', error);
+      return { success: false };
+    }
+  }
+
+  return { success: false };
 }
 
 export function meta({ data }: { data?: LoaderData }) {
@@ -102,14 +142,38 @@ export function meta({ data }: { data?: LoaderData }) {
 }
 
 export default function Community() {
-  const { community, isOwner, user } = useLoaderData<typeof loader>();
+  const { community, isOwner, user, analytics } = useLoaderData<typeof loader>();
 
-  const submit = useSubmit()
-  const navigation = useNavigation()
+  const submit = useSubmit();
+  const navigation = useNavigation();
 
-  // Check if logout is in progress
-  const isLoggingOut = navigation.state === "submitting" &&
-    navigation.formAction === "/logout"
+  // Track visit on component mount
+  useEffect(() => {
+    if (!community?.id) return; // Don't track if no community
+
+    // Check if we should track this visit (5-minute window)
+    if (shouldTrackVisit(community.id)) {
+      const sessionId = getSessionId();
+      const firstVisit = isFirstVisit();
+
+      // Update analytics with client-side isFirstVisit flag
+      const fullAnalytics = {
+        ...analytics,
+        isFirstVisit: firstVisit,
+      };
+
+      // Submit visit tracking (non-blocking)
+      const formData = new FormData();
+      formData.append('intent', 'track_visit');
+      formData.append('communityId', community.id);
+      formData.append('sessionId', sessionId);
+      formData.append('analytics', JSON.stringify(fullAnalytics));
+
+      // Fire and forget - don't wait for response
+      submit(formData, { method: 'post' });
+    }
+  }, [community?.id, analytics, submit]);
+
 
   // Check if navigating to dashboard - for global loading state
   const isDashboardLoading = navigation.state === "loading" &&
@@ -204,44 +268,6 @@ export default function Community() {
                 </TooltipContent>
               </Tooltip>
 
-              {/* Logout Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    className="group h-10 w-10 rounded-md shadow-sm hover:shadow-md transition-all duration-200 bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label={isLoggingOut ? "Signing out..." : "Logout"}
-                    disabled={isLoggingOut}
-                    onClick={() => {
-                      submit(null, {
-                        method: "post",
-                        action: "/logout"
-                      })
-                    }}
-                  >
-                    {isLoggingOut ? (
-                      <Spinner className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <LogOut className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left" className="bg-popover rounded-md border border-border mr-1 shadow-lg">
-                  <div className="flex items-center gap-2 px-3 py-2">
-                    {isLoggingOut ? (
-                      <Spinner className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <LogOut className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <div>
-                      <p className="font-medium text-sm">
-                        {isLoggingOut ? "Signing out..." : "Logout"}
-                      </p>
-                    </div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
             </TooltipProvider>
 
           </div>
