@@ -186,3 +186,41 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+
+@keyframes sparkle {
+  /* Animation starts and ends here */
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  
+  /* This is the "peak" of the animation */
+  50% {
+    scale: 1.1;
+    transform: scale(1) rotate(20deg);
+  }
+}
+
+/* 2. Create a class to apply this animation
+  We can just call it .animate-sparkle
+*/
+.animate-sparkle {
+  /* 'sparkle' = the name of the keyframes we just made
+    '2s' = duration (2 seconds)
+    'ease-in-out' = a smooth timing curve
+    'infinite' = loop forever
+    'alternate' = play forwards, then backwards (this is what makes it look nice!)
+  */
+  animation: sparkle 2s ease-in-out infinite alternate;
+}
+
+::selection {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+/* Gradient avatar background */
+.bg-gradient-avatar {
+  background: linear-gradient(to bottom right, var(--color-primary), rgb(236, 72, 153));
+}

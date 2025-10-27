@@ -13,5 +13,5 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Redirect to dashboard or home page after successful sign-in
-  return redirect('/login', { headers })
+  return redirect('/', { headers })
 }

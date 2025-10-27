@@ -2,17 +2,24 @@ import type { Route } from "./+types/hub";
 import { useLoaderData, Link } from "react-router";
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
-
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import ExploreLottie from '~/assets/lottie/ExploreIcon.lottie'
 import {
   Users,
   Calendar,
   BadgeCheck,
   Heart,
   ArrowRight,
+  ArrowRightCircle,
+  ArrowBigDown,
+  ArrowRightCircleIcon,
+  Sparkles,
+  Sparkle,
 } from "lucide-react";
+import { IconArrowBigLeft } from "@tabler/icons-react";
 
 type Community = Database['public']['Tables']['communities']['Row'];
 
@@ -62,9 +69,13 @@ export default function Hub() {
       <main className="w-full py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-4xl font-black text-foreground tracking-tight mb-2">
+            <div className="flex items-center gap-3">
+              <Sparkle className="h-8 w-8 mb-2 text-primary animate-sparkle" />  
+              <h1 className="text-4xl font-black text-foreground tracking-tight mb-2">
               Explore Communities
             </h1>
+            </div>
+
             <p className="text-lg text-muted-foreground">
               Discover amazing communities and connect with like-minded people
             </p>
@@ -87,7 +98,7 @@ export default function Hub() {
                     to={`/c/${community.slug}`}
                     className="group"
                   >
-                    <Card className="h-full border hover:border-primary/30 transition-all duration-200 shadow-none hover:shadow-md group">
+                    <Card className="h-full cursor-pointer border hover:border-primary/30 transition-all duration-200 shadow-none hover:shadow-md group transform-gpu hover:scale-[1.02] hover:-rotate-1">
                       <CardHeader className="pb-3">
                         <div className="flex items-start gap-4">
                           <Avatar className="h-16 w-16 border-2">
@@ -141,10 +152,6 @@ export default function Hub() {
                             <Calendar className="h-4 w-4" />
                             <span>{eventCount}</span>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-primary font-medium group-hover:gap-3 transition-all duration-200">
-                          <span>View Community</span>
-                          <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-200" />
                         </div>
                       </CardContent>
                     </Card>
