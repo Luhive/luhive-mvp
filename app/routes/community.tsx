@@ -3,6 +3,7 @@ import { useLoaderData, Link, useNavigation } from "react-router";
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router'
+import { UAParser } from 'ua-parser-js';
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
@@ -28,6 +29,8 @@ import {
   LogOut,
   Link as LinkIcon,
   Globe,
+  Link2,
+  MessageCircleCode,
 
 } from "lucide-react"
 
@@ -46,6 +49,14 @@ type LoaderData = {
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase, headers } = createClient(request);
+
+  const userAgent = request.headers.get('User-Agent') || '';
+  const { browser, cpu, device } = UAParser(userAgent);
+
+  console.log(browser.name);
+  console.log(cpu.architecture);
+  console.log(device.type);
+  console.log(device.model);    
 
   // Get current user session
   const { data: { user } } = await supabase.auth.getUser();
@@ -334,7 +345,7 @@ export default function Community() {
             </Card>
 
             {/* Quick Actions Card */}
-            <Card className="lg:col-span-2 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none">
+            <Card className="lg:col-span-2 lg:row-span-1 border hover:border-primary/30 transition-colors shadow-none">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                   <Sparkles className="h-5 w-5" />
@@ -342,54 +353,41 @@ export default function Community() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
-                <Button className="group relative overflow-hidden w-full rounded-[6px] hover:bg-primary/90 h-12 text-sm font-medium transition-all duration-200 border-primary border-solid border text-card-foreground bg-background">
-                  <span className="pointer-events-none absolute inset-0 -translate-x-[120%] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[120%]" />
+                <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
                   <span className="flex w-full items-center justify-between gap-3">
                     <span className="flex items-center gap-2">
-                      <Users className="h-4 w-4 opacity-90 text-primary" />
-                      <span className="text-primary">Join Our Community</span>
+                      <Users className="h-4 w-4 opacity-90 text-foreground" />
+                      <span className="text-foreground">Join Our Community</span>
                     </span>
-                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-primary" />
+                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-foreground" />
                   </span>
                 </Button>
 
-                <Button className="group relative overflow-hidden w-full rounded-[6px] hover:bg-primary/90 h-12 text-sm font-medium transition-all duration-200 border-primary border-solid border text-card-foreground bg-background">
-                  <span className="pointer-events-none absolute inset-0 -translate-x-[120%] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[120%]" />
+                <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
                   <span className="flex w-full items-center justify-between gap-3">
                     <span className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 opacity-90 text-primary" />
-                      <span className="text-primary">View Upcoming Events</span>
+                      <MessageCircle className="h-4 w-4 opacity-90 text-foreground" />
+                      <span className="text-foreground">Give a Feedback</span>
                     </span>
-                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-primary" />
+                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-foreground" />
                   </span>
                 </Button>
 
-                <Button className="group relative overflow-hidden w-full rounded-[6px] hover:bg-primary/90 h-12 text-sm font-medium transition-all duration-200 border-primary border-solid border text-card-foreground bg-background">
-                  <span className="pointer-events-none absolute inset-0 -translate-x-[120%] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[120%]" />
+                <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
                   <span className="flex w-full items-center justify-between gap-3">
                     <span className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 opacity-90 text-primary" />
-                      <span className="text-primary">Read Latest Posts</span>
+                      <Link2 className="h-4 w-4 opacity-90 text-foreground" />
+                      <span className="text-foreground">Copy Public Link</span>
                     </span>
-                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-primary" />
+                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-foreground" />
                   </span>
                 </Button>
 
-                <Button className="group relative overflow-hidden w-full rounded-[6px] hover:bg-primary/90 h-12 text-sm font-medium transition-all duration-200 border-primary border-solid border text-card-foreground bg-background">
-                  <span className="pointer-events-none absolute inset-0 -translate-x-[120%] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[120%]" />
-                  <span className="flex w-full items-center justify-between gap-3">
-                    <span className="flex items-center gap-2">
-                      <LayoutDashboard className="h-4 w-4 opacity-90 text-primary" />
-                      <span className="text-primary">Access Dashboard</span>
-                    </span>
-                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-primary" />
-                  </span>
-                </Button>
               </CardContent>
             </Card>
 
             {/* Upcoming Events Card */}
-            <Card className="md:col-span-2 lg:col-span-2 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none">
+            <Card className="md:col-span-2 lg:col-span-3 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                   <Calendar className="h-5 w-5" />
@@ -436,7 +434,7 @@ export default function Community() {
             </Card>
 
             {/* Recent Posts Card */}
-            <Card className="md:col-span-2 lg:col-span-4 border hover:border-primary/30 transition-colors shadow-none">
+            <Card className="md:col-span-2 lg:row-span-2 lg:col-span-1 border hover:border-primary/30 transition-colors shadow-none">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                   <BookOpen className="h-5 w-5" />
@@ -444,7 +442,7 @@ export default function Community() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div className="p-4 rounded-lg bg-muted border hover:border-primary/30 transition-colors">
                     <h3 className="font-semibold text-foreground text-sm mb-2">Getting Started with Flutter</h3>
                     <p className="text-xs text-muted-foreground mb-3">
