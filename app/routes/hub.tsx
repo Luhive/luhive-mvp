@@ -15,6 +15,7 @@ import {
   Sparkle,
 } from "lucide-react";
 import { IconArrowBigLeft } from "@tabler/icons-react";
+import { ShimmeringText } from "~/components/ui/shimmering-text";
 
 type Community = Database['public']['Tables']['communities']['Row'];
 
@@ -66,11 +67,14 @@ export default function Hub() {
           <div className="mb-8">
             <div className="flex items-center gap-3">
               <Sparkle className="h-8 w-8 mb-2 text-primary animate-sparkle" />  
-              <h1 className="text-4xl font-black text-foreground tracking-tight mb-2">
-              Explore Communities
-            </h1>
+              <ShimmeringText
+                className="text-4xl font-black tracking-tight mb-2"
+                text="Explore Communities"
+                wave={false}
+                duration={2}
+              />
             </div>
-
+            {/* [a] */}
             <p className="text-lg text-muted-foreground">
               Discover amazing communities and connect with like-minded people
             </p>

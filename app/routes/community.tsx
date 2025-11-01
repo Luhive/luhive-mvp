@@ -1,5 +1,5 @@
 import type { Route } from "./+types/community";
-import { useLoaderData, Link, useNavigation } from "react-router";
+import { useLoaderData, Link, useNavigation, useActionData } from "react-router";
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router';
@@ -38,6 +38,7 @@ import { getUserAgent } from "~/lib/userAgent";
 import { getIpLocation } from "~/lib/getIpLocation";
 import { prepareVisitAnalytics, type VisitAnalytics } from "~/lib/visitTracker";
 import { getSessionId, shouldTrackVisit, isFirstVisit } from "~/lib/sessionTracker";
+import { JoinCommunityForm } from "~/components/join-community-form";
 
 type Community = Database['public']['Tables']['communities']['Row'];
 
@@ -130,6 +131,92 @@ export async function action({ request }: Route.ActionArgs) {
     }
   }
 
+  if (intent === 'join_community') {
+    try {
+      const fullName = formData.get('fullName') as string;
+      const email = formData.get('email') as string;
+      const communityId = formData.get('communityId') as string;
+
+      // Validate inputs
+      if (!fullName || !email || !communityId) {
+        return { success: false, error: 'Missing required fields' };
+      }
+
+      // Check if profile exists by email (stored in settings.email)
+      const { data: existingProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, settings')
+        .eq('settings->>email', email)
+        .limit(1);
+
+      let profileId: string;
+
+      if (existingProfiles && existingProfiles.length > 0) {
+        // Profile exists - use existing ID and update name if different
+        const existingProfile = existingProfiles[0];
+        profileId = existingProfile.id;
+
+        if (existingProfile.full_name !== fullName) {
+          await supabase
+            .from('profiles')
+            .update({ full_name: fullName })
+            .eq('id', profileId);
+        }
+      } else {
+        // Create new profile with generated UUID
+        const newProfileId = crypto.randomUUID();
+
+        const { data: newProfile, error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: newProfileId,
+            full_name: fullName,
+            settings: { email },
+          })
+          .select('id')
+          .single();
+
+        if (profileError || !newProfile) {
+          console.error('Failed to create profile:', profileError);
+          return { success: false, error: 'Failed to create profile' };
+        }
+
+        profileId = newProfile.id;
+      }
+
+      // Check if user is already a member
+      const { data: existingMembership } = await supabase
+        .from('community_members')
+        .select('id')
+        .eq('user_id', profileId)
+        .eq('community_id', communityId)
+        .limit(1);
+
+      if (existingMembership && existingMembership.length > 0) {
+        return { success: true, message: 'You are already a member!' };
+      }
+
+      // Add to community_members
+      const { error: memberError } = await supabase
+        .from('community_members')
+        .insert({
+          user_id: profileId,
+          community_id: communityId,
+          role: 'member',
+        });
+
+      if (memberError) {
+        console.error('Failed to add community member:', memberError);
+        return { success: false, error: 'Failed to join community' };
+      }
+
+      return { success: true, message: 'Successfully joined the community!' };
+    } catch (error) {
+      console.error('Join community error:', error);
+      return { success: false, error: 'An error occurred' };
+    }
+  }
+
   return { success: false };
 }
 
@@ -143,6 +230,7 @@ export function meta({ data }: { data?: LoaderData }) {
 
 export default function Community() {
   const { community, isOwner, user, analytics } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
 
   const submit = useSubmit();
   const navigation = useNavigation();
@@ -173,6 +261,17 @@ export default function Community() {
       submit(formData, { method: 'post' });
     }
   }, [community?.id, analytics, submit]);
+
+  // Show toast notifications based on action results
+  useEffect(() => {
+    if (actionData && 'success' in actionData) {
+      if (actionData.success) {
+        toast.success(actionData.message || 'Success!');
+      } else if (actionData.error) {
+        toast.error(actionData.error);
+      }
+    }
+  }, [actionData]);
 
 
   // Check if navigating to dashboard - for global loading state
@@ -379,15 +478,10 @@ export default function Community() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
-                <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
-                  <span className="flex w-full items-center justify-between gap-3">
-                    <span className="flex items-center gap-2">
-                      <Users className="h-4 w-4 opacity-90 text-foreground" />
-                      <span className="text-foreground">Join Our Community</span>
-                    </span>
-                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-foreground" />
-                  </span>
-                </Button>
+                <JoinCommunityForm
+                  communityId={community?.id || ''}
+                  communityName={displayName}
+                />
 
                 <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
                   <span className="flex w-full items-center justify-between gap-3">
@@ -395,17 +489,24 @@ export default function Community() {
                       <MessageCircle className="h-4 w-4 opacity-90 text-foreground" />
                       <span className="text-foreground">Give a Feedback</span>
                     </span>
-                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-foreground" />
+
                   </span>
                 </Button>
 
-                <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
+                <Button
+                  className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background"
+                  onClick={() => {
+                    const url = window.location.href;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Link copied to clipboard!");
+                  }}
+                >
                   <span className="flex w-full items-center justify-between gap-3">
                     <span className="flex items-center gap-2">
                       <Link2 className="h-4 w-4 opacity-90 text-foreground" />
                       <span className="text-foreground">Copy Public Link</span>
                     </span>
-                    <ArrowRight className="h-4 w-4 translate-x-0 transition-transform duration-200 group-hover:translate-x-1 text-foreground" />
+
                   </span>
                 </Button>
 
