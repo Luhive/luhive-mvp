@@ -14,6 +14,7 @@ export default [
   ]),
 
   route("login", "routes/login.tsx"),
+  route("signup", "routes/register.tsx"),
 
   // Dashboard with layout and nested routes
   layout("routes/dashboard/layout.tsx", [

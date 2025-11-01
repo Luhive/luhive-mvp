@@ -13,8 +13,8 @@ import { toast } from 'sonner'
 
 export function meta({ }: Route.MetaArgs) {
   return [
-    { title: "Sign In Page - Luhive" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Sign Up - Luhive" },
+    { name: "description", content: "Create your Luhive account" },
   ];
 }
 
@@ -70,44 +70,70 @@ export async function action({ request }: Route.ActionArgs) {
     return Response.json({ success: false, error: 'Unable to start OAuth flow.' }, { headers });
   }
 
-  // Password login
-  const { error } = await supabase.auth.signInWithPassword({
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+  // Get form data
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  const name = formData.get('name') as string;
+  const surname = formData.get('surname') as string;
+  const fullName = `${name} ${surname}`.trim();
+
+  // Sign up with Supabase Auth
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
   });
 
   if (error) {
     return Response.json({ success: false, error: error.message }, { headers });
   }
 
-  // After successful login, get user and their community
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (user) {
-    // Fetch the user's community (where they are the creator)
-    const { data: community } = await supabase
-      .from('communities')
-      .select('slug')
-      .eq('created_by', user.id)
-      .single();
-
-    if (community) {
-      return redirect(`/c/${community.slug}`, { headers });
-    }
+  // Check if user was created successfully
+  if (!data.user) {
+    return Response.json({ success: false, error: 'Failed to create user account' }, { headers });
   }
 
-  // If no community found, redirect to home
-  return redirect('/', { headers });
+  // Create profile record for the new user
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      id: data.user.id,
+      full_name: fullName,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+  if (profileError) {
+    // Log the error but don't block the registration flow
+    console.error('Failed to create profile:', profileError);
+    // You might want to handle this differently depending on your requirements
+  }
+
+  // Check if user needs email confirmation
+  if (data.session) {
+    // User is automatically logged in (email confirmation disabled)
+    // Redirect to onboarding or home
+    return redirect('/register', { headers });
+  }
+
+  // If email confirmation is required, show a message
+  return Response.json({ 
+    success: true, 
+    message: 'Please check your email to confirm your account' 
+  }, { headers });
 }
 
-const Login = () => {
-  const actionData = useActionData<{ success: boolean; error?: string }>()
+const Register = () => {
+  const actionData = useActionData<{ success: boolean; error?: string; message?: string }>()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting'
 
   useEffect(() => {
-    if (actionData && 'error' in actionData && actionData.error) {
-      toast.error(String(actionData.error))
+    if (actionData) {
+      if ('error' in actionData && actionData.error) {
+        toast.error(String(actionData.error))
+      } else if ('message' in actionData && actionData.message) {
+        toast.success(String(actionData.message))
+      }
     }
   }, [actionData])
 
@@ -115,15 +141,23 @@ const Login = () => {
     <div className='mt-16'>
       <div className="flex flex-col items-center text-center">
         <img src={LuhiveLogo} alt="Luhive logo" className="h-12 w-12 mb-6" />
-        <h1 className="text-2xl font-bold mb-2">Nice to See You!</h1>
+        <h1 className="text-2xl font-bold mb-2">Welcome to Our Platform!</h1>
         <p className="text-sm text-muted-foreground mb-4">
-          Welcome to Luhive. Please enter your details.
+          Lets see who you are.
         </p>
       </div>
 
       <div className="mx-auto border rounded-md border-muted max-w-md px-6 py-12">
         <Form method="post" className="flex flex-col gap-4">
           <input type="hidden" name="intent" value="password" />
+		  <div className="flex flex-col gap-2">
+            <Label htmlFor="name">Name</Label>
+            <Input id="name" name="name" type="text" placeholder="Elizabeth" required />
+          </div>
+		  <div className="flex flex-col gap-2">
+            <Label htmlFor="surname">Surname</Label>
+            <Input id="surname" name="surname" type="text" placeholder="Queen" required />
+          </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" placeholder="you@example.com" required />
@@ -131,14 +165,11 @@ const Login = () => {
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Link className="text-xs" to="/forgot-password">
-                Forgot your password?
-              </Link>
             </div>
             <Input id="password" type="password" name="password" placeholder="Your password" required />
           </div>
           <Button disabled={isSubmitting} type="submit">
-            {isSubmitting ? <Spinner /> : 'Log in'}
+            {isSubmitting ? <Spinner /> : 'Sign Up'}
           </Button>
         </Form>
 
@@ -172,15 +203,15 @@ const Login = () => {
               <path fill="#4CAF50" d="M24 44c5.196 0 9.86-1.992 13.38-5.223l-6.173-5.234C29.093 34.484 26.682 35.5 24 35.5c-5.262 0-9.799-3.507-11.397-8.248l-6.52 5.017C8.704 39.043 15.83 44 24 44z" />
               <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z" />
             </svg>
-              Login with Google
+            Continue with Google
           </Button>
           </div>
         </Form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          No account?{' '}
-          <Link to="/signup" className="underline">
-            Sign up
+          Already with us?{' '}
+          <Link to="/login" className="underline">
+            Log in
           </Link>
         </p>
       </div>
@@ -188,4 +219,4 @@ const Login = () => {
   )
 }
 
-export default Login
+export default Register

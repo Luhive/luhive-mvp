@@ -78,7 +78,7 @@ export function TopNavigation({ user }: TopNavigationProps) {
         <div className="flex items-center gap-0">
           <Link to="/" className="flex items-center gap-3">
             <img className="h-5 w-5" src={LuhiveLogo} alt="Luhive Logo" />
-            <h1 className="font-black tracking-tight">Luhive</h1>
+            <h1 className="font-black text-xl tracking-tight">Luhive</h1>
           </Link>
 
           {/* <div className="hidden md:flex items-center gap-6">

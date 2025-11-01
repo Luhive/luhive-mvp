@@ -14,7 +14,7 @@ import manrope500Url from "./assets/fonts/manrope-v20-latin_latin-ext-500.woff2?
 import manrope600Url from "./assets/fonts/manrope-v20-latin_latin-ext-600.woff2?url";
 import manrope700Url from "./assets/fonts/manrope-v20-latin_latin-ext-700.woff2?url";
 import { Toaster } from "sonner";
-import ErrorComponent from "./routes/Error";
+import ErrorComponent from "./routes/error";
 
 export const links: Route.LinksFunction = () => [
   // Preload local Manrope font files for faster first paint
