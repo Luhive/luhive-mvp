@@ -34,37 +34,58 @@ import {
   FormMessage,
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
-import { useSubmit, useNavigation } from "react-router"
+import { useSubmit, useNavigation, useNavigate } from "react-router"
 
-const joinCommunitySchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+// Schema for non-logged-in users
+const guestJoinSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  surname: z.string().min(2, "Surname must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   communityId: z.string().min(1, "Community ID is required"),
 })
 
-type JoinCommunityFormValues = z.infer<typeof joinCommunitySchema>
+// Schema for logged-in users (just community consent)
+const memberJoinSchema = z.object({
+  communityId: z.string().min(1, "Community ID is required"),
+})
+
+type GuestJoinFormValues = z.infer<typeof guestJoinSchema>
+type MemberJoinFormValues = z.infer<typeof memberJoinSchema>
 
 interface JoinCommunityFormProps {
   communityId: string
   communityName: string
+  userEmail?: string | null
+  isLoggedIn: boolean
   trigger?: React.ReactNode
 }
 
 export function JoinCommunityForm({
   communityId,
   communityName,
+  userEmail,
+  isLoggedIn,
   trigger,
 }: JoinCommunityFormProps) {
   const [open, setOpen] = React.useState(false)
   const isMobile = useIsMobile()
   const submit = useSubmit()
+  const navigate = useNavigate()
   const navigation = useNavigation()
 
-  const form = useForm<JoinCommunityFormValues>({
-    resolver: zodResolver(joinCommunitySchema),
+  const guestForm = useForm<GuestJoinFormValues>({
+    resolver: zodResolver(guestJoinSchema),
     defaultValues: {
-      fullName: "",
+      name: "",
+      surname: "",
       email: "",
+      communityId: communityId,
+    },
+  })
+
+  const memberForm = useForm<MemberJoinFormValues>({
+    resolver: zodResolver(memberJoinSchema),
+    defaultValues: {
       communityId: communityId,
     },
   })
@@ -72,23 +93,34 @@ export function JoinCommunityForm({
   const isSubmitting = navigation.state === "submitting" &&
     navigation.formData?.get("intent") === "join_community"
 
-  const onSubmit = (values: JoinCommunityFormValues) => {
+  // For logged-in users: submit directly to join
+  const onMemberSubmit = (values: MemberJoinFormValues) => {
     const formData = new FormData()
     formData.append("intent", "join_community")
-    formData.append("fullName", values.fullName)
-    formData.append("email", values.email)
     formData.append("communityId", values.communityId)
 
     submit(formData, { method: "post" })
   }
 
-  // Close dialog/drawer on successful submission
+  // For non-logged-in users: redirect to register with params
+  const onGuestSubmit = (values: GuestJoinFormValues) => {
+    const params = new URLSearchParams({
+      name: values.name,
+      surname: values.surname,
+      email: values.email,
+      communityId: values.communityId,
+      communityName: communityName,
+    })
+    navigate(`/signup?${params.toString()}`)
+  }
+
+  // Close dialog/drawer on successful submission (for logged-in users)
   React.useEffect(() => {
-    if (navigation.state === "idle" && form.formState.isSubmitSuccessful) {
+    if (isLoggedIn && navigation.state === "idle" && memberForm.formState.isSubmitSuccessful) {
       setOpen(false)
-      form.reset()
+      memberForm.reset()
     }
-  }, [navigation.state, form.formState.isSubmitSuccessful, form])
+  }, [isLoggedIn, navigation.state, memberForm.formState.isSubmitSuccessful, memberForm])
 
   const defaultTrigger = (
     <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
@@ -101,47 +133,29 @@ export function JoinCommunityForm({
     </Button>
   )
 
-  const FormContent = () => (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="fullName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="John Doe"
-                  {...field}
-                  disabled={isSubmitting}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+  const consentMessage = `By joining ${communityName}, you'll receive email notifications about announcements, posts, and events. You can manage your notification preferences anytime.`
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  placeholder="john@example.com"
-                  {...field}
-                  disabled={isSubmitting}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+  // Form content for logged-in users (just consent)
+  const MemberFormContent = () => (
+    <Form {...memberForm}>
+      <form onSubmit={memberForm.handleSubmit(onMemberSubmit)} className="space-y-4">
+        <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+          <p>{consentMessage}</p>
+        </div>
 
-        <input type="hidden" {...form.register("communityId")} />
+        {userEmail && (
+          <div className="space-y-2">
+            <FormLabel>Your Email</FormLabel>
+            <Input
+              type="email"
+              value={userEmail}
+              disabled
+              className="bg-muted"
+            />
+          </div>
+        )}
+
+        <input type="hidden" {...memberForm.register("communityId")} />
 
         {isMobile ? (
           <DrawerFooter className="px-0">
@@ -187,6 +201,97 @@ export function JoinCommunityForm({
     </Form>
   )
 
+  // Form content for non-logged-in users (name, surname, email)
+  const GuestFormContent = () => (
+    <Form {...guestForm}>
+      <form onSubmit={guestForm.handleSubmit(onGuestSubmit)} className="space-y-4">
+        <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+          <p>{consentMessage}</p>
+        </div>
+
+        <FormField
+          control={guestForm.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Elizabeth"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={guestForm.control}
+          name="surname"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Surname</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Queen"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={guestForm.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <input type="hidden" {...guestForm.register("communityId")} />
+
+        {isMobile ? (
+          <DrawerFooter className="px-0">
+            <Button type="submit" className="w-full">
+              Continue to Sign Up
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline">
+                Cancel
+              </Button>
+            </DrawerClose>
+          </DrawerFooter>
+        ) : (
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+                onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+              <Button type="submit">
+                Continue to Sign Up
+            </Button>
+          </div>
+        )}
+      </form>
+    </Form>
+  )
+
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={setOpen}>
@@ -195,11 +300,13 @@ export function JoinCommunityForm({
           <DrawerHeader>
             <DrawerTitle>Join {communityName}</DrawerTitle>
             <DrawerDescription>
-              Enter your details to join our community and stay connected.
+              {isLoggedIn
+                ? "Review the details below and confirm to join our community."
+                : "Enter your details to get started with your account."}
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4">
-            <FormContent />
+            {isLoggedIn ? <MemberFormContent /> : <GuestFormContent />}
           </div>
         </DrawerContent>
       </Drawer>
@@ -213,10 +320,12 @@ export function JoinCommunityForm({
         <DialogHeader>
           <DialogTitle>Join {communityName}</DialogTitle>
           <DialogDescription>
-            Enter your details to join our community and stay connected.
+            {isLoggedIn
+              ? "Review the details below and confirm to join our community."
+              : "Enter your details to get started with your account."}
           </DialogDescription>
         </DialogHeader>
-        <FormContent />
+        {isLoggedIn ? <MemberFormContent /> : <GuestFormContent />}
       </DialogContent>
     </Dialog>
   )

@@ -1,7 +1,8 @@
 import { redirect } from 'react-router'
-import { Form, Link, useActionData, useNavigation } from 'react-router'
+import { Form, Link, useActionData, useNavigation, useSearchParams } from 'react-router'
 import type { Route } from './+types/login'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { z } from 'zod'
 
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
@@ -10,6 +11,27 @@ import { createClient } from '~/lib/supabase.server'
 import LuhiveLogo from '~/assets/images/LuhiveLogo.svg'
 import { Spinner } from '~/components/ui/spinner'
 import { toast } from 'sonner'
+
+// Validation schema
+const registerSchema = z.object({
+  name: z.string()
+    .min(1, 'Name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must be less than 50 characters'),
+  surname: z.string()
+    .min(1, 'Surname is required')
+    .min(2, 'Surname must be at least 2 characters')
+    .max(50, 'Surname must be less than 50 characters'),
+  email: z.string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z.string()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+})
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -67,6 +89,7 @@ export async function action({ request }: Route.ActionArgs) {
       return redirect(data.url, { headers });
     }
 
+
     return Response.json({ success: false, error: 'Unable to start OAuth flow.' }, { headers });
   }
 
@@ -75,6 +98,25 @@ export async function action({ request }: Route.ActionArgs) {
   const password = formData.get('password') as string;
   const name = formData.get('name') as string;
   const surname = formData.get('surname') as string;
+  const communityId = formData.get('communityId') as string | null;
+
+  // Validate form data
+  const validation = registerSchema.safeParse({
+    name,
+    surname,
+    email,
+    password,
+  });
+
+  if (!validation.success) {
+    const errors = validation.error.flatten().fieldErrors;
+    return Response.json({
+      success: false,
+      errors,
+      fieldErrors: errors
+    }, { headers });
+  }
+
   const fullName = `${name} ${surname}`.trim();
 
   // Sign up with Supabase Auth
@@ -105,14 +147,43 @@ export async function action({ request }: Route.ActionArgs) {
   if (profileError) {
     // Log the error but don't block the registration flow
     console.error('Failed to create profile:', profileError);
-    // You might want to handle this differently depending on your requirements
+  }
+
+  // If user came from community join flow, add them to the community
+  if (communityId && data.user) {
+    const { error: memberError } = await supabase
+      .from('community_members')
+      .insert({
+        user_id: data.user.id,
+        community_id: communityId,
+        role: 'member',
+      });
+
+    if (memberError) {
+      console.error('Failed to add user to community:', memberError);
+      // Don't block registration if community join fails
+    }
   }
 
   // Check if user needs email confirmation
   if (data.session) {
     // User is automatically logged in (email confirmation disabled)
-    // Redirect to onboarding or home
-    return redirect('/register', { headers });
+    // If they came from community, redirect to that community
+    if (communityId) {
+      // Fetch community slug for redirect
+      const { data: community } = await supabase
+        .from('communities')
+        .select('slug')
+        .eq('id', communityId)
+        .single();
+
+      if (community) {
+        return redirect(`/c/${community.slug}`, { headers });
+      }
+    }
+
+    // Otherwise redirect to onboarding or home
+    return redirect('/', { headers });
   }
 
   // If email confirmation is required, show a message
@@ -122,10 +193,34 @@ export async function action({ request }: Route.ActionArgs) {
   }, { headers });
 }
 
+type ActionData = {
+  success: boolean;
+  error?: string;
+  message?: string;
+  fieldErrors?: {
+    name?: string[];
+    surname?: string[];
+    email?: string[];
+    password?: string[];
+  };
+}
+
 const Register = () => {
-  const actionData = useActionData<{ success: boolean; error?: string; message?: string }>()
+  const actionData = useActionData<ActionData>()
   const navigation = useNavigation()
+  const [searchParams] = useSearchParams()
   const isSubmitting = navigation.state === 'submitting'
+  const [formKey, setFormKey] = useState(0)
+
+  // Get URL params for pre-filling
+  const nameParam = searchParams.get('name') || ''
+  const surnameParam = searchParams.get('surname') || ''
+  const emailParam = searchParams.get('email') || ''
+  const communityIdParam = searchParams.get('communityId') || ''
+  const communityNameParam = searchParams.get('communityName') || ''
+
+  // Get field errors
+  const fieldErrors = actionData?.fieldErrors
 
   useEffect(() => {
     if (actionData) {
@@ -133,6 +228,8 @@ const Register = () => {
         toast.error(String(actionData.error))
       } else if ('message' in actionData && actionData.message) {
         toast.success(String(actionData.message))
+        // Clear form by forcing remount
+        setFormKey(prev => prev + 1)
       }
     }
   }, [actionData])
@@ -141,35 +238,95 @@ const Register = () => {
     <div className='mt-16'>
       <div className="flex flex-col items-center text-center">
         <img src={LuhiveLogo} alt="Luhive logo" className="h-12 w-12 mb-6" />
-        <h1 className="text-2xl font-bold mb-2">Welcome to Our Platform!</h1>
+        <h1 className="text-2xl font-bold mb-2">
+          {communityNameParam ? `Join ${communityNameParam}` : 'Welcome to Our Platform!'}
+        </h1>
         <p className="text-sm text-muted-foreground mb-4">
-          Lets see who you are.
+          {communityNameParam
+            ? 'Create your account to join the community'
+            : 'Lets see who you are.'}
         </p>
       </div>
 
       <div className="mx-auto border rounded-md border-muted max-w-md px-6 py-12">
-        <Form method="post" className="flex flex-col gap-4">
+        {communityNameParam && (
+          <div className="mb-6 rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+            <p>
+              By joining {communityNameParam}, you'll receive email notifications about announcements, posts, and events. You can manage your notification preferences anytime.
+            </p>
+          </div>
+        )}
+
+        <Form key={formKey} method="post" className="flex flex-col gap-4">
           <input type="hidden" name="intent" value="password" />
+          {communityIdParam && <input type="hidden" name="communityId" value={communityIdParam} />}
 		  <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" name="name" type="text" placeholder="Elizabeth" required />
+            <Label htmlFor="name" className={fieldErrors?.name ? 'text-destructive' : ''}>
+              Name
+            </Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="Elizabeth"
+              defaultValue={nameParam}
+              className={fieldErrors?.name ? 'border-destructive' : ''}
+            />
+            {fieldErrors?.name && (
+              <p className="text-sm text-destructive">{fieldErrors.name[0]}</p>
+            )}
           </div>
 		  <div className="flex flex-col gap-2">
-            <Label htmlFor="surname">Surname</Label>
-            <Input id="surname" name="surname" type="text" placeholder="Queen" required />
+            <Label htmlFor="surname" className={fieldErrors?.surname ? 'text-destructive' : ''}>
+              Surname
+            </Label>
+            <Input
+              id="surname"
+              name="surname"
+              type="text"
+              placeholder="Queen"
+              defaultValue={surnameParam}
+              className={fieldErrors?.surname ? 'border-destructive' : ''}
+            />
+            {fieldErrors?.surname && (
+              <p className="text-sm text-destructive">{fieldErrors.surname[0]}</p>
+            )}
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="you@example.com" required />
+            <Label htmlFor="email" className={fieldErrors?.email ? 'text-destructive' : ''}>
+              Email
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+              defaultValue={emailParam}
+              className={fieldErrors?.email ? 'border-destructive' : ''}
+            />
+            {fieldErrors?.email && (
+              <p className="text-sm text-destructive">{fieldErrors.email[0]}</p>
+            )}
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className={fieldErrors?.password ? 'text-destructive' : ''}>
+                Password
+              </Label>
             </div>
-            <Input id="password" type="password" name="password" placeholder="Your password" required />
+            <Input
+              id="password"
+              type="password"
+              name="password"
+              placeholder="Your password"
+              className={fieldErrors?.password ? 'border-destructive' : ''}
+            />
+            {fieldErrors?.password && (
+              <p className="text-sm text-destructive">{fieldErrors.password[0]}</p>
+            )}
           </div>
           <Button disabled={isSubmitting} type="submit">
-            {isSubmitting ? <Spinner /> : 'Sign Up'}
+            {isSubmitting ? <Spinner /> : (communityNameParam ? 'Sign Up & Join' : 'Sign Up')}
           </Button>
         </Form>
 

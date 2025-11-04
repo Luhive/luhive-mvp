@@ -124,7 +124,7 @@ export async function action({ request }: Route.ActionArgs) {
       });
 
       // Return immediately (non-blocking)
-      return { success: true };
+      return { "": "" };
     } catch (error) {
       console.error('Visit tracking error:', error);
       return { success: false };
@@ -133,62 +133,25 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (intent === 'join_community') {
     try {
-      const fullName = formData.get('fullName') as string;
-      const email = formData.get('email') as string;
       const communityId = formData.get('communityId') as string;
 
       // Validate inputs
-      if (!fullName || !email || !communityId) {
-        return { success: false, error: 'Missing required fields' };
+      if (!communityId) {
+        return { success: false, error: 'Missing community ID' };
       }
 
-      // Check if profile exists by email (stored in settings.email)
-      const { data: existingProfiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, settings')
-        .eq('settings->>email', email)
-        .limit(1);
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
 
-      let profileId: string;
-
-      if (existingProfiles && existingProfiles.length > 0) {
-        // Profile exists - use existing ID and update name if different
-        const existingProfile = existingProfiles[0];
-        profileId = existingProfile.id;
-
-        if (existingProfile.full_name !== fullName) {
-          await supabase
-            .from('profiles')
-            .update({ full_name: fullName })
-            .eq('id', profileId);
-        }
-      } else {
-        // Create new profile with generated UUID
-        const newProfileId = crypto.randomUUID();
-
-        const { data: newProfile, error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: newProfileId,
-            full_name: fullName,
-            settings: { email },
-          })
-          .select('id')
-          .single();
-
-        if (profileError || !newProfile) {
-          console.error('Failed to create profile:', profileError);
-          return { success: false, error: 'Failed to create profile' };
-        }
-
-        profileId = newProfile.id;
+      if (!user) {
+        return { success: false, error: 'You must be logged in to join a community' };
       }
 
       // Check if user is already a member
       const { data: existingMembership } = await supabase
         .from('community_members')
         .select('id')
-        .eq('user_id', profileId)
+        .eq('user_id', user.id)
         .eq('community_id', communityId)
         .limit(1);
 
@@ -200,7 +163,7 @@ export async function action({ request }: Route.ActionArgs) {
       const { error: memberError } = await supabase
         .from('community_members')
         .insert({
-          user_id: profileId,
+          user_id: user.id,
           community_id: communityId,
           role: 'member',
         });
@@ -481,6 +444,8 @@ export default function Community() {
                 <JoinCommunityForm
                   communityId={community?.id || ''}
                   communityName={displayName}
+                  userEmail={user?.email}
+                  isLoggedIn={!!user}
                 />
 
                 <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
