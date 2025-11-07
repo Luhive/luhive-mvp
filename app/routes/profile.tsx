@@ -147,7 +147,7 @@ export default function Profile() {
       const { error: dbError } = await supabase
         .from('profiles')
         .update({ avatar_url: avatar.url })
-        .eq('id', user?.id);
+        .eq('id', user!.id);
 
       if (dbError) {
         toast.error('Failed to save avatar');
