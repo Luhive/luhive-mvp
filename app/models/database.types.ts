@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       communities: {
         Row: {
+          cover_url: string | null
           created_at: string | null
           created_by: string
           description: string | null
@@ -33,6 +34,7 @@ export type Database = {
           verified: boolean | null
         }
         Insert: {
+          cover_url?: string | null
           created_at?: string | null
           created_by: string
           description?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           verified?: boolean | null
         }
         Update: {
+          cover_url?: string | null
           created_at?: string | null
           created_by?: string
           description?: string | null
@@ -112,6 +115,13 @@ export type Database = {
             referencedRelation: "communities"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "community_members_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       community_visits: {
@@ -149,39 +159,6 @@ export type Database = {
           },
         ]
       }
-      demo_requests: {
-        Row: {
-          community_description: string
-          community_name: string
-          created_at: string | null
-          email_address: string
-          full_name: string
-          id: string
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          community_description: string
-          community_name: string
-          created_at?: string | null
-          email_address: string
-          full_name: string
-          id?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          community_description?: string
-          community_name?: string
-          created_at?: string | null
-          email_address?: string
-          full_name?: string
-          id?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -211,6 +188,33 @@ export type Database = {
           gamification?: Json | null
           id?: string
           settings?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      waitlist_requests: {
+        Row: {
+          community_name: string
+          created_at: string | null
+          email_address: string
+          id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          community_name: string
+          created_at?: string | null
+          email_address: string
+          id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          community_name?: string
+          created_at?: string | null
+          email_address?: string
+          id?: string
+          status?: string | null
           updated_at?: string | null
         }
         Relationships: []

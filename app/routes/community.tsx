@@ -1,10 +1,9 @@
 import type { Route } from "./+types/community";
-import { useLoaderData, Link, useNavigation, useActionData } from "react-router";
+import { useLoaderData, Link, useNavigation, useActionData, useRevalidator } from "react-router";
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router';
 import { useEffect } from 'react';
-
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
@@ -30,7 +29,6 @@ import {
 
 } from "lucide-react"
 
-import LuhiveLogo from "~/assets/images/LuhiveLogo.png";
 import { Activity } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip";
 import { TooltipProvider } from "~/components/ui/tooltip";
@@ -39,6 +37,7 @@ import { getIpLocation } from "~/lib/getIpLocation";
 import { prepareVisitAnalytics, type VisitAnalytics } from "~/lib/visitTracker";
 import { getSessionId, shouldTrackVisit, isFirstVisit } from "~/lib/sessionTracker";
 import { JoinCommunityForm } from "~/components/join-community-form";
+import { CoverPictureUpload } from "~/components/cover-picture-upload";
 
 type Community = Database['public']['Tables']['communities']['Row'];
 
@@ -197,6 +196,7 @@ export default function Community() {
 
   const submit = useSubmit();
   const navigation = useNavigation();
+  const revalidator = useRevalidator();
 
   // Track visit on component mount
   useEffect(() => {
@@ -246,6 +246,7 @@ export default function Community() {
   const displayTagline = community?.tagline || "Community Tagline";
   const displayDescription = community?.description || "Community Description";
   const displayLogo = community?.logo_url || '';
+  const displayCover = community?.cover_url || '';
   const displayVerified = community?.verified || false;
 
   // Parse stats if available
@@ -341,14 +342,37 @@ export default function Community() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]">
             {/* Profile Card - Large */}
-            <Card className="md:col-span-2 lg:col-span-2 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none">
-              <CardContent className="p-8 flex flex-col items-center justify-center text-center h-full space-y-4">
-                <Avatar className="h-24 w-24 border-1">
-                  <AvatarImage src={displayLogo} alt={displayName} />
-                  <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                    {displayName.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+            <Card className="md:col-span-2 py-0 lg:col-span-2 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none overflow-hidden">
+              <CardContent className="p-0 flex flex-col h-full">
+                {/* Cover Picture */}
+                {isOwner && community ? (
+                  <CoverPictureUpload
+                    communitySlug={community.slug}
+                    currentCoverUrl={displayCover}
+                    onCoverUpdate={() => revalidator.revalidate()}
+                  />
+                ) : (
+                  <div className="relative w-full h-36 bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background">
+                    {displayCover ? (
+                      <img
+                        src={displayCover}
+                        alt={`${displayName} cover`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="" />
+                    )}
+                  </div>
+                )}
+
+                {/* Profile Content */}
+                <div className="pb-8 flex flex-col items-center justify-center text-center flex-1 space-y-4 -mt-12">
+                  <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                    <AvatarImage src={displayLogo} alt={displayName} />
+                    <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                      {displayName.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                 <div className="space-y-2">
                   <h1 className="text-4xl font-black text-foreground tracking-tight">{displayName}</h1>
                   <p className="text-lg text-primary font-medium">{displayTagline}</p>
@@ -410,6 +434,7 @@ export default function Community() {
                       <Linkedin className="h-4 w-4" />
                     </Button>
                   </Activity>
+                </div>
                 </div>
               </CardContent>
             </Card>

@@ -19,17 +19,19 @@ export interface StorageConfig {
 export class ObjectStorageService {
   private supabase;
   private defaultConfig: StorageConfig = {
-    bucket: 'community-profile-pictures',
+    bucket: "community-profile-pictures",
     maxFileSize: 5 * 1024 * 1024, // 5MB
-    allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    allowedTypes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
   };
 
   constructor() {
     // Only create client in browser environment
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       this.supabase = createBrowserClient();
     } else {
-      throw new Error('ObjectStorageService can only be used in browser environment');
+      throw new Error(
+        "ObjectStorageService can only be used in browser environment"
+      );
     }
   }
 
@@ -42,7 +44,7 @@ export class ObjectStorageService {
   ): Promise<UploadResult> {
     try {
       const finalConfig = { ...this.defaultConfig, ...config };
-      
+
       // Validate file
       const validation = this.validateFile(file, finalConfig);
       if (!validation.valid) {
@@ -50,22 +52,25 @@ export class ObjectStorageService {
       }
 
       // Generate unique filename
-      const fileExtension = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExtension}`;
-      const filePath = finalConfig.folder ? `${finalConfig.folder}/${fileName}` : fileName;
+      const fileExtension = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${fileExtension}`;
+      const filePath = finalConfig.folder
+        ? `${finalConfig.folder}/${fileName}`
+        : fileName;
 
       // Upload to Supabase Storage
       const { data, error } = await this.supabase.storage
         .from(finalConfig.bucket)
         .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
+          cacheControl: "3600",
+          upsert: false,
         });
 
       if (error) {
-        console.log(error)
+        console.log(error);
         return { success: false, error: error.message };
-
       }
 
       // Get public URL
@@ -76,13 +81,13 @@ export class ObjectStorageService {
       return {
         success: true,
         url: urlData.publicUrl,
-        path: filePath
+        path: filePath,
       };
     } catch (error) {
-      console.log(error)
+      console.log(error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Upload failed'
+        error: error instanceof Error ? error.message : "Upload failed",
       };
     }
   }
@@ -92,9 +97,7 @@ export class ObjectStorageService {
    */
   async deleteFile(bucket: string, path: string): Promise<UploadResult> {
     try {
-      const { error } = await this.supabase.storage
-        .from(bucket)
-        .remove([path]);
+      const { error } = await this.supabase.storage.from(bucket).remove([path]);
 
       if (error) {
         return { success: false, error: error.message };
@@ -104,7 +107,7 @@ export class ObjectStorageService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Delete failed'
+        error: error instanceof Error ? error.message : "Delete failed",
       };
     }
   }
@@ -113,22 +116,25 @@ export class ObjectStorageService {
    * Get public URL for a file
    */
   getPublicUrl(bucket: string, path: string): string {
-    const { data } = this.supabase.storage
-      .from(bucket)
-      .getPublicUrl(path);
-    
+    const { data } = this.supabase.storage.from(bucket).getPublicUrl(path);
+
     return data.publicUrl;
   }
 
   /**
    * Validate file before upload
    */
-  private validateFile(file: File, config: StorageConfig): { valid: boolean; error?: string } {
+  private validateFile(
+    file: File,
+    config: StorageConfig
+  ): { valid: boolean; error?: string } {
     // Check file size
     if (file.size > config.maxFileSize!) {
       return {
         valid: false,
-        error: `File size must be less than ${Math.round(config.maxFileSize! / 1024 / 1024)}MB`
+        error: `File size must be less than ${Math.round(
+          config.maxFileSize! / 1024 / 1024
+        )}MB`,
       };
     }
 
@@ -136,7 +142,9 @@ export class ObjectStorageService {
     if (config.allowedTypes && !config.allowedTypes.includes(file.type)) {
       return {
         valid: false,
-        error: `File type ${file.type} is not allowed. Allowed types: ${config.allowedTypes.join(', ')}`
+        error: `File type ${
+          file.type
+        } is not allowed. Allowed types: ${config.allowedTypes.join(", ")}`,
       };
     }
 
@@ -151,18 +159,46 @@ export class ObjectStorageService {
     communitySlug: string
   ): Promise<UploadResult> {
     return this.uploadFile(file, {
-      bucket: 'community-profile-pictures',
+      bucket: "community-profile-pictures",
       folder: `logos/${communitySlug}`,
       maxFileSize: 2 * 1024 * 1024, // 2MB for logos
-      allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
+      allowedTypes: ["image/jpeg", "image/png", "image/webp"],
     });
   }
 
   /**
    * Delete community logo
    */
-  async deleteCommunityLogo(communitySlug: string, logoPath: string): Promise<UploadResult> {
-    return this.deleteFile('community-profile-pictures', logoPath);
+  async deleteCommunityLogo(
+    communitySlug: string,
+    logoPath: string
+  ): Promise<UploadResult> {
+    return this.deleteFile("community-profile-pictures", logoPath);
+  }
+
+  /**
+   * Upload community cover picture
+   */
+  async uploadCommunityCover(
+    file: File,
+    communitySlug: string
+  ): Promise<UploadResult> {
+    return this.uploadFile(file, {
+      bucket: "community-profile-pictures",
+      folder: `covers/${communitySlug}`,
+      maxFileSize: 2 * 1024 * 1024, // 2MB for covers (LinkedIn standard)
+      allowedTypes: ["image/jpeg", "image/png", "image/webp"],
+    });
+  }
+
+  /**
+   * Delete community cover picture
+   */
+  async deleteCommunityCover(
+    communitySlug: string,
+    coverPath: string
+  ): Promise<UploadResult> {
+    return this.deleteFile("community-profile-pictures", coverPath);
   }
 }
 
@@ -172,7 +208,10 @@ export const uploadCommunityLogo = (file: File, communitySlug: string) => {
   return storage.uploadCommunityLogo(file, communitySlug);
 };
 
-export const deleteCommunityLogo = (communitySlug: string, logoPath: string) => {
+export const deleteCommunityLogo = (
+  communitySlug: string,
+  logoPath: string
+) => {
   const storage = new ObjectStorageService();
   return storage.deleteCommunityLogo(communitySlug, logoPath);
 };
@@ -180,5 +219,18 @@ export const deleteCommunityLogo = (communitySlug: string, logoPath: string) => 
 export const getPublicUrl = (bucket: string, path: string) => {
   const storage = new ObjectStorageService();
   return storage.getPublicUrl(bucket, path);
+};
+
+export const uploadCommunityCover = (file: File, communitySlug: string) => {
+  const storage = new ObjectStorageService();
+  return storage.uploadCommunityCover(file, communitySlug);
+};
+
+export const deleteCommunityCover = (
+  communitySlug: string,
+  coverPath: string
+) => {
+  const storage = new ObjectStorageService();
+  return storage.deleteCommunityCover(communitySlug, coverPath);
 };
 
