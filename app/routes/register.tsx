@@ -3,7 +3,6 @@ import { Form, Link, useActionData, useNavigation, useSearchParams } from 'react
 import type { Route } from './+types/login'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
-
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
 import { Label } from '~/components/ui/label'
@@ -123,6 +122,13 @@ export async function action({ request }: Route.ActionArgs) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        // Store community they want to join
+        pending_community_id: communityId || null,
+        full_name: fullName,
+      }
+    }
   });
 
   if (error) {
@@ -140,50 +146,25 @@ export async function action({ request }: Route.ActionArgs) {
     .insert({
       id: data.user.id,
       full_name: fullName,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      metadata: {
+        referral_community_id: communityId
+      }
     });
 
   if (profileError) {
     // Log the error but don't block the registration flow
     console.error('Failed to create profile:', profileError);
+    return Response.json({ success: false, error: 'Failed to create user account' }, { headers });
   }
 
-  // If user came from community join flow, add them to the community
-  if (communityId && data.user) {
-    const { error: memberError } = await supabase
-      .from('community_members')
-      .insert({
-        user_id: data.user.id,
-        community_id: communityId,
-        role: 'member',
-      });
-
-    if (memberError) {
-      console.error('Failed to add user to community:', memberError);
-      // Don't block registration if community join fails
-    }
-  }
 
   // Check if user needs email confirmation
-  if (data.session) {
-    // User is automatically logged in (email confirmation disabled)
-    // If they came from community, redirect to that community
-    if (communityId) {
-      // Fetch community slug for redirect
-      const { data: community } = await supabase
-        .from('communities')
-        .select('slug')
-        .eq('id', communityId)
-        .single();
-
-      if (community) {
-        return redirect(`/c/${community.slug}`, { headers });
-      }
-    }
-
-    // Otherwise redirect to onboarding or home
-    return redirect('/', { headers });
+  if (!data.session) {
+    return Response.json({
+      success: true,
+      message: 'Please check your email to verify your account',
+      requiresVerification: true
+    }, { headers });
   }
 
   // If email confirmation is required, show a message

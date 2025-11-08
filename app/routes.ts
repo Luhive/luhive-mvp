@@ -23,4 +23,6 @@ export default [
   ]),
 
   route("logout", "routes/logout.tsx"),
+
+  route("auth/verify", "routes/auth.verify.tsx"),
 ] satisfies RouteConfig;
