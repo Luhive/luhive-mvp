@@ -1,5 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
-import Cropper from 'react-easy-crop';
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { Button } from '~/components/ui/button';
 import { Spinner } from '~/components/ui/spinner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '~/components/ui/dialog';
@@ -7,6 +6,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/comp
 import { toast } from 'sonner';
 import { ImageUp, X } from 'lucide-react';
 import { createClient } from '~/lib/supabase.client';
+
+// Lazy load Cropper component to avoid SSR issues
+const Cropper = lazy(() => import('react-easy-crop').then(module => ({ default: module.default })));
 
 interface CoverPictureUploadProps {
   communitySlug: string;
@@ -294,16 +296,18 @@ export function CoverPictureUpload({
 
           <div className="relative w-full h-[400px] bg-muted">
             {selectedImage && (
-              <Cropper
-                image={selectedImage}
-                crop={crop}
-                zoom={zoom}
-                aspect={4 / 1}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-                objectFit="horizontal-cover"
-              />
+              <Suspense fallback={<div className="flex items-center justify-center h-full"><Spinner className="h-8 w-8" /></div>}>
+                <Cropper
+                  image={selectedImage}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={4 / 1}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={onCropComplete}
+                  objectFit="horizontal-cover"
+                />
+              </Suspense>
             )}
           </div>
 
