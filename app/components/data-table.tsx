@@ -41,13 +41,15 @@ import {
   TableRow,
 } from "~/components/ui/table"
 import { Search } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 
 // Schema for joined users
 export const schema = z.object({
-  id: z.number(),
-  name: z.string(),
-  surname: z.string(),
-  email: z.email(),
+  id: z.string(),
+  full_name: z.string(),
+  avatar_url: z.string().nullable(),
+  joined_at: z.string(),
+  role: z.string().optional(),
 })
 
 // Column definitions for joined users table
@@ -75,21 +77,42 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
-  },
-  {
-    accessorKey: "surname",
-    header: "Surname",
-    cell: ({ row }) => <div>{row.original.surname}</div>,
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
+    accessorKey: "full_name",
+    header: "Member",
     cell: ({ row }) => (
-      <div className="text-muted-foreground">{row.original.email}</div>
+      <div className="flex items-center gap-3">
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={row.original.avatar_url || ''} alt={row.original.full_name} />
+          <AvatarFallback className="text-xs bg-primary/10 text-primary">
+            {row.original.full_name.substring(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="font-medium">{row.original.full_name}</div>
+      </div>
     ),
+  },
+  {
+    accessorKey: "role",
+    header: "Role",
+    cell: ({ row }) => (
+      <div className="capitalize text-muted-foreground">{row.original.role || 'member'}</div>
+    ),
+  },
+  {
+    accessorKey: "joined_at",
+    header: "Joined Date",
+    cell: ({ row }) => {
+      const date = new Date(row.original.joined_at);
+      return (
+        <div className="text-muted-foreground">
+          {date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })}
+        </div>
+      );
+    },
   },
   {
     id: "actions",
@@ -104,8 +127,8 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
             toast.promise(
               new Promise((resolve) => setTimeout(resolve, 1000)),
               {
-                loading: `Removing ${row.original.name}...`,
-                success: `${row.original.name} ${row.original.surname} has been removed`,
+                loading: `Removing ${row.original.full_name}...`,
+                success: `${row.original.full_name} has been removed`,
                 error: "Failed to remove user",
               }
             )
@@ -146,7 +169,7 @@ export function DataTable({
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row.id.toString(),
+    getRowId: (row) => row.id,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -176,9 +199,9 @@ export function DataTable({
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by name"
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+              value={(table.getColumn("full_name")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
+              table.getColumn("full_name")?.setFilterValue(event.target.value)
             }
             className="pl-10 w-80"
           />

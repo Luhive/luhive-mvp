@@ -46,6 +46,8 @@ type LoaderData = {
   isOwner: boolean;
   user: { id: string } | null;
   analytics: VisitAnalytics;
+  memberCount: number;
+  eventCount: number;
 };
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -69,6 +71,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       isOwner: false,
       user: user || null,
       analytics,
+      memberCount: 0,
+      eventCount: 0,
     };
   }
 
@@ -86,11 +90,23 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   // Check if user is the owner
   const isOwner = user ? community.created_by === user.id : false;
 
+  // Fetch real-time member count
+  const { count: memberCount } = await supabase
+    .from('community_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('community_id', community.id);
+
+  // Get event count from stats (placeholder for now)
+  const stats = community.stats as { events?: number } | null;
+  const eventCount = stats?.events || 0;
+
   return {
     community,
     isOwner,
     user: user || null,
     analytics,
+    memberCount: memberCount || 0,
+    eventCount,
   };
 }
 
@@ -191,7 +207,7 @@ export function meta({ data }: { data?: LoaderData }) {
 }
 
 export default function Community() {
-  const { community, isOwner, user, analytics } = useLoaderData<typeof loader>();
+  const { community, isOwner, user, analytics, memberCount, eventCount } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const submit = useSubmit();
@@ -248,11 +264,6 @@ export default function Community() {
   const displayLogo = community?.logo_url || '';
   const displayCover = community?.cover_url || '';
   const displayVerified = community?.verified || false;
-
-  // Parse stats if available
-  const stats = community?.stats as { members?: number; events?: number } | null;
-  const memberCount = stats?.members || 0;
-  const eventCount = stats?.events || 0;
 
   // Parse social links if available
   const socialLinks = community?.social_links as {

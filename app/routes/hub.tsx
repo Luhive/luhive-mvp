@@ -17,7 +17,9 @@ import {
 import { IconArrowBigLeft } from "@tabler/icons-react";
 import { ShimmeringText } from "~/components/ui/shimmering-text";
 
-type Community = Database['public']['Tables']['communities']['Row'];
+type Community = Database['public']['Tables']['communities']['Row'] & {
+  memberCount: number;
+};
 
 type LoaderData = {
   communities: Community[];
@@ -44,8 +46,23 @@ export async function loader({ request }: Route.LoaderArgs) {
     };
   }
 
+  // Fetch member counts for each community
+  const communitiesWithCounts = await Promise.all(
+    (communities || []).map(async (community) => {
+      const { count } = await supabase
+        .from('community_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('community_id', community.id);
+
+      return {
+        ...community,
+        memberCount: count || 0,
+      };
+    })
+  );
+
   return {
-    communities: communities || [],
+    communities: communitiesWithCounts,
     user: user || null,
   };
 }
@@ -87,8 +104,8 @@ export default function Hub() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {communities.map((community) => {
-                const stats = community.stats as { members?: number; events?: number } | null;
-                const memberCount = stats?.members || 0;
+                const stats = community.stats as { events?: number } | null;
+                const memberCount = community.memberCount || 0;
                 const eventCount = stats?.events || 0;
 
                 return (
