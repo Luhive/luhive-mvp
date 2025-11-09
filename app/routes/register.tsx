@@ -10,6 +10,7 @@ import { createClient } from '~/lib/supabase.server'
 import LuhiveLogo from '~/assets/images/LuhiveLogo.svg'
 import { Spinner } from '~/components/ui/spinner'
 import { toast } from 'sonner'
+import { Eye, EyeOff } from 'lucide-react'
 
 // Validation schema
 const registerSchema = z.object({
@@ -160,18 +161,12 @@ export async function action({ request }: Route.ActionArgs) {
 
   // Check if user needs email confirmation
   if (!data.session) {
-    return Response.json({
-      success: true,
-      message: 'Please check your email to verify your account',
-      requiresVerification: true
-    }, { headers });
+    // Redirect to email sent page with email as query param
+    return redirect(`/auth/email-sent?email=${encodeURIComponent(email)}`, { headers });
   }
 
-  // If email confirmation is required, show a message
-  return Response.json({ 
-    success: true, 
-    message: 'Please check your email to confirm your account' 
-  }, { headers });
+  // If email confirmation is required, redirect to email sent page
+  return redirect(`/auth/email-sent?email=${encodeURIComponent(email)}`, { headers });
 }
 
 type ActionData = {
@@ -192,6 +187,7 @@ const Register = () => {
   const [searchParams] = useSearchParams()
   const isSubmitting = navigation.state === 'submitting'
   const [formKey, setFormKey] = useState(0)
+  const [showPassword, setShowPassword] = useState(false)
 
   // Get URL params for pre-filling
   const nameParam = searchParams.get('name') || ''
@@ -295,13 +291,27 @@ const Register = () => {
                 Password
               </Label>
             </div>
-            <Input
-              id="password"
-              type="password"
-              name="password"
-              placeholder="Your password"
-              className={fieldErrors?.password ? 'border-destructive' : ''}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Your password"
+                className={fieldErrors?.password ? 'border-destructive pr-10' : 'pr-10'}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
             {fieldErrors?.password && (
               <p className="text-sm text-destructive">{fieldErrors.password[0]}</p>
             )}

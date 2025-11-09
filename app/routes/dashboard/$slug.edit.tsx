@@ -72,6 +72,24 @@ export async function action({ request, params }: { request: Request; params: Re
   const linkedin = formData.get('linkedin') as string;
   const logo_url = formData.get('logo_url') as string;
 
+  // Word count validation helper
+  const countWords = (text: string): number => {
+    if (!text || text.trim() === '') return 0;
+    return text.trim().split(/\s+/).length;
+  };
+
+  // Validate word limits
+  const taglineWordCount = countWords(tagline);
+  const descriptionWordCount = countWords(description);
+
+  if (taglineWordCount > 25) {
+    return { success: false, error: 'Tagline must be 25 words or less' };
+  }
+
+  if (descriptionWordCount > 100) {
+    return { success: false, error: 'Description must be 100 words or less' };
+  }
+
   // Prepare social links JSON
   const socialLinks = {
     website: website || null,
@@ -122,9 +140,23 @@ export default function CommunityEdit() {
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>(community.logo_url || '');
+  const [taglineWordCount, setTaglineWordCount] = useState(0);
+  const [descriptionWordCount, setDescriptionWordCount] = useState(0);
+
+  // Word counting function
+  const countWords = (text: string): number => {
+    if (!text || text.trim() === '') return 0;
+    return text.trim().split(/\s+/).length;
+  };
 
   // Get host from React Router location
   const host = typeof window !== 'undefined' ? window.location.host : '';
+
+  // Initialize word counts on mount
+  useEffect(() => {
+    setTaglineWordCount(countWords(community.tagline || ''));
+    setDescriptionWordCount(countWords(community.description || ''));
+  }, [community.tagline, community.description]);
 
   // Show toast on action result
   useEffect(() => {
@@ -142,6 +174,16 @@ export default function CommunityEdit() {
 
   const handleLogoUpdate = (newLogoUrl: string) => {
     setLogoUrl(newLogoUrl);
+  };
+
+  const handleTaglineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const words = countWords(e.target.value);
+    setTaglineWordCount(words);
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const words = countWords(e.target.value);
+    setDescriptionWordCount(words);
   };
 
   return (
@@ -227,7 +269,12 @@ export default function CommunityEdit() {
                         name="tagline"
                         defaultValue={community.tagline || ''}
                         placeholder="A short tagline"
+                        onChange={handleTaglineChange}
+                        maxLength={500}
                       />
+                      <p className={`text-xs ${taglineWordCount > 25 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                        {taglineWordCount}/25 words
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -239,7 +286,12 @@ export default function CommunityEdit() {
                         placeholder="Tell people more about your community"
                         rows={6}
                         className="resize-none"
+                        onChange={handleDescriptionChange}
+                        maxLength={2000}
                       />
+                      <p className={`text-xs ${descriptionWordCount > 100 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                        {descriptionWordCount}/100 words
+                      </p>
                     </div>
                   </div>
                 </CardContent>

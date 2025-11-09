@@ -232,43 +232,44 @@ export function CoverPictureUpload({
 
   if (!isClient) {
     return (
-      <div className="relative w-full h-36 bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background" />
+      <div className="relative w-full aspect-[4/1] max-h-32 sm:max-h-36 md:max-h-40 lg:max-h-44 bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background" />
     );
   }
 
   return (
     <>
       {/* Cover Picture Display */}
-      <div className="relative w-full h-36 bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background overflow-hidden">
-        {currentCover ? (
-          <img
-            src={currentCover}
-            alt="Community Cover"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full" />
-        )}
+      <div>
+        <div className="relative w-full aspect-[4/1] max-h-32 sm:max-h-36 md:max-h-40 lg:max-h-44 bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background overflow-hidden">
+          {currentCover ? (
+            <img
+              src={currentCover}
+              alt="Community Cover"
+              className="w-full h-full object-cover object-center"
+            />
+          ) : (
+            <div className="w-full h-full" />
+          )}
 
-        {/* Edit Button - Top Right */}
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <label
-                htmlFor="cover-upload"
-                className="absolute top-3 right-3 cursor-pointer group/edit"
-              >
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className="h-9 w-9 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 group-hover/edit:bg-primary group-hover/edit:text-primary-foreground"
-                  type="button"
-                  asChild
+          {/* Edit Button - Top Right */}
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <label
+                  htmlFor="cover-upload"
+                  className="absolute top-2 right-2 sm:top-3 sm:right-3 cursor-pointer group/edit"
                 >
-                  <span>
-                    <ImageUp className="h-4 w-4 group-hover/edit:text-primary transition-transform duration-200 group-hover/edit:scale-110" />
-                  </span>
-                </Button>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 group-hover/edit:bg-primary group-hover/edit:text-primary-foreground"
+                    type="button"
+                    asChild
+                  >
+                    <span>
+                      <ImageUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover/edit:text-primary transition-transform duration-200 group-hover/edit:scale-110" />
+                    </span>
+                  </Button>
                 <input
                   id="cover-upload"
                   type="file"
@@ -285,6 +286,7 @@ export function CoverPictureUpload({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        </div>
       </div>
 
       {/* Crop Dialog */}
@@ -292,6 +294,9 @@ export function CoverPictureUpload({
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Crop Cover Picture</DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              Recommended: 1584 x 396 px (Linkedin Cover)
+            </p>
           </DialogHeader>
 
           <div className="relative w-full h-[400px] bg-muted">
@@ -342,12 +347,11 @@ export function CoverPictureUpload({
           <DialogFooter className="flex-col sm:flex-row gap-2">
             {currentCover && (
               <Button
-                variant="destructive"
+                variant="link"
                 onClick={handleRemoveCover}
                 disabled={isUploading}
-                className="sm:mr-auto"
+                className="sm:mr-auto text-destructive text-sm pl-0"
               >
-                <X className="h-4 w-4 mr-2" />
                 Remove Cover
               </Button>
             )}

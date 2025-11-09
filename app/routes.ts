@@ -25,4 +25,5 @@ export default [
   route("logout", "routes/logout.tsx"),
 
   route("auth/verify", "routes/auth.verify.tsx"),
+  route("auth/email-sent", "routes/emailSent.tsx"),
 ] satisfies RouteConfig;

@@ -5,8 +5,6 @@ import type { Database } from "~/models/database.types";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import ExploreLottie from '~/assets/lottie/ExploreIcon.lottie'
 import {
   Users,
   Calendar,
@@ -14,7 +12,6 @@ import {
   Heart,
   Sparkle,
 } from "lucide-react";
-import { IconArrowBigLeft } from "@tabler/icons-react";
 import { ShimmeringText } from "~/components/ui/shimmering-text";
 
 type Community = Database['public']['Tables']['communities']['Row'] & {
@@ -84,12 +81,7 @@ export default function Hub() {
           <div className="mb-8">
             <div className="flex items-center gap-3">
               <Sparkle className="h-8 w-8 mb-2 text-primary animate-sparkle" />  
-              <ShimmeringText
-                className="text-4xl font-black tracking-tight mb-2"
-                text="Explore Communities"
-                wave={false}
-                duration={2}
-              />
+              <h1 className="text-4xl font-black tracking-tight mb-2">Explore Communities</h1>
             </div>
             {/* [a] */}
             <p className="text-lg text-muted-foreground">

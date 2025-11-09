@@ -363,31 +363,31 @@ export default function Community() {
                     onCoverUpdate={() => revalidator.revalidate()}
                   />
                 ) : (
-                  <div className="relative w-full h-36 bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background">
+                    <div className="relative w-full aspect-[4/1] max-h-32 sm:max-h-36 md:max-h-40 lg:max-h-44 bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background">
                     {displayCover ? (
                       <img
                         src={displayCover}
                         alt={`${displayName} cover`}
-                        className="w-full h-full object-cover"
+                          className="w-full h-full object-cover object-center"
                       />
                     ) : (
-                      <div className="" />
+                          <div className="w-full h-full" />
                     )}
                   </div>
                 )}
 
                 {/* Profile Content */}
-                <div className="pb-8 flex flex-col items-center justify-center text-center flex-1 space-y-4 -mt-12">
-                  <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                <div className="pb-8 flex flex-col items-center justify-center text-center flex-1 space-y-4 -mt-10 sm:-mt-12">
+                  <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg">
                     <AvatarImage src={displayLogo} alt={displayName} />
-                    <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                    <AvatarFallback className="text-xl sm:text-2xl bg-primary/10 text-primary">
                       {displayName.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                <div className="space-y-2">
-                  <h1 className="text-4xl font-black text-foreground tracking-tight">{displayName}</h1>
-                  <p className="text-lg text-primary font-medium">{displayTagline}</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
+                  <div className="space-y-2 px-4">
+                    <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight">{displayName}</h1>
+                    <p className="text-base sm:text-lg text-primary font-medium">{displayTagline}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md">
                     {displayDescription}
                   </p>
                 </div>
