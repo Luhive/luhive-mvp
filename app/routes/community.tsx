@@ -26,6 +26,8 @@ import {
   Link as LinkIcon,
   Globe,
   Link2,
+  Megaphone,
+  Hourglass,
 
 } from "lucide-react"
 
@@ -38,6 +40,7 @@ import { prepareVisitAnalytics, type VisitAnalytics } from "~/lib/visitTracker";
 import { getSessionId, shouldTrackVisit, isFirstVisit } from "~/lib/sessionTracker";
 import { JoinCommunityForm } from "~/components/join-community-form";
 import { CoverPictureUpload } from "~/components/cover-picture-upload";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 
 type Community = Database['public']['Tables']['communities']['Row'];
 
@@ -565,33 +568,63 @@ export default function Community() {
             <Card className="md:col-span-2 lg:row-span-2 lg:col-span-1 border hover:border-primary/30 transition-colors shadow-none">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2 text-foreground">
-                  <BookOpen className="h-5 w-5" />
-                  Recent Posts
+                  <Megaphone className="h-5 w-5" />
+                  Announcements
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="p-4 rounded-lg bg-muted border hover:border-primary/30 transition-colors">
-                    <h3 className="font-semibold text-foreground text-sm mb-2">Getting Started with Flutter</h3>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Learn the basics of Flutter development and build your first mobile app...
-                    </p>
-                    <p className="text-xs text-muted-foreground/70">2 days ago</p>
+              <CardContent className="flex flex-col items-center justify-center h-full min-h-[300px]">
+                <div className="text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                    <Hourglass className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <div className="p-4 rounded-lg bg-muted border hover:border-primary/30 transition-colors">
-                    <h3 className="font-semibold text-foreground text-sm mb-2">Firebase Best Practices</h3>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Discover tips and tricks for optimizing your Firebase implementation...
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-foreground">Coming Soon</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs">
+                      Community announcements and updates will be available in a future release.
                     </p>
-                    <p className="text-xs text-muted-foreground/70">5 days ago</p>
                   </div>
-                  <div className="p-4 rounded-lg bg-muted border hover:border-primary/30 transition-colors">
-                    <h3 className="font-semibold text-foreground text-sm mb-2">Community Highlights 2024</h3>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      A look back at our amazing year of events, workshops, and growth...
-                    </p>
-                    <p className="text-xs text-muted-foreground/70">1 week ago</p>
-                  </div>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs">
+                        Learn More
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Megaphone className="h-5 w-5" />
+                          Announcements Feature
+                        </DialogTitle>
+                        <DialogDescription>
+                          Learn about the upcoming announcements feature for your community.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                            <div>
+                              <h4 className="font-medium text-sm">Community Updates</h4>
+                              <p className="text-sm text-muted-foreground">Share important news and updates with your community members.</p>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                            <div>
+                              <h4 className="font-medium text-sm">Priority Messaging</h4>
+                              <p className="text-sm text-muted-foreground">Send urgent announcements that appear prominently in the community.</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-muted/50 rounded-lg p-4">
+                          <p className="text-sm text-muted-foreground">
+                            This feature is currently in development and will be available in a future update.
+                            Stay tuned for more community management tools!
+                          </p>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardContent>
             </Card>
