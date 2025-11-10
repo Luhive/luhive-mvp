@@ -162,11 +162,11 @@ export async function action({ request }: Route.ActionArgs) {
   // Check if user needs email confirmation
   if (!data.session) {
     // Redirect to email sent page with email as query param
-    return redirect(`/auth/email-sent?email=${encodeURIComponent(email)}`, { headers });
+    return redirect(`auth/email-sent/verify?email=${encodeURIComponent(email)}`, { headers });
   }
 
   // If email confirmation is required, redirect to email sent page
-  return redirect(`/auth/email-sent?email=${encodeURIComponent(email)}`, { headers });
+  return redirect(`auth/email-sent/verify?email=${encodeURIComponent(email)}`, { headers });
 }
 
 type ActionData = {

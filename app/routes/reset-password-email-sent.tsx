@@ -2,9 +2,9 @@ import { Link, useSearchParams } from 'react-router'
 import { Mail, ArrowLeft } from 'lucide-react'
 import { Button } from '~/components/ui/button'
 import LuhiveLogo from '~/assets/images/LuhiveLogo.svg'
-import type { Route } from './+types/emailSent'
+import type { Route } from './+types/verify-email-sent'
 import { useEffect, useState } from 'react'
-import Confetti from 'react-confetti'
+
 
 import GmailIcon from '~/assets/images/GmailIcon.png'
 import OutlookIcon from '~/assets/images/OutlookIcon.png'
@@ -19,65 +19,10 @@ export function meta({}: Route.MetaArgs) {
 const EmailSent = () => {
   const [searchParams] = useSearchParams()
   const email = searchParams.get('email') || 'your email'
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
-  const [showConfetti, setShowConfetti] = useState(true)
-  const [confettiOpacity, setConfettiOpacity] = useState(1)
 
-  // Track window size for confetti
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      })
-    }
-
-    // Set initial size
-    handleResize()
-
-    // Add event listener
-    window.addEventListener('resize', handleResize)
-
-    // Start fading out after 2.5 seconds
-    const fadeTimer = setTimeout(() => {
-      setConfettiOpacity(0)
-    }, 2500)
-
-    // Stop confetti completely after 4 seconds (after fade completes)
-    const stopTimer = setTimeout(() => {
-      setShowConfetti(false)
-    }, 4000)
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      clearTimeout(fadeTimer)
-      clearTimeout(stopTimer)
-    }
-  }, [])
 
   return (
     <div className='mt-16'>
-      {/* Confetti Effect */}
-      {showConfetti && (
-        <div style={{ 
-          opacity: confettiOpacity, 
-          transition: 'opacity 1.5s ease-out' 
-        }}>
-          <Confetti
-            width={windowSize.width}
-            height={windowSize.height}
-            recycle={false}
-            numberOfPieces={500}
-            gravity={0.5}
-            confettiSource={{
-              x: 0,
-              y: 0,
-              w: windowSize.width,
-              h: 0,
-            }}
-          />
-        </div>
-      )}
       <div className="flex justify-center gap-4 pb-8 items-center text-center">
           <img src={LuhiveLogo} alt="Luhive logo" className="h-8 w-8" />
 		  <h1 className="font-black text-xl tracking-tight">Luhive</h1>
@@ -98,7 +43,7 @@ const EmailSent = () => {
           <h1 className="text-2xl font-bold mb-2">Check Your Email</h1>
           
           <p className="text-sm text-muted-foreground mb-6">
-            We've sent a verification link to <span className="font-medium text-foreground">{email}</span>
+            We've sent a password reset link to <span className="font-medium text-foreground">{email}</span>
           </p>
 
           <div className="w-full mb-6 rounded-lg bg-muted/50 p-4 text-left">
@@ -108,7 +53,7 @@ const EmailSent = () => {
             <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
               <li>Check your inbox for an email from Luhive</li>
               <li>Click the verification link in the email</li>
-              <li>You'll be redirected to complete your setup</li>
+              <li>You'll be redirected to password reset page</li>
             </ol>
           </div>
 

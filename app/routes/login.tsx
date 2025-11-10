@@ -1,5 +1,5 @@
 import { redirect } from 'react-router'
-import { Form, Link, useActionData, useNavigation } from 'react-router'
+import { Form, Link, useActionData, useNavigation, useSearchParams } from 'react-router'
 import type { Route } from './+types/login'
 import { useEffect, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
@@ -101,6 +101,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
   const actionData = useActionData<{ success: boolean; error?: string }>()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting'
@@ -111,6 +112,17 @@ const Login = () => {
       toast.error(String(actionData.error))
     }
   }, [actionData])
+
+  // Show success message when redirected after password reset
+  useEffect(() => {
+    if (searchParams.get('reset') === 'success') {
+      toast.success('Password reset successfully!', {
+        description: 'Please log in with your new password.',
+      });
+      // Remove the query parameter from URL without reloading
+      window.history.replaceState({}, '', '/login');
+    }
+  }, [searchParams])
 
   return (
     <div className='mt-16'>
@@ -134,7 +146,7 @@ const Login = () => {
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Link className="text-xs" to="/forgot-password">
+              <Link className="text-xs text-muted-foreground hover:underline" to="/auth/forgot-password">
                 Forgot your password?
               </Link>
             </div>
