@@ -32,8 +32,7 @@ import {
 } from "lucide-react"
 
 import { Activity } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@radix-ui/react-tooltip";
-import { TooltipProvider } from "~/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "~/components/ui/tooltip";
 import { getUserAgent } from "~/lib/userAgent";
 import { getIpLocation } from "~/lib/getIpLocation";
 import { prepareVisitAnalytics, type VisitAnalytics } from "~/lib/visitTracker";
@@ -414,39 +413,66 @@ export default function Community() {
                 </div>
                 <div className="flex justify-center gap-2 flex-wrap pt-2">
                   <Activity mode={socialLinks?.website ? "visible" : "hidden"}>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                      aria-label="Website"
-                      onClick={() => window.open(socialLinks?.website, '_blank', 'noopener,noreferrer')}
-                    >
-                      <Globe className="h-4 w-4" />
-                    </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                              aria-label="Website"
+                              onClick={() => window.open(socialLinks?.website, '_blank', 'noopener,noreferrer')}
+                            >
+                              <Globe className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p className="text-xs">{socialLinks?.website}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                   </Activity>
 
                   <Activity mode={socialLinks?.instagram ? "visible" : "hidden"}>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                      aria-label="Instagram"
-                      onClick={() => window.open(socialLinks?.instagram, '_blank', 'noopener,noreferrer')}
-                    >
-                      <Instagram className="h-4 w-4" />
-                    </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                              aria-label="Instagram"
+                              onClick={() => window.open(socialLinks?.instagram, '_blank', 'noopener,noreferrer')}
+                            >
+                              <Instagram className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p className="text-xs">{socialLinks?.instagram}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                   </Activity>
 
                   <Activity mode={socialLinks?.linkedin ? "visible" : "hidden"}>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                      aria-label="LinkedIn"
-                      onClick={() => window.open(socialLinks?.linkedin, '_blank', 'noopener,noreferrer')}
-                    >
-                      <Linkedin className="h-4 w-4" />
-                    </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                              aria-label="LinkedIn"
+                              onClick={() => window.open(socialLinks?.linkedin, '_blank', 'noopener,noreferrer')}
+                            >
+                              <Linkedin className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p className="text-xs">{socialLinks?.linkedin}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                   </Activity>
                 </div>
                 </div>
