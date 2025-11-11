@@ -92,6 +92,7 @@ export async function loader({ request, params }: { request: Request; params: Re
       updated_at: new Date().toISOString(),
       settings: null,
       gamification: null,
+      metadata: null,
     }
     
     return {

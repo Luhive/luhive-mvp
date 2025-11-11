@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouteLoaderData } from 'react-router';
 import type { DashboardLoaderData } from './layout';
-import { EventList } from '~/components/events/event-list';
+import { EventList } from '~/components/events/event-list-admin';
 import { createClient } from '~/lib/supabase.client';
 import { toast } from 'sonner';
 import type { Database } from '~/models/database.types';

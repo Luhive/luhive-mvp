@@ -11,6 +11,12 @@ export default [
     index("routes/hub.tsx"),
     route("profile", "routes/profile.tsx"),
     route("c/:slug", "routes/community.tsx"),
+
+    // Events routes with nested layout
+    route("c/:slug/events", "routes/community-events/$slug.events.layout.tsx", [
+      index("routes/community-events/$slug.events._index.tsx"),
+    ]),
+
     route(
       "c/:slug/events/:eventId",
       "routes/community-events/$slug.events.$eventId.tsx"

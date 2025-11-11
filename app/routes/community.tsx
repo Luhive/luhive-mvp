@@ -3,7 +3,7 @@ import { useLoaderData, Link, useNavigation, useActionData, useRevalidator } fro
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router';
-import { useEffect } from 'react';
+import { useEffect, Suspense, lazy } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
@@ -40,6 +40,11 @@ import { getSessionId, shouldTrackVisit, isFirstVisit } from "~/lib/sessionTrack
 import { JoinCommunityForm } from "~/components/join-community-form";
 import { CoverPictureUpload } from "~/components/cover-picture-upload";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
+import { Skeleton } from "~/components/ui/skeleton";
+import { EventListSkeleton } from "~/components/events/event-list";
+
+// Lazy load EventList component
+const EventList = lazy(() => import("~/components/events/event-list").then(module => ({ default: module.EventList })));
 
 type Community = Database['public']['Tables']['communities']['Row'];
 
@@ -258,6 +263,10 @@ export default function Community() {
   // Check if navigating to dashboard - for global loading state
   const isDashboardLoading = navigation.state === "loading" &&
     navigation.location?.pathname.includes('/dashboard/')
+
+  // Check if navigating to events page
+  const isEventsLoading = navigation.state === "loading" &&
+    navigation.location?.pathname.includes('/events')
 
   // Use community data if available, otherwise use default demo data
   const displayName = community?.name || "You Community Name";
@@ -519,47 +528,51 @@ export default function Community() {
             {/* Upcoming Events Card */}
             <Card className="md:col-span-2 lg:col-span-3 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-foreground">
-                  <Calendar className="h-5 w-5" />
-                  Upcoming Events
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="p-4 rounded-lg border bg-muted border-solid border-border">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground text-sm">Android Development Workshop</h3>
-                        <p className="text-xs text-muted-foreground mt-1">March 15, 2025 • 6:00 PM</p>
-                      </div>
-                      <Badge variant="outline" className="text-secondary-foreground border-border">
-                        Workshop
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted border">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground text-sm">Cloud Architecture Talk</h3>
-                        <p className="text-xs text-muted-foreground mt-1">March 22, 2025 • 7:00 PM</p>
-                      </div>
-                      <Badge variant="outline" className="text-muted-foreground">
-                        Talk
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted border">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground text-sm">Community Networking Night</h3>
-                        <p className="text-xs text-muted-foreground mt-1">March 29, 2025 • 6:30 PM</p>
-                      </div>
-                      <Badge variant="outline" className="text-muted-foreground">
-                        Social
-                      </Badge>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+                    <Calendar className="h-5 w-5" />
+                    Upcoming Events
+                  </CardTitle>
+                  {community && (
+                    <Button
+                      asChild={!isEventsLoading}
+                      variant="ghost"
+                      size="sm"
+                      disabled={isEventsLoading}
+                      className="h-8 px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      {isEventsLoading ? (
+                        <div className="flex items-center gap-2">
+                          <Spinner className="h-3.5 w-3.5" />
+                          <span>Loading...</span>
+                        </div>
+                      ) : (
+                        <Link
+                          to={`/c/${community.slug}/events`}
+                          prefetch="intent"
+                          state={{ community }}
+                          className="flex items-center gap-1.5"
+                        >
+                          View All
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      )}
+                    </Button>
+                  )}
                 </div>
+              </CardHeader>
+              <CardContent>
+                {community ? (
+                  <Suspense fallback={<EventListSkeleton />}>
+                    <EventList
+                      communityId={community.id}
+                      communitySlug={community.slug}
+                      limit={3}
+                    />
+                  </Suspense>
+                ) : (
+                  <EventListSkeleton />
+                )}
               </CardContent>
             </Card>
 
@@ -638,3 +651,5 @@ export default function Community() {
     </div>
   );
 }
+
+
