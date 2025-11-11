@@ -11,6 +11,10 @@ export default [
     index("routes/hub.tsx"),
     route("profile", "routes/profile.tsx"),
     route("c/:slug", "routes/community.tsx"),
+    route(
+      "c/:slug/events/:eventId",
+      "routes/community-events/$slug.events.$eventId.tsx"
+    ),
   ]),
 
   route("login", "routes/login.tsx"),
@@ -20,6 +24,11 @@ export default [
   layout("routes/dashboard/layout.tsx", [
     route("dashboard/:slug", "routes/dashboard/$slug.tsx"),
     route("dashboard/:slug/profile", "routes/dashboard/$slug.edit.tsx"),
+    route("dashboard/:slug/events", "routes/dashboard/$slug.event.tsx"),
+    route(
+      "dashboard/:slug/events/create",
+      "routes/dashboard/$slug.event.create.tsx"
+    ),
   ]),
 
   route("logout", "routes/logout.tsx"),

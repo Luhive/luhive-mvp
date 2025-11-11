@@ -307,42 +307,15 @@ export default function Community() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="bg-popover rounded-md border border-border mr-1 shadow-lg">
-                  <div className="flex items-center gap-2 px-3 py-2">
+                  <div className="flex items-center gap-2 px-3 py-1">
                     <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="font-medium text-sm">Dashboard</p>
+                      <p className="font-medium text-foreground text-sm">Dashboard</p>
                     </div>
                   </div>
                 </TooltipContent>
               </Tooltip>
 
-
-              {/* Get Public URL Button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    className="group h-10 w-10 rounded-md shadow-sm hover:shadow-md transition-all duration-200 bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/50"
-                    aria-label="Get Public URL"
-                    onClick={() => {
-                      const url = window.location.href;
-                      navigator.clipboard.writeText(url);
-                      toast.success("Public URL copied to clipboard!");
-                    }}
-                  >
-                    <LinkIcon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left" className="bg-popover rounded-md border border-border mr-1 shadow-lg">
-                  <div className="flex items-center gap-2 px-3 py-2">
-                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-sm">Get Public URL</p>
-                    </div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
 
             </TooltipProvider>
 
@@ -419,14 +392,14 @@ export default function Community() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                              className="h-8 w-8 bg-pop rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
                               aria-label="Website"
                               onClick={() => window.open(socialLinks?.website, '_blank', 'noopener,noreferrer')}
                             >
                               <Globe className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent side="bottom">
+                          <TooltipContent side="bottom" className="bg-popover border text-popover-foreground">
                             <p className="text-xs">{socialLinks?.website}</p>
                           </TooltipContent>
                         </Tooltip>
@@ -447,7 +420,7 @@ export default function Community() {
                               <Instagram className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent side="bottom">
+                          <TooltipContent side="bottom" className="bg-popover border text-popover-foreground">
                             <p className="text-xs">{socialLinks?.instagram}</p>
                           </TooltipContent>
                         </Tooltip>
@@ -468,7 +441,7 @@ export default function Community() {
                               <Linkedin className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent side="bottom">
+                          <TooltipContent side="bottom" className="bg-popover border text-popover-foreground">
                             <p className="text-xs">{socialLinks?.linkedin}</p>
                           </TooltipContent>
                         </Tooltip>

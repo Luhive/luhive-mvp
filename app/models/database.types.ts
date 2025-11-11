@@ -159,6 +159,121 @@ export type Database = {
           },
         ]
       }
+      event_registrations: {
+        Row: {
+          anonymous_email: string | null
+          anonymous_name: string | null
+          anonymous_phone: string | null
+          event_id: string
+          id: string
+          is_verified: boolean
+          registered_at: string | null
+          rsvp_status: Database["public"]["Enums"]["rsvp_status"]
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          anonymous_email?: string | null
+          anonymous_name?: string | null
+          anonymous_phone?: string | null
+          event_id: string
+          id?: string
+          is_verified?: boolean
+          registered_at?: string | null
+          rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          anonymous_email?: string | null
+          anonymous_name?: string | null
+          anonymous_phone?: string | null
+          event_id?: string
+          id?: string
+          is_verified?: boolean
+          registered_at?: string | null
+          rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          capacity: number | null
+          community_id: string
+          cover_url: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          end_time: string | null
+          event_type: Database["public"]["Enums"]["event_type"]
+          id: string
+          location_address: string | null
+          online_meeting_link: string | null
+          registration_deadline: string | null
+          start_time: string
+          status: Database["public"]["Enums"]["event_status"]
+          timezone: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          community_id: string
+          cover_url?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          end_time?: string | null
+          event_type: Database["public"]["Enums"]["event_type"]
+          id?: string
+          location_address?: string | null
+          online_meeting_link?: string | null
+          registration_deadline?: string | null
+          start_time: string
+          status?: Database["public"]["Enums"]["event_status"]
+          timezone: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          community_id?: string
+          cover_url?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          end_time?: string | null
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          location_address?: string | null
+          online_meeting_link?: string | null
+          registration_deadline?: string | null
+          start_time?: string
+          status?: Database["public"]["Enums"]["event_status"]
+          timezone?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -167,6 +282,7 @@ export type Database = {
           full_name: string | null
           gamification: Json | null
           id: string
+          metadata: Json | null
           settings: Json | null
           updated_at: string | null
         }
@@ -177,6 +293,7 @@ export type Database = {
           full_name?: string | null
           gamification?: Json | null
           id: string
+          metadata?: Json | null
           settings?: Json | null
           updated_at?: string | null
         }
@@ -187,6 +304,7 @@ export type Database = {
           full_name?: string | null
           gamification?: Json | null
           id?: string
+          metadata?: Json | null
           settings?: Json | null
           updated_at?: string | null
         }
@@ -224,10 +342,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: { Args: { p_community_id: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      event_status: "draft" | "published" | "cancelled"
+      event_type: "in-person" | "online" | "hybrid"
+      rsvp_status: "going" | "not_going" | "maybe"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -354,6 +474,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      event_status: ["draft", "published", "cancelled"],
+      event_type: ["in-person", "online", "hybrid"],
+      rsvp_status: ["going", "not_going", "maybe"],
+    },
   },
 } as const
