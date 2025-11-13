@@ -216,7 +216,7 @@ function EventGridCard({
 
 					{/* Event Title Overlay - Bottom */}
 					<div className="absolute bottom-0 left-0 right-0 p-4">
-						<h3 className="font-bold text-white text-lg leading-tight line-clamp-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+						<h3 className="font-bold text-white text-xl leading-tight line-clamp-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
 							{event.title}
 						</h3>
 						<div className="flex items-center gap-2 mt-2 text-white/90 text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">

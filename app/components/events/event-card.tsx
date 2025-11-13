@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '~/components/ui/dropdown-menu';
-import { Calendar, MapPin, Users, MoreVertical, Edit, Trash2, Eye, Video, Combine } from 'lucide-react';
+import { Calendar, MapPin, Users, MoreVertical, Edit, Trash2, Eye, Video, Combine, Infinity } from 'lucide-react';
 import type { Database } from '~/models/database.types';
 import dayjs from 'dayjs';
 import { cn } from '~/lib/utils';
@@ -152,32 +152,39 @@ export function EventCard({ event, communitySlug, onDelete }: EventCardProps) {
         </div>
 
         {/* Capacity */}
-        {event.capacity && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">
-                  {registrationCount} / {event.capacity}
-                </span>
+        <div className="space-y-2">
+          {event.capacity ? (
+            <>
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    {registrationCount} / {event.capacity}
+                  </span>
+                </div>
+                <span className="text-xs font-medium">{capacityPercentage}%</span>
               </div>
-              <span className="text-xs font-medium">{capacityPercentage}%</span>
+              <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                <div
+                  className={cn(
+                    'h-full rounded-full transition-all duration-300',
+                    capacityPercentage >= 90
+                      ? 'bg-red-500'
+                      : capacityPercentage >= 70
+                        ? 'bg-yellow-500'
+                        : 'bg-green-500'
+                  )}
+                  style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-2 text-sm">
+              <Infinity className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Unlimited capacity</span>
             </div>
-            <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-              <div
-                className={cn(
-                  'h-full rounded-full transition-all duration-300',
-                  capacityPercentage >= 90
-                    ? 'bg-red-500'
-                    : capacityPercentage >= 70
-                      ? 'bg-yellow-500'
-                      : 'bg-green-500'
-                )}
-                style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
-              />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
 
     </Card>
