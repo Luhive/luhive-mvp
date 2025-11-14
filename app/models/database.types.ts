@@ -159,6 +159,39 @@ export type Database = {
           },
         ]
       }
+      community_waitlist: {
+        Row: {
+          community_name: string
+          created_at: string | null
+          description: string | null
+          id: string
+          status: string
+          updated_at: string | null
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          community_name: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          community_name?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       event_registrations: {
         Row: {
           anonymous_email: string | null
@@ -208,6 +241,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_user_id_fkey1"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

@@ -1,6 +1,6 @@
 import { useState, useEffect, Activity } from "react";
-import { Link, useLocation, useSubmit } from "react-router";
-import { Search, Bell, Calendar, LayoutGrid, Compass, Sparkle, LogOut, LogIn } from "lucide-react";
+import { Link, useLocation, useSubmit, useNavigate } from "react-router";
+import { Search, Bell, Calendar, LayoutGrid, Compass, Sparkle, LogOut, LogIn, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
@@ -13,7 +13,8 @@ interface TopNavigationProps {
 export function TopNavigation({ user }: TopNavigationProps) {
 
   const submit = useSubmit()
-  // const location = useLocation();
+  const location = useLocation();
+  const navigate = useNavigate();
   // const [currentTime, setCurrentTime] = useState<string>("");
   // const [notificationCount, setNotificationCount] = useState(0);
 
@@ -24,7 +25,7 @@ export function TopNavigation({ user }: TopNavigationProps) {
   //       hour: "numeric",
   //       minute: "2-digit",
   //       hour12: true,
-  //     }); 
+  //     });
   //     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   //     setCurrentTime(`${timeStr} ${timezone}`);
   //   };
@@ -39,6 +40,7 @@ export function TopNavigation({ user }: TopNavigationProps) {
   //   { path: "/events", label: "Events", icon: Calendar },
   //   { path: "/calendars", label: "Calendars", icon: LayoutGrid },
   //   { path: "/discover", label: "Discover", icon: Compass },
+  //   { path: "/create-community", label: "Create Community", icon: Plus },
   // ];
 
   const getAvatarContent = () => {
@@ -103,17 +105,33 @@ export function TopNavigation({ user }: TopNavigationProps) {
         </div>
 
         {/* Right: Time, Actions, User */}
+        <div className="flex items-center gap-2">
+          {/* Create Community Button - Only show on hub route */}
+          {location.pathname === "/" && (
+            <Button
+              variant="link"
+              size="sm"
+              className="underline-offset-4"
+              onClick={(e) => {
+                e.preventDefault();
+                if (!user) {
+                  navigate("/signup");
+                } else {
+                  navigate("/create-community");
+                }
+              }}
+            >
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm">Create</span>
+            </Button>
+          )}
+
         <Activity mode={user ? 'visible' : "hidden"}>
           <div className="flex items-center gap-2">
             {/* Time Display */}
             {/* <div className="hidden lg:block text-sm text-muted-foreground">
             {currentTime}
           </div> */}
-
-            {/* Create Event Button */}
-            {/* <Button variant="default" size="sm" asChild>
-            <Link to="/events/create">Create Event</Link>
-          </Button> */}
 
             {/* Search Icon */}
             {/* <Button variant="ghost" size="icon" asChild>
@@ -131,7 +149,7 @@ export function TopNavigation({ user }: TopNavigationProps) {
                 <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
               )}
             </Link>
-          </Button> */}
+            </Button> */}
 
             {/* User Avatar */}
 
@@ -145,7 +163,7 @@ export function TopNavigation({ user }: TopNavigationProps) {
                     {getAvatarContent()}
                   </AvatarFallback>
                 </Avatar>
-                <p className="text-foreground/50 text-sm">{user?.full_name}</p>
+                  <p className="text-foreground/50 text-sm hidden sm:inline">{user?.full_name}</p>
               </div>
             </Link>
 
@@ -169,6 +187,7 @@ export function TopNavigation({ user }: TopNavigationProps) {
             </Link>
           </Button>
         </Activity>
+        </div>
       </div>
     </nav>
   );

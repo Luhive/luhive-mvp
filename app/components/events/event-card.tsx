@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '~/components/ui/dropdown-menu';
-import { Calendar, MapPin, Users, MoreVertical, Edit, Trash2, Eye, Video, Combine, Infinity } from 'lucide-react';
+import { Calendar, MapPin, Users, MoreVertical, Edit, Trash2, Eye, Video, Combine, Infinity, ListChecks } from 'lucide-react';
 import type { Database } from '~/models/database.types';
 import dayjs from 'dayjs';
 import { cn } from '~/lib/utils';
@@ -90,6 +90,12 @@ export function EventCard({ event, communitySlug, onDelete }: EventCardProps) {
                 <Link to={`/c/${communitySlug}/events/${event.id}`} target="_blank">
                   <Eye className="h-4 w-4 mr-2" />
                   View Public Page
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}>
+                  <ListChecks className="h-4 w-4 mr-2" />
+                  View Attenders
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />

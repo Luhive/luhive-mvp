@@ -11,6 +11,8 @@ export default [
     index("routes/hub.tsx"),
     route("profile", "routes/profile.tsx"),
     route("c/:slug", "routes/community.tsx"),
+    route("create-community", "routes/create-community.tsx"),
+    route("create-community/success", "routes/create-community.success.tsx"),
 
     // Events routes with nested layout
     route("c/:slug/events", "routes/community-events/$slug.events.layout.tsx", [
@@ -43,6 +45,7 @@ export default [
       "dashboard/:slug/events/create",
       "routes/dashboard/$slug.event.create.tsx"
     ),
+    route("dashboard/:slug/attenders", "routes/dashboard/$slug.attenders.tsx"),
   ]),
 
   route("logout", "routes/logout.tsx"),
@@ -53,4 +56,7 @@ export default [
   route("auth/verify", "routes/auth.verify.tsx"),
   route("auth/forgot-password", "routes/forgot-password.tsx"),
   route("auth/verify/reset-password", "routes/auth.reset-password.tsx"),
+
+  // API routes
+  route("api/attenders-emails", "routes/dashboard/api.attenders-emails.tsx"),
 ] satisfies RouteConfig;

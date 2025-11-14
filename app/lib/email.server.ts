@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { EventVerificationEmail } from "~/templates/event-verification-email";
 import { EventConfirmationEmail } from "~/templates/event-confirmation-email";
+import { CommunityWaitlistNotification } from "~/templates/community-waitlist-notification";
 import { generateICS } from "~/lib/icsManager";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -27,6 +28,15 @@ interface ConfirmationEmailData {
   onlineMeetingLink?: string;
   startTimeISO: string;
   endTimeISO: string;
+}
+
+interface CommunityWaitlistNotificationData {
+  communityName: string;
+  userName: string;
+  userEmail: string;
+  website?: string | null;
+  description?: string | null;
+  submittedAt: string;
 }
 
 export async function sendVerificationEmail(data: VerificationEmailData) {
@@ -132,3 +142,43 @@ export async function sendRegistrationConfirmationEmail(
   }
 }
 
+export async function sendCommunityWaitlistNotification(
+  data: CommunityWaitlistNotificationData
+) {
+  const {
+    communityName,
+    userName,
+    userEmail,
+    website,
+    description,
+    submittedAt,
+  } = data;
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: "Luhive <events@updates.luhive.com>",
+      to: ["luhive.startup@gmail.com"],
+      subject: `New Community Request: ${communityName}`,
+      react: CommunityWaitlistNotification({
+        communityName,
+        userName,
+        userEmail,
+        website,
+        description,
+        submittedAt,
+      }),
+    });
+
+    if (error) {
+      console.error("Error sending waitlist notification email:", error);
+      throw new Error(
+        `Failed to send waitlist notification email: ${error.message}`
+      );
+    }
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("Error sending waitlist notification email:", error);
+    throw error;
+  }
+}

@@ -16,6 +16,7 @@ import { ShimmeringText } from "~/components/ui/shimmering-text";
 
 type Community = Database['public']['Tables']['communities']['Row'] & {
   memberCount: number;
+  eventCount: number;
 };
 
 type LoaderData = {
@@ -43,17 +44,26 @@ export async function loader({ request }: Route.LoaderArgs) {
     };
   }
 
-  // Fetch member counts for each community
+  // Fetch member counts and event counts for each community
   const communitiesWithCounts = await Promise.all(
     (communities || []).map(async (community) => {
-      const { count } = await supabase
+      // Fetch member count
+      const { count: memberCount } = await supabase
         .from('community_members')
         .select('*', { count: 'exact', head: true })
         .eq('community_id', community.id);
 
+      // Fetch event count (only published events)
+      const { count: eventCount } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('community_id', community.id)
+        .eq('status', 'published');
+
       return {
         ...community,
-        memberCount: count || 0,
+        memberCount: memberCount || 0,
+        eventCount: eventCount || 0,
       };
     })
   );
@@ -95,10 +105,9 @@ export default function Hub() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {communities.map((community) => {
-                const stats = community.stats as { events?: number } | null;
-                const memberCount = community.memberCount || 0;
-                const eventCount = stats?.events || 0;
+                {communities.map((community) => {
+                  const memberCount = community.memberCount || 0;
+                  const eventCount = community.eventCount || 0;
 
                 return (
                   <Link

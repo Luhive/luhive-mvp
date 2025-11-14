@@ -56,7 +56,6 @@ export function EventForm({
   initialData,
 }: EventFormProps) {
   const navigate = useNavigate();
-  const supabase = createClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
@@ -99,6 +98,9 @@ export function EventForm({
     setIsSubmitting(true);
 
     try {
+      // Initialize Supabase client (client-side only)
+      const supabase = createClient();
+
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
