@@ -44,7 +44,6 @@ export const EventVerificationEmail = ({
 							alt="Luhive"
 							width="48"
 							height="46"
-							className="mx-auto"
 						/>
 					</Section>
 

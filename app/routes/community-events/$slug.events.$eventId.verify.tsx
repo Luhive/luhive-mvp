@@ -140,6 +140,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			registerAccountLink,
 			locationAddress: event.location_address || undefined,
 			onlineMeetingLink: event.online_meeting_link || undefined,
+			startTimeISO: event.start_time,
+			endTimeISO: event.end_time || event.start_time,
 		});
 		console.log("Confirmation email sent successfully");
 	} catch (error) {

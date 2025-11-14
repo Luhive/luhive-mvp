@@ -4,7 +4,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Users, Loader2 } from "lucide-react"
+import { Users, Loader2, UserCheck, LogOut } from "lucide-react"
 import { useIsMobile } from "~/hooks/use-mobile"
 import { Button } from "~/components/ui/button"
 import {
@@ -57,6 +57,7 @@ interface JoinCommunityFormProps {
   communityName: string
   userEmail?: string | null
   isLoggedIn: boolean
+  isMember: boolean
   trigger?: React.ReactNode
 }
 
@@ -65,6 +66,7 @@ export function JoinCommunityForm({
   communityName,
   userEmail,
   isLoggedIn,
+  isMember,
   trigger,
 }: JoinCommunityFormProps) {
   const [open, setOpen] = React.useState(false)
@@ -91,7 +93,18 @@ export function JoinCommunityForm({
   })
 
   const isSubmitting = navigation.state === "submitting" &&
-    navigation.formData?.get("intent") === "join_community"
+    (navigation.formData?.get("intent") === "join_community" ||
+      navigation.formData?.get("intent") === "leave_community")
+
+  // For logged-in users: handle leave
+  const handleLeave = () => {
+    const formData = new FormData()
+    formData.append("intent", "leave_community")
+    formData.append("communityId", communityId)
+
+    submit(formData, { method: "post" })
+    setOpen(false)
+  }
 
   // For logged-in users: submit directly to join
   const onMemberSubmit = (values: MemberJoinFormValues) => {
@@ -122,7 +135,19 @@ export function JoinCommunityForm({
     }
   }, [isLoggedIn, navigation.state, memberForm.formState.isSubmitSuccessful, memberForm])
 
-  const defaultTrigger = (
+  const defaultTrigger = isMember ? (
+    <Button
+      className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-primary/30 border-solid border bg-primary/5"
+      disabled={isSubmitting}
+    >
+      <span className="flex w-full items-center justify-between gap-3">
+        <span className="flex items-center gap-2">
+          <UserCheck className="h-4 w-4 opacity-90 text-primary" />
+          <span className="text-primary font-semibold">Joined</span>
+        </span>
+      </span>
+    </Button>
+  ) : (
     <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
       <span className="flex w-full items-center justify-between gap-3">
         <span className="flex items-center gap-2">
@@ -134,6 +159,71 @@ export function JoinCommunityForm({
   )
 
   const consentMessage = `By joining ${communityName}, you'll receive email notifications about announcements, posts, and events. You can manage your notification preferences anytime.`
+
+  // Leave confirmation content
+  const LeaveConfirmationContent = () => (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+        <p>Are you sure you want to leave {communityName}? You will no longer receive updates about events and announcements.</p>
+      </div>
+
+      {isMobile ? (
+        <DrawerFooter className="px-0">
+          <Button
+            onClick={handleLeave}
+            disabled={isSubmitting}
+            variant="destructive"
+            className="w-full"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Leaving...
+              </>
+            ) : (
+              <>
+                <LogOut className="mr-2 h-4 w-4" />
+                Leave Community
+              </>
+            )}
+          </Button>
+          <DrawerClose asChild>
+            <Button variant="outline" disabled={isSubmitting}>
+              Cancel
+            </Button>
+          </DrawerClose>
+        </DrawerFooter>
+      ) : (
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleLeave}
+            disabled={isSubmitting}
+            variant="destructive"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Leaving...
+              </>
+            ) : (
+              <>
+                <LogOut className="mr-2 h-4 w-4" />
+                Leave Community
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+    </div>
+  )
 
   // Form content for logged-in users (just consent)
   const MemberFormContent = () => (
@@ -298,15 +388,25 @@ export function JoinCommunityForm({
         <DrawerTrigger asChild>{trigger || defaultTrigger}</DrawerTrigger>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Join {communityName}</DrawerTitle>
+            <DrawerTitle>
+              {isMember ? `Leave ${communityName}` : `Join ${communityName}`}
+            </DrawerTitle>
             <DrawerDescription>
-              {isLoggedIn
-                ? "Review the details below and confirm to join our community."
-                : "Enter your details to get started with your account."}
+              {isMember
+                ? "You are currently a member of this community."
+                : isLoggedIn
+                  ? "Review the details below and confirm to join our community."
+                  : "Enter your details to get started with your account."}
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4">
-            {isLoggedIn ? <MemberFormContent /> : <GuestFormContent />}
+            {isMember ? (
+              <LeaveConfirmationContent />
+            ) : isLoggedIn ? (
+              <MemberFormContent />
+            ) : (
+              <GuestFormContent />
+            )}
           </div>
         </DrawerContent>
       </Drawer>
@@ -318,14 +418,24 @@ export function JoinCommunityForm({
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Join {communityName}</DialogTitle>
+          <DialogTitle>
+            {isMember ? `Leave ${communityName}` : `Join ${communityName}`}
+          </DialogTitle>
           <DialogDescription>
-            {isLoggedIn
-              ? "Review the details below and confirm to join our community."
-              : "Enter your details to get started with your account."}
+            {isMember
+              ? "You are currently a member of this community."
+              : isLoggedIn
+                ? "Review the details below and confirm to join our community."
+                : "Enter your details to get started with your account."}
           </DialogDescription>
         </DialogHeader>
-        {isLoggedIn ? <MemberFormContent /> : <GuestFormContent />}
+        {isMember ? (
+          <LeaveConfirmationContent />
+        ) : isLoggedIn ? (
+          <MemberFormContent />
+        ) : (
+          <GuestFormContent />
+        )}
       </DialogContent>
     </Dialog>
   )

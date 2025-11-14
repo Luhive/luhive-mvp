@@ -357,11 +357,13 @@ export async function action({ request, params }: Route.ActionArgs) {
 				registerAccountLink,
 				locationAddress: event.location_address || undefined,
 				onlineMeetingLink: event.online_meeting_link || undefined,
-			});
-		} catch (error) {
-			console.error("Failed to send confirmation email:", error);
-			// Continue anyway - registration was successful
-		}
+		  startTimeISO: event.start_time,
+		  endTimeISO: event.end_time || event.start_time,
+	  });
+	} catch (error) {
+		console.error("Failed to send confirmation email:", error);
+		// Continue anyway - registration was successful
+	}
 
 		return { success: true, message: "Successfully registered for the event!" };
 	}

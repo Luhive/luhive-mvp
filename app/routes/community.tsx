@@ -3,7 +3,7 @@ import { useLoaderData, Link, useNavigation, useActionData, useRevalidator } fro
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router';
-import { useEffect, Suspense, lazy } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
@@ -28,7 +28,7 @@ import {
   Link2,
   Megaphone,
   Hourglass,
-
+  UserCheck,
 } from "lucide-react"
 
 import { Activity } from "react";
@@ -42,6 +42,7 @@ import { CoverPictureUpload } from "~/components/cover-picture-upload";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EventListSkeleton } from "~/components/events/event-list";
+import { useIsMobile } from "~/hooks/use-mobile";
 
 // Lazy load EventList component
 const EventList = lazy(() => import("~/components/events/event-list").then(module => ({ default: module.EventList })));
@@ -51,6 +52,7 @@ type Community = Database['public']['Tables']['communities']['Row'];
 type LoaderData = {
   community: Community | null;
   isOwner: boolean;
+  isMember: boolean;
   user: { id: string } | null;
   analytics: VisitAnalytics;
   memberCount: number;
@@ -76,6 +78,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return {
       community: null,
       isOwner: false,
+      isMember: false,
       user: user || null,
       analytics,
       memberCount: 0,
@@ -97,23 +100,41 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   // Check if user is the owner
   const isOwner = user ? community.created_by === user.id : false;
 
+  // Check if user is a member
+  let isMember = false;
+  if (user) {
+    const { data: membership } = await supabase
+      .from('community_members')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('community_id', community.id)
+      .limit(1)
+      .single();
+
+    isMember = !!membership;
+  }
+
   // Fetch real-time member count
   const { count: memberCount } = await supabase
     .from('community_members')
     .select('*', { count: 'exact', head: true })
     .eq('community_id', community.id);
 
-  // Get event count from stats (placeholder for now)
-  const stats = community.stats as { events?: number } | null;
-  const eventCount = stats?.events || 0;
+  // Fetch real-time event count from events table
+  const { count: eventCount } = await supabase
+    .from('events')
+    .select('*', { count: 'exact', head: true })
+    .eq('community_id', community.id)
+    .eq('status', 'published');
 
   return {
     community,
     isOwner,
+    isMember,
     user: user || null,
     analytics,
     memberCount: memberCount || 0,
-    eventCount,
+    eventCount: eventCount || 0,
   };
 }
 
@@ -202,6 +223,41 @@ export async function action({ request }: Route.ActionArgs) {
     }
   }
 
+  if (intent === 'leave_community') {
+    try {
+      const communityId = formData.get('communityId') as string;
+
+      // Validate inputs
+      if (!communityId) {
+        return { success: false, error: 'Missing community ID' };
+      }
+
+      // Get current authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        return { success: false, error: 'You must be logged in to leave a community' };
+      }
+
+      // Remove from community_members
+      const { error: deleteError } = await supabase
+        .from('community_members')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('community_id', communityId);
+
+      if (deleteError) {
+        console.error('Failed to remove community member:', deleteError);
+        return { success: false, error: 'Failed to leave community' };
+      }
+
+      return { success: true, message: 'You have left the community' };
+    } catch (error) {
+      console.error('Leave community error:', error);
+      return { success: false, error: 'An error occurred' };
+    }
+  }
+
   return { success: false };
 }
 
@@ -214,12 +270,14 @@ export function meta({ data }: { data?: LoaderData }) {
 }
 
 export default function Community() {
-  const { community, isOwner, user, analytics, memberCount, eventCount } = useLoaderData<typeof loader>();
+  const { community, isOwner, isMember, user, analytics, memberCount, eventCount } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const submit = useSubmit();
   const navigation = useNavigation();
   const revalidator = useRevalidator();
+  const isMobile = useIsMobile();
+  const [showStickyButton, setShowStickyButton] = useState(!isMember && !isOwner);
 
   // Track visit on component mount
   useEffect(() => {
@@ -258,6 +316,7 @@ export default function Community() {
       }
     }
   }, [actionData]);
+
 
 
   // Check if navigating to dashboard - for global loading state
@@ -333,7 +392,7 @@ export default function Community() {
       </Activity>
       {/* Owner Dashboard Icon */}
 
-      <main className="w-full py-8 px-4 sm:px-6 lg:px-8">
+      <main className={`w-full py-8 px-4 sm:px-6 lg:px-8 ${isMobile ? 'pb-32' : ''}`}>
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]">
             {/* Profile Card - Large */}
@@ -488,12 +547,29 @@ export default function Community() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
-                <JoinCommunityForm
-                  communityId={community?.id || ''}
-                  communityName={displayName}
-                  userEmail={user?.email}
-                  isLoggedIn={!!user}
-                />
+                {isOwner ? (
+                  <Button
+                    className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background"
+                    asChild
+                  >
+                    <Link to={`/dashboard/${community?.slug}`}>
+                      <span className="flex w-full items-center justify-between gap-3">
+                        <span className="flex items-center gap-2">
+                          <LayoutDashboard className="h-4 w-4 opacity-90 text-foreground" />
+                          <span className="text-foreground">Manage Your Community</span>
+                        </span>
+                      </span>
+                    </Link>
+                  </Button>
+                ) : (
+                    <JoinCommunityForm
+                      communityId={community?.id || ''}
+                      communityName={displayName}
+                      userEmail={user?.email}
+                      isLoggedIn={!!user}
+                      isMember={isMember}
+                    />
+                )}
 
                 <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
                   <span className="flex w-full items-center justify-between gap-3">
@@ -648,6 +724,31 @@ export default function Community() {
           </div>
         </div>
       </main>
+
+      {/* Sticky Mobile Join Button - Only show if not owner and not member */}
+      {isMobile && community && showStickyButton && (
+        <div className={`fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-background via-background to-background/0 pointer-events-none transition-opacity duration-300 ease-in-out ${showStickyButton ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className={`pointer-events-auto max-w-md mx-auto transform transition-all duration-300 ease-in-out ${showStickyButton ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+            <JoinCommunityForm
+              communityId={community.id}
+              communityName={displayName}
+              userEmail={user?.email}
+              isLoggedIn={!!user}
+              isMember={isMember}
+              trigger={
+                <Button
+                  className="w-full py-6 rounded-xl shadow-lg hover:shadow-xl text-base font-semibold transition-all duration-200 bg-primary hover:bg-primary/90"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <Users className="h-5 w-5" />
+                    <span>Join Our Community</span>
+                  </span>
+                </Button>
+              }
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
