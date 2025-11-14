@@ -21,6 +21,14 @@ export default [
       "c/:slug/events/:eventId",
       "routes/community-events/$slug.events.$eventId.tsx"
     ),
+    route(
+      "c/:slug/events/:eventId/verify",
+      "routes/community-events/$slug.events.$eventId.verify.tsx"
+    ),
+    route(
+      "c/:slug/events/:eventId/verification-sent",
+      "routes/community-events/$slug.events.$eventId.verification-sent.tsx"
+    ),
   ]),
 
   route("login", "routes/login.tsx"),

@@ -1,5 +1,12 @@
-import { useState, useEffect } from "react";
-import { useLoaderData, Link, Form, useActionData } from "react-router";
+import { useState, useEffect, Activity } from "react";
+import {
+	useLoaderData,
+	Link,
+	Form,
+	useActionData,
+	useSearchParams,
+	useNavigation,
+} from "react-router";
 import { redirect } from "react-router";
 import { createClient } from "~/lib/supabase.server";
 import type { Route } from "./+types/$slug.events.$eventId";
@@ -18,12 +25,19 @@ import {
 	ExternalLink,
 	CheckCircle2,
 	Send,
+	Settings,
 } from "lucide-react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import advancedFormat from "dayjs/plugin/advancedFormat";
 import { cn } from "~/lib/utils";
+import crypto from "crypto";
+import {
+	sendVerificationEmail,
+	sendRegistrationConfirmationEmail,
+} from "~/lib/email.server";
+import { AnonymousRegistrationDialog } from "~/components/events/anonymous-registration-dialog";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -41,6 +55,7 @@ interface LoaderData {
 	isUserRegistered: boolean;
 	canRegister: boolean;
 	user: any;
+	isOwnerOrAdmin: boolean;
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -92,6 +107,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		data: { user },
 	} = await supabase.auth.getUser();
 	let isUserRegistered = false;
+	let isOwnerOrAdmin = false;
 
 	if (user) {
 		const { data: registration } = await supabase
@@ -102,6 +118,17 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 			.single();
 
 		isUserRegistered = !!registration;
+
+		// Check if user is owner or admin of the community
+		const { data: membership } = await supabase
+			.from("community_members")
+			.select("role")
+			.eq("community_id", community.id)
+			.eq("user_id", user.id)
+			.single();
+
+		isOwnerOrAdmin =
+			membership?.role === "owner" || membership?.role === "admin";
 	}
 
 	// Check if registration is still open
@@ -123,6 +150,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		isUserRegistered,
 		canRegister,
 		user: user || null,
+		isOwnerOrAdmin,
 	};
 }
 
@@ -131,12 +159,140 @@ export async function action({ request, params }: Route.ActionArgs) {
 	const formData = await request.formData();
 	const intent = formData.get("intent") as string;
 
+	const slug = params.slug;
 	const eventId = params.eventId;
-	if (!eventId) {
-		return { success: false, error: "Event ID required" };
+	if (!eventId || !slug) {
+		return { success: false, error: "Event ID and slug required" };
 	}
 
-	// Check authentication
+	// Get event details
+	const { data: event, error: eventError } = await supabase
+		.from("events")
+		.select("*")
+		.eq("id", eventId)
+		.single();
+
+	if (eventError || !event) {
+		console.error("Error fetching event:", eventError);
+		return { success: false, error: "Event not found" };
+	}
+
+	// Get community details
+	const { data: community, error: communityError } = await supabase
+		.from("communities")
+		.select("*")
+		.eq("id", event.community_id)
+		.single();
+
+	if (communityError || !community) {
+		console.error("Community not found for event:", eventId, communityError);
+		return { success: false, error: "Community not found" };
+	}
+
+	// Handle anonymous registration
+	if (intent === "anonymous-register") {
+		console.log("Anonymous registration started");
+		const name = formData.get("name") as string;
+		const email = formData.get("email") as string;
+
+		if (!name || !email) {
+			console.log("Missing name or email");
+			return { success: false, error: "Name and email are required" };
+		}
+
+		console.log("Registering anonymous user:", { name, email, eventId });
+
+		// Check if this email is already registered for this event
+		const { data: existingRegistration, error: existingRegistrationError } =
+			await supabase
+				.from("event_registrations")
+				.select("id, is_verified")
+				.eq("event_id", eventId)
+				.eq("anonymous_email", email)
+				.maybeSingle();
+
+		// Only return error if it's not a "no rows" error
+		if (
+			existingRegistrationError &&
+			existingRegistrationError.code !== "PGRST116"
+		) {
+			console.error("Error checking registration:", existingRegistrationError);
+			return {
+				success: false,
+				error: "Failed to check existing registration",
+			};
+		}
+
+		if (existingRegistration) {
+			if (existingRegistration.is_verified) {
+				return {
+					success: false,
+					error: "This email is already registered for this event",
+				};
+			} else {
+				return {
+					success: false,
+					error: "A verification email has already been sent to this address",
+				};
+			}
+		}
+
+		// Generate verification token
+		const verificationToken = crypto.randomBytes(32).toString("hex");
+		const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+		// Create registration record
+		console.log("Creating registration record...");
+		const { error: registerError } = await supabase
+			.from("event_registrations")
+			.insert({
+				event_id: eventId,
+				anonymous_name: name,
+				anonymous_email: email,
+				rsvp_status: "going",
+				is_verified: false,
+				verification_token: verificationToken,
+				token_expires_at: tokenExpiresAt.toISOString(),
+			});
+
+		if (registerError) {
+			console.error("Error creating registration:", registerError);
+			return { success: false, error: registerError.message };
+		}
+
+		console.log("Registration record created successfully");
+
+		// Send verification email
+		console.log("Sending verification email...");
+		const verificationLink = `${new URL(request.url).origin
+			}/c/${slug}/events/${eventId}/verify?token=${verificationToken}`;
+		const registerAccountLink = `${new URL(request.url).origin}/signup`;
+
+		try {
+			await sendVerificationEmail({
+				eventTitle: event.title,
+				communityName: community.name,
+				verificationLink,
+				recipientName: name,
+				recipientEmail: email,
+				registerAccountLink,
+			});
+			console.log("Verification email sent successfully");
+		} catch (error) {
+			console.error("Failed to send verification email:", error);
+			// Continue anyway - user can request resend
+		}
+
+		// Redirect to email sent page
+		console.log("Redirecting to verification-sent page");
+		return redirect(
+			`/c/${slug}/events/${eventId}/verification-sent?email=${encodeURIComponent(
+				email
+			)}`
+		);
+	}
+
+	// Check authentication for logged-in user actions
 	const {
 		data: { user },
 		error: authError,
@@ -174,6 +330,37 @@ export async function action({ request, params }: Route.ActionArgs) {
 
 		if (registerError) {
 			return { success: false, error: registerError.message };
+		}
+
+		// Get user profile for email
+		const { data: profile } = await supabase
+			.from("profiles")
+			.select("full_name")
+			.eq("id", user.id)
+			.single();
+
+		// Send confirmation email
+		const eventDate = dayjs(event.start_time).tz(event.timezone);
+		const eventLink = `${new URL(request.url).origin
+			}/c/${slug}/events/${eventId}`;
+		const registerAccountLink = `${new URL(request.url).origin}/signup`;
+
+		try {
+			await sendRegistrationConfirmationEmail({
+				eventTitle: event.title,
+				communityName: community.name,
+				eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+				eventTime: eventDate.format("h:mm A z"),
+				eventLink,
+				recipientName: profile?.full_name || "there",
+				recipientEmail: user.email || "",
+				registerAccountLink,
+				locationAddress: event.location_address || undefined,
+				onlineMeetingLink: event.online_meeting_link || undefined,
+			});
+		} catch (error) {
+			console.error("Failed to send confirmation email:", error);
+			// Continue anyway - registration was successful
 		}
 
 		return { success: true, message: "Successfully registered for the event!" };
@@ -261,12 +448,25 @@ export default function EventPublicView() {
 		isUserRegistered,
 		canRegister,
 		user,
+		isOwnerOrAdmin,
 	} = useLoaderData<LoaderData>();
 	const actionData = useActionData<{
 		success: boolean;
 		error?: string;
 		message?: string;
 	}>();
+	const navigation = useNavigation();
+	const [searchParams] = useSearchParams();
+	const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
+
+	// Check if form is submitting
+	const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
+	const isRegistering =
+		isSubmitting &&
+		navigation.formData?.get("intent") === "register";
+	const isUnregistering =
+		isSubmitting &&
+		navigation.formData?.get("intent") === "unregister";
 
 	const eventDate = dayjs(event.start_time).tz(event.timezone);
 	const eventEndDate = event.end_time
@@ -288,6 +488,16 @@ export default function EventPublicView() {
 		}
 	}, [actionData]);
 
+	// Handle verification status from URL params
+	useEffect(() => {
+		const verified = searchParams.get("verified");
+		if (verified === "success") {
+			toast.success("Email verified! You're registered for the event.");
+		} else if (verified === "already") {
+			toast.info("You're already registered for this event.");
+		}
+	}, [searchParams]);
+
 	const handleShare = async () => {
 		if (navigator.share) {
 			try {
@@ -308,6 +518,12 @@ export default function EventPublicView() {
 
 	return (
 		<div className="min-h-screen bg-background">
+			<AnonymousRegistrationDialog
+				open={showAnonymousDialog}
+				onOpenChange={setShowAnonymousDialog}
+				eventId={event.id}
+				communitySlug={community.slug}
+			/>
 			<main className="w-full">
 				{/* Content Container */}
 				<div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
@@ -318,86 +534,95 @@ export default function EventPublicView() {
 							<div className="order-1">
 								{/* Event Cover - Square */}
 								<div className="relative aspect-square w-full bg-gradient-to-br from-primary/5 via-primary/10 to-background overflow-hidden rounded-xl border shadow-sm">
-								{event.cover_url ? (
-									<img
-										src={event.cover_url}
-										alt={event.title}
-										className="w-full h-full object-cover"
-									/>
-								) : (
-									<div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-										<Calendar className="h-16 w-16 text-primary/30" />
-									</div>
-								)}
+									{/* Cover Image */}
+									<Activity mode={event.cover_url ? "visible" : "hidden"}>
+										<img
+											src={event.cover_url || ""}
+											alt={event.title}
+											className="w-full h-full object-cover"
+										/>
+									</Activity>
 
-								{/* Past Event Overlay */}
-								{isPastEvent && (
-									<div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+									{/* Placeholder when no cover */}
+									<Activity mode={!event.cover_url ? "visible" : "hidden"}>
+										<div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+											<Calendar className="h-16 w-16 text-primary/30" />
+										</div>
+									</Activity>
+
+									{/* Past Event Overlay */}
+									<Activity mode={isPastEvent ? "visible" : "hidden"}>
+										<div className="absolute inset-0 bg-black/60 flex items-center justify-center">
 											<Badge
 												variant="outline"
 												className="bg-black/60 text-white border-white/20"
 											>
-											Past Event
-										</Badge>
-									</div>
-								)}
+												Past Event
+											</Badge>
+										</div>
+									</Activity>
 								</div>
 							</div>
 
 							{/* Host Info, Capacity & Share - Mobile Order 3 */}
 							<div className="order-3 space-y-6">
-							{/* Host Info */}
-							<div className="space-y-3">
+								{/* Host Info */}
+								<div className="space-y-3">
 									<h3 className="text-sm font-semibold text-muted-foreground border-b pb-3">
 										Hosted By
 									</h3>
-								<Link
-									to={`/c/${community.slug}`}
-										className="flex items-center gap-2  bg-card transition-colors"
-								>
+									<Link
+										to={`/c/${community.slug}`}
+										className="flex items-center gap-2 bg-card transition-colors"
+									>
 										<Avatar className="h-6 w-6">
 											<AvatarImage
 												src={community.logo_url || ""}
 												alt={community.name}
 											/>
-										<AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-											{community.name.substring(0, 2).toUpperCase()}
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex-1 min-w-0">
+											<AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+												{community.name.substring(0, 2).toUpperCase()}
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex-1 min-w-0">
 											<p className="font-semibold text-sm truncate hover:text-primary transition-colors">
 												{community.name}
 											</p>
-									</div>
-								</Link>
-								{event.capacity && (
-										<div className="space-y-2 pt-3 lg:pt-6">
-										<div className="flex items-center justify-between text-sm">
-											<span className="text-muted-foreground">
-												{event.capacity - registrationCount} spots left
-											</span>
-											<span className="font-semibold">
-												{registrationCount}/{event.capacity}
-											</span>
 										</div>
-										<div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-											<div
-												className={cn(
-													"h-full rounded-full transition-all duration-300",
-													capacityPercentage >= 90
-														? "bg-red-500"
-														: capacityPercentage >= 70
-															? "bg-yellow-500"
-															: "bg-primary"
-												)}
+									</Link>
+
+									{/* Capacity Indicator */}
+									<Activity mode={event.capacity ? "visible" : "hidden"}>
+										<div className="space-y-2 pt-3 lg:pt-6">
+											<div className="flex items-center justify-between text-sm">
+												<span className="text-muted-foreground">
+													{event.capacity
+														? event.capacity - registrationCount
+														: 0}{" "}
+													spots left
+												</span>
+												<span className="font-semibold">
+													{registrationCount}/{event.capacity || 0}
+												</span>
+											</div>
+											<div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+												<div
+													className={cn(
+														"h-full rounded-full transition-all duration-300",
+														capacityPercentage >= 90
+															? "bg-red-500"
+															: capacityPercentage >= 70
+																? "bg-yellow-500"
+																: "bg-primary"
+													)}
 													style={{
 														width: `${Math.min(capacityPercentage, 100)}%`,
 													}}
-											/>
+												/>
+											</div>
 										</div>
-									</div>
-								)}
-							</div>
+									</Activity>
+								</div>
 
 								{/* Contact & Share */}
 								<div className="space-y-2">
@@ -425,173 +650,230 @@ export default function EventPublicView() {
 
 							{/* Main Content - Mobile Order 4 */}
 							<div className="order-4 space-y-6">
-							{/* Date & Time */}
-							<div className="flex items-start gap-3">
-								<div className="mt-1">
-									<Calendar className="h-5 w-5 text-muted-foreground" />
-								</div>
-								<div>
-									<p className="font-semibold text-base">
-											{eventDate.format("dddd, MMMM D")}
-									</p>
-									<p className="text-sm text-muted-foreground">
-											{eventDate.format("h:mm A")}
-											{eventEndDate && ` - ${eventEndDate.format("h:mm A")}`}{" "}
-											{event.timezone}
-									</p>
-								</div>
-							</div>
-
-							{/* Location */}
-							{event.location_address && (
+								{/* Date & Time */}
 								<div className="flex items-start gap-3">
 									<div className="mt-1">
-										<MapPin className="h-5 w-5 text-muted-foreground" />
+										<Calendar className="h-5 w-5 text-muted-foreground" />
 									</div>
 									<div>
 										<p className="font-semibold text-base">
-												{event.location_address.split(",")[0]}
+											{eventDate.format("dddd, MMMM D")}
 										</p>
 										<p className="text-sm text-muted-foreground">
-												{event.location_address
-													.split(",")
-													.slice(1)
-													.join(",")
-													.trim()}
+											{eventDate.format("h:mm A")}
+											{eventEndDate &&
+												` - ${eventEndDate.format("h:mm A")}`}{" "}
+											{event.timezone}
 										</p>
 									</div>
 								</div>
-							)}
 
-							<Separator />
+								{/* Location */}
+								<Activity mode={event.location_address ? "visible" : "hidden"}>
+									<div className="flex items-start gap-3">
+										<div className="mt-1">
+											<MapPin className="h-5 w-5 text-muted-foreground" />
+										</div>
+										<div>
+											<p className="font-semibold text-base">
+												{event.location_address?.split(",")[0] || ""}
+											</p>
+											<p className="text-sm text-muted-foreground">
+												{event.location_address
+													?.split(",")
+													.slice(1)
+													.join(",")
+													.trim() || ""}
+											</p>
+										</div>
+									</div>
+								</Activity>
 
-							{/* Registration Section */}
-							<div className="space-y-4">
-								<h2 className="text-xl font-semibold">Registration</h2>
+								<Separator />
 
-								<Card className="bg-card/50">
-									<CardContent className="p-6 space-y-4">
-										{isUserRegistered ? (
-											<>
+								{/* Registration Section */}
+								<div className="space-y-4">
+									<h2 className="text-xl font-semibold">
+										{isOwnerOrAdmin ? "Event Management" : "Registration"}
+									</h2>
+
+									<Card className="bg-card/50">
+										<CardContent className="p-6 space-y-4">
+											{/* Admin/Owner View */}
+											<Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
+												<p className="text-sm text-muted-foreground">
+													You are an admin of this community. Manage this event
+													from the dashboard.
+												</p>
+												<Button asChild className="w-full" size="lg">
+													<Link to={`/dashboard/${community.slug}/events`}>
+														<Settings className="h-4 w-4 mr-2" />
+														Manage Event
+													</Link>
+												</Button>
+											</Activity>
+
+											{/* Already Registered View */}
+											<Activity
+												mode={
+													!isOwnerOrAdmin && isUserRegistered
+														? "visible"
+														: "hidden"
+												}
+											>
 												<div className="flex items-center gap-2 text-green-600 dark:text-green-500">
 													<CheckCircle2 className="h-5 w-5" />
-														<span className="font-semibold">
-															You're registered for this event!
-														</span>
+													<span className="font-semibold">
+														You're registered for this event!
+													</span>
 												</div>
 
-												{event.capacity && (
+												<Activity mode={event.capacity ? "visible" : "hidden"}>
 													<div className="flex items-center justify-between text-sm pt-3 border-t">
-															<span className="text-muted-foreground">
-																Capacity
-															</span>
+														<span className="text-muted-foreground">
+															Capacity
+														</span>
 														<span className="font-semibold">
-															{registrationCount}/{event.capacity}
+															{registrationCount}/{event.capacity || 0}
 														</span>
 													</div>
-												)}
+												</Activity>
 
 												<Form method="post" className="pt-2">
-														<input
-															type="hidden"
-															name="intent"
-															value="unregister"
-														/>
+													<input
+														type="hidden"
+														name="intent"
+														value="unregister"
+													/>
 													<Button
 														type="submit"
 														variant="outline"
 														className="w-full"
+														disabled={isUnregistering}
 													>
-														Cancel Registration
+														{isUnregistering ? "Cancelling..." : "Cancel Registration"}
 													</Button>
 												</Form>
-											</>
-										) : (
-											<>
-												{canRegister ? (
-													<>
-														<p className="text-sm text-muted-foreground">
-															Welcome! To join the event, please register below.
-														</p>
+											</Activity>
 
-																{user && (
-																	<div className="flex items-center gap-2 text-sm">
-																		<Avatar className="h-6 w-6">
-																			<AvatarFallback className="bg-primary/10 text-primary text-xs">
-																				{user.email?.charAt(0).toUpperCase()}
-																			</AvatarFallback>
-																		</Avatar>
-																		<span className="text-muted-foreground">
-																			{user.email}
-																		</span>
-																	</div>
-																)}
+											{/* Can Register View */}
+											<Activity
+												mode={
+													!isOwnerOrAdmin && !isUserRegistered && canRegister
+														? "visible"
+														: "hidden"
+												}
+											>
+												<p className="text-sm text-muted-foreground">
+													Welcome! To join the event, please register below.
+												</p>
 
-																{user ? (
-																	<Form method="post">
-																		<input
-																			type="hidden"
-																			name="intent"
-																			value="register"
-																		/>
-																		<Button
-																			type="submit"
-																			className="w-full"
-																			size="lg"
-																		>
-																			One-Click RSVP
-																		</Button>
-																	</Form>
-																) : (
-																		<Button asChild className="w-full" size="lg">
-																			<Link
-																				to={`/login?redirect=/c/${community.slug}/events/${event.id}`}
-																			>
-																			Login to Register
-																		</Link>
-																	</Button>
-																)}
-															</>
-														) : (
-															<div className="text-center py-6">
-																<p className="text-sm font-medium text-muted-foreground">
-																	{isPastEvent
-																			? "This event has ended"
-																			: event.capacity &&
-																				registrationCount >= event.capacity
-																				? "Event is at full capacity"
-																				: "Registration is closed"}
+												<Activity mode={user ? "visible" : "hidden"}>
+													<div className="flex items-center gap-2 text-sm">
+														<Avatar className="h-6 w-6">
+															<AvatarFallback className="bg-primary/10 text-primary text-xs">
+																{user?.email?.charAt(0).toUpperCase()}
+															</AvatarFallback>
+														</Avatar>
+														<span className="text-muted-foreground">
+															{user?.email}
+														</span>
+													</div>
+												</Activity>
+
+												<Activity mode={user ? "visible" : "hidden"}>
+													<Form method="post">
+														<input
+															type="hidden"
+															name="intent"
+															value="register"
+														/>
+														<Button
+															type="submit"
+															className="w-full"
+															size="lg"
+															disabled={isRegistering}
+														>
+															{isRegistering ? "Registering..." : "One-Click RSVP"}
+														</Button>
+													</Form>
+												</Activity>
+
+												<Activity mode={!user ? "visible" : "hidden"}>
+													<div className="space-y-3">
+														<Button
+															onClick={() => setShowAnonymousDialog(true)}
+															className="w-full"
+															size="lg"
+															disabled={isSubmitting}
+														>
+															{isSubmitting ? "Processing..." : "Register for Event"}
+														</Button>
+														<p className="text-xs text-center text-muted-foreground">
+															Already have an account?{" "}
+															<Link
+																to={`/login?redirect=/c/${community.slug}/events/${event.id}`}
+																className="underline hover:text-foreground font-medium"
+															>
+																Login
+															</Link>
 														</p>
 													</div>
-												)}
-											</>
-										)}
-									</CardContent>
-								</Card>
-							</div>
+												</Activity>
+											</Activity>
 
-							{/* About Event */}
-							{event.description && (
-								<div className="space-y-4">
-									<h2 className="text-xl font-semibold">About Event</h2>
-									<div className="prose prose-sm max-w-none">
-										<p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
-											{event.description}
-										</p>
-									</div>
+											{/* Registration Closed View */}
+											<Activity
+												mode={
+													!isOwnerOrAdmin && !isUserRegistered && !canRegister
+														? "visible"
+														: "hidden"
+												}
+											>
+												<div className="text-center py-6">
+													<p className="text-sm font-medium text-muted-foreground">
+														{isPastEvent
+															? "This event has ended"
+															: event.capacity &&
+																registrationCount >= event.capacity
+																? "Event is at full capacity"
+																: "Registration is closed"}
+													</p>
+												</div>
+											</Activity>
+										</CardContent>
+									</Card>
 								</div>
-							)}
 
-							{/* Online Meeting */}
-								{(event.event_type === "online" ||
-									event.event_type === "hybrid") &&
-								event.online_meeting_link && (
+								{/* About Event */}
+								<Activity mode={event.description ? "visible" : "hidden"}>
+									<div className="space-y-4">
+										<h2 className="text-xl font-semibold">About Event</h2>
+										<div className="prose prose-sm max-w-none">
+											<p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
+												{event.description || ""}
+											</p>
+										</div>
+									</div>
+								</Activity>
+
+								{/* Online Meeting */}
+								<Activity
+									mode={
+										(event.event_type === "online" ||
+											event.event_type === "hybrid") &&
+											!!event.online_meeting_link
+											? "visible"
+											: "hidden"
+									}
+								>
 									<div className="space-y-3 pt-4 border-t">
 										<h3 className="text-base font-semibold flex items-center gap-2">
 											<Video className="h-4 w-4" />
 											Online Meeting
 										</h3>
-										{isUserRegistered ? (
+
+										<Activity mode={isUserRegistered ? "visible" : "hidden"}>
 											<Button
 												asChild
 												variant="outline"
@@ -599,7 +881,7 @@ export default function EventPublicView() {
 												size="sm"
 											>
 												<a
-													href={event.online_meeting_link}
+													href={event.online_meeting_link || ""}
 													target="_blank"
 													rel="noopener noreferrer"
 												>
@@ -607,13 +889,15 @@ export default function EventPublicView() {
 													<ExternalLink className="h-4 w-4 ml-2" />
 												</a>
 											</Button>
-										) : (
+										</Activity>
+
+										<Activity mode={!isUserRegistered ? "visible" : "hidden"}>
 											<p className="text-sm text-muted-foreground">
 												Register to access the meeting link
 											</p>
-										)}
+										</Activity>
 									</div>
-								)}
+								</Activity>
 							</div>
 						</div>
 					</div>

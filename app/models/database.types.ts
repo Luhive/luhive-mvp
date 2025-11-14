@@ -169,8 +169,10 @@ export type Database = {
           is_verified: boolean
           registered_at: string | null
           rsvp_status: Database["public"]["Enums"]["rsvp_status"]
+          token_expires_at: string | null
           updated_at: string | null
           user_id: string | null
+          verification_token: string | null
         }
         Insert: {
           anonymous_email?: string | null
@@ -181,8 +183,10 @@ export type Database = {
           is_verified?: boolean
           registered_at?: string | null
           rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
+          token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string | null
+          verification_token?: string | null
         }
         Update: {
           anonymous_email?: string | null
@@ -193,8 +197,10 @@ export type Database = {
           is_verified?: boolean
           registered_at?: string | null
           rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
+          token_expires_at?: string | null
           updated_at?: string | null
           user_id?: string | null
+          verification_token?: string | null
         }
         Relationships: [
           {
@@ -220,6 +226,7 @@ export type Database = {
           location_address: string | null
           online_meeting_link: string | null
           registration_deadline: string | null
+          slug: string | null
           start_time: string
           status: Database["public"]["Enums"]["event_status"]
           timezone: string
@@ -239,6 +246,7 @@ export type Database = {
           location_address?: string | null
           online_meeting_link?: string | null
           registration_deadline?: string | null
+          slug?: string | null
           start_time: string
           status?: Database["public"]["Enums"]["event_status"]
           timezone: string
@@ -258,6 +266,7 @@ export type Database = {
           location_address?: string | null
           online_meeting_link?: string | null
           registration_deadline?: string | null
+          slug?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["event_status"]
           timezone?: string
