@@ -97,35 +97,35 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response('Community not found', { status: 404 });
   }
 
-  // Check if user is the owner
+  // Check if user is the owner (no query needed)
   const isOwner = user ? community.created_by === user.id : false;
 
-  // Check if user is a member
-  let isMember = false;
-  if (user) {
-    const { data: membership } = await supabase
+  // Parallelize all dependent queries after fetching community
+  const [membershipResult, memberCountResult, eventCountResult] = await Promise.all([
+    // Check if user is a member (only if user exists)
+    user
+      ? supabase
+        .from('community_members')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('community_id', community.id)
+        .limit(1)
+        .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    // Fetch member count
+    supabase
       .from('community_members')
-      .select('id')
-      .eq('user_id', user.id)
+      .select('*', { count: 'exact', head: true })
+      .eq('community_id', community.id),
+    // Fetch event count
+    supabase
+      .from('events')
+      .select('*', { count: 'exact', head: true })
       .eq('community_id', community.id)
-      .limit(1)
-      .single();
+      .eq('status', 'published')
+  ]);
 
-    isMember = !!membership;
-  }
-
-  // Fetch real-time member count
-  const { count: memberCount } = await supabase
-    .from('community_members')
-    .select('*', { count: 'exact', head: true })
-    .eq('community_id', community.id);
-
-  // Fetch real-time event count from events table
-  const { count: eventCount } = await supabase
-    .from('events')
-    .select('*', { count: 'exact', head: true })
-    .eq('community_id', community.id)
-    .eq('status', 'published');
+  const isMember = !!membershipResult.data;
 
   return {
     community,
@@ -133,8 +133,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     isMember,
     user: user || null,
     analytics,
-    memberCount: memberCount || 0,
-    eventCount: eventCount || 0,
+    memberCount: memberCountResult.count || 0,
+    eventCount: eventCountResult.count || 0,
   };
 }
 

@@ -44,29 +44,50 @@ export async function loader({ request }: Route.LoaderArgs) {
     };
   }
 
-  // Fetch member counts and event counts for each community
-  const communitiesWithCounts = await Promise.all(
-    (communities || []).map(async (community) => {
-      // Fetch member count
-      const { count: memberCount } = await supabase
-        .from('community_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('community_id', community.id);
+  if (!communities || communities.length === 0) {
+    return {
+      communities: [],
+      user: user || null,
+    };
+  }
 
-      // Fetch event count (only published events)
-      const { count: eventCount } = await supabase
-        .from('events')
-        .select('*', { count: 'exact', head: true })
-        .eq('community_id', community.id)
-        .eq('status', 'published');
+  // Batch fetch all member and event counts in parallel (fixes N+1 query problem)
+  const communityIds = communities.map(c => c.id);
 
-      return {
-        ...community,
-        memberCount: memberCount || 0,
-        eventCount: eventCount || 0,
-      };
-    })
-  );
+  const [memberCountsResult, eventCountsResult] = await Promise.all([
+    // Fetch all memberships for all communities in one query
+    supabase
+      .from('community_members')
+      .select('community_id')
+      .in('community_id', communityIds),
+    // Fetch all published events for all communities in one query
+    supabase
+      .from('events')
+      .select('community_id')
+      .in('community_id', communityIds)
+      .eq('status', 'published')
+  ]);
+
+  // Count members per community
+  const memberCounts = new Map<string, number>();
+  (memberCountsResult.data || []).forEach(member => {
+    const count = memberCounts.get(member.community_id!) || 0;
+    memberCounts.set(member.community_id!, count + 1);
+  });
+
+  // Count events per community
+  const eventCounts = new Map<string, number>();
+  (eventCountsResult.data || []).forEach(event => {
+    const count = eventCounts.get(event.community_id) || 0;
+    eventCounts.set(event.community_id, count + 1);
+  });
+
+  // Combine data
+  const communitiesWithCounts = communities.map(community => ({
+    ...community,
+    memberCount: memberCounts.get(community.id) || 0,
+    eventCount: eventCounts.get(community.id) || 0,
+  }));
 
   return {
     communities: communitiesWithCounts,
