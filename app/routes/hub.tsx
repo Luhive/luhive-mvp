@@ -95,10 +95,57 @@ export async function loader({ request }: Route.LoaderArgs) {
   };
 }
 
+const HUB_CANONICAL_URL = "https://luhive.com/hub";
+const HUB_OG_IMAGE_URL = "https://luhive.com/LuhiveLogoBackground.png";
+
 export function meta({ data }: { data?: LoaderData }) {
+  const communities = data?.communities ?? [];
+  const communityCount = communities.length;
+  const verifiedCount = communities.filter((community) => community.verified).length;
+  const featuredCommunities = communities
+    .slice(0, 6)
+    .map((community) => community.name)
+    .filter(Boolean);
+
+  const title = communityCount
+    ? `Explore ${communityCount}+ Communities | Luhive Hub`
+    : "Luhive Hub | Discover Communities";
+
+  const description = communityCount
+    ? `Discover ${communityCount} curated communities${verifiedCount ? ` with ${verifiedCount} verified founders` : ""
+    } on the Luhive Hub.`
+    : "Discover curated communities, founders, and events on the Luhive Hub.";
+
+  const keywords = [
+    "Luhive",
+    "Luhive communities",
+    "founder communities",
+    "startup networking",
+    "tech communities",
+    "community discovery",
+    "events",
+    ...featuredCommunities,
+  ].join(", ");
+
   return [
-    { title: "Hub - Luhive" },
-    { name: "description", content: "Discover and explore communities on Luhive" },
+    { title },
+    { name: "description", content: description },
+    { name: "keywords", content: keywords },
+    {
+      name: "robots",
+      content: "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1",
+    },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+    { property: "og:url", content: HUB_CANONICAL_URL },
+    { property: "og:type", content: "website" },
+    { property: "og:site_name", content: "Luhive" },
+    { property: "og:image", content: HUB_OG_IMAGE_URL },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: HUB_OG_IMAGE_URL },
+    { tagName: "link", rel: "canonical", href: HUB_CANONICAL_URL },
   ];
 }
 
