@@ -1,0 +1,22 @@
+# robots.txt for app.luhive.com
+
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /signup
+Allow: /create-community
+Allow: /c/
+
+# Disallow private/authenticated routes
+Disallow: /dashboard/
+Disallow: /profile
+Disallow: /logout
+Disallow: /auth/verify/reset-password
+Disallow: /auth/email-sent/
+Disallow: /c/*/events/*/verify
+Disallow: /c/*/events/*/verification-sent
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://app.luhive.com/sitemap.xml
+

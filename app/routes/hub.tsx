@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { ShimmeringText } from "~/components/ui/shimmering-text";
 
+import PeopleIcon from "~/assets/images/PeopleIcon.png";
+
 type Community = Database['public']['Tables']['communities']['Row'] & {
   memberCount: number;
   eventCount: number;
@@ -159,6 +161,7 @@ export default function Hub() {
           <div className="mb-8">
             <div className="flex items-center gap-3">
               <Sparkle className="h-8 w-8 mb-2 text-primary animate-sparkle" />  
+              {/* <img src={PeopleIcon} alt="People Icon" className="h-12 w-12 mb-2" /> */}
               <h1 className="text-4xl font-black tracking-tight mb-2">Explore Communities</h1>
             </div>
             {/* [a] */}

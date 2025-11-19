@@ -48,6 +48,8 @@ import {
 import { AnonymousRegistrationDialog } from "~/components/events/anonymous-registration-dialog";
 import { AttendersAvatarsSkeleton } from "~/components/events/attenders-avatars";
 
+import CheckIcon3D from '~/assets/images/TickIcon.png'
+
 // Lazy load the attenders avatars component
 const AttendersAvatars = lazy(() =>
 	import("~/components/events/attenders-avatars").then((module) => ({
@@ -75,6 +77,7 @@ interface LoaderData {
 	user: any;
 	userProfile: Profile | null;
 	isOwnerOrAdmin: boolean;
+	origin: string;
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -172,6 +175,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		now < registrationDeadline &&
 		(!event.capacity || (registrationCount || 0) < event.capacity);
 
+	// Get origin for absolute URLs in meta tags
+	const url = new URL(request.url);
+	const origin = url.origin;
+
 	return {
 		event,
 		community,
@@ -181,6 +188,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		user: user || null,
 		userProfile,
 		isOwnerOrAdmin,
+		origin,
 	};
 }
 
@@ -423,8 +431,28 @@ export function meta({ data }: { data?: LoaderData }) {
 		];
 	}
 
-	const { event, community } = data;
+	const { event, community, origin } = data;
 	const eventDate = dayjs(event.start_time).format("MMMM D, YYYY");
+
+	// Construct canonical URL
+	const canonicalUrl = `${origin}/c/${community.slug}/events/${event.id}`;
+
+	// Ensure image URL is absolute
+	const getAbsoluteImageUrl = (url: string | null | undefined): string => {
+		if (!url) return "";
+		// If already absolute, return as is
+		if (url.startsWith("http://") || url.startsWith("https://")) {
+			return url;
+		}
+		// If relative, make it absolute using origin
+		if (url.startsWith("/")) {
+			return `${origin}${url}`;
+		}
+		// Otherwise, assume it's a full Supabase URL (should already be absolute)
+		return url;
+	};
+
+	const imageUrl = getAbsoluteImageUrl(event.cover_url || community.logo_url);
 
 	return [
 		{ title: `${event.title} - ${community.name}` },
@@ -439,21 +467,24 @@ export function meta({ data }: { data?: LoaderData }) {
 			property: "og:description",
 			content: event.description || `Join ${event.title}`,
 		},
-		{
-			property: "og:image",
-			content: event.cover_url || community.logo_url || "",
-		},
+		...(imageUrl
+			? [
+				{ property: "og:image", content: imageUrl },
+				{ property: "og:image:secure_url", content: imageUrl },
+				{ property: "og:image:type", content: "image/jpeg" },
+			]
+			: []),
 		{ property: "og:type", content: "event" },
+		{ property: "og:url", content: canonicalUrl },
+		{ property: "og:site_name", content: "Luhive" },
 		{ name: "twitter:card", content: "summary_large_image" },
 		{ name: "twitter:title", content: `${event.title} - ${community.name}` },
 		{
 			name: "twitter:description",
 			content: event.description || `Join ${event.title}`,
 		},
-		{
-			name: "twitter:image",
-			content: event.cover_url || community.logo_url || "",
-		},
+		...(imageUrl ? [{ name: "twitter:image", content: imageUrl }] : []),
+		{ tagName: "link", rel: "canonical", href: canonicalUrl },
 	];
 }
 
@@ -668,7 +699,7 @@ export default function EventPublicView() {
 
 
 									{/* Capacity Indicator */}
-									<Activity mode={event.capacity ? "visible" : "hidden"}>
+									<Activity mode={event.capacity && canRegister && !isPastEvent ? "visible" : "hidden"}>
 										<div className="space-y-2 pt-3 lg:pt-6">
 											<div className="flex items-center justify-between text-sm">
 												<span className="text-muted-foreground">
@@ -828,14 +859,14 @@ export default function EventPublicView() {
 														: "hidden"
 												}
 											>
-												<div className="flex items-center gap-2 text-green-600 dark:text-green-500">
+												<div className="flex items-center gap-1 text-green-600 dark:text-green-500">
 													<CheckCircle2 className="h-5 w-5" />
 													<span className="font-semibold">
 														You're registered for this event!
 													</span>
 												</div>
 
-												<Activity mode={event.capacity ? "visible" : "hidden"}>
+												<Activity mode={event.capacity && canRegister && !isPastEvent ? "visible" : "hidden"}>
 													<div className="flex items-center justify-between text-sm pt-3 border-t">
 														<span className="text-muted-foreground">
 															Capacity
@@ -998,15 +1029,34 @@ export default function EventPublicView() {
 														: "hidden"
 												}
 											>
-												<div className="text-center py-6">
-													<p className="text-sm font-medium text-muted-foreground">
-														{isPastEvent
-															? "This event has ended"
-															: event.capacity &&
-																registrationCount >= event.capacity
-																? "Event is at full capacity"
-																: "Registration is closed"}
-													</p>
+												<div className="flex flex-col items-center gap-3 py-4">
+													<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+														{isPastEvent ? (
+															<CalendarClock className="h-6 w-6 text-muted-foreground" />
+														) : event.capacity && registrationCount >= event.capacity ? (
+															<PersonStanding className="h-6 w-6 text-muted-foreground" />
+														) : (
+															<Hourglass className="h-6 w-6 text-muted-foreground" />
+														)}
+													</div>
+													<div className="text-center space-y-1">
+														<p className="text-sm font-semibold text-foreground">
+															{isPastEvent
+																? "This event has ended"
+																: event.capacity &&
+																	registrationCount >= event.capacity
+																	? "Event is at full capacity"
+																	: "Registration is closed"}
+														</p>
+														<p className="text-xs text-muted-foreground">
+															{isPastEvent
+																? "Thank you for your interest"
+																: event.capacity &&
+																	registrationCount >= event.capacity
+																	? "All spots have been filled"
+																	: "The registration deadline has passed"}
+														</p>
+													</div>
 												</div>
 											</Activity>
 										</CardContent>
