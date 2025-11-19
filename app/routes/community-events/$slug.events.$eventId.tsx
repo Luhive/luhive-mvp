@@ -1,4 +1,4 @@
-import { useState, useEffect, Activity } from "react";
+import { useState, useEffect, Activity, Suspense, lazy } from "react";
 import {
 	useLoaderData,
 	Link,
@@ -26,7 +26,13 @@ import {
 	CheckCircle2,
 	Send,
 	Settings,
+	PersonStanding,
 } from "lucide-react";
+import {
+	detectDiscussionPlatform,
+	getPlatformName,
+	getPlatformIcon,
+} from "~/lib/discussion-platform";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -38,6 +44,14 @@ import {
 	sendRegistrationConfirmationEmail,
 } from "~/lib/email.server";
 import { AnonymousRegistrationDialog } from "~/components/events/anonymous-registration-dialog";
+import { AttendersAvatarsSkeleton } from "~/components/events/attenders-avatars";
+
+// Lazy load the attenders avatars component
+const AttendersAvatars = lazy(() =>
+	import("~/components/events/attenders-avatars").then((module) => ({
+		default: module.default,
+	}))
+);
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -570,14 +584,15 @@ export default function EventPublicView() {
 							<div className="order-3 space-y-6">
 								{/* Host Info */}
 								<div className="space-y-3">
-									<h3 className="text-sm font-semibold text-muted-foreground border-b pb-3">
+									<div className="flex items-center justify-between border-b pb-2">
+										<h3 className="text-sm font-semibold text-muted-foreground">
 										Hosted By
 									</h3>
 									<Link
 										to={`/c/${community.slug}`}
 										className="flex items-center gap-2 bg-card transition-colors"
 									>
-										<Avatar className="h-6 w-6">
+											<Avatar className="h-8 w-8">
 											<AvatarImage
 												src={community.logo_url || ""}
 												alt={community.name}
@@ -592,6 +607,13 @@ export default function EventPublicView() {
 											</p>
 										</div>
 									</Link>
+									</div>
+
+
+									<Suspense fallback={<AttendersAvatarsSkeleton />}>
+										<AttendersAvatars eventId={event.id} maxVisible={3} />
+									</Suspense>
+
 
 									{/* Capacity Indicator */}
 									<Activity mode={event.capacity ? "visible" : "hidden"}>
@@ -627,6 +649,7 @@ export default function EventPublicView() {
 								</div>
 
 								{/* Contact & Share */}
+								<div className="space-y-3">
 								<div className="space-y-2">
 									<Button
 										onClick={handleShare}
@@ -637,6 +660,36 @@ export default function EventPublicView() {
 										<Send className="h-4 w-4 mr-2" />
 										Share Event
 									</Button>
+								</div>
+
+									{/* Discussion Channel */}
+									<Activity mode={event.discussion_link ? "visible" : "hidden"}>
+										<div>
+											{(() => {
+												const platform = detectDiscussionPlatform(event.discussion_link || "");
+												const PlatformIcon = getPlatformIcon(platform);
+												const platformName = getPlatformName(platform);
+
+												return (
+													<Button
+														asChild
+														variant="outline"
+														className="w-full"
+														size="lg"
+													>
+														<a
+															href={event.discussion_link || ""}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															<PlatformIcon className="h-4 w-4 mr-2" />
+															Join Event Chat on {platformName}
+														</a>
+													</Button>
+												);
+											})()}
+										</div>
+									</Activity>
 								</div>
 							</div>
 						</div>
@@ -796,7 +849,7 @@ export default function EventPublicView() {
 															size="lg"
 															disabled={isRegistering}
 														>
-															{isRegistering ? "Registering..." : "One-Click RSVP"}
+															{isRegistering ? "Registering..." : "One-Click Register"}
 														</Button>
 													</Form>
 												</Activity>
@@ -900,6 +953,7 @@ export default function EventPublicView() {
 										</Activity>
 									</div>
 								</Activity>
+
 							</div>
 						</div>
 					</div>

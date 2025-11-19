@@ -5,12 +5,13 @@ import { Button } from '~/components/ui/button';
 import { Separator } from '~/components/ui/separator';
 import { Spinner } from '~/components/ui/spinner';
 import { Badge } from '~/components/ui/badge';
-import { Save, FileText, Calendar, MapPin, Users, Eye } from 'lucide-react';
+import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle } from 'lucide-react';
 import { EventCoverUpload } from './event-cover-upload';
 import { EventBasicInfo } from './event-form-fields/event-basic-info';
 import { EventDateTime } from './event-form-fields/event-datetime';
 import { EventLocation } from './event-form-fields/event-location';
 import { EventCapacity } from './event-form-fields/event-capacity';
+import { EventDiscussion } from './event-form-fields/event-discussion';
 import { createClient } from '~/lib/supabase.client';
 import { toast } from 'sonner';
 import type { Database } from '~/models/database.types';
@@ -34,6 +35,7 @@ interface EventFormData {
   eventType: EventType;
   locationAddress?: string;
   onlineMeetingLink?: string;
+  discussionLink?: string;
   capacity?: number;
   registrationDeadline?: Date;
   coverUrl?: string;
@@ -68,6 +70,7 @@ export function EventForm({
   const [eventType, setEventType] = useState<EventType>(initialData?.eventType || 'in-person');
   const [locationAddress, setLocationAddress] = useState(initialData?.locationAddress || '');
   const [onlineMeetingLink, setOnlineMeetingLink] = useState(initialData?.onlineMeetingLink || '');
+  const [discussionLink, setDiscussionLink] = useState(initialData?.discussionLink || '');
   const [capacity, setCapacity] = useState<number | undefined>(initialData?.capacity);
   const [registrationDeadline, setRegistrationDeadline] = useState<Date | undefined>(
     initialData?.registrationDeadline
@@ -86,6 +89,15 @@ export function EventForm({
     if (eventType === 'online' && !onlineMeetingLink.trim()) return false;
     if (eventType === 'hybrid' && (!locationAddress.trim() || !onlineMeetingLink.trim())) return false;
     
+    // Validate discussion link if provided (must be valid URL)
+    if (discussionLink.trim()) {
+      try {
+        new URL(discussionLink.trim());
+      } catch {
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -135,6 +147,7 @@ export function EventForm({
         event_type: eventType,
         location_address: locationAddress || null,
         online_meeting_link: onlineMeetingLink || null,
+        discussion_link: discussionLink.trim() || null,
         capacity: capacity || null,
         registration_deadline: registrationDeadline ? registrationDeadline.toISOString() : null,
         cover_url: coverUrl || null,
@@ -355,6 +368,22 @@ export function EventForm({
                 onEventTypeChange={setEventType}
                 onLocationAddressChange={setLocationAddress}
                 onOnlineMeetingLinkChange={setOnlineMeetingLink}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Discussion Channel */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Discussion Channel
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EventDiscussion
+                discussionLink={discussionLink}
+                onDiscussionLinkChange={setDiscussionLink}
               />
             </CardContent>
           </Card>

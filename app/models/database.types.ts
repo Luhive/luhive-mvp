@@ -260,6 +260,7 @@ export type Database = {
           created_at: string | null
           created_by: string
           description: string | null
+          discussion_link: string | null
           end_time: string | null
           event_type: Database["public"]["Enums"]["event_type"]
           id: string
@@ -280,6 +281,7 @@ export type Database = {
           created_at?: string | null
           created_by: string
           description?: string | null
+          discussion_link?: string | null
           end_time?: string | null
           event_type: Database["public"]["Enums"]["event_type"]
           id?: string
@@ -300,6 +302,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string
           description?: string | null
+          discussion_link?: string | null
           end_time?: string | null
           event_type?: Database["public"]["Enums"]["event_type"]
           id?: string

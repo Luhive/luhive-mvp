@@ -18,6 +18,7 @@ import {
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
+  IconDownload,
   IconTrash,
   IconMail,
   IconPhone,
@@ -25,8 +26,12 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "~/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -57,6 +62,11 @@ import type { Database } from "~/models/database.types";
 import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AttendersTableSkeleton } from "./attenders-table-skeleton";
+import { utils, writeFile } from "xlsx";
+import { useIsMobile } from "~/hooks/use-mobile";
+import { cn } from "~/lib/utils";
+
+import ExcelIcon from "~/assets/images/ExcelLogo.png";
 
 type RSVPStatus = Database["public"]["Enums"]["rsvp_status"];
 
@@ -247,6 +257,7 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
     name: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const isMobile = useIsMobile();
 
   // Fetch attenders client-side
   useEffect(() => {
@@ -414,6 +425,40 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  const handleExportToExcel = React.useCallback(() => {
+    const sortedRows = table.getSortedRowModel().rows;
+
+    if (!sortedRows.length) {
+      toast.info("No attenders to export");
+      return;
+    }
+
+    const exportRows = sortedRows.map((row, index) => ({
+      "#": index + 1,
+      Name: row.original.name,
+      Email: row.original.email ?? "",
+      Phone: row.original.phone ?? "",
+      "RSVP Status": rsvpStatusConfig[row.original.rsvp_status].label,
+      Verified: row.original.is_verified ? "Verified" : "Pending",
+      "Registered At": row.original.registered_at
+        ? new Date(row.original.registered_at).toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "",
+    }));
+
+    const worksheet = utils.json_to_sheet(exportRows);
+    const workbook = utils.book_new();
+    utils.book_append_sheet(workbook, worksheet, "Attenders");
+
+    writeFile(workbook, `attenders-${eventId}.xlsx`, { compression: true });
+    toast.success("Export complete");
+  }, [eventId, table]);
+
   // RSVP status counts
   const goingCount = data.filter((a) => a.rsvp_status === "going").length;
   const notGoingCount = data.filter(
@@ -428,8 +473,8 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* Stats and Search */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="lg:flex space-y-5 lg:space-y-0 items-center justify-between">
+        <div className="md:flex space-y-2 md:space-y-0 items-center gap-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">
               Attenders List
@@ -446,20 +491,47 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
         </div>
 
         {/* Search/Filter Bar */}
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by name"
-              value={
-                (table.getColumn("name")?.getFilterValue() as string) ?? ""
-              }
-              onChange={(event) =>
-                table.getColumn("name")?.setFilterValue(event.target.value)
-              }
-              className="pl-10 w-80"
-            />
+        <div className="flex flex-col gap-2 w-full lg:w-auto">
+          <div className="flex items-center gap-2">
+            <InputGroup className="lg:w-80 w-full">
+              <InputGroupAddon className="text-muted-foreground">
+                <Search className="h-4 w-4" aria-hidden />
+              </InputGroupAddon>
+              <InputGroupInput
+                placeholder="Search by name"
+                value={
+                  (table.getColumn("name")?.getFilterValue() as string) ?? ""
+                }
+                onChange={(event) =>
+                  table.getColumn("name")?.setFilterValue(event.target.value)
+                }
+              />
+            </InputGroup>
+            {!isMobile && (
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="whitespace-nowrap"
+                onClick={handleExportToExcel}
+              >
+                <img src={ExcelIcon} className="mr-1 h-5 w-5" aria-hidden />
+                Export
+              </Button>
+            )}
           </div>
+          {isMobile && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={cn("w-full justify-center gap-2")}
+              onClick={handleExportToExcel}
+            >
+              <img src={ExcelIcon} className="h-4 w-4" aria-hidden />
+              Export to Excel
+            </Button>
+          )}
         </div>
       </div>
 

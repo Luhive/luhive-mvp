@@ -37,7 +37,7 @@ export function EventList({ communityId, communitySlug, limit = 3 }: EventListPr
 					.eq('community_id', communityId)
 					.eq('status', 'published')
 					.gte('start_time', now)
-					.order('start_time', { ascending: true })
+					.order('start_time', { ascending: false })
 					.limit(limit);
 
 				if (error) {
