@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar'
 import { Skeleton } from '~/components/ui/skeleton'
-import { createClient } from '~/lib/supabase.client'
 import { AttendersListModal } from './attenders-list-modal'
 import { cn } from '~/lib/utils'
 
@@ -46,51 +45,16 @@ const AttendersAvatars = ({ eventId, maxVisible = 3 }: AttendersAvatarsProps) =>
 
       try {
         setLoading(true)
-        const supabase = createClient()
 
-        // Fetch event registrations with user profiles
-        const { data: registrations, error } = await supabase
-          .from('event_registrations')
-          .select(`
-            id,
-            user_id,
-            anonymous_name,
-            profiles (
-              id,
-              full_name,
-              avatar_url
-            )
-          `)
-          .eq('event_id', eventId)
-          .eq('is_verified', true)
-          .eq('rsvp_status', 'going')
-          .order('registered_at', { ascending: false })
-          .limit(20) // Limit initial fetch
+        // Fetch attendees from API endpoint (uses service role to bypass RLS)
+        const response = await fetch(`/api/attenders-list?eventId=${encodeURIComponent(eventId)}`)
 
-        if (error) {
-          console.error('Error fetching attendees:', error)
-          setAttendees([])
-          setLoading(false)
-          return
+        if (!response.ok) {
+          throw new Error('Failed to fetch attendees')
         }
 
-        // Transform data to avatar format
-        const attendeeAvatars: AttenderAvatar[] = (registrations || [])
-          .map((reg: any) => {
-            const isAnonymous = !reg.user_id
-            const name = isAnonymous
-              ? reg.anonymous_name || 'Anonymous'
-              : reg.profiles?.full_name || 'Unknown User'
-
-            return {
-              id: reg.id,
-              name,
-              avatar_url: isAnonymous ? null : reg.profiles?.avatar_url || null,
-            }
-          })
-          .filter((avatar) => avatar.name !== 'Unknown User')
-
-        setAttendees(attendeeAvatars)
+        const { attendees: attendeeList } = await response.json()
+        setAttendees(attendeeList || [])
       } catch (error) {
         console.error('Error fetching attendees:', error)
         setAttendees([])

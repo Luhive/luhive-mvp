@@ -27,6 +27,8 @@ import {
 	Send,
 	Settings,
 	PersonStanding,
+	Hourglass,
+	CalendarClock,
 } from "lucide-react";
 import {
 	detectDiscussionPlatform,
@@ -37,7 +39,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import advancedFormat from "dayjs/plugin/advancedFormat";
-import { cn } from "~/lib/utils";
+import { cn, getTimeRemaining } from "~/lib/utils";
 import crypto from "crypto";
 import {
 	sendVerificationEmail,
@@ -62,6 +64,8 @@ type Community = Database["public"]["Tables"]["communities"]["Row"];
 type EventStatus = Database["public"]["Enums"]["event_status"];
 type EventType = Database["public"]["Enums"]["event_type"];
 
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+
 interface LoaderData {
 	event: Event;
 	community: Community;
@@ -69,6 +73,7 @@ interface LoaderData {
 	isUserRegistered: boolean;
 	canRegister: boolean;
 	user: any;
+	userProfile: Profile | null;
 	isOwnerOrAdmin: boolean;
 }
 
@@ -122,6 +127,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 	} = await supabase.auth.getUser();
 	let isUserRegistered = false;
 	let isOwnerOrAdmin = false;
+	let userProfile: Profile | null = null;
 
 	if (user) {
 		const { data: registration } = await supabase
@@ -143,6 +149,15 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
 		isOwnerOrAdmin =
 			membership?.role === "owner" || membership?.role === "admin";
+
+		// Fetch user profile
+		const { data: profile } = await supabase
+			.from("profiles")
+			.select("*")
+			.eq("id", user.id)
+			.single();
+
+		userProfile = profile || null;
 	}
 
 	// Check if registration is still open
@@ -164,6 +179,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		isUserRegistered,
 		canRegister,
 		user: user || null,
+		userProfile,
 		isOwnerOrAdmin,
 	};
 }
@@ -464,6 +480,7 @@ export default function EventPublicView() {
 		isUserRegistered,
 		canRegister,
 		user,
+		userProfile,
 		isOwnerOrAdmin,
 	} = useLoaderData<LoaderData>();
 	const actionData = useActionData<{
@@ -474,6 +491,11 @@ export default function EventPublicView() {
 	const navigation = useNavigation();
 	const [searchParams] = useSearchParams();
 	const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
+	const [timeRemaining, setTimeRemaining] = useState<{
+		days: number;
+		hours: number;
+		formatted: string;
+	} | null>(null);
 
 	// Check if form is submitting
 	const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
@@ -492,6 +514,36 @@ export default function EventPublicView() {
 	const capacityPercentage = event.capacity
 		? Math.round((registrationCount / event.capacity) * 100)
 		: 0;
+
+	// Format registration deadline for display
+	const registrationDeadlineDate = event.registration_deadline
+		? dayjs(event.registration_deadline).tz(event.timezone)
+		: eventDate;
+	const registrationDeadlineFormatted = registrationDeadlineDate.format("h:mm A z");
+
+	// Calculate time remaining until registration deadline
+	useEffect(() => {
+		if (!event.registration_deadline) {
+			setTimeRemaining(null);
+			return;
+		}
+
+		const calculateTimeRemaining = () => {
+			const remaining = getTimeRemaining(
+				event.registration_deadline!,
+				event.timezone
+			);
+			setTimeRemaining(remaining);
+		};
+
+		// Calculate immediately
+		calculateTimeRemaining();
+
+		// Update every minute
+		const interval = setInterval(calculateTimeRemaining, 60000);
+
+		return () => clearInterval(interval);
+	}, [event.registration_deadline, event.timezone]);
 
 	// Show toast notifications
 	useEffect(() => {
@@ -752,8 +804,8 @@ export default function EventPublicView() {
 										{isOwnerOrAdmin ? "Event Management" : "Registration"}
 									</h2>
 
-									<Card className="bg-card/50">
-										<CardContent className="p-6 space-y-4">
+									<Card className="bg-card/50 shadow-none border-primary/20 hover:border-primary/40 transition-all">
+										<CardContent className="px-4 py-0 space-y-4">
 											{/* Admin/Owner View */}
 											<Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
 												<p className="text-sm text-muted-foreground">
@@ -819,20 +871,81 @@ export default function EventPublicView() {
 														: "hidden"
 												}
 											>
-												<p className="text-sm text-muted-foreground">
+												<Activity mode={!!timeRemaining ? "visible" : "hidden"}>
+													<div className="mb-4 flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
+														<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background shadow-sm">
+															<Hourglass className="h-4 w-4 text-primary" />
+														</div>
+														<div className="space-y-0.5">
+															<p className="text-sm font-medium">
+																Registration closes in{" "}
+																<span className="text-primary font-bold">
+																	{timeRemaining?.formatted}
+																</span>
+															</p>
+															<p className="text-xs text-muted-foreground">
+																Secure your spot before it’s too late!
+															</p>
+														</div>
+													</div>
+												</Activity>
+
+												<Activity
+													mode={
+														!timeRemaining && event.registration_deadline
+															? "visible"
+															: "hidden"
+													}
+												>
+													<div className="mb-4 flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
+														<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background shadow-sm">
+															<CalendarClock className="h-4 w-4 text-muted-foreground" />
+														</div>
+														<div className="space-y-0.5">
+															<p className="text-sm font-medium">
+																Registration closes {registrationDeadlineFormatted}
+															</p>
+															<p className="text-xs text-muted-foreground">
+																Don't miss out!
+															</p>
+														</div>
+													</div>
+												</Activity>
+
+												<p className="text-sm text-foreground mb-4">
 													Welcome! To join the event, please register below.
 												</p>
 
 												<Activity mode={user ? "visible" : "hidden"}>
-													<div className="flex items-center gap-2 text-sm">
+													<div className="flex items-center gap-2">
 														<Avatar className="h-6 w-6">
 															<AvatarFallback className="bg-primary/10 text-primary text-xs">
-																{user?.email?.charAt(0).toUpperCase()}
+																{userProfile?.full_name
+																	? userProfile.full_name
+																		.split(" ")
+																		.map((n) => n[0])
+																		.join("")
+																		.toUpperCase()
+																		.slice(0, 2)
+																	: user?.email?.charAt(0).toUpperCase()}
 															</AvatarFallback>
 														</Avatar>
-														<span className="text-muted-foreground">
-															{user?.email}
-														</span>
+														<div className="flex flex-col">
+															{userProfile?.full_name ? (
+																<>
+																	<span className="text-sm font-semibold text-foreground">
+																		{userProfile.full_name}
+																	</span>
+																	<span className="text-xs text-muted-foreground">
+																		{user?.email}
+																	</span>
+																</>
+															) : (
+																<span className="text-sm text-muted-foreground">
+																	{user?.email}
+																</span>
+															)}
+														</div>
 													</div>
 												</Activity>
 
@@ -846,10 +959,10 @@ export default function EventPublicView() {
 														<Button
 															type="submit"
 															className="w-full"
-															size="lg"
+															size="sm"
 															disabled={isRegistering}
 														>
-															{isRegistering ? "Registering..." : "One-Click Register"}
+															{isRegistering ? "Registering..." : "Register"}
 														</Button>
 													</Form>
 												</Activity>

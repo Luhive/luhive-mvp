@@ -609,13 +609,28 @@ export default function Community() {
                     <Calendar className="h-5 w-5" />
                     Upcoming Events
                   </CardTitle>
-                  {community && (
+
+                </div>
+              </CardHeader>
+              <CardContent>
+                {community ? (
+                  <Suspense fallback={<EventListSkeleton />}>
+                    <EventList
+                      communityId={community.id}
+                      communitySlug={community.slug}
+                      limit={3}
+                    />
+                  </Suspense>
+                ) : (
+                  <EventListSkeleton />
+                )}
+                {community && (
                     <Button
                       asChild={!isEventsLoading}
-                      variant="ghost"
-                      size="sm"
+                    variant="outline"
+                    size="lg"
                       disabled={isEventsLoading}
-                      className="h-8 px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    className="mt-3 w-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                     >
                       {isEventsLoading ? (
                         <div className="flex items-center gap-2">
@@ -633,21 +648,7 @@ export default function Community() {
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       )}
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {community ? (
-                  <Suspense fallback={<EventListSkeleton />}>
-                    <EventList
-                      communityId={community.id}
-                      communitySlug={community.slug}
-                      limit={3}
-                    />
-                  </Suspense>
-                ) : (
-                  <EventListSkeleton />
+                  </Button>
                 )}
               </CardContent>
             </Card>

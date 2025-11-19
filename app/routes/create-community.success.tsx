@@ -28,7 +28,7 @@ export default function CreateCommunitySuccess() {
                 {/* Header */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-center gap-2">
-                    <Sparkles className="h-6 w-6 text-primary" />
+                    <Sparkles className="lg:block hidden h-6 w-6 text-primary" />
                     <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
                       Request Submitted!
                     </h1>
@@ -62,15 +62,12 @@ export default function CreateCommunitySuccess() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-6 justify-center">
+                <div className="pt-4">
                   <Button asChild variant="default" className="min-w-[140px]">
                     <Link to="/">
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Back to Hub
                     </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="min-w-[140px]">
-                    <Link to="/profile">View Profile</Link>
                   </Button>
                 </div>
               </div>

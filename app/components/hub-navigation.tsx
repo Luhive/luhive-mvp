@@ -106,12 +106,11 @@ export function TopNavigation({ user }: TopNavigationProps) {
 
         {/* Right: Time, Actions, User */}
         <div className="flex items-center gap-2">
-          {/* Create Community Button - Only show on hub route */}
-          {location.pathname === "/" && (
+          {/* Create Community Button */}
             <Button
-              variant="link"
+            variant="default"
               size="sm"
-              className="underline-offset-4"
+            className="underline-offset-4 bg-transparent hover:bg-transparent"
               onClick={(e) => {
                 e.preventDefault();
                 if (!user) {
@@ -121,10 +120,8 @@ export function TopNavigation({ user }: TopNavigationProps) {
                 }
               }}
             >
-              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="text-sm">Create</span>
-            </Button>
-          )}
+            <span className="text-sm text-primary/60 hover:text-primary transition-colors">Create Community</span>
+          </Button>
 
         <Activity mode={user ? 'visible' : "hidden"}>
           <div className="flex items-center gap-2">
@@ -180,10 +177,9 @@ export function TopNavigation({ user }: TopNavigationProps) {
           </div>
         </Activity>
         <Activity mode={user ? 'hidden' : 'visible'}>
-          <Button variant="ghost" className="hover:opacity-45 hover:bg-transparent transition-all" asChild>
+            <Button variant="ghost" className="py-0 px-5 h-9 bg-primary/20 rounded-xl hover:bg-primary/30 active:bg-primary/40 transition-all" asChild>
             <Link to="/login">
-              <LogIn className="h-5 w-5 text-primary" />
-              <p className="text-primary">Sign In</p> 
+                <p className="text-primary text-md">Sign In</p> 
             </Link>
           </Button>
         </Activity>
