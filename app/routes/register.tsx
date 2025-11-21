@@ -195,6 +195,12 @@ const Register = () => {
   const navigation = useNavigation()
   const [searchParams] = useSearchParams()
   const isSubmitting = navigation.state === 'submitting'
+
+  // Check which form is being submitted
+  const submittingIntent = navigation.formData?.get('intent') as string | null
+  const isSubmittingPassword = isSubmitting && submittingIntent === 'password'
+  const isSubmittingOAuth = isSubmitting && submittingIntent === 'oauth'
+
   const [formKey, setFormKey] = useState(0)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -325,8 +331,8 @@ const Register = () => {
               <p className="text-sm text-destructive">{fieldErrors.password[0]}</p>
             )}
           </div>
-          <Button disabled={isSubmitting} type="submit">
-            {isSubmitting ? <Spinner /> : (communityNameParam ? 'Sign Up & Join' : 'Sign Up')}
+          <Button disabled={isSubmittingPassword} type="submit">
+            {isSubmittingPassword ? <Spinner /> : (communityNameParam ? 'Sign Up & Join' : 'Sign Up')}
           </Button>
         </Form>
 
@@ -341,7 +347,7 @@ const Register = () => {
           <input type="hidden" name="provider" value="google" />
           {communityIdParam && <input type="hidden" name="communityId" value={communityIdParam} />}
           <Button
-            disabled={isSubmitting}
+            disabled={isSubmittingOAuth}
             variant="outline"
             className="w-full hover:bg-muted hover:text-foreground"
             type="submit">
@@ -357,7 +363,7 @@ const Register = () => {
               <path fill="#4CAF50" d="M24 44c5.196 0 9.86-1.992 13.38-5.223l-6.173-5.234C29.093 34.484 26.682 35.5 24 35.5c-5.262 0-9.799-3.507-11.397-8.248l-6.52 5.017C8.704 39.043 15.83 44 24 44z" />
               <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z" />
             </svg>
-            {isSubmitting ? <Spinner /> : 'Continue with Google'}
+            {isSubmittingOAuth ? <Spinner /> : 'Continue with Google'}
           </Button>
         </Form>
 

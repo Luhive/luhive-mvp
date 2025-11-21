@@ -70,6 +70,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@locator/babel-jsx": "^0.5.1",
     "@react-email/preview-server": "5.0.4",
     "@react-router/dev": "^7.9.2",
     "@tailwindcss/vite": "^4.1.13",
