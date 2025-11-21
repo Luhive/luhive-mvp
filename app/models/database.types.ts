@@ -197,6 +197,9 @@ export type Database = {
           anonymous_email: string | null
           anonymous_name: string | null
           anonymous_phone: string | null
+          approval_status:
+            | Database["public"]["Enums"]["event_approval_statuses"]
+            | null
           event_id: string
           id: string
           is_verified: boolean
@@ -211,6 +214,9 @@ export type Database = {
           anonymous_email?: string | null
           anonymous_name?: string | null
           anonymous_phone?: string | null
+          approval_status?:
+            | Database["public"]["Enums"]["event_approval_statuses"]
+            | null
           event_id: string
           id?: string
           is_verified?: boolean
@@ -225,6 +231,9 @@ export type Database = {
           anonymous_email?: string | null
           anonymous_name?: string | null
           anonymous_phone?: string | null
+          approval_status?:
+            | Database["public"]["Enums"]["event_approval_statuses"]
+            | null
           event_id?: string
           id?: string
           is_verified?: boolean
@@ -264,6 +273,7 @@ export type Database = {
           end_time: string | null
           event_type: Database["public"]["Enums"]["event_type"]
           id: string
+          is_approve_required: boolean
           location_address: string | null
           online_meeting_link: string | null
           registration_deadline: string | null
@@ -285,6 +295,7 @@ export type Database = {
           end_time?: string | null
           event_type: Database["public"]["Enums"]["event_type"]
           id?: string
+          is_approve_required?: boolean
           location_address?: string | null
           online_meeting_link?: string | null
           registration_deadline?: string | null
@@ -306,6 +317,7 @@ export type Database = {
           end_time?: string | null
           event_type?: Database["public"]["Enums"]["event_type"]
           id?: string
+          is_approve_required?: boolean
           location_address?: string | null
           online_meeting_link?: string | null
           registration_deadline?: string | null
@@ -397,6 +409,7 @@ export type Database = {
       get_user_role: { Args: { p_community_id: string }; Returns: string }
     }
     Enums: {
+      event_approval_statuses: "pending" | "approved" | "rejected"
       event_status: "draft" | "published" | "cancelled"
       event_type: "in-person" | "online" | "hybrid"
       rsvp_status: "going" | "not_going" | "maybe"
@@ -527,6 +540,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      event_approval_statuses: ["pending", "approved", "rejected"],
       event_status: ["draft", "published", "cancelled"],
       event_type: ["in-person", "online", "hybrid"],
       rsvp_status: ["going", "not_going", "maybe"],

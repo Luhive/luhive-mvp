@@ -12,16 +12,20 @@ import dayjs from 'dayjs';
 interface EventCapacityProps {
   capacity?: number;
   registrationDeadline?: Date;
+  isApproveRequired: boolean;
   onCapacityChange: (capacity: number | undefined) => void;
   onRegistrationDeadlineChange: (deadline: Date | undefined) => void;
+  onIsApproveRequiredChange: (isRequired: boolean) => void;
   eventStartDate?: Date;
 }
 
 export function EventCapacity({
   capacity,
   registrationDeadline,
+  isApproveRequired,
   onCapacityChange,
   onRegistrationDeadlineChange,
+  onIsApproveRequiredChange,
   eventStartDate,
 }: EventCapacityProps) {
   const [hasCapacityLimit, setHasCapacityLimit] = useState(!!capacity);
@@ -79,6 +83,21 @@ export function EventCapacity({
             </InputGroup>
           </div>
         )}
+      </div>
+
+      {/* Approval Required */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label htmlFor="approval-toggle">Require Approval</Label>
+          <p className="text-sm text-muted-foreground">
+            Manually approve or reject registration requests
+          </p>
+        </div>
+        <Switch
+          id="approval-toggle"
+          checked={isApproveRequired}
+          onCheckedChange={onIsApproveRequiredChange}
+        />
       </div>
 
       {/* Registration Deadline */}

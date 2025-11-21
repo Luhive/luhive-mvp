@@ -29,6 +29,8 @@ import {
 	PersonStanding,
 	Hourglass,
 	CalendarClock,
+	AlertTriangle,
+	Users,
 } from "lucide-react";
 import {
 	detectDiscussionPlatform,
@@ -44,6 +46,7 @@ import crypto from "crypto";
 import {
 	sendVerificationEmail,
 	sendRegistrationConfirmationEmail,
+	sendRegistrationRequestEmail,
 } from "~/lib/email.server";
 import { AnonymousRegistrationDialog } from "~/components/events/anonymous-registration-dialog";
 import { AttendersAvatarsSkeleton } from "~/components/events/attenders-avatars";
@@ -73,6 +76,7 @@ interface LoaderData {
 	community: Community;
 	registrationCount: number;
 	isUserRegistered: boolean;
+	userRegistrationStatus: string | null;
 	canRegister: boolean;
 	user: any;
 	userProfile: Profile | null;
@@ -118,29 +122,32 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		throw new Response("Event not available", { status: 404 });
 	}
 
-	// Get registration count
+	// Get registration count (only approved registrations count towards capacity)
 	const { count: registrationCount } = await supabase
 		.from("event_registrations")
 		.select("*", { count: "exact", head: true })
-		.eq("event_id", event.id);
+		.eq("event_id", event.id)
+		.eq("approval_status", "approved");
 
 	// Check if current user is registered
 	const {
 		data: { user },
 	} = await supabase.auth.getUser();
 	let isUserRegistered = false;
+	let userRegistrationStatus: string | null = null;
 	let isOwnerOrAdmin = false;
 	let userProfile: Profile | null = null;
 
 	if (user) {
 		const { data: registration } = await supabase
 			.from("event_registrations")
-			.select("id")
+			.select("id, approval_status")
 			.eq("event_id", event.id)
 			.eq("user_id", user.id)
 			.single();
 
 		isUserRegistered = !!registration;
+		userRegistrationStatus = registration?.approval_status || null;
 
 		// Check if user is owner or admin of the community
 		const { data: membership } = await supabase
@@ -184,6 +191,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		community,
 		registrationCount: registrationCount || 0,
 		isUserRegistered,
+		userRegistrationStatus,
 		canRegister,
 		user: user || null,
 		userProfile,
@@ -279,6 +287,9 @@ export async function action({ request, params }: Route.ActionArgs) {
 		const verificationToken = crypto.randomBytes(32).toString("hex");
 		const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+		// Determine approval status
+		const approvalStatus = event.is_approve_required ? "pending" : "approved";
+
 		// Create registration record
 		console.log("Creating registration record...");
 		const { error: registerError } = await supabase
@@ -291,6 +302,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 				is_verified: false,
 				verification_token: verificationToken,
 				token_expires_at: tokenExpiresAt.toISOString(),
+				approval_status: approvalStatus,
 			});
 
 		if (registerError) {
@@ -356,6 +368,9 @@ export async function action({ request, params }: Route.ActionArgs) {
 			};
 		}
 
+		// Determine approval status
+		const approvalStatus = event.is_approve_required ? "pending" : "approved";
+
 		// Register user
 		const { error: registerError } = await supabase
 			.from("event_registrations")
@@ -364,6 +379,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 				user_id: user.id,
 				rsvp_status: "going",
 				is_verified: true,
+				approval_status: approvalStatus,
 			});
 
 		if (registerError) {
@@ -377,10 +393,28 @@ export async function action({ request, params }: Route.ActionArgs) {
 			.eq("id", user.id)
 			.single();
 
-		// Send confirmation email
 		const eventDate = dayjs(event.start_time).tz(event.timezone);
-		const eventLink = `${new URL(request.url).origin
-			}/c/${slug}/events/${eventId}`;
+		const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
+
+		// If pending approval, return early without sending confirmation email
+		if (approvalStatus === "pending") {
+			try {
+				await sendRegistrationRequestEmail({
+					eventTitle: event.title,
+					communityName: community.name,
+					eventLink,
+					recipientName: profile?.full_name || "there",
+					recipientEmail: user.email || "",
+					eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+					eventTime: eventDate.format("h:mm A z"),
+				});
+			} catch (error) {
+				console.error("Failed to send request email:", error);
+			}
+			return { success: true, message: "Registration request sent! Waiting for approval." };
+		}
+
+		// Send confirmation email
 		const registerAccountLink = `${new URL(request.url).origin}/signup`;
 
 		try {
@@ -452,9 +486,42 @@ export function meta({ data }: { data?: LoaderData }) {
 		return url;
 	};
 
-	const imageUrl = getAbsoluteImageUrl(event.cover_url || community.logo_url);
+	// Get image URL with fallback priority: event cover > community logo > default
+	let imageUrl = getAbsoluteImageUrl(event.cover_url || community.logo_url);
 
-	return [
+	// If no image is available, use a default Luhive image
+	// Using the main domain logo as fallback (similar to hub.tsx)
+	if (!imageUrl) {
+		// Fallback to a publicly accessible logo
+		// You can replace this with your actual hosted logo URL
+		imageUrl = "https://luhive.com/LuhiveLogoBackground.png";
+	}
+
+	// Clean up Supabase storage URL - remove any query parameters that might interfere
+	// and ensure it's a clean, accessible URL
+	if (imageUrl) {
+		try {
+			const url = new URL(imageUrl);
+			// Remove any transform or query parameters that might cause issues
+			url.search = "";
+			imageUrl = url.toString();
+
+			// Ensure Supabase storage URLs use HTTPS (required for og:image)
+			if (imageUrl.includes('supabase.co') && !imageUrl.startsWith('https://')) {
+				imageUrl = imageUrl.replace(/^http:\/\//, 'https://');
+			}
+		} catch (e) {
+			// If URL parsing fails, use as-is
+			console.warn("Failed to parse image URL:", imageUrl);
+		}
+	}
+
+	const metaTags: Array<
+		| { title: string }
+		| { name: string; content: string }
+		| { property: string; content: string }
+		| { tagName: string; rel: string; href: string }
+	> = [
 		{ title: `${event.title} - ${community.name}` },
 		{
 			name: "description",
@@ -466,26 +533,52 @@ export function meta({ data }: { data?: LoaderData }) {
 		{
 			property: "og:description",
 			content: event.description || `Join ${event.title}`,
-		},
-		...(imageUrl
-			? [
-				{ property: "og:image", content: imageUrl },
-				{ property: "og:image:secure_url", content: imageUrl },
-				{ property: "og:image:type", content: "image/jpeg" },
-			]
-			: []),
-		{ property: "og:type", content: "event" },
-		{ property: "og:url", content: canonicalUrl },
-		{ property: "og:site_name", content: "Luhive" },
+			},
+			{ property: "og:type", content: "event" },
+			{ property: "og:url", content: canonicalUrl },
+			{ property: "og:site_name", content: "Luhive" },
+		];
+
+	// Add image meta tags only if we have a valid image URL
+	if (imageUrl) {
+		// Detect image type from URL extension
+		const getImageType = (url: string): string => {
+			const lowerUrl = url.toLowerCase();
+			if (lowerUrl.includes('.png')) return 'image/png';
+			if (lowerUrl.includes('.jpg') || lowerUrl.includes('.jpeg')) return 'image/jpeg';
+			if (lowerUrl.includes('.webp')) return 'image/webp';
+			return 'image/jpeg'; // Default to JPEG
+		};
+
+		const imageType = getImageType(imageUrl);
+
+		metaTags.push(
+			{ property: "og:image", content: imageUrl },
+			{ property: "og:image:secure_url", content: imageUrl },
+			{ property: "og:image:type", content: imageType },
+			{ property: "og:image:width", content: "1200" },
+			{ property: "og:image:height", content: "630" },
+			{ property: "og:image:alt", content: `${event.title} - ${community.name}` }
+		);
+	}
+
+	// Twitter Card meta tags
+	metaTags.push(
 		{ name: "twitter:card", content: "summary_large_image" },
 		{ name: "twitter:title", content: `${event.title} - ${community.name}` },
 		{
 			name: "twitter:description",
 			content: event.description || `Join ${event.title}`,
-		},
-		...(imageUrl ? [{ name: "twitter:image", content: imageUrl }] : []),
-		{ tagName: "link", rel: "canonical", href: canonicalUrl },
-	];
+		}
+	);
+
+	if (imageUrl) {
+		metaTags.push({ name: "twitter:image", content: imageUrl });
+	}
+
+	metaTags.push({ tagName: "link", rel: "canonical", href: canonicalUrl });
+
+	return metaTags;
 }
 
 const statusConfig: Record<
@@ -509,6 +602,7 @@ export default function EventPublicView() {
 		community,
 		registrationCount,
 		isUserRegistered,
+		userRegistrationStatus,
 		canRegister,
 		user,
 		userProfile,
@@ -594,6 +688,8 @@ export default function EventPublicView() {
 			toast.success("Email verified! You're registered for the event.");
 		} else if (verified === "already") {
 			toast.info("You're already registered for this event.");
+		} else if (verified === "pending_approval") {
+			toast.success("Email verified! Your registration is pending approval.");
 		}
 	}, [searchParams]);
 
@@ -843,12 +939,20 @@ export default function EventPublicView() {
 													You are an admin of this community. Manage this event
 													from the dashboard.
 												</p>
-												<Button asChild className="w-full" size="lg">
-													<Link to={`/dashboard/${community.slug}/events`}>
-														<Settings className="h-4 w-4 mr-2" />
-														Manage Event
-													</Link>
-												</Button>
+												<div className="space-y-2">
+													<Button asChild className="w-full bg-primary/80" size="lg">
+														<Link to={`/dashboard/${community.slug}/events`}>
+															<Settings className="h-4 w-4 mr-2" />
+															Manage Event
+														</Link>
+													</Button>
+													<Button asChild variant="outline" className="w-full" size="lg">
+														<Link to={`/dashboard/${community.slug}/attenders?eventId=${event.id}`}>
+															<Users className="h-4 w-4 mr-2" />
+															Check Attendance List
+														</Link>
+													</Button>
+												</div>
 											</Activity>
 
 											{/* Already Registered View */}
@@ -859,14 +963,32 @@ export default function EventPublicView() {
 														: "hidden"
 												}
 											>
-												<div className="flex items-center gap-1 text-green-600 dark:text-green-500">
-													<CheckCircle2 className="h-5 w-5" />
-													<span className="font-semibold">
-														You're registered for this event!
-													</span>
-												</div>
+												{userRegistrationStatus === "pending" ? (
+													<div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-md border border-amber-200 dark:border-amber-900">
+														<Hourglass className="h-5 w-5 flex-shrink-0" />
+														<div>
+															<p className="font-semibold text-sm">Registration Pending</p>
+															<p className="text-xs opacity-90">Your request is waiting for approval.</p>
+														</div>
+													</div>
+												) : userRegistrationStatus === "rejected" ? (
+													<div className="flex items-center gap-2 text-red-600 dark:text-red-500 bg-red-50 dark:bg-red-950/30 p-3 rounded-md border border-red-200 dark:border-red-900">
+														<AlertTriangle className="h-5 w-5 flex-shrink-0" />
+														<div>
+															<p className="font-semibold text-sm">Registration Rejected</p>
+															<p className="text-xs opacity-90">Your registration request was declined.</p>
+														</div>
+													</div>
+												) : (
+															<div className="flex items-center gap-1 text-green-600 dark:text-green-500">
+																<CheckCircle2 className="h-5 w-5" />
+																<span className="font-semibold">
+																	You're registered for this event!
+																</span>
+															</div>
+												)}
 
-												<Activity mode={event.capacity && canRegister && !isPastEvent ? "visible" : "hidden"}>
+												<Activity mode={event.capacity && canRegister && !isPastEvent && userRegistrationStatus === "approved" ? "visible" : "hidden"}>
 													<div className="flex items-center justify-between text-sm pt-3 border-t">
 														<span className="text-muted-foreground">
 															Capacity

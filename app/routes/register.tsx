@@ -73,10 +73,20 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (intent === 'oauth') {
     const provider = formData.get('provider') as 'google';
+    const communityId = formData.get('communityId') as string | null;
+
+    // Store community ID in cookie for OAuth callback
+    if (communityId) {
+      headers.append(
+        'Set-Cookie',
+        `pending_community_id=${communityId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
+      );
+    }
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: new URL('/login', request.url).toString(),
+        redirectTo: new URL('/auth/verify', request.url).toString(),
       },
     });
 
@@ -88,7 +98,6 @@ export async function action({ request }: Route.ActionArgs) {
     if (data?.url) {
       return redirect(data.url, { headers });
     }
-
 
     return Response.json({ success: false, error: 'Unable to start OAuth flow.' }, { headers });
   }
@@ -330,15 +339,12 @@ const Register = () => {
         <Form method="post" className="flex" replace>
           <input type="hidden" name="intent" value="oauth" />
           <input type="hidden" name="provider" value="google" />
-          <div className="w-full hover:bg-muted hover:text-foreground" onClick={() => toast.info("Coming Soon 🚀", {
-            description: "We are currently working on this feature",
-            position: 'bottom-center'
-          })}>
-            <Button
-              disabled
-              variant="outline"
-              className="w-full hover:bg-muted hover:text-foreground"
-              type="submit">
+          {communityIdParam && <input type="hidden" name="communityId" value={communityIdParam} />}
+          <Button
+            disabled={isSubmitting}
+            variant="outline"
+            className="w-full hover:bg-muted hover:text-foreground"
+            type="submit">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 48 48"
@@ -351,9 +357,8 @@ const Register = () => {
               <path fill="#4CAF50" d="M24 44c5.196 0 9.86-1.992 13.38-5.223l-6.173-5.234C29.093 34.484 26.682 35.5 24 35.5c-5.262 0-9.799-3.507-11.397-8.248l-6.52 5.017C8.704 39.043 15.83 44 24 44z" />
               <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z" />
             </svg>
-            Continue with Google
+            {isSubmitting ? <Spinner /> : 'Continue with Google'}
           </Button>
-          </div>
         </Form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">

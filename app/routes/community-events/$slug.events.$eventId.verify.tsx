@@ -94,6 +94,12 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		throw new Response("Failed to verify registration", { status: 500 });
 	}
 
+	// Check if approval is pending
+	if (registration.approval_status === 'pending') {
+		console.log("Registration verified but pending approval");
+		return redirect(`/c/${slug}/events/${eventId}?verified=pending_approval`, { headers });
+	}
+
 	// Get event details
 	console.log("Fetching event details");
 	const { data: event, error: eventError } = await supabase

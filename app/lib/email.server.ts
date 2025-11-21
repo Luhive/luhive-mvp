@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 import { EventVerificationEmail } from "~/templates/event-verification-email";
 import { EventConfirmationEmail } from "~/templates/event-confirmation-email";
+import { EventStatusUpdateEmail } from "~/templates/event-status-update-email";
+import { EventRegistrationRequestEmail } from "~/templates/event-registration-request-email";
 import { CommunityWaitlistNotification } from "~/templates/community-waitlist-notification";
 import { generateICS } from "~/lib/icsManager";
 
@@ -30,6 +32,31 @@ interface ConfirmationEmailData {
   endTimeISO: string;
 }
 
+interface StatusUpdateEmailData {
+  eventTitle: string;
+  communityName: string;
+  eventLink: string;
+  recipientName: string;
+  recipientEmail: string;
+  status: "approved" | "rejected";
+  eventDate?: string;
+  eventTime?: string;
+  locationAddress?: string;
+  onlineMeetingLink?: string;
+  startTimeISO?: string;
+  endTimeISO?: string;
+}
+
+interface RegistrationRequestEmailData {
+  eventTitle: string;
+  communityName: string;
+  eventLink: string;
+  recipientName: string;
+  recipientEmail: string;
+  eventDate?: string;
+  eventTime?: string;
+}
+
 interface CommunityWaitlistNotificationData {
   communityName: string;
   userName: string;
@@ -37,6 +64,46 @@ interface CommunityWaitlistNotificationData {
   website?: string | null;
   description?: string | null;
   submittedAt: string;
+}
+
+export async function sendRegistrationRequestEmail(
+  data: RegistrationRequestEmailData
+) {
+  const {
+    eventTitle,
+    communityName,
+    eventLink,
+    recipientName,
+    recipientEmail,
+    eventDate,
+    eventTime,
+  } = data;
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: "Luhive <events@updates.luhive.com>",
+      to: [recipientEmail],
+      subject: `Registration Request Received: ${eventTitle}`,
+      react: EventRegistrationRequestEmail({
+        eventTitle,
+        communityName,
+        eventLink,
+        recipientName,
+        eventDate,
+        eventTime,
+      }),
+    });
+
+    if (error) {
+      console.error("Error sending request email:", error);
+      throw new Error(`Failed to send request email: ${error.message}`);
+    }
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("Error sending request email:", error);
+    throw error;
+  }
 }
 
 export async function sendVerificationEmail(data: VerificationEmailData) {
@@ -71,6 +138,77 @@ export async function sendVerificationEmail(data: VerificationEmailData) {
     return { success: true, data: emailData };
   } catch (error) {
     console.error("Error sending verification email:", error);
+    throw error;
+  }
+}
+
+export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
+  const {
+    eventTitle,
+    communityName,
+    eventLink,
+    recipientName,
+    recipientEmail,
+    status,
+    eventDate,
+    eventTime,
+    locationAddress,
+    onlineMeetingLink,
+    startTimeISO,
+    endTimeISO,
+  } = data;
+
+  try {
+    const attachments = [];
+
+    // Add ICS attachment if approved and dates are provided
+    if (status === "approved" && startTimeISO && endTimeISO) {
+      const icsContent = generateICS({
+        title: eventTitle,
+        description: `${eventTitle}\n\nHosted by: ${communityName}\n\nView event details: ${eventLink}`,
+        location: locationAddress || onlineMeetingLink || "Online Event",
+        startTime: startTimeISO,
+        endTime: endTimeISO,
+        url: eventLink,
+        organizerName: communityName,
+        organizerEmail: "events@luhive.com",
+      });
+
+      attachments.push({
+        filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
+        content: Buffer.from(icsContent).toString("base64"),
+      });
+    }
+
+    const { data: emailData, error } = await resend.emails.send({
+      from: "Luhive <events@updates.luhive.com>",
+      to: [recipientEmail],
+      subject:
+        status === "approved"
+          ? `Registration Approved: ${eventTitle}`
+          : `Registration Update: ${eventTitle}`,
+      react: EventStatusUpdateEmail({
+        eventTitle,
+        communityName,
+        eventLink,
+        recipientName,
+        status,
+        eventDate,
+        eventTime,
+        locationAddress,
+        onlineMeetingLink,
+      }),
+      attachments: attachments.length > 0 ? attachments : undefined,
+    });
+
+    if (error) {
+      console.error("Error sending status update email:", error);
+      throw new Error(`Failed to send status update email: ${error.message}`);
+    }
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("Error sending status update email:", error);
     throw error;
   }
 }

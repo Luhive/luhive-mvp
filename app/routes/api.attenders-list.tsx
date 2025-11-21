@@ -14,6 +14,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     const serviceClient = createServiceRoleClient();
 
     // Fetch event registrations with user profiles
+    // Only show approved registrations (or null for legacy events without approval requirement)
     const { data: registrations, error } = await serviceClient
       .from('event_registrations')
       .select(`
@@ -29,6 +30,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       .eq('event_id', eventId)
       .eq('is_verified', true)
       .eq('rsvp_status', 'going')
+      .or('approval_status.is.null,approval_status.eq.approved')
       .order('registered_at', { ascending: false });
 
     if (error) {

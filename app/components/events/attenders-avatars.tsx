@@ -119,9 +119,9 @@ const AttendersAvatars = ({ eventId, maxVisible = 3 }: AttendersAvatarsProps) =>
         
         {/* Names below avatars */}
         <div className="flex gap-1">
-          {visibleAttendees.map((attendee) => (
+          {visibleAttendees.map((attendee, index) => (
             <span key={attendee.id} className="text-sm text-muted-foreground">
-              {attendee.name.split(' ')[0]},
+              {attendee.name.split(' ')[0]}{index < visibleAttendees.length - 1 ? ', ' : ''}
             </span>
           ))}
           {remainingCount > 0 && (

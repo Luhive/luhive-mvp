@@ -40,6 +40,7 @@ interface EventFormData {
   registrationDeadline?: Date;
   coverUrl?: string;
   status: EventStatus;
+  isApproveRequired: boolean;
 }
 
 interface EventFormProps {
@@ -77,6 +78,7 @@ export function EventForm({
   );
   const [coverUrl, setCoverUrl] = useState(initialData?.coverUrl || '');
   const [status, setStatus] = useState<EventStatus>(initialData?.status || 'draft');
+  const [isApproveRequired, setIsApproveRequired] = useState(initialData?.isApproveRequired || false);
 
   // Validation
   const isValid = () => {
@@ -152,6 +154,7 @@ export function EventForm({
         registration_deadline: registrationDeadline ? registrationDeadline.toISOString() : null,
         cover_url: coverUrl || null,
         status: submitStatus,
+        is_approve_required: isApproveRequired,
       };
 
       if (mode === 'create') {
@@ -400,8 +403,10 @@ export function EventForm({
               <EventCapacity
                 capacity={capacity}
                 registrationDeadline={registrationDeadline}
+                isApproveRequired={isApproveRequired}
                 onCapacityChange={setCapacity}
                 onRegistrationDeadlineChange={setRegistrationDeadline}
+                onIsApproveRequiredChange={setIsApproveRequired}
                 eventStartDate={startDate}
               />
             </CardContent>
