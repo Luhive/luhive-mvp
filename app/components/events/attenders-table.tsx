@@ -197,15 +197,14 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
       const userEmailsMap = new Map<string, string>();
       if (authenticatedUserIds.length > 0) {
         try {
-          // Note: This API route might need to be adjusted if we need to fetch emails securely
-          // For now assuming it works as before
-          const response = await fetch(`/dashboard/api/attenders-emails?userIds=${authenticatedUserIds.join(",")}`);
-            if (response.ok) {
-              const emails = await response.json();
-              emails.forEach((e: { id: string; email: string }) => {
-                userEmailsMap.set(e.id, e.email);
-              });
-            }
+          const response = await fetch(`/api/attenders-emails?userIds=${encodeURIComponent(JSON.stringify(authenticatedUserIds))}`);
+          if (response.ok) {
+            const { emails } = await response.json();
+            // emails is an object: { userId: "email" }
+            Object.entries(emails || {}).forEach(([userId, email]) => {
+              userEmailsMap.set(userId, email as string);
+            });
+          }
         } catch (e) {
           console.error("Failed to fetch emails", e);
         }
