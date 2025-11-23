@@ -334,7 +334,7 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                             return (
                               <div
                                 key={event.id}
-                                className="group bg-white border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row gap-6 hover:shadow-md transition-all duration-200 hover:border-gray-200"
+                                className="group bg-white border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row gap-6 hover:shadow-xs transition-all duration-200 hover:border-gray-200"
                               >
                                 {/* Left Section: Cover Picture with Date Overlay (Desktop) / Small Icon + Date (Mobile) */}
                                 <div className="flex flex-col gap-3 min-w-[200px] md:min-w-0 md:self-stretch md:gap-0">
@@ -369,10 +369,10 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                         >
                                           {event.status}
                                         </Badge>
-                                        <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50/50 rounded-full border border-blue-100">
-                                          <Users className="w-3 h-3 text-blue-500" />
-                                          <span className="text-xs font-bold text-blue-900">{registrationCount}</span>
-                                          <span className="text-[10px] text-blue-400">/{capacity || "∞"}</span>
+                                        <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full border border-primary/20">
+                                          <Users className="w-3 h-3 text-primary" />
+                                          <span className="text-xs font-bold text-primary">{registrationCount}</span>
+                                          <span className="text-[10px] text-primary/70">/{capacity || "∞"}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -411,7 +411,7 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                       {formatEventType(event.event_type)}
                                     </span>
                                   </div>
-                                  <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                                  <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-primary transition-colors">
                                     {event.title}
                                   </h3>
                                   <div className="flex items-center gap-4 text-sm text-gray-500 mt-1 flex-wrap">
@@ -427,14 +427,14 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
 
                                   {/* Desktop: Registration Count */}
                                   <div className="hidden md:flex items-center gap-3 mt-3">
-                                    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-blue-50/50 rounded-full border border-blue-100 w-fit transition-colors group-hover:bg-blue-50 group-hover:border-blue-200">
-                                      <Users className="w-3.5 h-3.5 text-blue-500" />
+                                    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-primary/5 rounded-full border border-primary/20 w-fit transition-colors group-hover:bg-primary/15 group-hover:border-primary/30">
+                                      <Users className="w-3.5 h-3.5 text-primary" />
                                       <div className="flex items-baseline gap-1">
-                                        <span className="text-sm font-bold text-blue-900">{registrationCount}</span>
-                                        <span className="text-xs text-blue-400 font-medium">
+                                        <span className="text-sm font-bold text-primary">{registrationCount}</span>
+                                        <span className="text-xs text-primary/70 font-medium">
                                           / {capacity ? capacity : "∞"}
                                         </span>
-                                        <span className="text-xs text-blue-400 font-medium ml-1">registered</span>
+                                        <span className="text-xs text-primary/70 font-medium ml-1">registered</span>
                                       </div>
                                     </div>
                                   </div>
