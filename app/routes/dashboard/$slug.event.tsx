@@ -34,7 +34,7 @@ export default function EventsPage() {
           .from('events')
           .select('*')
           .eq('community_id', parentData.community.id)
-          .order('start_time', { ascending: true });
+          .order('start_time', { ascending: false });
 
         if (error) {
           console.error('Error fetching events:', error);
@@ -46,10 +46,18 @@ export default function EventsPage() {
         // For each event, get registration count
         const eventsWithCounts = await Promise.all(
           (eventsData || []).map(async (event) => {
-            const { count } = await supabase
+            let query = supabase
               .from('event_registrations')
               .select('*', { count: 'exact', head: true })
               .eq('event_id', event.id);
+
+            // If event requires approval, only count approved registrations
+            // For events without approval requirement, count all registrations (including null approval_status)
+            if (event.is_approve_required) {
+              query = query.eq('approval_status', 'approved');
+            }
+
+            const { count } = await query;
 
             return {
               ...event,
@@ -107,8 +115,8 @@ export default function EventsPage() {
 
   if (loading) {
     return (
-      <div className="py-4 px-4 md:px-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gray-50/50">
+        <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
@@ -118,8 +126,8 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="py-4 px-4 md:px-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         <EventList
           events={events}
           communitySlug={community.slug}

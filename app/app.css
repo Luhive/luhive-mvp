@@ -226,3 +226,17 @@ body {
 .bg-gradient-avatar {
   background: linear-gradient(to bottom right, var(--color-primary), rgb(236, 72, 153));
 }
+
+/* Shimmer animation for progress bars */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
