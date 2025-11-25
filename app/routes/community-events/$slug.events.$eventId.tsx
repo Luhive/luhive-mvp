@@ -49,6 +49,7 @@ import {
 	sendRegistrationRequestEmail,
 } from "~/lib/email.server";
 import { AnonymousRegistrationDialog } from "~/components/events/anonymous-registration-dialog";
+import { CustomQuestionsForm } from "~/components/events/custom-questions-form";
 import { AttendersAvatarsSkeleton } from "~/components/events/attenders-avatars";
 
 import CheckIcon3D from '~/assets/images/TickIcon.png'
@@ -235,7 +236,97 @@ export async function action({ request, params }: Route.ActionArgs) {
 		return { success: false, error: "Community not found" };
 	}
 
-	// Handle anonymous registration
+	// Handle anonymous registration step 2 (with custom answers)
+	if (intent === "anonymous-custom-questions") {
+		const name = formData.get("name") as string;
+		const email = formData.get("email") as string;
+		const customAnswersStr = formData.get("custom_answers") as string;
+
+		if (!name || !email) {
+			return { success: false, error: "Name and email are required" };
+		}
+
+		// Parse custom_answers
+		let customAnswers = null;
+		if (customAnswersStr) {
+			try {
+				customAnswers = JSON.parse(customAnswersStr);
+			} catch (e) {
+				console.error("Error parsing custom_answers:", e);
+			}
+		}
+
+		// Validate custom answers
+		if (event.custom_questions) {
+			const { validateCustomAnswers } = await import('~/lib/utils/customQuestions');
+			const validation = validateCustomAnswers(
+				customAnswers || {},
+				event.custom_questions as any
+			);
+			if (!validation.valid) {
+				return { success: false, error: "Please fill in all required fields", validationErrors: validation.errors };
+			}
+		}
+
+		// Check if this email is already registered
+		const { data: existingRegistration } = await supabase
+			.from("event_registrations")
+			.select("id, is_verified")
+			.eq("event_id", eventId)
+			.eq("anonymous_email", email)
+			.maybeSingle();
+
+		if (existingRegistration?.is_verified) {
+			return { success: false, error: "This email is already registered for this event" };
+		}
+
+		// Generate verification token
+		const verificationToken = crypto.randomBytes(32).toString("hex");
+		const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+		const approvalStatus = event.is_approve_required ? "pending" : "approved";
+
+		// Create registration record
+		const { error: registerError } = await supabase
+			.from("event_registrations")
+			.insert({
+				event_id: eventId,
+				anonymous_name: name,
+				anonymous_email: email,
+				rsvp_status: "going",
+				is_verified: false,
+				verification_token: verificationToken,
+				token_expires_at: tokenExpiresAt.toISOString(),
+				approval_status: approvalStatus,
+				custom_answers: customAnswers,
+			});
+
+		if (registerError) {
+			return { success: false, error: registerError.message };
+		}
+
+		// Send verification email
+		const verificationLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}/verify?token=${verificationToken}`;
+		const registerAccountLink = `${new URL(request.url).origin}/signup`;
+
+		try {
+			await sendVerificationEmail({
+				eventTitle: event.title,
+				communityName: community.name,
+				verificationLink,
+				recipientName: name,
+				recipientEmail: email,
+				registerAccountLink,
+			});
+		} catch (error) {
+			console.error("Failed to send verification email:", error);
+		}
+
+		return redirect(
+			`/c/${slug}/events/${eventId}/verification-sent?email=${encodeURIComponent(email)}`
+		);
+	}
+
+	// Handle anonymous registration (step 1: name/email)
 	if (intent === "anonymous-register") {
 		console.log("Anonymous registration started");
 		const name = formData.get("name") as string;
@@ -245,6 +336,24 @@ export async function action({ request, params }: Route.ActionArgs) {
 			console.log("Missing name or email");
 			return { success: false, error: "Name and email are required" };
 		}
+
+		// Check if event has custom questions
+		const hasCustomQuestions = event.custom_questions && (
+			(event.custom_questions as any).phone?.enabled ||
+			((event.custom_questions as any).custom && (event.custom_questions as any).custom.length > 0)
+		);
+
+		// If custom questions exist, return data to show custom questions form
+		if (hasCustomQuestions) {
+			return {
+				success: true,
+				needsCustomQuestions: true,
+				anonymousName: name,
+				anonymousEmail: email,
+			};
+		}
+
+		// If no custom questions, proceed with normal flow
 
 		console.log("Registering anonymous user:", { name, email, eventId });
 
@@ -290,7 +399,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 		// Determine approval status
 		const approvalStatus = event.is_approve_required ? "pending" : "approved";
 
-		// Create registration record
+		// Create registration record (no custom answers in step 1)
 		console.log("Creating registration record...");
 		const { error: registerError } = await supabase
 			.from("event_registrations")
@@ -368,6 +477,29 @@ export async function action({ request, params }: Route.ActionArgs) {
 			};
 		}
 
+		// Parse custom_answers if provided
+		let customAnswers = null;
+		const customAnswersStr = formData.get("custom_answers") as string;
+		if (customAnswersStr) {
+			try {
+				customAnswers = JSON.parse(customAnswersStr);
+			} catch (e) {
+				console.error("Error parsing custom_answers:", e);
+			}
+		}
+
+		// Validate custom answers if event has custom questions
+		if (event.custom_questions && customAnswers) {
+			const { validateCustomAnswers } = await import('~/lib/utils/customQuestions');
+			const validation = validateCustomAnswers(
+				customAnswers,
+				event.custom_questions as any
+			);
+			if (!validation.valid) {
+				return { success: false, error: "Please fill in all required fields", validationErrors: validation.errors };
+			}
+		}
+
 		// Determine approval status
 		const approvalStatus = event.is_approve_required ? "pending" : "approved";
 
@@ -380,6 +512,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 				rsvp_status: "going",
 				is_verified: true,
 				approval_status: approvalStatus,
+				custom_answers: customAnswers,
 			});
 
 		if (registerError) {
@@ -612,10 +745,16 @@ export default function EventPublicView() {
 		success: boolean;
 		error?: string;
 		message?: string;
+		needsCustomQuestions?: boolean;
+		anonymousName?: string;
+		anonymousEmail?: string;
 	}>();
 	const navigation = useNavigation();
 	const [searchParams] = useSearchParams();
 	const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
+	const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
+	const [anonymousName, setAnonymousName] = useState<string | null>(null);
+	const [anonymousEmail, setAnonymousEmail] = useState<string | null>(null);
 	const [timeRemaining, setTimeRemaining] = useState<{
 		days: number;
 		hours: number;
@@ -670,7 +809,7 @@ export default function EventPublicView() {
 		return () => clearInterval(interval);
 	}, [event.registration_deadline, event.timezone]);
 
-	// Show toast notifications
+	// Show toast notifications and handle custom questions flow
 	useEffect(() => {
 		if (actionData) {
 			if (actionData.success && actionData.message) {
@@ -678,8 +817,27 @@ export default function EventPublicView() {
 			} else if (actionData.error) {
 				toast.error(actionData.error);
 			}
+
+			// Handle anonymous registration with custom questions
+			if (actionData.success && actionData.needsCustomQuestions) {
+				setAnonymousName(actionData.anonymousName || null);
+				setAnonymousEmail(actionData.anonymousEmail || null);
+				setShowAnonymousDialog(false);
+				setShowCustomQuestionsForm(true);
+			}
 		}
 	}, [actionData]);
+
+	// Check if event has custom questions
+	const hasCustomQuestions = event.custom_questions && (
+		(event.custom_questions as any)?.phone?.enabled ||
+		((event.custom_questions as any)?.custom && (event.custom_questions as any).custom.length > 0)
+	);
+
+	// Get user phone from profile metadata
+	const userPhone = userProfile?.metadata && typeof userProfile.metadata === 'object' && 'phone' in userProfile.metadata
+		? (userProfile.metadata as any).phone
+		: null;
 
 	// Handle verification status from URL params
 	useEffect(() => {
@@ -711,6 +869,42 @@ export default function EventPublicView() {
 		}
 	};
 
+	const handleCustomQuestionsSubmit = (answers: any) => {
+		// Create a form and submit it
+		const form = document.createElement('form');
+		form.method = 'POST';
+		form.style.display = 'none';
+
+		const intentInput = document.createElement('input');
+		intentInput.type = 'hidden';
+		intentInput.name = 'intent';
+		intentInput.value = anonymousName ? 'anonymous-custom-questions' : 'register';
+		form.appendChild(intentInput);
+
+		const customAnswersInput = document.createElement('input');
+		customAnswersInput.type = 'hidden';
+		customAnswersInput.name = 'custom_answers';
+		customAnswersInput.value = JSON.stringify(answers);
+		form.appendChild(customAnswersInput);
+
+		if (anonymousName && anonymousEmail) {
+			const nameInput = document.createElement('input');
+			nameInput.type = 'hidden';
+			nameInput.name = 'name';
+			nameInput.value = anonymousName;
+			form.appendChild(nameInput);
+
+			const emailInput = document.createElement('input');
+			emailInput.type = 'hidden';
+			emailInput.name = 'email';
+			emailInput.value = anonymousEmail;
+			form.appendChild(emailInput);
+		}
+
+		document.body.appendChild(form);
+		form.submit();
+	};
+
 	return (
 		<div className="min-h-screen bg-background">
 			<AnonymousRegistrationDialog
@@ -719,6 +913,22 @@ export default function EventPublicView() {
 				eventId={event.id}
 				communitySlug={community.slug}
 			/>
+			{hasCustomQuestions && (
+				<CustomQuestionsForm
+					open={showCustomQuestionsForm}
+					onOpenChange={setShowCustomQuestionsForm}
+					eventId={event.id}
+					customQuestions={event.custom_questions as any}
+					userName={userProfile?.full_name || undefined}
+					userEmail={user?.email || undefined}
+					userAvatarUrl={userProfile?.avatar_url || undefined}
+					userPhone={userPhone}
+					anonymousName={anonymousName || undefined}
+					anonymousEmail={anonymousEmail || undefined}
+					onSubmit={handleCustomQuestionsSubmit}
+					isSubmitting={isSubmitting}
+				/>
+			)}
 			<main className="w-full">
 				{/* Content Container */}
 				<div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
@@ -1103,21 +1313,33 @@ export default function EventPublicView() {
 												</Activity>
 
 												<Activity mode={user ? "visible" : "hidden"}>
-													<Form method="post">
-														<input
-															type="hidden"
-															name="intent"
-															value="register"
-														/>
+													{hasCustomQuestions ? (
 														<Button
-															type="submit"
+															type="button"
+															onClick={() => setShowCustomQuestionsForm(true)}
 															className="w-full"
 															size="sm"
 															disabled={isRegistering}
 														>
-															{isRegistering ? "Registering..." : "Register"}
+															Register
 														</Button>
-													</Form>
+													) : (
+															<Form method="post">
+																<input
+																	type="hidden"
+																	name="intent"
+																	value="register"
+																/>
+																<Button
+																	type="submit"
+																	className="w-full"
+																	size="sm"
+																	disabled={isRegistering}
+																>
+																	{isRegistering ? "Registering..." : "Register"}
+																</Button>
+															</Form>
+													)}
 												</Activity>
 
 												<Activity mode={!user ? "visible" : "hidden"}>

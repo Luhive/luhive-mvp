@@ -1,3 +1,5 @@
+import { CustomAnswerJson, CustomQuestionJson } from "./event.types"
+
 export type Json =
   | string
   | number
@@ -200,6 +202,7 @@ export type Database = {
           approval_status:
             | Database["public"]["Enums"]["event_approval_statuses"]
             | null
+          custom_answers: CustomAnswerJson | Json | null
           event_id: string
           id: string
           is_verified: boolean
@@ -217,6 +220,7 @@ export type Database = {
           approval_status?:
             | Database["public"]["Enums"]["event_approval_statuses"]
             | null
+          custom_answers?: CustomAnswerJson | Json | null
           event_id: string
           id?: string
           is_verified?: boolean
@@ -234,6 +238,7 @@ export type Database = {
           approval_status?:
             | Database["public"]["Enums"]["event_approval_statuses"]
             | null
+          custom_answers?: CustomAnswerJson | Json | null
           event_id?: string
           id?: string
           is_verified?: boolean
@@ -268,6 +273,7 @@ export type Database = {
           cover_url: string | null
           created_at: string | null
           created_by: string
+          custom_questions: CustomQuestionJson | Json | null
           description: string | null
           discussion_link: string | null
           end_time: string | null
@@ -290,6 +296,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           created_by: string
+          custom_questions?: CustomQuestionJson | Json | null
           description?: string | null
           discussion_link?: string | null
           end_time?: string | null
@@ -312,6 +319,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           created_by?: string
+          custom_questions?: CustomQuestionJson | Json | null
           description?: string | null
           discussion_link?: string | null
           end_time?: string | null

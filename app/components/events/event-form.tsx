@@ -5,16 +5,18 @@ import { Button } from '~/components/ui/button';
 import { Separator } from '~/components/ui/separator';
 import { Spinner } from '~/components/ui/spinner';
 import { Badge } from '~/components/ui/badge';
-import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle } from 'lucide-react';
+import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle } from 'lucide-react';
 import { EventCoverUpload } from './event-cover-upload';
 import { EventBasicInfo } from './event-form-fields/event-basic-info';
 import { EventDateTime } from './event-form-fields/event-datetime';
 import { EventLocation } from './event-form-fields/event-location';
 import { EventCapacity } from './event-form-fields/event-capacity';
 import { EventDiscussion } from './event-form-fields/event-discussion';
+import { CustomQuestionsBuilder } from './custom-questions-builder';
 import { createClient } from '~/lib/supabase.client';
 import { toast } from 'sonner';
 import type { Database } from '~/models/database.types';
+import type { CustomQuestionJson } from '~/models/event.types';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -41,6 +43,7 @@ interface EventFormData {
   coverUrl?: string;
   status: EventStatus;
   isApproveRequired: boolean;
+  customQuestions?: CustomQuestionJson | null;
 }
 
 interface EventFormProps {
@@ -79,6 +82,9 @@ export function EventForm({
   const [coverUrl, setCoverUrl] = useState(initialData?.coverUrl || '');
   const [status, setStatus] = useState<EventStatus>(initialData?.status || 'draft');
   const [isApproveRequired, setIsApproveRequired] = useState(initialData?.isApproveRequired || false);
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestionJson | null>(
+    initialData?.customQuestions || null
+  );
 
   // Validation
   const isValid = () => {
@@ -155,6 +161,7 @@ export function EventForm({
         cover_url: coverUrl || null,
         status: submitStatus,
         is_approve_required: isApproveRequired,
+        custom_questions: customQuestions,
       };
 
       if (mode === 'create') {
@@ -408,6 +415,22 @@ export function EventForm({
                 onRegistrationDeadlineChange={setRegistrationDeadline}
                 onIsApproveRequiredChange={setIsApproveRequired}
                 eventStartDate={startDate}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Custom Registration Questions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <HelpCircle className="h-4 w-4" />
+                Registration Questions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CustomQuestionsBuilder
+                value={customQuestions}
+                onChange={setCustomQuestions}
               />
             </CardContent>
           </Card>

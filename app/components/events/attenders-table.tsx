@@ -55,8 +55,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Filter } from "lucide-react";
+import { Search, MoreHorizontal, Filter, AlertTriangle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Separator } from "~/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -65,17 +66,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "~/components/ui/drawer";
 import { createClient } from "~/lib/supabase.client";
 import type { Database } from "~/models/database.types";
-import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AttendersTableSkeleton } from "./attenders-table-skeleton";
+import { RegistrationAnswersDisplay } from "./registration-answers-display";
 import { utils, writeFile } from "xlsx";
 import { useIsMobile } from "~/hooks/use-mobile";
 import { cn } from "~/lib/utils";
 import { useFetcher } from "react-router";
+import type { CustomQuestionJson, CustomAnswerJson } from "~/models/event.types";
+import { getCSVHeaders, flattenCustomAnswers } from "~/lib/utils/customQuestions";
 
 import ExcelIcon from "~/assets/images/ExcelLogo.png";
+
+type EventRegistration = Database["public"]["Tables"]["event_registrations"]["Row"];
 
 type RSVPStatus = Database["public"]["Enums"]["rsvp_status"];
 type ApprovalStatus = Database["public"]["Enums"]["event_approval_statuses"];
@@ -92,6 +104,7 @@ export const attenderSchema = z.object({
   is_verified: z.boolean(),
   registered_at: z.string().nullable(),
   is_anonymous: z.boolean(),
+  custom_answers: z.any().nullable().optional(),
 });
 
 type Attender = z.infer<typeof attenderSchema>;
@@ -128,6 +141,9 @@ interface AttendersTableProps {
 export function AttendersTable({ eventId }: AttendersTableProps) {
   const [data, setData] = useState<Attender[]>([]);
   const [loading, setLoading] = useState(true);
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestionJson | null>(null);
+  const [selectedAttender, setSelectedAttender] = useState<Attender | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -158,6 +174,17 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
 
       const supabase = createClient();
 
+      // Fetch event to get custom_questions
+      const { data: eventData } = await supabase
+        .from("events")
+        .select("custom_questions")
+        .eq("id", eventId)
+        .single();
+
+      if (eventData?.custom_questions) {
+        setCustomQuestions(eventData.custom_questions as CustomQuestionJson);
+      }
+
       // Fetch event registrations with user profiles
       const { data: registrations, error } = await supabase
         .from("event_registrations")
@@ -171,6 +198,7 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
           approval_status,
           is_verified,
           registered_at,
+          custom_answers,
           profiles (
             id,
             full_name,
@@ -212,6 +240,8 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
 
       const formattedData: Attender[] = registrations.map((reg: any) => {
         const isAnonymous = !reg.user_id;
+        // Get phone from custom_answers if available, otherwise use anonymous_phone
+        const phoneFromAnswers = (reg.custom_answers as CustomAnswerJson)?.phone;
         return {
           id: reg.id,
           name: isAnonymous
@@ -220,13 +250,14 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
           email: isAnonymous
             ? reg.anonymous_email
             : reg.user_id ? userEmailsMap.get(reg.user_id) : null,
-          phone: reg.anonymous_phone,
+          phone: phoneFromAnswers || reg.anonymous_phone,
           avatar_url: reg.profiles?.avatar_url,
           rsvp_status: reg.rsvp_status,
           approval_status: reg.approval_status || "approved", // Default to approved if null (legacy)
           is_verified: reg.is_verified,
           registered_at: reg.registered_at,
           is_anonymous: isAnonymous,
+          custom_answers: reg.custom_answers,
         };
       });
 
@@ -245,6 +276,11 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
   const handleDeleteClick = (id: string, name: string) => {
     setAttenderToDelete({ id, name });
     setDeleteDialogOpen(true);
+  };
+
+  const handleShowAttenderDetails = (attender: Attender) => {
+    setSelectedAttender(attender);
+    setDrawerOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
@@ -312,25 +348,49 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
     }
   }, [fetcher.state, fetcher.data, fetchAttenders]);
 
-  const handleExportToExcel = React.useCallback(() => {
-    const exportData = data.map((row) => ({
-      Name: row.name,
-      Type: row.is_anonymous ? "Anonymous" : "Member",
-      Email: row.email || "-",
-      Phone: row.phone || "-",
-      "RSVP Status": rsvpStatusConfig[row.rsvp_status]?.label || row.rsvp_status,
-      "Approval Status": row.approval_status ? approvalStatusConfig[row.approval_status as ApprovalStatus]?.label : "Approved",
-      Verified: row.is_verified ? "Yes" : "No",
-      "Registered At": row.registered_at
-        ? new Date(row.registered_at).toLocaleString()
-        : "-",
-    }));
+  const handleExportToExcel = React.useCallback(async () => {
+    const supabase = createClient();
+
+    // Fetch full registration data for export
+    const { data: registrations } = await supabase
+      .from("event_registrations")
+      .select("*")
+      .eq("event_id", eventId);
+
+    if (!registrations) return;
+
+    // Get custom question headers
+    const customHeaders = customQuestions ? getCSVHeaders(customQuestions) : [];
+
+    const exportData = data.map((row) => {
+      const registration = registrations.find((r: any) => r.id === row.id);
+      const baseData: Record<string, string> = {
+        Name: row.name,
+        Type: row.is_anonymous ? "Anonymous" : "Member",
+        Email: row.email || "-",
+        Phone: row.phone || "-",
+        "RSVP Status": rsvpStatusConfig[row.rsvp_status]?.label || row.rsvp_status,
+        "Approval Status": row.approval_status ? approvalStatusConfig[row.approval_status as ApprovalStatus]?.label : "Approved",
+        Verified: row.is_verified ? "Yes" : "No",
+        "Registered At": row.registered_at
+          ? new Date(row.registered_at).toLocaleString()
+          : "-",
+      };
+
+      // Add custom question answers if available
+      if (registration && customQuestions) {
+        const flattened = flattenCustomAnswers(registration as EventRegistration, customQuestions);
+        Object.assign(baseData, flattened);
+      }
+
+      return baseData;
+    });
 
     const ws = utils.json_to_sheet(exportData);
     const wb = utils.book_new();
     utils.book_append_sheet(wb, ws, "Attenders");
     writeFile(wb, "event-attenders.xlsx");
-  }, [data]);
+  }, [data, eventId, customQuestions]);
 
   const columns = React.useMemo<ColumnDef<Attender>[]>(
     () => [
@@ -360,7 +420,10 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
         accessorKey: "name",
         header: "Attender",
         cell: ({ row }) => (
-          <div className="flex items-center gap-3">
+          <button
+            onClick={() => handleShowAttenderDetails(row.original)}
+            className="flex items-center gap-3 w-full text-left hover:opacity-80 transition-opacity"
+          >
             <Avatar className="h-8 w-8">
               <AvatarImage
                 src={row.original.avatar_url || ""}
@@ -376,7 +439,7 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
                 <span className="text-xs text-muted-foreground">Anonymous</span>
               )}
             </div>
-          </div>
+          </button>
         ),
       },
       {
@@ -514,6 +577,12 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
                       Email Attender
                     </DropdownMenuCheckboxItem>
                   )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    onClick={() => handleShowAttenderDetails(attender)}
+                  >
+                    Show Answers
+                  </DropdownMenuCheckboxItem>
                   <DropdownMenuSeparator />
                   {!isPending && attender.approval_status !== 'approved' && (
                     <DropdownMenuCheckboxItem
@@ -777,6 +846,193 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Attender Details Drawer/Dialog */}
+      {selectedAttender && (
+        isMobile ? (
+          <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>{selectedAttender.name}</DrawerTitle>
+                <DrawerDescription>
+                  Complete registration details
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="px-4 pb-4 overflow-y-auto space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage
+                        src={selectedAttender.avatar_url || ""}
+                        alt={selectedAttender.name}
+                      />
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {selectedAttender.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="font-semibold">{selectedAttender.name}</div>
+                      {selectedAttender.is_anonymous && (
+                        <Badge variant="secondary" className="mt-1">Anonymous</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Email</span>
+                      <span className="text-sm font-medium">{selectedAttender.email || "-"}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Phone</span>
+                      <span className="text-sm font-medium">{selectedAttender.phone || "-"}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">RSVP Status</span>
+                      <Badge variant={rsvpStatusConfig[selectedAttender.rsvp_status].variant}>
+                        {rsvpStatusConfig[selectedAttender.rsvp_status].label}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Approval Status</span>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "border-transparent font-medium",
+                          approvalStatusConfig[selectedAttender.approval_status as ApprovalStatus]?.className,
+                          selectedAttender.approval_status === 'approved' && "bg-green-100 text-green-700 hover:bg-green-200 border-green-200"
+                        )}
+                      >
+                        {approvalStatusConfig[selectedAttender.approval_status as ApprovalStatus]?.label || "Approved"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Verified</span>
+                      <Badge variant={selectedAttender.is_verified ? "default" : "outline"}>
+                        {selectedAttender.is_verified ? "Verified" : "Pending"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Registered At</span>
+                      <span className="text-sm font-medium">
+                        {selectedAttender.registered_at
+                          ? new Date(selectedAttender.registered_at).toLocaleString()
+                          : "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Custom Answers */}
+                {(customQuestions && selectedAttender.custom_answers) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold mb-3">Custom Answers</h3>
+                      <RegistrationAnswersDisplay
+                        answers={selectedAttender.custom_answers as CustomAnswerJson | null}
+                        questions={customQuestions}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{selectedAttender.name}</DialogTitle>
+                <DialogDescription>
+                  Complete registration details
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage
+                        src={selectedAttender.avatar_url || ""}
+                        alt={selectedAttender.name}
+                      />
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {selectedAttender.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="font-semibold">{selectedAttender.name}</div>
+                      {selectedAttender.is_anonymous && (
+                        <Badge variant="secondary" className="mt-1">Anonymous</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Email</span>
+                      <span className="text-sm font-medium">{selectedAttender.email || "-"}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Phone</span>
+                      <span className="text-sm font-medium">{selectedAttender.phone || "-"}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">RSVP Status</span>
+                      <Badge variant={rsvpStatusConfig[selectedAttender.rsvp_status].variant}>
+                        {rsvpStatusConfig[selectedAttender.rsvp_status].label}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Approval Status</span>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "border-transparent font-medium",
+                          approvalStatusConfig[selectedAttender.approval_status as ApprovalStatus]?.className,
+                          selectedAttender.approval_status === 'approved' && "bg-green-100 text-green-700 hover:bg-green-200 border-green-200"
+                        )}
+                      >
+                        {approvalStatusConfig[selectedAttender.approval_status as ApprovalStatus]?.label || "Approved"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Verified</span>
+                      <Badge variant={selectedAttender.is_verified ? "default" : "outline"}>
+                        {selectedAttender.is_verified ? "Verified" : "Pending"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Registered At</span>
+                      <span className="text-sm font-medium">
+                        {selectedAttender.registered_at
+                          ? new Date(selectedAttender.registered_at).toLocaleString()
+                          : "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Custom Answers */}
+                {(customQuestions && selectedAttender.custom_answers) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h3 className="font-semibold mb-3">Custom Answers</h3>
+                      <RegistrationAnswersDisplay
+                        answers={selectedAttender.custom_answers as CustomAnswerJson | null}
+                        questions={customQuestions}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )
+      )}
     </div>
   );
 }
