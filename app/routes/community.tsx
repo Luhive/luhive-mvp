@@ -1,5 +1,5 @@
 import type { Route } from "./+types/community";
-import { useLoaderData, Link, useNavigation, useActionData, useRevalidator } from "react-router";
+import { useLoaderData, Link, useNavigation, useActionData, useRevalidator, useLocation } from "react-router";
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router';
@@ -42,6 +42,7 @@ import { CoverPictureUpload } from "~/components/cover-picture-upload";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EventListSkeleton } from "~/components/events/event-list";
+import { CommunityPageSkeleton } from "~/components/community-page-skeleton";
 import { useIsMobile } from "~/hooks/use-mobile";
 
 // Lazy load EventList component
@@ -270,14 +271,40 @@ export function meta({ data }: { data?: LoaderData }) {
 }
 
 export default function Community() {
-  const { community, isOwner, isMember, user, analytics, memberCount, eventCount } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const submit = useSubmit();
   const navigation = useNavigation();
+  const location = useLocation();
   const revalidator = useRevalidator();
   const isMobile = useIsMobile();
-  const [showStickyButton, setShowStickyButton] = useState(!isMember && !isOwner);
+
+  // Get community data from navigation state (when coming from hub)
+  const navigationState = location.state as {
+    community?: Community & {
+      memberCount?: number;
+      eventCount?: number;
+      description?: string;
+      verified?: boolean;
+    };
+    description?: string;
+    verified?: boolean;
+  } | null;
+
+  const stateCommunity = navigationState?.community;
+  const isNavigating = navigation.state === "loading";
+  const isNavigatingFromHub = isNavigating && !!stateCommunity;
+
+  // Merge additional data from navigation state if available
+  const skeletonCommunity = stateCommunity ? {
+    ...stateCommunity,
+    description: stateCommunity.description || navigationState?.description || undefined,
+    verified: stateCommunity.verified ?? navigationState?.verified ?? false,
+  } : null;
+
+  // Extract data from loader
+  const { community, isOwner, isMember, user, analytics, memberCount, eventCount } = loaderData;
 
   // Track visit on component mount
   useEffect(() => {
@@ -342,6 +369,7 @@ export default function Community() {
     linkedin?: string;
   } | null;
 
+  const [showStickyButton, setShowStickyButton] = useState(!isMember && !isOwner);
 
   return (
     <div className="min-h-screen bg-background relative">

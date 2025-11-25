@@ -1,5 +1,6 @@
 import type { Route } from "./+types/hub";
-import { useLoaderData, Link } from "react-router";
+import { useLoaderData, NavLink, useNavigation } from "react-router";
+import { useEffect, useState } from "react";
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -13,8 +14,10 @@ import {
   Sparkle,
 } from "lucide-react";
 import { ShimmeringText } from "~/components/ui/shimmering-text";
+import { CommunityPageSkeleton } from "~/components/community-page-skeleton";
 
 import PeopleIcon from "~/assets/images/PeopleIcon.png";
+import { TopNavigation } from "~/components/hub-navigation";
 
 type Community = Database['public']['Tables']['communities']['Row'] & {
   memberCount: number;
@@ -153,9 +156,60 @@ export function meta({ data }: { data?: LoaderData }) {
 
 export default function Hub() {
   const { communities, user } = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  const [pendingCommunity, setPendingCommunity] = useState<{
+    community: Community;
+    memberCount: number;
+    eventCount: number;
+    description?: string;
+    verified?: boolean;
+  } | null>(null);
+
+  // Watch for navigation state changes to show skeleton instantly
+  useEffect(() => {
+    if (navigation.state === "loading" && navigation.location?.pathname.startsWith('/c/')) {
+      const navState = navigation.location.state as {
+        community?: Community;
+        memberCount?: number;
+        eventCount?: number;
+        description?: string;
+        verified?: boolean;
+      } | undefined;
+
+      if (navState?.community) {
+        setPendingCommunity({
+          community: navState.community,
+          memberCount: navState.memberCount || 0,
+          eventCount: navState.eventCount || 0,
+          description: navState.description,
+          verified: navState.verified,
+        });
+      }
+    } else if (navigation.state === "idle") {
+      // Clear when navigation completes
+      setPendingCommunity(null);
+    }
+  }, [navigation.state, navigation.location]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Show skeleton overlay when navigating to community */}
+      {pendingCommunity && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <TopNavigation user={user} />
+          <div className="mt-8">
+            <CommunityPageSkeleton
+              community={{
+                ...pendingCommunity.community,
+                memberCount: pendingCommunity.memberCount,
+                eventCount: pendingCommunity.eventCount,
+                description: pendingCommunity.description ?? undefined,
+                verified: pendingCommunity.verified ?? false,
+              } as Community & { memberCount?: number; eventCount?: number; description?: string; verified?: boolean }}
+            />
+          </div>
+        </div>
+      )}
       <main className="w-full py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
@@ -181,10 +235,27 @@ export default function Hub() {
                   const eventCount = community.eventCount || 0;
 
                 return (
-                  <Link
+                  <NavLink
                     key={community.id}
                     to={`/c/${community.slug}`}
+                    state={{
+                      community,
+                      memberCount,
+                      eventCount,
+                      description: community.description,
+                      verified: community.verified
+                    }}
                     className="group"
+                    onClick={(e) => {
+                      // Set pending community immediately on click for instant feedback
+                      setPendingCommunity({
+                        community,
+                        memberCount,
+                        eventCount,
+                        description: community.description || undefined,
+                        verified: community.verified ?? undefined
+                      });
+                    }}
                   >
                     <Card className="h-full cursor-pointer border hover:border-primary/30 transition-all duration-200 shadow-none hover:shadow-md group transform-gpu hover:scale-[1.02] hover:-rotate-1">
                       <CardHeader className="pb-3">
@@ -243,7 +314,7 @@ export default function Hub() {
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
+                  </NavLink>
                 );
               })}
             </div>
