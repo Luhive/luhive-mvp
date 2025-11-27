@@ -41,7 +41,7 @@ export function CommunityPageSkeleton({ community }: CommunityPageSkeletonProps)
                     <img
                       src={displayCover}
                       alt={`${displayName} cover`}
-                      className="w-full h-full object-cover object-center opacity-50"
+                      className="w-full h-full object-cover object-center"
                     />
                   </div>
                 ) : (
