@@ -138,11 +138,9 @@ export default function CreateCommunity() {
   }, [actionData]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="w-full py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
+    <main className="py-8">
+      {/* Header */}
+      <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
 			  <UserPlus className="h-8 w-8 text-primary" />
               <h1 className="text-4xl font-black tracking-tight">Create Community</h1>
@@ -272,10 +270,8 @@ export default function CreateCommunity() {
                 </div>
               </Form>
             </CardContent>
-          </Card>
-        </div>
-      </main>
-    </div>
+      </Card>
+    </main>
   );
 }
 

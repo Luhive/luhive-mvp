@@ -906,7 +906,7 @@ export default function EventPublicView() {
 	};
 
 	return (
-		<div className="min-h-screen bg-background">
+		<>
 			<AnonymousRegistrationDialog
 				open={showAnonymousDialog}
 				onOpenChange={setShowAnonymousDialog}
@@ -929,10 +929,8 @@ export default function EventPublicView() {
 					isSubmitting={isSubmitting}
 				/>
 			)}
-			<main className="w-full">
-				{/* Content Container */}
-				<div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10">
-					<div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-8 lg:gap-12">
+			<main className="py-6 md:py-10">
+				<div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-8 lg:gap-12">
 						{/* Left Column: Cover + Host Info */}
 						<div className="contents lg:block lg:space-y-6">
 							{/* Event Cover - Mobile Order 1 */}
@@ -1461,11 +1459,10 @@ export default function EventPublicView() {
 									</div>
 								</Activity>
 
-							</div>
 						</div>
 					</div>
 				</div>
 			</main>
-		</div>
+		</>
 	);
 }

@@ -3,6 +3,7 @@ import { Outlet, useLoaderData } from "react-router";
 import { TopNavigation } from "~/components/hub-navigation";
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
+import Footer from "~/components/common/Footer";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -36,11 +37,12 @@ export default function TopNavigationLayout() {
   const { user } = useLoaderData<typeof loader>();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen container mx-auto px-4 sm:px-8 bg-background flex flex-col">
       <TopNavigation user={user} />
-      <main>
+      <main className="flex-1">
         <Outlet />
       </main>
+      <Footer />
     </div>
   );
 }

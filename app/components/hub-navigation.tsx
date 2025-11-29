@@ -75,7 +75,7 @@ export function TopNavigation({ user }: TopNavigationProps) {
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="px-4 sm:px-6 lg:px-8 mx-auto flex h-16 items-center justify-between">
+      <div className="mx-auto flex h-16 items-center justify-between">
         {/* Left: Logo/Navigation */}
         <div className="flex items-center gap-0">
           <Link to="/" className="flex items-center gap-3">
@@ -110,7 +110,7 @@ export function TopNavigation({ user }: TopNavigationProps) {
             <Button
             variant="default"
               size="sm"
-            className="underline-offset-4 bg-transparent hover:bg-transparent"
+            className="underline-offset-4 bg-transparent hover:bg-transparent hidden sm:flex"
               onClick={(e) => {
                 e.preventDefault();
                 if (!user) {

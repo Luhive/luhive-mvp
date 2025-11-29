@@ -2,6 +2,11 @@
 .env
 /node_modules/
 
+.env.development
+.env.production
+
+dbMigration.sh
+
 # React Router
 /.react-router/
 /build/

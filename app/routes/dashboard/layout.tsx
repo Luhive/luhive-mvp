@@ -9,6 +9,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "~/components/ui/sidebar"
+import Footer from "~/components/common/Footer"
 
 type Community = Database['public']['Tables']['communities']['Row']
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -147,6 +148,7 @@ export default function DashboardLayout() {
             <Outlet />
           </div>
         </div>
+        <Footer />
       </SidebarInset>
     </SidebarProvider>
   )
