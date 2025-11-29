@@ -8,6 +8,23 @@ import { generateICS } from "~/lib/icsManager";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Format email sender: if EMAIL_SENDER is provided and not already formatted,
+// wrap it with "Luhive <" and ">". Otherwise use the provided format or fallback.
+const getFromEmail = (): string => {
+  const emailSender = process.env.EMAIL_SENDER;
+  if (!emailSender) {
+    return "Luhive <events@events.luhive.com>";
+  }
+  // If already formatted with angle brackets, use as-is
+  if (emailSender.includes("<") && emailSender.includes(">")) {
+    return emailSender;
+  }
+  // Otherwise, format it as "Luhive <email>"
+  return `Luhive <${emailSender}>`;
+};
+
+const FROM_EMAIL = getFromEmail();
+
 interface VerificationEmailData {
   eventTitle: string;
   communityName: string;
@@ -81,7 +98,7 @@ export async function sendRegistrationRequestEmail(
 
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: "Luhive <events@updates.luhive.com>",
+      from: FROM_EMAIL,
       to: [recipientEmail],
       subject: `Registration Request Received: ${eventTitle}`,
       react: EventRegistrationRequestEmail({
@@ -118,7 +135,7 @@ export async function sendVerificationEmail(data: VerificationEmailData) {
 
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: "Luhive <events@updates.luhive.com>",
+      from: FROM_EMAIL,
       to: [recipientEmail],
       subject: `Verify your registration for ${eventTitle}`,
       react: EventVerificationEmail({
@@ -181,7 +198,7 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
     }
 
     const { data: emailData, error } = await resend.emails.send({
-      from: "Luhive <events@updates.luhive.com>",
+      from: FROM_EMAIL,
       to: [recipientEmail],
       subject:
         status === "approved"
@@ -245,7 +262,7 @@ export async function sendRegistrationConfirmationEmail(
     });
 
     const { data: emailData, error } = await resend.emails.send({
-      from: "Luhive <events@updates.luhive.com>",
+      from: FROM_EMAIL,
       to: [recipientEmail],
       subject: `You're registered for ${eventTitle}!`,
       react: EventConfirmationEmail({
@@ -294,7 +311,7 @@ export async function sendCommunityWaitlistNotification(
 
   try {
     const { data: emailData, error } = await resend.emails.send({
-      from: "Luhive <events@updates.luhive.com>",
+      from: FROM_EMAIL,
       to: ["luhive.startup@gmail.com"],
       subject: `New Community Request: ${communityName}`,
       react: CommunityWaitlistNotification({
