@@ -21,8 +21,8 @@ export default function Footer() {
         <div className="h-1 w-1 rounded-full bg-gray-600">
         </div>
 
-        <a href="#" style={{ fontFamily: 'Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }} className="hover:text-black transition text-xs opacity-70">Discover</a>
-        <a href="#" style={{ fontFamily: 'Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }} className="hover:text-black transition text-xs opacity-70">Help</a>
+        <a href="#" className="hover:text-black transition text-xs opacity-70 font-sans">Discover</a>
+        <a href="#" className="hover:text-black transition text-xs opacity-70 font-sans">Help</a>
 
       </div>
 
@@ -30,15 +30,15 @@ export default function Footer() {
 
       {/* Right Icons */}
       <div className="flex items-center space-x-4">
-        <Link to="/contact-us" className="hover:text-black transition">
+        <a href="mailto:contact@luhive.com" className="hover:text-black transition">
           <img className="h-6 w-6" src={Message} alt="Message Icon" />
-        </Link>
-        <Link to="https://twitter.com/luhive_" target="_blank" rel="noopener noreferrer" className="hover:text-black transition">
+        </a>
+        <a href="https://twitter.com/luhive_" target="_blank" rel="noopener noreferrer" className="hover:text-black transition">
             <img className="h-6 w-6" src={Xsocialmedia} alt="X Icon" />
-        </Link>
-        <Link to="https://www.linkedin.com/company/luhive" target="_blank" rel="noopener noreferrer" className="hover:text-black transition">
+        </a>
+        <a href="https://www.linkedin.com/company/luhive" target="_blank" rel="noopener noreferrer" className="hover:text-black transition">
             <img className="h-6 w-6" src={Linkedin} alt="LinkedIn Icon" />
-        </Link>
+        </a>
       </div>
     </footer>
   );
