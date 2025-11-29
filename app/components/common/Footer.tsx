@@ -9,12 +9,12 @@ import Message from '../../assets/icons/Message.svg'
 
 export default function Footer() {
   return (
-    <footer className="w-full py-3 pb-5 px-4 sm:px-6 lg:px-8 flex items-center justify-between bg-white text-gray-600">
+    <footer className="py-3 pb-5 flex items-center justify-between bg-white text-gray-600">
       {/* Left Section */}
       <div className="flex items-center space-x-5">
         <Link to="/" className="flex items-center gap-3">
             <img className="h-4 w-4" src={LuhiveLogo} alt="Luhive Logo" />
-            <h1 className="font-black text-xs tracking-tight">Luhive</h1>
+            <h1 className="font-black text-xs tracking-tight hidden sm:block">Luhive</h1>
         </Link>
 
         {/* circle */}

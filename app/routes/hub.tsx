@@ -13,10 +13,9 @@ import {
   Heart,
   Sparkle,
 } from "lucide-react";
-import { ShimmeringText } from "~/components/ui/shimmering-text";
+
 import { CommunityPageSkeleton } from "~/components/community-page-skeleton";
 
-import PeopleIcon from "~/assets/images/PeopleIcon.png";
 import { TopNavigation } from "~/components/hub-navigation";
 
 type Community = Database['public']['Tables']['communities']['Row'] & {
@@ -192,27 +191,28 @@ export default function Hub() {
   }, [navigation.state, navigation.location]);
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <>
       {/* Show skeleton overlay when navigating to community */}
       {pendingCommunity && (
-        <div className="fixed inset-0 z-50 bg-background">
-          <TopNavigation user={user} />
-          <div className="mt-8">
-            <CommunityPageSkeleton
-              community={{
-                ...pendingCommunity.community,
-                memberCount: pendingCommunity.memberCount,
-                eventCount: pendingCommunity.eventCount,
-                description: pendingCommunity.description ?? undefined,
-                verified: pendingCommunity.verified ?? false,
-              } as Community & { memberCount?: number; eventCount?: number; description?: string; verified?: boolean }}
-            />
+        <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+          <div className="min-h-screen container mx-auto px-4 sm:px-8 flex flex-col">
+            <TopNavigation user={user} />
+            <div className="lg:py-8 py-4 flex-1">
+              <CommunityPageSkeleton
+                community={{
+                  ...pendingCommunity.community,
+                  memberCount: pendingCommunity.memberCount,
+                  eventCount: pendingCommunity.eventCount,
+                  description: pendingCommunity.description ?? undefined,
+                  verified: pendingCommunity.verified ?? false,
+                } as Community & { memberCount?: number; eventCount?: number; description?: string; verified?: boolean }}
+              />
+            </div>
           </div>
         </div>
       )}
-      <main className="w-full py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
+      <main className="py-8">
+        <div className="mb-8">
             <div className="flex items-center gap-3">
               <Sparkle className="h-8 w-8 mb-2 text-primary animate-sparkle" />  
               {/* <img src={PeopleIcon} alt="People Icon" className="h-12 w-12 mb-2" /> */}
@@ -318,9 +318,8 @@ export default function Hub() {
                 );
               })}
             </div>
-          )}
-        </div>
+        )}
       </main>
-    </div>
+    </>
   );
 }

@@ -164,7 +164,7 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="py-8">
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground">Please log in to view your profile.</p>
@@ -175,7 +175,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="py-8">
       <div className="mx-auto space-y-6">
         {/* Profile Header */}
         <Card>

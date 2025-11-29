@@ -37,7 +37,7 @@ export default function TopNavigationLayout() {
   const { user } = useLoaderData<typeof loader>();
 
   return (
-    <div className="min-h-screen container mx-auto bg-background flex flex-col">
+    <div className="min-h-screen container mx-auto px-4 sm:px-8 bg-background flex flex-col">
       <TopNavigation user={user} />
       <main className="flex-1">
         <Outlet />

@@ -372,7 +372,7 @@ export default function Community() {
   const [showStickyButton, setShowStickyButton] = useState(!isMember && !isOwner);
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <>
       {/* Global Loading Overlay for Dashboard Navigation */}
       {isDashboardLoading && (
         <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center">
@@ -420,9 +420,8 @@ export default function Community() {
       </Activity>
       {/* Owner Dashboard Icon */}
 
-      <main className={`w-full py-8 px-4 sm:px-6 lg:px-8 ${isMobile ? 'pb-32' : ''}`}>
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]">
+      <main className={`lg:py-8 py-4 ${isMobile ? 'pb-18' : ''}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]">
             {/* Profile Card - Large */}
             <Card className="md:col-span-2 py-0 lg:col-span-2 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none overflow-hidden">
               <CardContent className="p-0 flex flex-col h-full">
@@ -746,11 +745,6 @@ export default function Community() {
               </CardContent>
             </Card>
 
-            {/* Footer */}
-            <div className="md:col-span-2 lg:col-span-4 text-center py-4">
-              <p className="text-sm text-muted-foreground">Powered by Luhive © 2025</p>
-            </div>
-          </div>
         </div>
       </main>
 
@@ -778,8 +772,6 @@ export default function Community() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
-
-
