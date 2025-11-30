@@ -142,6 +142,7 @@ export async function action({ request }: Route.ActionArgs) {
   });
 
   if (error) {
+    console.error('Error signing up:', error);
     return Response.json({ success: false, error: error.message }, { headers });
   }
 

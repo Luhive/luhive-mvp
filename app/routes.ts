@@ -60,5 +60,9 @@ export default [
   // API routes
   route("api/attenders-emails", "routes/dashboard/api.attenders-emails.tsx"),
   route("api/attenders-list", "routes/api.attenders-list.tsx"),
-  route("api/update-registration-status", "routes/api.update-registration-status.tsx"),
+  route(
+    "api/update-registration-status",
+    "routes/api.update-registration-status.tsx"
+  ),
+  route("api/email-debug", "routes/api.email-debug.tsx"),
 ] satisfies RouteConfig;
