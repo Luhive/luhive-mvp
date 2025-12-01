@@ -20,6 +20,7 @@ import { Label } from '~/components/ui/label';
 import { Textarea } from '~/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { Separator } from '~/components/ui/separator';
+import { Spinner } from '~/components/ui/spinner';
 import { Phone, User, Mail } from 'lucide-react';
 import type { CustomQuestionJson, CustomAnswerJson } from '~/models/event.types';
 import {
@@ -299,7 +300,14 @@ export function CustomQuestionsForm({
         size="lg"
         disabled={isSubmitting}
       >
-        {isSubmitting ? 'Submitting...' : 'Complete Registration'}
+        {isSubmitting ? (
+          <>
+            <Spinner className="h-4 w-4 mr-2" />
+            Submitting...
+          </>
+        ) : (
+          'Complete Registration'
+        )}
       </Button>
     </Form>
   );
