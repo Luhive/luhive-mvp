@@ -1,9 +1,11 @@
 import type { Route } from "./+types/navigation-layout";
 import { Outlet, useLoaderData } from "react-router";
+import { useEffect } from "react";
 import { TopNavigation } from "~/components/hub-navigation";
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
 import Footer from "~/components/common/Footer";
+import { setUser, clearUser } from "~/services/sentry";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -35,6 +37,18 @@ export async function loader({ request }: Route.LoaderArgs): Promise<TopNavigati
 
 export default function TopNavigationLayout() {
   const { user } = useLoaderData<typeof loader>();
+
+  // Set Sentry user context when user is available
+  useEffect(() => {
+    if (user) {
+      setUser({
+        id: user.id,
+        username: user.full_name || undefined,
+      });
+    } else {
+      clearUser();
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen container mx-auto px-5 lg:px-2 bg-background flex flex-col">

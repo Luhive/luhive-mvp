@@ -1,6 +1,7 @@
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from "@supabase/ssr"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Database } from "~/models/database.types";
+import * as Sentry from "@sentry/react-router";
 
 export function createClient(request: Request) {
   const headers = new Headers();
@@ -30,6 +31,11 @@ export function createClient(request: Request) {
     }
   );
 
+  // Add Sentry Supabase integration for this request's client
+  Sentry.addIntegration(
+    Sentry.supabaseIntegration({ supabaseClient: supabase })
+  );
+
   return { supabase, headers };
 }
 
@@ -39,7 +45,7 @@ export function createServiceRoleClient() {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
   }
 
-  return createSupabaseClient<Database>(
+  const serviceClient = createSupabaseClient<Database>(
     process.env.VITE_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     {
@@ -49,4 +55,11 @@ export function createServiceRoleClient() {
       },
     }
   );
+
+  // Add Sentry Supabase integration for service role client
+  Sentry.addIntegration(
+    Sentry.supabaseIntegration({ supabaseClient: serviceClient })
+  );
+
+  return serviceClient;
 }

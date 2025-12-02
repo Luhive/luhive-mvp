@@ -6,6 +6,7 @@ import {
 	useActionData,
 	useSearchParams,
 	useNavigation,
+	useSubmit,
 } from "react-router";
 import { redirect } from "react-router";
 import { createClient } from "~/lib/supabase.server";
@@ -48,6 +49,44 @@ import {
 	sendRegistrationConfirmationEmail,
 	sendRegistrationRequestEmail,
 } from "~/lib/email.server";
+
+/**
+ * Sanitizes Supabase errors to return user-friendly messages for duplicate/unique constraint violations
+ * @param error - The Supabase error object
+ * @param context - Additional context (e.g., "email") to provide more specific error messages
+ * @returns User-friendly error message or null if not a duplicate error
+ */
+function sanitizeDuplicateError(
+	error: { code?: string; message?: string; details?: string } | null,
+	context?: { email?: string; isVerified?: boolean }
+): string | null {
+	if (!error) return null;
+
+	// Check for PostgreSQL unique violation error code (23505)
+	const isUniqueViolation = error.code === "23505";
+
+	// Check for duplicate-related keywords in error message
+	const errorMessage = error.message?.toLowerCase() || "";
+	const isDuplicateMessage =
+		errorMessage.includes("duplicate") ||
+		errorMessage.includes("unique constraint") ||
+		errorMessage.includes("already exists");
+
+	if (isUniqueViolation || isDuplicateMessage) {
+		// For email duplicates, provide context-specific messages
+		if (context?.email) {
+			if (context.isVerified !== undefined) {
+				return context.isVerified
+					? "This email is already registered for this event"
+					: "A verification email has already been sent to this address";
+			}
+			return "This email is already registered for this event";
+		}
+		return "This email is already registered for this event";
+	}
+
+	return null;
+}
 import { AnonymousRegistrationDialog } from "~/components/events/anonymous-registration-dialog";
 import { CustomQuestionsForm } from "~/components/events/custom-questions-form";
 import { AttendersAvatarsSkeleton } from "~/components/events/attenders-avatars";
@@ -301,7 +340,20 @@ export async function action({ request, params }: Route.ActionArgs) {
 			});
 
 		if (registerError) {
-			return { success: false, error: registerError.message };
+			// Check for duplicate email error
+			const duplicateError = sanitizeDuplicateError(registerError, {
+				email,
+				isVerified: existingRegistration?.is_verified,
+			});
+			if (duplicateError) {
+				return { success: false, error: duplicateError };
+			}
+			// For other errors, return generic message to avoid exposing technical details
+			console.error("Error creating registration:", registerError);
+			return {
+				success: false,
+				error: "Failed to create registration. Please try again.",
+			};
 		}
 
 		// Send verification email
@@ -415,8 +467,20 @@ export async function action({ request, params }: Route.ActionArgs) {
 			});
 
 		if (registerError) {
+			// Check for duplicate email error
+			const duplicateError = sanitizeDuplicateError(registerError, {
+				email,
+				isVerified: existingRegistration!.is_verified,
+			});
+			if (duplicateError) {
+				return { success: false, error: duplicateError };
+			}
+			// For other errors, return generic message to avoid exposing technical details
 			console.error("Error creating registration:", registerError);
-			return { success: false, error: registerError.message };
+			return {
+				success: false,
+				error: "Failed to create registration. Please try again.",
+			};
 		}
 
 		console.log("Registration record created successfully");
@@ -462,7 +526,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 	}
 
 	if (intent === "register") {
-		// Check if already registered
+		// Check if already registered by user_id
 		const { data: existingRegistration } = await supabase
 			.from("event_registrations")
 			.select("id")
@@ -475,6 +539,23 @@ export async function action({ request, params }: Route.ActionArgs) {
 				success: false,
 				error: "You are already registered for this event",
 			};
+		}
+
+		// Check if user's email is already registered as anonymous
+		if (user.email) {
+			const { data: existingAnonymousRegistration } = await supabase
+				.from("event_registrations")
+				.select("id, is_verified")
+				.eq("event_id", eventId)
+				.eq("anonymous_email", user.email)
+				.maybeSingle();
+
+			if (existingAnonymousRegistration) {
+				return {
+					success: false,
+					error: "This email is already registered for this event",
+				};
+			}
 		}
 
 		// Parse custom_answers if provided
@@ -516,7 +597,19 @@ export async function action({ request, params }: Route.ActionArgs) {
 			});
 
 		if (registerError) {
-			return { success: false, error: registerError.message };
+			// Check for duplicate email error
+			const duplicateError = sanitizeDuplicateError(registerError, {
+				email: user.email || undefined,
+			});
+			if (duplicateError) {
+				return { success: false, error: duplicateError };
+			}
+			// For other errors, return generic message to avoid exposing technical details
+			console.error("Error creating registration:", registerError);
+			return {
+				success: false,
+				error: "Failed to create registration. Please try again.",
+			};
 		}
 
 		// Get user profile for email
@@ -750,6 +843,7 @@ export default function EventPublicView() {
 		anonymousEmail?: string;
 	}>();
 	const navigation = useNavigation();
+	const submit = useSubmit();
 	const [searchParams] = useSearchParams();
 	const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
 	const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
@@ -763,12 +857,13 @@ export default function EventPublicView() {
 
 	// Check if form is submitting
 	const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
+	const submittingIntent = navigation.formData?.get("intent") as string | null;
 	const isRegistering =
 		isSubmitting &&
-		navigation.formData?.get("intent") === "register";
+		(submittingIntent === "register" || submittingIntent === "anonymous-custom-questions");
 	const isUnregistering =
 		isSubmitting &&
-		navigation.formData?.get("intent") === "unregister";
+		submittingIntent === "unregister";
 
 	const eventDate = dayjs(event.start_time).tz(event.timezone);
 	const eventEndDate = event.end_time
@@ -870,39 +965,17 @@ export default function EventPublicView() {
 	};
 
 	const handleCustomQuestionsSubmit = (answers: any) => {
-		// Create a form and submit it
-		const form = document.createElement('form');
-		form.method = 'POST';
-		form.style.display = 'none';
-
-		const intentInput = document.createElement('input');
-		intentInput.type = 'hidden';
-		intentInput.name = 'intent';
-		intentInput.value = anonymousName ? 'anonymous-custom-questions' : 'register';
-		form.appendChild(intentInput);
-
-		const customAnswersInput = document.createElement('input');
-		customAnswersInput.type = 'hidden';
-		customAnswersInput.name = 'custom_answers';
-		customAnswersInput.value = JSON.stringify(answers);
-		form.appendChild(customAnswersInput);
+		// Use React Router's submit to properly track navigation state
+		const formData = new FormData();
+		formData.append('intent', anonymousName ? 'anonymous-custom-questions' : 'register');
+		formData.append('custom_answers', JSON.stringify(answers));
 
 		if (anonymousName && anonymousEmail) {
-			const nameInput = document.createElement('input');
-			nameInput.type = 'hidden';
-			nameInput.name = 'name';
-			nameInput.value = anonymousName;
-			form.appendChild(nameInput);
-
-			const emailInput = document.createElement('input');
-			emailInput.type = 'hidden';
-			emailInput.name = 'email';
-			emailInput.value = anonymousEmail;
-			form.appendChild(emailInput);
+			formData.append('name', anonymousName);
+			formData.append('email', anonymousEmail);
 		}
 
-		document.body.appendChild(form);
-		form.submit();
+		submit(formData, { method: 'POST' });
 	};
 
 	return (

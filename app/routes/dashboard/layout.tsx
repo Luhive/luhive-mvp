@@ -1,7 +1,9 @@
 import { redirect } from "react-router"
 import { Outlet, useLoaderData, useLocation } from "react-router"
+import { useEffect } from "react"
 import { createClient } from "~/lib/supabase.server"
 import type { Database } from "~/models/database.types"
+import { setUser, setCommunityContext } from "~/services/sentry"
 
 import { AppSidebar } from "~/components/app-sidebar"
 import { SiteHeader } from "~/components/site-header"
@@ -123,6 +125,20 @@ function getHeaderTitle(pathname: string): string {
 export default function DashboardLayout() {
   const { community, user, userEmail, role } = useLoaderData<DashboardLoaderData>()
   const location = useLocation()
+
+  // Set Sentry user and community context
+  useEffect(() => {
+    setUser({
+      id: user.id,
+      email: userEmail,
+      username: user.full_name || undefined,
+    });
+    setCommunityContext({
+      id: community.id,
+      slug: community.slug,
+      name: community.name,
+    });
+  }, [user, userEmail, community]);
 
   return (
     <SidebarProvider
