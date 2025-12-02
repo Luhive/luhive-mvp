@@ -1,4 +1,5 @@
 import type { Config } from "@react-router/dev/config";
+import { sentryOnBuildEnd } from "@sentry/react-router";
 
 export default {
   // Config options...
@@ -7,4 +8,9 @@ export default {
   // prerender: ["/login", "/signup", "/create-community"],
   // Note: React Router v7 automatically caches loader data in memory
   // between navigations for better performance
+  buildEnd: async ({ viteConfig, reactRouterConfig, buildManifest }) => {
+    // ...
+    // Call this at the end of the hook
+    +(await sentryOnBuildEnd({ viteConfig, reactRouterConfig, buildManifest }));
+  },
 } satisfies Config;

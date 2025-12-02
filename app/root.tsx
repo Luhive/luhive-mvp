@@ -7,6 +7,8 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import * as Sentry from "@sentry/react-router";
+
 import type { Route } from "./+types/root";
 import "./app.css";
 import manrope400Url from "./assets/fonts/manrope-v20-latin_latin-ext-regular.woff2?url";
@@ -15,6 +17,8 @@ import manrope600Url from "./assets/fonts/manrope-v20-latin_latin-ext-600.woff2?
 import manrope700Url from "./assets/fonts/manrope-v20-latin_latin-ext-700.woff2?url";
 import { Toaster } from "sonner";
 import ErrorComponent from "./routes/error";
+
+
 
 export const links: Route.LinksFunction = () => [
   // Preload local Manrope font files for faster first paint
@@ -25,6 +29,7 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+
   return (
     <html lang="en">
       <head>
@@ -53,15 +58,20 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
 
+  if (!isRouteErrorResponse(error)) {
+    Sentry.captureException(error);
+  }
+
+
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? "404" : "Error";
     details =
       error.status === 404
         ? "The requested page could not be found."
         : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof ErrorComponent) {
-    details = (error as Error).message || details;
-    stack = (error as Error).stack;
+  } else if (import.meta.env.DEV && error instanceof Error) {
+    details = error.message || details;
+    stack = error.stack;
   }
 
   return <ErrorComponent message={message} details={details} stack={stack} />;
