@@ -1,5 +1,5 @@
 import { PassThrough } from "node:stream";
-import './instrument.server';
+import './../instrument.server.mjs'
 
 import type { AppLoadContext, EntryContext } from "react-router";
 import { createReadableStreamFromReadable } from "@react-router/node";

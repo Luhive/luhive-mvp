@@ -16,6 +16,9 @@ const sentryConfig: SentryReactRouterBuildOptions = {
   // store it in an environment variable to keep it secure.
   authToken: process.env.SENTRY_AUTH_TOKEN,
   // ...
+  sourcemaps: {
+    filesToDeleteAfterUpload: ["./build/**/*.map"],
+  },
 };
 
 const ensureServerBuildEntry = (): PluginOption => {
