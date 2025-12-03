@@ -1,5 +1,3 @@
-import { CustomAnswerJson, CustomQuestionJson } from "./event.types"
-
 export type Json =
   | string
   | number
@@ -202,7 +200,7 @@ export type Database = {
           approval_status:
             | Database["public"]["Enums"]["event_approval_statuses"]
             | null
-          custom_answers: CustomAnswerJson | Json | null
+          custom_answers: Json | null
           event_id: string
           id: string
           is_verified: boolean
@@ -220,7 +218,7 @@ export type Database = {
           approval_status?:
             | Database["public"]["Enums"]["event_approval_statuses"]
             | null
-          custom_answers?: CustomAnswerJson | Json | null
+          custom_answers?: Json | null
           event_id: string
           id?: string
           is_verified?: boolean
@@ -238,7 +236,7 @@ export type Database = {
           approval_status?:
             | Database["public"]["Enums"]["event_approval_statuses"]
             | null
-          custom_answers?: CustomAnswerJson | Json | null
+          custom_answers?: Json | null
           event_id?: string
           id?: string
           is_verified?: boolean
@@ -273,16 +271,20 @@ export type Database = {
           cover_url: string | null
           created_at: string | null
           created_by: string
-          custom_questions: CustomQuestionJson | Json | null
+          custom_questions: Json | null
           description: string | null
           discussion_link: string | null
           end_time: string | null
           event_type: Database["public"]["Enums"]["event_type"]
+          external_platform: string | null
+          external_registration_count: number | null
+          external_registration_url: string | null
           id: string
           is_approve_required: boolean
           location_address: string | null
           online_meeting_link: string | null
           registration_deadline: string | null
+          registration_type: string | null
           slug: string | null
           start_time: string
           status: Database["public"]["Enums"]["event_status"]
@@ -296,16 +298,20 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           created_by: string
-          custom_questions?: CustomQuestionJson | Json | null
+          custom_questions?: Json | null
           description?: string | null
           discussion_link?: string | null
           end_time?: string | null
           event_type: Database["public"]["Enums"]["event_type"]
+          external_platform?: string | null
+          external_registration_count?: number | null
+          external_registration_url?: string | null
           id?: string
           is_approve_required?: boolean
           location_address?: string | null
           online_meeting_link?: string | null
           registration_deadline?: string | null
+          registration_type?: string | null
           slug?: string | null
           start_time: string
           status?: Database["public"]["Enums"]["event_status"]
@@ -319,16 +325,20 @@ export type Database = {
           cover_url?: string | null
           created_at?: string | null
           created_by?: string
-          custom_questions?: CustomQuestionJson | Json | null
+          custom_questions?: Json | null
           description?: string | null
           discussion_link?: string | null
           end_time?: string | null
           event_type?: Database["public"]["Enums"]["event_type"]
+          external_platform?: string | null
+          external_registration_count?: number | null
+          external_registration_url?: string | null
           id?: string
           is_approve_required?: boolean
           location_address?: string | null
           online_meeting_link?: string | null
           registration_deadline?: string | null
+          registration_type?: string | null
           slug?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["event_status"]

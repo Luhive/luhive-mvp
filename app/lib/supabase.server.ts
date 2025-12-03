@@ -3,6 +3,8 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Database } from "~/models/database.types";
 import * as Sentry from "@sentry/react-router";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 export function createClient(request: Request) {
   const headers = new Headers();
 
@@ -31,10 +33,12 @@ export function createClient(request: Request) {
     }
   );
 
-  // Add Sentry Supabase integration for this request's client
-  Sentry.addIntegration(
-    Sentry.supabaseIntegration({ supabaseClient: supabase })
-  );
+  // Only add Sentry Supabase integration in production
+  if (isProduction) {
+    Sentry.addIntegration(
+      Sentry.supabaseIntegration({ supabaseClient: supabase })
+    );
+  }
 
   return { supabase, headers };
 }
@@ -56,10 +60,12 @@ export function createServiceRoleClient() {
     }
   );
 
-  // Add Sentry Supabase integration for service role client
-  Sentry.addIntegration(
-    Sentry.supabaseIntegration({ supabaseClient: serviceClient })
-  );
+  // Only add Sentry Supabase integration in production
+  if (isProduction) {
+    Sentry.addIntegration(
+      Sentry.supabaseIntegration({ supabaseClient: serviceClient })
+    );
+  }
 
   return serviceClient;
 }
