@@ -17,14 +17,36 @@ import {
   DropdownMenuSeparator,
 } from '~/components/ui/dropdown-menu';
 import { Badge } from '~/components/ui/badge';
-import { Plus, Search, Calendar, Filter, MapPin, Users, MoreHorizontal, ExternalLink, Edit, Trash2, BarChart3, Clock } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Calendar,
+  Filter,
+  MapPin,
+  Users,
+  MoreHorizontal,
+  ExternalLink,
+  Edit,
+  Trash2,
+  BarChart3,
+  Clock,
+  ChevronDown,
+  Link as LinkIcon,
+  Bell,
+} from 'lucide-react';
 import type { Database } from '~/models/database.types';
+import type { ExternalPlatform } from '~/models/event.types';
 import dayjs from 'dayjs';
 import { cn } from '~/lib/utils';
+import {
+  getExternalPlatformName,
+  getExternalPlatformIcon,
+} from '~/lib/utils/external-platform';
 
 type Event = Database['public']['Tables']['events']['Row'];
 type EventStatus = Database['public']['Enums']['event_status'];
 type EventType = Database['public']['Enums']['event_type'];
+type RegistrationTypeFilter = 'all' | 'luhive' | 'external';
 
 interface EventListProps {
   events: (Event & { registration_count?: number })[];
@@ -37,6 +59,7 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
   const [statusFilter, setStatusFilter] = useState<EventStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all');
   const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [registrationTypeFilter, setRegistrationTypeFilter] = useState<RegistrationTypeFilter>('all');
 
   // Filter events
   const filteredEvents = events.filter((event) => {
@@ -67,6 +90,17 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
       }
     }
 
+    // Registration type filter
+    if (registrationTypeFilter !== 'all') {
+      const isExternal = event.registration_type === 'external';
+      if (registrationTypeFilter === 'external' && !isExternal) {
+        return false;
+      }
+      if (registrationTypeFilter === 'luhive' && isExternal) {
+        return false;
+      }
+    }
+
     return true;
   });
 
@@ -79,10 +113,21 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
   const formatEventType = (type: EventType): string => {
     const typeMap: Record<EventType, string> = {
       'in-person': 'in-person',
-      'online': 'online',
-      'hybrid': 'hybrid',
+      online: 'online',
+      hybrid: 'hybrid',
     };
     return typeMap[type] || type;
+  };
+
+  // Helper function to check if event is external
+  const isExternalEvent = (event: Event): boolean => {
+    return event.registration_type === 'external';
+  };
+
+  // Helper function to get registration/subscription count for an event
+  const getRegistrationCount = (event: Event & { registration_count?: number }): number => {
+    // For both native and external events, use registration_count from event_registrations
+    return event.registration_count || 0;
   };
 
   // Stats
@@ -91,6 +136,7 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
     published: events.filter((e) => e.status === 'published').length,
     draft: events.filter((e) => e.status === 'draft').length,
     upcoming: events.filter((e) => dayjs(e.start_time).isAfter(dayjs())).length,
+    external: events.filter((e) => e.registration_type === 'external').length,
   };
 
   return (
@@ -99,20 +145,49 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Events</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage your community events
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">Manage your community events</p>
         </div>
-        <Button asChild>
-          <Link to={`/dashboard/${communitySlug}/events/create`}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Event
-          </Link>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Event
+              <ChevronDown className="h-4 w-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem asChild>
+              <Link to={`/dashboard/${communitySlug}/events/create`} className="flex items-center">
+                <Calendar className="w-4 h-4 mr-2" />
+                <div className="flex flex-col">
+                  <span className="font-medium">Luhive Event</span>
+                  <span className="text-xs text-muted-foreground">
+                    Full registration & analytics
+                  </span>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link
+                to={`/dashboard/${communitySlug}/events/create-external`}
+                className="flex items-center"
+              >
+                <LinkIcon className="w-4 h-4 mr-2" />
+                <div className="flex flex-col">
+                  <span className="font-medium">External Event</span>
+                  <span className="text-xs text-muted-foreground">
+                    Link to Google Forms, etc.
+                  </span>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div className="bg-muted/50 rounded-lg p-4">
           <div className="text-2xl font-bold">{stats.total}</div>
           <div className="text-xs text-muted-foreground">Total Events</div>
@@ -128,6 +203,10 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
         <div className="bg-muted/50 rounded-lg p-4">
           <div className="text-2xl font-bold">{stats.upcoming}</div>
           <div className="text-xs text-muted-foreground">Upcoming</div>
+        </div>
+        <div className="bg-muted/50 rounded-lg p-4">
+          <div className="text-2xl font-bold">{stats.external}</div>
+          <div className="text-xs text-muted-foreground">External</div>
         </div>
       </div>
 
@@ -145,7 +224,10 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
         </div>
 
         {/* Status Filter */}
-        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as EventStatus | 'all')}>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as EventStatus | 'all')}
+        >
           <SelectTrigger className="w-full sm:w-[160px]">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Status" />
@@ -159,7 +241,10 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
         </Select>
 
         {/* Type Filter */}
-        <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as EventType | 'all')}>
+        <Select
+          value={typeFilter}
+          onValueChange={(value) => setTypeFilter(value as EventType | 'all')}
+        >
           <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
@@ -172,7 +257,10 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
         </Select>
 
         {/* Time Filter */}
-        <Select value={timeFilter} onValueChange={(value) => setTimeFilter(value as 'all' | 'upcoming' | 'past')}>
+        <Select
+          value={timeFilter}
+          onValueChange={(value) => setTimeFilter(value as 'all' | 'upcoming' | 'past')}
+        >
           <SelectTrigger className="w-full sm:w-[160px]">
             <Calendar className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Time" />
@@ -183,19 +271,36 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
             <SelectItem value="past">Past</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Registration Type Filter */}
+        <Select
+          value={registrationTypeFilter}
+          onValueChange={(value) => setRegistrationTypeFilter(value as RegistrationTypeFilter)}
+        >
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <LinkIcon className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Registration" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Events</SelectItem>
+            <SelectItem value="luhive">Luhive</SelectItem>
+            <SelectItem value="external">External</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Active Filters Summary */}
-      {(searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || timeFilter !== 'all') && (
+      {(searchQuery ||
+        statusFilter !== 'all' ||
+        typeFilter !== 'all' ||
+        timeFilter !== 'all' ||
+        registrationTypeFilter !== 'all') && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {searchQuery && (
             <Badge variant="secondary">
               Search: {searchQuery}
-              <button
-                onClick={() => setSearchQuery('')}
-                className="ml-1 hover:text-foreground"
-              >
+              <button onClick={() => setSearchQuery('')} className="ml-1 hover:text-foreground">
                 ×
               </button>
             </Badge>
@@ -203,10 +308,7 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
           {statusFilter !== 'all' && (
             <Badge variant="secondary">
               Status: {statusFilter}
-              <button
-                onClick={() => setStatusFilter('all')}
-                className="ml-1 hover:text-foreground"
-              >
+              <button onClick={() => setStatusFilter('all')} className="ml-1 hover:text-foreground">
                 ×
               </button>
             </Badge>
@@ -214,10 +316,7 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
           {typeFilter !== 'all' && (
             <Badge variant="secondary">
               Type: {typeFilter}
-              <button
-                onClick={() => setTypeFilter('all')}
-                className="ml-1 hover:text-foreground"
-              >
+              <button onClick={() => setTypeFilter('all')} className="ml-1 hover:text-foreground">
                 ×
               </button>
             </Badge>
@@ -225,8 +324,16 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
           {timeFilter !== 'all' && (
             <Badge variant="secondary">
               Time: {timeFilter}
+              <button onClick={() => setTimeFilter('all')} className="ml-1 hover:text-foreground">
+                ×
+              </button>
+            </Badge>
+          )}
+          {registrationTypeFilter !== 'all' && (
+            <Badge variant="secondary">
+              Registration: {registrationTypeFilter === 'luhive' ? 'Luhive' : 'External'}
               <button
-                onClick={() => setTimeFilter('all')}
+                onClick={() => setRegistrationTypeFilter('all')}
                 className="ml-1 hover:text-foreground"
               >
                 ×
@@ -241,6 +348,7 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
               setStatusFilter('all');
               setTypeFilter('all');
               setTimeFilter('all');
+              setRegistrationTypeFilter('all');
             }}
           >
             Clear all
@@ -257,19 +365,22 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
           <div className="space-y-3">
             {(() => {
               // Group events by month, then by date
-              const eventsByMonth = sortedEvents.reduce((acc, event) => {
-                const monthKey = dayjs(event.start_time).format('YYYY-MM');
-                const dateKey = dayjs(event.start_time).format('YYYY-MM-DD');
+              const eventsByMonth = sortedEvents.reduce(
+                (acc, event) => {
+                  const monthKey = dayjs(event.start_time).format('YYYY-MM');
+                  const dateKey = dayjs(event.start_time).format('YYYY-MM-DD');
 
-                if (!acc[monthKey]) {
-                  acc[monthKey] = {};
-                }
-                if (!acc[monthKey][dateKey]) {
-                  acc[monthKey][dateKey] = [];
-                }
-                acc[monthKey][dateKey].push(event);
-                return acc;
-              }, {} as Record<string, Record<string, typeof sortedEvents>>);
+                  if (!acc[monthKey]) {
+                    acc[monthKey] = {};
+                  }
+                  if (!acc[monthKey][dateKey]) {
+                    acc[monthKey][dateKey] = [];
+                  }
+                  acc[monthKey][dateKey].push(event);
+                  return acc;
+                },
+                {} as Record<string, Record<string, typeof sortedEvents>>
+              );
 
               const monthEntries = Object.entries(eventsByMonth);
 
@@ -323,13 +434,19 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                             const weekday = eventDate.format('ddd').toUpperCase();
                             const date = eventDate.format('MMM D');
                             const time = eventDate.format('h:mm A');
-                            const registrationCount = event.registration_count || 0;
+                            const registrationCount = getRegistrationCount(event);
                             const capacity = event.capacity;
-                            const location = event.event_type === 'in-person'
-                              ? event.location_address
-                              : event.event_type === 'online'
-                                ? 'Online Event'
-                                : event.location_address || 'Hybrid Event';
+                            const location =
+                              event.event_type === 'in-person'
+                                ? event.location_address
+                                : event.event_type === 'online'
+                                  ? 'Online Event'
+                                  : event.location_address || 'Hybrid Event';
+                            const isExternal = isExternalEvent(event);
+                            const platform = event.external_platform as ExternalPlatform | null;
+                            const PlatformIcon = platform
+                              ? getExternalPlatformIcon(platform)
+                              : null;
 
                             return (
                               <div
@@ -348,12 +465,18 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                           className="w-full h-full object-cover"
                                         />
                                       ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-2xl">📅</div>
+                                          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-2xl">
+                                            📅
+                                          </div>
                                       )}
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-xs font-semibold text-red-500 uppercase tracking-wider">{weekday}</span>
-                                      <span className="text-xl font-bold text-gray-900">{date}</span>
+                                      <span className="text-xs font-semibold text-red-500 uppercase tracking-wider">
+                                        {weekday}
+                                      </span>
+                                      <span className="text-xl font-bold text-gray-900">
+                                        {date}
+                                      </span>
                                       <span className="text-xs text-gray-500 mt-0.5">{time}</span>
 
                                       {/* Mobile: Status and Registration Badges */}
@@ -361,19 +484,44 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                         <Badge
                                           variant="secondary"
                                           className={cn(
-                                            "h-5 px-1.5 text-[10px] uppercase tracking-wider font-semibold rounded-md",
-                                            event.status === "published"
-                                              ? "bg-green-50 text-green-700 hover:bg-green-100"
-                                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                            'h-5 px-1.5 text-[10px] uppercase tracking-wider font-semibold rounded-md',
+                                            event.status === 'published'
+                                              ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                           )}
                                         >
                                           {event.status}
                                         </Badge>
-                                        <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full border border-primary/20">
-                                          <Users className="w-3 h-3 text-primary" />
-                                          <span className="text-xs font-bold text-primary">{registrationCount}</span>
-                                          <span className="text-[10px] text-primary/70">/{capacity || "∞"}</span>
-                                        </div>
+                                        {isExternal ? (
+                                          <Badge
+                                            variant="outline"
+                                            className="h-5 px-1.5 text-[10px] uppercase tracking-wider font-semibold rounded-md border-primary/50 bg-primary/5 text-primary"
+                                          >
+                                            {PlatformIcon && (
+                                              <PlatformIcon className="w-3 h-3 mr-1 text-primary" />
+                                            )}
+                                            External
+                                          </Badge>
+                                        ) : (
+                                            <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full border border-primary/20">
+                                              <Users className="w-3 h-3 text-primary" />
+                                              <span className="text-xs font-bold text-primary">
+                                                {registrationCount}
+                                              </span>
+                                              <span className="text-[10px] text-primary/70">
+                                                /{capacity || '∞'}
+                                              </span>
+                                            </div>
+                                        )}
+                                        {isExternal && registrationCount > 0 && (
+                                          <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full border border-primary/20">
+                                            <Bell className="w-3 h-3 text-primary" />
+                                            <span className="text-xs font-bold text-primary">
+                                              {registrationCount}
+                                            </span>
+                                            <span className="text-[10px] text-primary/70">subscribed</span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -387,7 +535,9 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
-                                      <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-4xl">📅</div>
+                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 text-4xl">
+                                          📅
+                                        </div>
                                     )}
                                   </div>
                                 </div>
@@ -399,10 +549,10 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                     <Badge
                                       variant="secondary"
                                       className={cn(
-                                        "h-5 px-1.5 text-[10px] uppercase tracking-wider font-semibold rounded-md",
-                                        event.status === "published"
-                                          ? "bg-green-50 text-green-700 hover:bg-green-100"
-                                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                        'h-5 px-1.5 text-[10px] uppercase tracking-wider font-semibold rounded-md',
+                                        event.status === 'published'
+                                          ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                       )}
                                     >
                                       {event.status}
@@ -410,6 +560,19 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                     <span className="text-xs text-gray-400 font-medium px-2 py-0.5 bg-gray-50 rounded-full border border-gray-100">
                                       {formatEventType(event.event_type)}
                                     </span>
+                                    {isExternal && (
+                                      <Badge
+                                        variant="outline"
+                                        className="h-5 px-1.5 text-[10px] uppercase tracking-wider font-semibold rounded-md border-primary/50 bg-primary/5 text-primary"
+                                      >
+                                        {PlatformIcon && (
+                                          <PlatformIcon className="w-3 h-3 mr-1 text-primary" />
+                                        )}
+                                        {platform
+                                          ? getExternalPlatformName(platform)
+                                          : 'External'}
+                                      </Badge>
+                                    )}
                                   </div>
                                   <h3 className="text-lg font-bold text-gray-900 truncate group-hover:text-primary transition-colors">
                                     {event.title}
@@ -425,18 +588,31 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                     </div>
                                   </div>
 
-                                  {/* Desktop: Registration Count */}
+                                  {/* Desktop: Registration/Subscription Count */}
                                   <div className="hidden md:flex items-center gap-3 mt-3">
-                                    <div className="flex items-center gap-2 px-2.5 py-1.5 bg-primary/5 rounded-full border border-primary/20 w-fit transition-colors group-hover:bg-primary/15 group-hover:border-primary/30">
-                                      <Users className="w-3.5 h-3.5 text-primary" />
-                                      <div className="flex items-baseline gap-1">
-                                        <span className="text-sm font-bold text-primary">{registrationCount}</span>
-                                        <span className="text-xs text-primary/70 font-medium">
-                                          / {capacity ? capacity : "∞"}
+                                    {isExternal ? (
+                                      <div className="flex items-center gap-2 px-2.5 py-1.5 bg-primary/5 rounded-full border border-primary/20 w-fit">
+                                        <Bell className="w-3.5 h-3.5 text-primary" />
+                                        <span className="text-xs text-primary font-medium">
+                                          {registrationCount} {registrationCount === 1 ? 'subscribed' : 'subscribed'}
                                         </span>
-                                        <span className="text-xs text-primary/70 font-medium ml-1">registered</span>
                                       </div>
-                                    </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 px-2.5 py-1.5 bg-primary/5 rounded-full border border-primary/20 w-fit transition-colors group-hover:bg-primary/15 group-hover:border-primary/30">
+                                          <Users className="w-3.5 h-3.5 text-primary" />
+                                          <div className="flex items-baseline gap-1">
+                                            <span className="text-sm font-bold text-primary">
+                                              {registrationCount}
+                                            </span>
+                                            <span className="text-xs text-primary/70 font-medium">
+                                              / {capacity ? capacity : '∞'}
+                                            </span>
+                                            <span className="text-xs text-primary/70 font-medium ml-1">
+                                              registered
+                                            </span>
+                                          </div>
+                                        </div>
+                                    )}
                                   </div>
                                 </div>
 
@@ -455,18 +631,24 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                           <ExternalLink className="w-4 h-4" />
                                         </Link>
                                       </Button>
-                                      <div className="w-px h-4 bg-gray-200"></div>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
-                                        title="Manage Guests"
-                                        asChild
-                                      >
-                                        <Link to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}>
-                                          <Users className="w-4 h-4" />
-                                        </Link>
-                                      </Button>
+                                      {!isExternal && (
+                                        <>
+                                          <div className="w-px h-4 bg-gray-200"></div>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
+                                            title="Manage Guests"
+                                            asChild
+                                          >
+                                            <Link
+                                              to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}
+                                            >
+                                              <Users className="w-4 h-4" />
+                                            </Link>
+                                          </Button>
+                                        </>
+                                      )}
                                       <div className="w-px h-4 bg-gray-200"></div>
                                       <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -483,12 +665,28 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                             <Edit className="w-4 h-4 mr-2" />
                                             Edit Details
                                           </DropdownMenuItem>
-                                          <DropdownMenuItem asChild>
-                                            <Link to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}>
-                                              <Users className="w-4 h-4 mr-2" />
-                                              Manage Guests
-                                            </Link>
-                                          </DropdownMenuItem>
+                                          {!isExternal && (
+                                            <DropdownMenuItem asChild>
+                                              <Link
+                                                to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}
+                                              >
+                                                <Users className="w-4 h-4 mr-2" />
+                                                Manage Guests
+                                              </Link>
+                                            </DropdownMenuItem>
+                                          )}
+                                          {isExternal && event.external_registration_url && (
+                                            <DropdownMenuItem asChild>
+                                              <a
+                                                href={event.external_registration_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                              >
+                                                <ExternalLink className="w-4 h-4 mr-2" />
+                                                Open Registration Form
+                                              </a>
+                                            </DropdownMenuItem>
+                                          )}
                                           <DropdownMenuItem disabled>
                                             <BarChart3 className="w-4 h-4 mr-2" />
                                             View Analytics
@@ -512,7 +710,7 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                         </div>
                       </div>
                     );
-                  })
+                  }),
                 ];
               });
             })()}
@@ -524,20 +722,27 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
           <h3 className="text-lg font-semibold mb-2">No events found</h3>
           <p className="text-sm text-muted-foreground mb-6">
             {events.length === 0
-              ? "Get started by creating your first event"
-              : "Try adjusting your filters"}
+                ? 'Get started by creating your first event'
+                : 'Try adjusting your filters'}
           </p>
           {events.length === 0 && (
-            <Button asChild>
-              <Link to={`/dashboard/${communitySlug}/events/create`}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Event
-              </Link>
-            </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button asChild>
+                  <Link to={`/dashboard/${communitySlug}/events/create`}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Luhive Event
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link to={`/dashboard/${communitySlug}/events/create-external`}>
+                    <LinkIcon className="h-4 w-4 mr-2" />
+                    Create External Event
+                  </Link>
+                </Button>
+              </div>
           )}
         </div>
       )}
     </div>
   );
 }
-

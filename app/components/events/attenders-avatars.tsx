@@ -13,6 +13,7 @@ interface AttenderAvatar {
 interface AttendersAvatarsProps {
   eventId: string
   maxVisible?: number
+  isExternalEvent?: boolean
 }
 
 const AttendersAvatarsSkeleton = () => {
@@ -31,7 +32,7 @@ const AttendersAvatarsSkeleton = () => {
   )
 }
 
-const AttendersAvatars = ({ eventId, maxVisible = 3 }: AttendersAvatarsProps) => {
+const AttendersAvatars = ({ eventId, maxVisible = 3, isExternalEvent = false }: AttendersAvatarsProps) => {
   const [attendees, setAttendees] = useState<AttenderAvatar[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -98,7 +99,7 @@ const AttendersAvatars = ({ eventId, maxVisible = 3 }: AttendersAvatarsProps) =>
             'hover:border-primary/50 transition-transform cursor-pointer',
             'focus:outline-none focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:rounded-full',
           )}
-          aria-label="View all attendees"
+          aria-label={isExternalEvent ? "View all subscribers" : "View all attendees"}
         >
           <div className='flex -space-x-2'>
             {visibleAttendees.map((attendee) => (
@@ -136,6 +137,7 @@ const AttendersAvatars = ({ eventId, maxVisible = 3 }: AttendersAvatarsProps) =>
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         eventId={eventId}
+        isExternalEvent={isExternalEvent}
       />
     </>
   )

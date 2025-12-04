@@ -27,8 +27,10 @@ function createClient() {
     SUPABASE_ANON_KEY
   );
 
-  // Add Sentry Supabase integration
-  Sentry.addIntegration(Sentry.supabaseIntegration({ supabaseClient }));
+  // Only add Sentry Supabase integration in production
+  if (import.meta.env.PROD) {
+    Sentry.addIntegration(Sentry.supabaseIntegration({ supabaseClient }));
+  }
 
   return supabaseClient;
 }
