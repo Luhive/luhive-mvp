@@ -1,7 +1,9 @@
 import { redirect } from "react-router";
 import { createClient, createServiceRoleClient } from "~/lib/supabase.server";
 import type { Route } from "./+types/$slug.events.$eventId.verify";
-import { sendRegistrationConfirmationEmail } from "~/lib/email.server";
+import { sendRegistrationConfirmationEmail, sendSubscriptionConfirmationEmail } from "~/lib/email.server";
+import { getExternalPlatformName } from "~/lib/utils/external-platform";
+import type { ExternalPlatform } from "~/models/event.types";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -128,28 +130,51 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		return redirect(`/c/${slug}/events/${eventId}?verified=success`, { headers });
 	}
 
-	// Send confirmation email
+	// Send confirmation email (subscription for external events, registration for native)
 	const eventDate = dayjs(event.start_time).tz(event.timezone);
 	const eventLink = `${url.origin}/c/${slug}/events/${eventId}`;
 	const registerAccountLink = `${url.origin}/signup`;
+	const isExternalEvent = event.registration_type === "external";
 
 	try {
-		console.log("Sending confirmation email");
-		await sendRegistrationConfirmationEmail({
-			eventTitle: event.title,
-			communityName: community.name,
-			eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-			eventTime: eventDate.format("h:mm A z"),
-			eventLink,
-			recipientName: registration.anonymous_name || "there",
-			recipientEmail: registration.anonymous_email || "",
-			registerAccountLink,
-			locationAddress: event.location_address || undefined,
-			onlineMeetingLink: event.online_meeting_link || undefined,
-			startTimeISO: event.start_time,
-			endTimeISO: event.end_time || event.start_time,
-		});
-		console.log("Confirmation email sent successfully");
+		if (isExternalEvent) {
+			console.log("Sending subscription confirmation email");
+			const externalPlatformName = getExternalPlatformName(
+				(event.external_platform as ExternalPlatform) || "other"
+			);
+			await sendSubscriptionConfirmationEmail({
+				eventTitle: event.title,
+				communityName: community.name,
+				eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+				eventTime: eventDate.format("h:mm A z"),
+				eventLink,
+				externalRegistrationUrl: event.external_registration_url || "",
+				externalPlatformName,
+				recipientName: registration.anonymous_name || "there",
+				recipientEmail: registration.anonymous_email || "",
+				registerAccountLink,
+				locationAddress: event.location_address || undefined,
+				onlineMeetingLink: event.online_meeting_link || undefined,
+			});
+			console.log("Subscription confirmation email sent successfully");
+		} else {
+			console.log("Sending registration confirmation email");
+			await sendRegistrationConfirmationEmail({
+				eventTitle: event.title,
+				communityName: community.name,
+				eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+				eventTime: eventDate.format("h:mm A z"),
+				eventLink,
+				recipientName: registration.anonymous_name || "there",
+				recipientEmail: registration.anonymous_email || "",
+				registerAccountLink,
+				locationAddress: event.location_address || undefined,
+				onlineMeetingLink: event.online_meeting_link || undefined,
+				startTimeISO: event.start_time,
+				endTimeISO: event.end_time || event.start_time,
+			});
+			console.log("Registration confirmation email sent successfully");
+		}
 	} catch (error) {
 		console.error("Failed to send confirmation email:", error);
 		// Continue anyway - verification was successful

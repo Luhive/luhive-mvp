@@ -136,9 +136,10 @@ const approvalStatusConfig: Record<
 
 interface AttendersTableProps {
   eventId: string;
+  isExternalEvent?: boolean;
 }
 
-export function AttendersTable({ eventId }: AttendersTableProps) {
+export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTableProps) {
   const [data, setData] = useState<Attender[]>([]);
   const [loading, setLoading] = useState(true);
   const [customQuestions, setCustomQuestions] = useState<CustomQuestionJson | null>(null);
@@ -210,7 +211,7 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
 
       if (error) {
         console.error("Error fetching registrations:", error);
-        toast.error("Failed to load attenders");
+        toast.error(isExternalEvent ? "Failed to load subscribers" : "Failed to load attenders");
         setData([]);
         setLoading(false);
         return;
@@ -388,7 +389,7 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
 
     const ws = utils.json_to_sheet(exportData);
     const wb = utils.book_new();
-    utils.book_append_sheet(wb, ws, "Attenders");
+    utils.book_append_sheet(wb, ws, isExternalEvent ? "Subscribers" : "Attenders");
     writeFile(wb, "event-attenders.xlsx");
   }, [data, eventId, customQuestions]);
 
@@ -418,7 +419,7 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
       },
       {
         accessorKey: "name",
-        header: "Attender",
+        header: isExternalEvent ? "Subscriber" : "Attender",
         cell: ({ row }) => (
           <button
             onClick={() => handleShowAttenderDetails(row.original)}
@@ -504,7 +505,7 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
       },
       {
         accessorKey: "registered_at",
-        header: "Registered",
+        header: isExternalEvent ? "Subscribed" : "Registered",
         cell: ({ row }) => {
           if (!row.original.registered_at)
             return <span className="text-muted-foreground">-</span>;
@@ -655,7 +656,7 @@ export function AttendersTable({ eventId }: AttendersTableProps) {
               <Search className="h-4 w-4 text-muted-foreground" />
             </InputGroupAddon>
             <InputGroupInput
-              placeholder="Filter attenders..."
+              placeholder={isExternalEvent ? "Filter subscribers..." : "Filter attenders..."}
               value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
               onChange={(event) =>
                 table.getColumn("name")?.setFilterValue(event.target.value)

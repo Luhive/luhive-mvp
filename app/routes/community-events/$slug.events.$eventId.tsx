@@ -17,6 +17,8 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Separator } from "~/components/ui/separator";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { toast } from "sonner";
 import {
 	Calendar,
@@ -38,6 +40,12 @@ import {
 	getPlatformName,
 	getPlatformIcon,
 } from "~/lib/discussion-platform";
+import type { ExternalPlatform } from "~/models/event.types";
+import {
+	getExternalPlatformName,
+	getExternalPlatformIcon,
+} from "~/lib/utils/external-platform";
+import { Bell } from "lucide-react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -48,6 +56,7 @@ import {
 	sendVerificationEmail,
 	sendRegistrationConfirmationEmail,
 	sendRegistrationRequestEmail,
+	sendSubscriptionConfirmationEmail,
 } from "~/lib/email.server";
 
 /**
@@ -88,6 +97,7 @@ function sanitizeDuplicateError(
 	return null;
 }
 import { AnonymousRegistrationDialog } from "~/components/events/anonymous-registration-dialog";
+import { AnonymousSubscriptionDialog } from "~/components/events/anonymous-subscription-dialog";
 import { CustomQuestionsForm } from "~/components/events/custom-questions-form";
 import { AttendersAvatarsSkeleton } from "~/components/events/attenders-avatars";
 
@@ -162,7 +172,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		throw new Response("Event not available", { status: 404 });
 	}
 
-	// Get registration count (only approved registrations count towards capacity)
+	// Get registration/subscription count
+	// For external events, count all approved subscriptions
+	// For native events, count only approved registrations
+	const isExternal = event.registration_type === "external";
 	const { count: registrationCount } = await supabase
 		.from("event_registrations")
 		.select("*", { count: "exact", head: true })
@@ -515,6 +528,106 @@ export async function action({ request, params }: Route.ActionArgs) {
 		);
 	}
 
+	// Handle anonymous subscription (no auth required)
+	if (intent === "anonymous-subscribe") {
+		// Only allow subscribe for external events
+		if (event.registration_type !== "external") {
+			return { success: false, error: "Subscribe is only available for external events" };
+		}
+
+		const name = formData.get("name") as string;
+		const email = formData.get("email") as string;
+
+		if (!name || !email) {
+			return { success: false, error: "Name and email are required" };
+		}
+
+		// Check if this email is already subscribed
+		const { data: existingRegistration, error: existingRegistrationError } =
+			await supabase
+				.from("event_registrations")
+				.select("id, is_verified")
+				.eq("event_id", eventId)
+				.eq("anonymous_email", email)
+				.maybeSingle();
+
+		if (
+			existingRegistrationError &&
+			existingRegistrationError.code !== "PGRST116"
+		) {
+			console.error("Error checking subscription:", existingRegistrationError);
+			return {
+				success: false,
+				error: "Failed to check existing subscription",
+			};
+		}
+
+		if (existingRegistration) {
+			return {
+				success: false,
+				error: "This email is already subscribed to this event",
+			};
+		}
+
+		// Create subscription record (auto-approved and verified immediately for external events)
+		const { error: subscribeError } = await supabase
+			.from("event_registrations")
+			.insert({
+				event_id: eventId,
+				anonymous_name: name,
+				anonymous_email: email,
+				rsvp_status: "going",
+				is_verified: true, // Verified immediately - no verification needed
+				approval_status: "approved", // Auto-approve subscriptions
+			});
+
+		if (subscribeError) {
+			const duplicateError = sanitizeDuplicateError(subscribeError, {
+				email,
+				isVerified: true,
+			});
+			if (duplicateError) {
+				return { success: false, error: duplicateError };
+			}
+			console.error("Error creating subscription:", subscribeError);
+			return {
+				success: false,
+				error: "Failed to subscribe. Please try again.",
+			};
+		}
+
+		// Send subscription confirmation email directly
+		const eventDate = dayjs(event.start_time).tz(event.timezone);
+		const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
+		const registerAccountLink = `${new URL(request.url).origin}/signup`;
+
+		try {
+			const externalPlatformName = getExternalPlatformName(
+				(event.external_platform as ExternalPlatform) || "other"
+			);
+
+			await sendSubscriptionConfirmationEmail({
+				eventTitle: event.title,
+				communityName: community.name,
+				eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+				eventTime: eventDate.format("h:mm A z"),
+				eventLink,
+				externalRegistrationUrl: event.external_registration_url || "",
+				externalPlatformName,
+				recipientName: name,
+				recipientEmail: email,
+				registerAccountLink,
+				locationAddress: event.location_address || undefined,
+				onlineMeetingLink: event.online_meeting_link || undefined,
+			});
+		} catch (error) {
+			console.error("Failed to send subscription confirmation email:", error);
+			// Continue anyway - subscription was successful
+		}
+
+		return { success: true, message: "Successfully subscribed for event updates!" };
+	}
+
 	// Check authentication for logged-in user actions
 	const {
 		data: { user },
@@ -666,7 +779,109 @@ export async function action({ request, params }: Route.ActionArgs) {
 		return { success: true, message: "Successfully registered for the event!" };
 	}
 
-	if (intent === "unregister") {
+	if (intent === "subscribe") {
+		// Only allow subscribe for external events
+		if (event.registration_type !== "external") {
+			return { success: false, error: "Subscribe is only available for external events" };
+		}
+
+		// Check if already subscribed by user_id
+		const { data: existingRegistration } = await supabase
+			.from("event_registrations")
+			.select("id")
+			.eq("event_id", eventId)
+			.eq("user_id", user.id)
+			.single();
+
+		if (existingRegistration) {
+			return {
+				success: false,
+				error: "You are already subscribed to this event",
+			};
+		}
+
+		// Check if user's email is already subscribed as anonymous
+		if (user.email) {
+			const { data: existingAnonymousRegistration } = await supabase
+				.from("event_registrations")
+				.select("id, is_verified")
+				.eq("event_id", eventId)
+				.eq("anonymous_email", user.email)
+				.maybeSingle();
+
+			if (existingAnonymousRegistration) {
+				return {
+					success: false,
+					error: "This email is already subscribed to this event",
+				};
+			}
+		}
+
+		// Subscribe user (auto-approved for external events)
+		const { error: subscribeError } = await supabase
+			.from("event_registrations")
+			.insert({
+				event_id: eventId,
+				user_id: user.id,
+				rsvp_status: "going",
+				is_verified: true,
+				approval_status: "approved", // Auto-approve subscriptions
+			});
+
+		if (subscribeError) {
+			const duplicateError = sanitizeDuplicateError(subscribeError, {
+				email: user.email || undefined,
+			});
+			if (duplicateError) {
+				return { success: false, error: duplicateError };
+			}
+			console.error("Error creating subscription:", subscribeError);
+			return {
+				success: false,
+				error: "Failed to subscribe. Please try again.",
+			};
+		}
+
+		// Get user profile for email
+		const { data: profile } = await supabase
+			.from("profiles")
+			.select("full_name")
+			.eq("id", user.id)
+			.single();
+
+		const eventDate = dayjs(event.start_time).tz(event.timezone);
+		const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
+		const registerAccountLink = `${new URL(request.url).origin}/signup`;
+
+		// Send subscription confirmation email
+		try {
+			const externalPlatformName = getExternalPlatformName(
+				(event.external_platform as ExternalPlatform) || "other"
+			);
+
+			await sendSubscriptionConfirmationEmail({
+				eventTitle: event.title,
+				communityName: community.name,
+				eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+				eventTime: eventDate.format("h:mm A z"),
+				eventLink,
+				externalRegistrationUrl: event.external_registration_url || "",
+				externalPlatformName,
+				recipientName: profile?.full_name || "there",
+				recipientEmail: user.email || "",
+				registerAccountLink,
+				locationAddress: event.location_address || undefined,
+				onlineMeetingLink: event.online_meeting_link || undefined,
+			});
+		} catch (error) {
+			console.error("Failed to send subscription email:", error);
+			// Continue anyway - subscription was successful
+		}
+
+		return { success: true, message: "Successfully subscribed for event updates!" };
+	}
+
+	if (intent === "unregister" || intent === "unsubscribe") {
 		const { error: unregisterError } = await supabase
 			.from("event_registrations")
 			.delete()
@@ -677,7 +892,11 @@ export async function action({ request, params }: Route.ActionArgs) {
 			return { success: false, error: unregisterError.message };
 		}
 
-		return { success: true, message: "Registration cancelled" };
+		const message = event.registration_type === "external"
+			? "Unsubscribed from event updates"
+			: "Registration cancelled";
+
+		return { success: true, message };
 	}
 
 	return { success: false, error: "Invalid action" };
@@ -847,6 +1066,7 @@ export default function EventPublicView() {
 	const [searchParams] = useSearchParams();
 	const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
 	const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
+	const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
 	const [anonymousName, setAnonymousName] = useState<string | null>(null);
 	const [anonymousEmail, setAnonymousEmail] = useState<string | null>(null);
 	const [timeRemaining, setTimeRemaining] = useState<{
@@ -909,6 +1129,8 @@ export default function EventPublicView() {
 		if (actionData) {
 			if (actionData.success && actionData.message) {
 				toast.success(actionData.message);
+				// Close subscribe dialog on successful subscription
+				setShowSubscribeDialog(false);
 			} else if (actionData.error) {
 				toast.error(actionData.error);
 			}
@@ -928,6 +1150,16 @@ export default function EventPublicView() {
 		(event.custom_questions as any)?.phone?.enabled ||
 		((event.custom_questions as any)?.custom && (event.custom_questions as any).custom.length > 0)
 	);
+
+	// Check if this is an external event
+	const isExternalEvent = event.registration_type === "external";
+	const externalPlatform = event.external_platform as ExternalPlatform | null;
+	const ExternalPlatformIcon = externalPlatform
+		? getExternalPlatformIcon(externalPlatform)
+		: ExternalLink;
+	const externalPlatformName = externalPlatform
+		? getExternalPlatformName(externalPlatform)
+		: "External Form";
 
 	// Get user phone from profile metadata
 	const userPhone = userProfile?.metadata && typeof userProfile.metadata === 'object' && 'phone' in userProfile.metadata
@@ -980,9 +1212,29 @@ export default function EventPublicView() {
 
 	return (
 		<>
+			<style>{`
+				@keyframes bell-ring {
+					0%, 100% { transform: rotate(0deg); }
+					10% { transform: rotate(14deg); }
+					20% { transform: rotate(-12deg); }
+					30% { transform: rotate(10deg); }
+					40% { transform: rotate(-8deg); }
+					50% { transform: rotate(6deg); }
+					60% { transform: rotate(-4deg); }
+					70% { transform: rotate(2deg); }
+					80% { transform: rotate(-1deg); }
+					90% { transform: rotate(0deg); }
+				}
+			`}</style>
 			<AnonymousRegistrationDialog
 				open={showAnonymousDialog}
 				onOpenChange={setShowAnonymousDialog}
+				eventId={event.id}
+				communitySlug={community.slug}
+			/>
+			<AnonymousSubscriptionDialog
+				open={showSubscribeDialog}
+				onOpenChange={setShowSubscribeDialog}
 				eventId={event.id}
 				communitySlug={community.slug}
 			/>
@@ -1071,12 +1323,12 @@ export default function EventPublicView() {
 
 
 									<Suspense fallback={<AttendersAvatarsSkeleton />}>
-										<AttendersAvatars eventId={event.id} maxVisible={3} />
+									<AttendersAvatars eventId={event.id} maxVisible={3} isExternalEvent={isExternalEvent} />
 									</Suspense>
 
 
-									{/* Capacity Indicator */}
-									<Activity mode={event.capacity && canRegister && !isPastEvent ? "visible" : "hidden"}>
+								{/* Capacity Indicator (only for native events) */}
+								<Activity mode={!isExternalEvent && event.capacity && canRegister && !isPastEvent ? "visible" : "hidden"}>
 										<div className="space-y-2 pt-3 lg:pt-6">
 											<div className="flex items-center justify-between text-sm">
 												<span className="text-muted-foreground">
@@ -1208,11 +1460,22 @@ export default function EventPublicView() {
 
 								{/* Registration Section */}
 								<div className="space-y-4">
+								<div className="flex items-center gap-2">
 									<h2 className="text-xl font-semibold">
 										{isOwnerOrAdmin ? "Event Management" : "Registration"}
 									</h2>
+									{isExternalEvent && (
+										<Badge
+											variant="outline"
+											className="border-primary/50 bg-primary/5 text-primary"
+										>
+											<ExternalLink className="h-3 w-3 mr-1" />
+											External
+										</Badge>
+									)}
+								</div>
 
-									<Card className="bg-card/50 shadow-none border-primary/20 hover:border-primary/40 transition-all">
+								<Card className="bg-card/50 shadow-none transition-all border-primary/20 hover:border-primary/40">
 										<CardContent className="px-4 py-0 space-y-4">
 											{/* Admin/Owner View */}
 											<Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
@@ -1227,19 +1490,177 @@ export default function EventPublicView() {
 															Manage Event
 														</Link>
 													</Button>
+												{!isExternalEvent && (
 													<Button asChild variant="outline" className="w-full" size="lg">
 														<Link to={`/dashboard/${community.slug}/attenders?eventId=${event.id}`}>
 															<Users className="h-4 w-4 mr-2" />
 															Check Attendance List
 														</Link>
 													</Button>
-												</div>
-											</Activity>
+												)}
+												{isExternalEvent && event.external_registration_url && (
+													<Button asChild variant="outline" className="w-full" size="lg">
+														<a
+															href={event.external_registration_url}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															<ExternalLink className="h-4 w-4 mr-2" />
+															Open Registration Form
+														</a>
+													</Button>
+												)}
+											</div>
+										</Activity>
 
-											{/* Already Registered View */}
+										{/* External Event Subscribe View (for non-admin users) */}
+										<Activity
+											mode={
+												!isOwnerOrAdmin && isExternalEvent && !isPastEvent
+													? "visible"
+													: "hidden"
+											}
+										>
+											<div className="space-y-4">
+												<div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+													<ExternalPlatformIcon
+														className="h-6 w-6 flex-shrink-0 text-primary"
+													/>
+													<div>
+														<p className="font-medium text-sm text-primary">
+															Registration on {externalPlatformName}
+														</p>
+														<p className="text-xs text-primary/70">
+															This event uses external registration
+														</p>
+													</div>
+												</div>
+
+												{registrationCount > 0 && (
+													<div className="flex items-center gap-2 text-sm text-muted-foreground">
+														<Bell className="h-4 w-4" />
+														<span>
+															{registrationCount} {registrationCount === 1 ? 'person' : 'people'} subscribed
+														</span>
+													</div>
+												)}
+
+												{/* Subscribe Section */}
+												<div className="space-y-3">
+													{isUserRegistered ? (
+														<div className="flex items-center gap-2 text-green-600 dark:text-green-500">
+															<CheckCircle2 className="h-5 w-5" />
+															<span className="font-semibold">
+																You're subscribed for updates!
+															</span>
+														</div>
+													) : (
+														<>
+															{user ? (
+																<Form method="post">
+																	<input
+																		type="hidden"
+																		name="intent"
+																		value="subscribe"
+																	/>
+																	<div className="relative w-full">
+																		<span className="absolute inset-0 rounded-md border-2 border-primary animate-pulse" />
+																		<Button
+																			type="submit"
+																			variant="outline"
+																			className="relative w-full border-primary"
+																			size="lg"
+																			disabled={isSubmitting}
+																		>
+																			<Bell
+																				className="h-4 w-4 mr-2 origin-top"
+																				style={{
+																					animation: 'bell-ring 1s ease-in-out infinite',
+																				}}
+																			/>
+																			{isSubmitting ? "Subscribing..." : "Subscribe for Updates"}
+																		</Button>
+																	</div>
+																</Form>
+															) : (
+																<div className="relative w-full">
+																	<span className="absolute inset-0 rounded-md border-2 border-primary animate-pulse" />
+																	<Button
+																		type="button"
+																		variant="outline"
+																		className="relative w-full border-primary"
+																		size="lg"
+																		onClick={() => setShowSubscribeDialog(true)}
+																	>
+																		<Bell
+																			className="h-4 w-4 mr-2 origin-top"
+																			style={{
+																				animation: 'bell-ring 1s ease-in-out infinite',
+																			}}
+																		/>
+																		Subscribe for Updates
+																	</Button>
+																</div>
+															)}
+														</>
+													)}
+												</div>
+
+												<Separator />
+
+												{/* External Registration Link */}
+												<div className="space-y-2">
+													<p className="text-sm font-medium text-foreground">
+														Complete your registration
+													</p>
+													<Button
+														asChild
+														className="w-full"
+														size="lg"
+													>
+														<a
+															href={event.external_registration_url || "#"}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															Register on {externalPlatformName}
+															<ExternalLink className="h-4 w-4 ml-2" />
+														</a>
+													</Button>
+													<p className="text-xs text-center text-muted-foreground">
+														You will be redirected to an external website to complete registration
+													</p>
+												</div>
+											</div>
+										</Activity>
+
+										{/* External Event - Past Event View */}
+										<Activity
+											mode={
+												!isOwnerOrAdmin && isExternalEvent && isPastEvent
+													? "visible"
+													: "hidden"
+											}
+										>
+											<div className="flex flex-col items-center gap-3 py-4">
+												<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+													<CalendarClock className="h-6 w-6 text-muted-foreground" />
+												</div>
+												<div className="text-center space-y-1">
+													<p className="text-sm font-semibold text-foreground">
+														This event has ended
+													</p>
+													<p className="text-xs text-muted-foreground">
+														Thank you for your interest
+													</p>
+												</div>
+											</div>
+										</Activity>
+
+										{/* Already Registered View (only for native events) */}
 											<Activity
 												mode={
-													!isOwnerOrAdmin && isUserRegistered
+												!isOwnerOrAdmin && !isExternalEvent && isUserRegistered
 														? "visible"
 														: "hidden"
 												}
@@ -1297,10 +1718,10 @@ export default function EventPublicView() {
 												</Form>
 											</Activity>
 
-											{/* Can Register View */}
+										{/* Can Register View (only for native events) */}
 											<Activity
 												mode={
-													!isOwnerOrAdmin && !isUserRegistered && canRegister
+												!isOwnerOrAdmin && !isExternalEvent && !isUserRegistered && canRegister
 														? "visible"
 														: "hidden"
 												}
@@ -1436,10 +1857,10 @@ export default function EventPublicView() {
 												</Activity>
 											</Activity>
 
-											{/* Registration Closed View */}
+										{/* Registration Closed View (only for native events) */}
 											<Activity
 												mode={
-													!isOwnerOrAdmin && !isUserRegistered && !canRegister
+												!isOwnerOrAdmin && !isExternalEvent && !isUserRegistered && !canRegister
 														? "visible"
 														: "hidden"
 												}
@@ -1506,7 +1927,8 @@ export default function EventPublicView() {
 											Online Meeting
 										</h3>
 
-										<Activity mode={isUserRegistered ? "visible" : "hidden"}>
+									{/* For external events, show meeting link to everyone */}
+									<Activity mode={isExternalEvent || isUserRegistered ? "visible" : "hidden"}>
 											<Button
 												asChild
 												variant="outline"
@@ -1524,7 +1946,8 @@ export default function EventPublicView() {
 											</Button>
 										</Activity>
 
-										<Activity mode={!isUserRegistered ? "visible" : "hidden"}>
+									{/* For native events, show register prompt if not registered */}
+									<Activity mode={!isExternalEvent && !isUserRegistered ? "visible" : "hidden"}>
 											<p className="text-sm text-muted-foreground">
 												Register to access the meeting link
 											</p>
