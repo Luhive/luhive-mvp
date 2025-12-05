@@ -6,9 +6,12 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
+  // Landing page (standalone, no navigation layout)
+  index("routes/index.tsx"),
+
   // Routes with top navigation layout
   layout("routes/navigation-layout.tsx", [
-    index("routes/hub.tsx"),
+    route("hub", "routes/hub.tsx"),
     route("profile", "routes/profile.tsx"),
     route("c/:slug", "routes/community.tsx"),
     route("create-community", "routes/create-community.tsx"),

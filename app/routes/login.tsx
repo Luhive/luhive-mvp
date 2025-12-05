@@ -38,7 +38,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     }
 
     // If no community found, redirect to home
-    return redirect('/', { headers });
+    return redirect('/hub', { headers });
   }
 
   return Response.json({ user: null }, { headers });
@@ -97,7 +97,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   // If no community found, redirect to home
-  return redirect('/', { headers });
+  return redirect('/hub', { headers });
 }
 
 const Login = () => {

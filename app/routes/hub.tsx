@@ -2,6 +2,7 @@ import type { Route } from "./+types/hub";
 import { useLoaderData, NavLink, useNavigation } from "react-router";
 import { useEffect, useState } from "react";
 import { createClient } from "~/lib/supabase.server";
+import { createClient as createClientBrowser } from "~/lib/supabase.client";
 import type { Database } from "~/models/database.types";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { CommunityPageSkeleton } from "~/components/community-page-skeleton";
+import { HubPageSkeleton } from "~/components/hub-page-skeleton";
 
 import { TopNavigation } from "~/components/hub-navigation";
 
@@ -27,6 +29,21 @@ type LoaderData = {
   communities: Community[];
   user: { id: string } | null;
 };
+
+// Client loader for INSTANT navigation - returns immediately without Promise
+export function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
+  // Return immediately (synchronously, no Promise) for instant navigation
+  // This makes navigation instant - page renders right away with skeleton
+  // Data will be fetched client-side in the component via useEffect
+  return {
+    communities: [],
+    user: null,
+    _fromClientLoader: true,
+  };
+}
+
+// Enable client loader hydration
+clientLoader.hydrate = true;
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase, headers } = createClient(request);
@@ -154,7 +171,7 @@ export function meta({ data }: { data?: LoaderData }) {
 }
 
 export default function Hub() {
-  const { communities, user } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<typeof loader>() as LoaderData & { _fromClientLoader?: boolean };
   const navigation = useNavigation();
   const [pendingCommunity, setPendingCommunity] = useState<{
     community: Community;
@@ -163,10 +180,97 @@ export default function Hub() {
     description?: string;
     verified?: boolean;
   } | null>(null);
+  const [clientData, setClientData] = useState<LoaderData | null>(null);
+  const [isLoading, setIsLoading] = useState(loaderData._fromClientLoader || false);
+  
+  // Fetch data client-side if we came from clientLoader
+  useEffect(() => {
+    if (loaderData._fromClientLoader && !clientData) {
+      async function fetchHubData() {
+        try {
+          setIsLoading(true);
+          const supabase = createClientBrowser();
+          
+          // Get current user session
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          // Fetch all communities
+          const { data: communities, error } = await supabase
+            .from('communities')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (error) {
+            console.error('Error fetching communities:', error);
+            setClientData({ communities: [], user: user || null });
+            setIsLoading(false);
+            return;
+          }
+          
+          if (!communities || communities.length === 0) {
+            setClientData({ communities: [], user: user || null });
+            setIsLoading(false);
+            return;
+          }
+          
+          // Batch fetch all member and event counts in parallel
+          const communityIds = communities.map(c => c.id);
+          
+          const [memberCountsResult, eventCountsResult] = await Promise.all([
+            supabase
+              .from('community_members')
+              .select('community_id')
+              .in('community_id', communityIds),
+            supabase
+              .from('events')
+              .select('community_id')
+              .in('community_id', communityIds)
+              .eq('status', 'published')
+          ]);
+          
+          // Count members per community
+          const memberCounts = new Map<string, number>();
+          (memberCountsResult.data || []).forEach(member => {
+            const count = memberCounts.get(member.community_id!) || 0;
+            memberCounts.set(member.community_id!, count + 1);
+          });
+          
+          // Count events per community
+          const eventCounts = new Map<string, number>();
+          (eventCountsResult.data || []).forEach(event => {
+            const count = eventCounts.get(event.community_id) || 0;
+            eventCounts.set(event.community_id, count + 1);
+          });
+          
+          // Combine data
+          const communitiesWithCounts = communities.map(community => ({
+            ...community,
+            memberCount: memberCounts.get(community.id) || 0,
+            eventCount: eventCounts.get(community.id) || 0,
+          }));
+          
+          setClientData({
+            communities: communitiesWithCounts,
+            user: user || null,
+          });
+        } catch (error) {
+          console.error('Error fetching hub data:', error);
+          setClientData({ communities: [], user: null });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+      
+      fetchHubData();
+    }
+  }, [loaderData._fromClientLoader, clientData]);
+  
+  // Use client data if available, otherwise use loader data
+  const { communities, user } = clientData || loaderData;
 
   // Watch for navigation state changes to show skeleton instantly
   useEffect(() => {
-    if (navigation.state === "loading" && navigation.location?.pathname.startsWith('/c/')) {
+    if (navigation.state === "loading" && navigation.location?.pathname.startsWith('/c/') && !navigation.location?.pathname.includes('/events')) {
       const navState = navigation.location.state as {
         community?: Community;
         memberCount?: number;
@@ -211,7 +315,16 @@ export default function Hub() {
           </div>
         </div>
       )}
-      <main className="py-8">
+
+      {/* Show skeleton on page while loading, or show actual content */}
+      {isLoading ? (
+        <div className="min-h-screen">
+          <HubPageSkeleton user={user} />
+        </div>
+      ) : (
+        <>
+          {/* <TopNavigation user={user} /> */}
+          <main className="py-8">
         <div className="mb-8">
             <div className="flex items-center gap-3">
               <Sparkle className="h-8 w-8 mb-2 text-primary animate-sparkle" />  
@@ -319,7 +432,9 @@ export default function Hub() {
               })}
             </div>
         )}
-      </main>
+          </main>
+        </>
+      )}
     </>
   );
 }

@@ -15,13 +15,18 @@ dayjs.extend(timezone);
 
 type Event = Database['public']['Tables']['events']['Row'];
 
+// Export Event type for external use
+export type { Event };
+
 interface EventListProps {
 	communityId: string;
 	communitySlug: string;
 	limit?: number;
+	onEventClick?: (event: Event) => void;
+	onEventsLoaded?: (events: Event[]) => void;
 }
 
-export function EventList({ communityId, communitySlug, limit = 3 }: EventListProps) {
+export function EventList({ communityId, communitySlug, limit = 3, onEventClick, onEventsLoaded }: EventListProps) {
 	const [events, setEvents] = useState<Event[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -43,12 +48,15 @@ export function EventList({ communityId, communitySlug, limit = 3 }: EventListPr
 				if (error) {
 					console.error('Error fetching events:', error);
 					setEvents([]);
+					onEventsLoaded?.([]);
 				} else {
 					setEvents(data || []);
+					onEventsLoaded?.(data || []);
 				}
 			} catch (error) {
 				console.error('Error fetching events:', error);
 				setEvents([]);
+				onEventsLoaded?.([]);
 			} finally {
 				setLoading(false);
 			}
@@ -66,26 +74,34 @@ export function EventList({ communityId, communitySlug, limit = 3 }: EventListPr
 	}
 
 	return (
+		
 		<div className="space-y-3">
 			{events.map((event) => (
 				<EventCard
 					key={event.id}
 					event={event}
 					communitySlug={communitySlug}
+					onEventClick={onEventClick}
 				/>
 			))}
 		</div>
 	);
 }
 
-function EventCard({ event, communitySlug }: { event: Event; communitySlug: string }) {
+function EventCard({ event, communitySlug, onEventClick }: { 
+	event: Event; 
+	communitySlug: string;
+	onEventClick?: (event: Event) => void;
+}) {
 	const eventDate = dayjs(event.start_time).tz(event.timezone);
 	const eventEndDate = event.end_time ? dayjs(event.end_time).tz(event.timezone) : null;
 
 	return (
 		<Link
 			to={`/c/${communitySlug}/events/${event.id}`}
+			state={{ event }}
 			className="block p-4 rounded-lg border bg-card hover:border-accent/50 hover:shadow-md hover:shadow-accent/20 active:shadow-none transition-all duration-400 group"
+			onClick={() => onEventClick?.(event)}
 		>
 			<div className="flex gap-4">
 				{/* Event Cover - Small Square */}

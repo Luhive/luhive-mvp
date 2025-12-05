@@ -1,0 +1,92 @@
+{
+  "nav": {
+    "about": "About",
+    "features": "Features",
+    "communities": "Communities",
+    "forOrganizers": "For Organizers",
+    "contact": "Contact",
+    "signUp": "Sign Up"
+  },
+  "hero": {
+    "title": "One Platform.",
+    "titleHighlight": "Engaged Communities.",
+    "subtitle": "Luhive brings your community together in one powerful, unified platform.",
+    "ctaDiscover": "Discover Communities",
+    "ctaCreate": "Create Your Community",
+    "tagline": "Build communities that matter"
+  },
+  "about": {
+    "badge": "About Luhive",
+    "title": "The Future of Community Management",
+    "description": "We're building the ultimate community platform for verified organizations. Starting in Azerbaijan, scaling globally.",
+    "problem": {
+      "title": "The Problem",
+      "description": "Communities today are <strong>fragmented</strong>. Event management happens on Google Forms. Announcements are scattered across Telegram, WhatsApp, and Discord. Feedback gets lost in the noise.",
+      "highlight": "It's time for a change."
+    },
+    "solution": {
+      "title": "Our Solution",
+      "description": "Luhive brings everything together — events, communication, feedback, and community engagement — all in one beautifully designed platform."
+    },
+    "whoWeServe": {
+      "title": "Who We Serve",
+      "description": "<strong>Verified communities</strong> that want real connections and zero chaos. From tech communities to educational organizations."
+    },
+    "vision": {
+      "title": "Our Vision",
+      "description": "Starting in <strong>Azerbaijan</strong>, scaling <strong>globally</strong>. We're building a platform that empowers communities worldwide to connect, engage, and thrive together. Our mission is to break down barriers, foster meaningful connections, and create spaces where every community can flourish—no matter where they are."
+    }
+  },
+  "features": {
+    "badge": "Key Features",
+    "title": "Everything You Need, Nothing You Don't",
+    "unifiedEvents": {
+      "title": "Unified Event Management",
+      "description": "Create, manage, and track events effortlessly. No more Google Forms. Just one powerful system that works."
+    },
+    "centralizedComm": {
+      "title": "Centralized Communication",
+      "description": "Say goodbye to scattered chats. All your community conversations, announcements, and updates in one place."
+    },
+    "smartFeedback": {
+      "title": "Smart Feedback System",
+      "description": "Collect, organize, and act on community feedback. Never lose a suggestion or request again."
+    },
+    "verified": {
+      "title": "Verified Communities",
+      "description": "Join authentic, verified communities. Build trust and credibility with official community badges."
+    },
+    "analytics": {
+      "title": "Analytics & Insights",
+      "description": "Understand your community better with powerful analytics. Track engagement, growth, and member activity."
+    },
+    "privacy": {
+      "title": "Privacy & Security",
+      "description": "Your community's data is safe with us. Enterprise-grade security meets user-friendly design."
+    }
+  },
+  "contact": {
+    "badge": "Join Our Community",
+    "title": "Be Part of the Future",
+    "getInTouch": "Get in Touch",
+    "description": "Have questions? Want to learn more about Luhive? We'd love to hear from you.",
+    "email": {
+      "label": "Email Us",
+      "value": "hi@luhive.com"
+    },
+    "linkedin": {
+      "label": "Connect on LinkedIn",
+      "value": "linkedin.com/company/luhive"
+    }
+  },
+  "footer": {
+    "tagline": "Unite. Engage. Thrive.",
+    "description": "Building the future of community management.",
+    "product": "Product",
+    "connect": "Connect",
+    "email": "Email",
+    "linkedin": "LinkedIn",
+    "copyright": "© 2025 Luhive. All rights reserved."
+  }
+}
+

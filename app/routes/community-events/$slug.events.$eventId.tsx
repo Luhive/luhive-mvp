@@ -6,9 +6,12 @@ import {
 	useActionData,
 	useSearchParams,
 	useNavigation,
+	useLocation,
+	Await,
 } from "react-router";
 import { redirect } from "react-router";
 import { createClient } from "~/lib/supabase.server";
+import { createClient as createClientBrowser } from "~/lib/supabase.client";
 import type { Route } from "./+types/$slug.events.$eventId";
 import type { Database } from "~/models/database.types";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -51,6 +54,10 @@ import {
 import { AnonymousRegistrationDialog } from "~/components/events/anonymous-registration-dialog";
 import { CustomQuestionsForm } from "~/components/events/custom-questions-form";
 import { AttendersAvatarsSkeleton } from "~/components/events/attenders-avatars";
+import { Skeleton } from "~/components/ui/skeleton";
+import { EventPageSkeleton } from "~/components/events/event-page-skeleton";
+import { CommunityPageSkeleton } from "~/components/community-page-skeleton";
+import { TopNavigation } from "~/components/hub-navigation";
 
 import CheckIcon3D from '~/assets/images/TickIcon.png'
 
@@ -72,9 +79,8 @@ type EventType = Database["public"]["Enums"]["event_type"];
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
-interface LoaderData {
-	event: Event;
-	community: Community;
+// Deferred user data that requires additional queries
+interface DeferredUserData {
 	registrationCount: number;
 	isUserRegistered: boolean;
 	userRegistrationStatus: string | null;
@@ -82,7 +88,16 @@ interface LoaderData {
 	user: any;
 	userProfile: Profile | null;
 	isOwnerOrAdmin: boolean;
+}
+
+interface LoaderData {
+	event: Event;
+	community: Community;
 	origin: string;
+	// User data - null when using instant navigation (fetched client-side)
+	userData: DeferredUserData | Promise<DeferredUserData> | null;
+	// Flag indicating data came from navigation state (instant load)
+	_fromNavigationState?: boolean;
 }
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -95,7 +110,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		throw new Response("Not Found", { status: 404 });
 	}
 
-	// Get community by slug
+	// Get community by slug - FAST (required for page render)
 	const { data: community, error: communityError } = await supabase
 		.from("communities")
 		.select("*")
@@ -106,7 +121,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		throw new Response("Community not found", { status: 404 });
 	}
 
-	// Get event by ID and verify it belongs to this community
+	// Get event by ID and verify it belongs to this community - FAST (required for page render)
 	const { data: event, error: eventError } = await supabase
 		.from("events")
 		.select("*")
@@ -123,83 +138,117 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		throw new Response("Event not available", { status: 404 });
 	}
 
-	// Get registration count (only approved registrations count towards capacity)
-	const { count: registrationCount } = await supabase
-		.from("event_registrations")
-		.select("*", { count: "exact", head: true })
-		.eq("event_id", event.id)
-		.eq("approval_status", "approved");
-
-	// Check if current user is registered
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
-	let isUserRegistered = false;
-	let userRegistrationStatus: string | null = null;
-	let isOwnerOrAdmin = false;
-	let userProfile: Profile | null = null;
-
-	if (user) {
-		const { data: registration } = await supabase
-			.from("event_registrations")
-			.select("id, approval_status")
-			.eq("event_id", event.id)
-			.eq("user_id", user.id)
-			.single();
-
-		isUserRegistered = !!registration;
-		userRegistrationStatus = registration?.approval_status || null;
-
-		// Check if user is owner or admin of the community
-		const { data: membership } = await supabase
-			.from("community_members")
-			.select("role")
-			.eq("community_id", community.id)
-			.eq("user_id", user.id)
-			.single();
-
-		isOwnerOrAdmin =
-			membership?.role === "owner" || membership?.role === "admin";
-
-		// Fetch user profile
-		const { data: profile } = await supabase
-			.from("profiles")
-			.select("*")
-			.eq("id", user.id)
-			.single();
-
-		userProfile = profile || null;
-	}
-
-	// Check if registration is still open
-	const now = new Date();
-	const eventStartTime = new Date(event.start_time);
-	const registrationDeadline = event.registration_deadline
-		? new Date(event.registration_deadline)
-		: eventStartTime;
-
-	const canRegister =
-		event.status === "published" &&
-		now < registrationDeadline &&
-		(!event.capacity || (registrationCount || 0) < event.capacity);
-
 	// Get origin for absolute URLs in meta tags
 	const url = new URL(request.url);
 	const origin = url.origin;
 
+	// Create promise for slow user-related queries (deferred loading)
+	const userDataPromise = (async (): Promise<DeferredUserData> => {
+		// Get registration count (only approved registrations count towards capacity)
+		const { count: registrationCount } = await supabase
+			.from("event_registrations")
+			.select("*", { count: "exact", head: true })
+			.eq("event_id", event.id)
+			.eq("approval_status", "approved");
+
+		// Check if current user is registered
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+		let isUserRegistered = false;
+		let userRegistrationStatus: string | null = null;
+		let isOwnerOrAdmin = false;
+		let userProfile: Profile | null = null;
+
+		if (user) {
+			const { data: registration } = await supabase
+				.from("event_registrations")
+				.select("id, approval_status")
+				.eq("event_id", event.id)
+				.eq("user_id", user.id)
+				.single();
+
+			isUserRegistered = !!registration;
+			userRegistrationStatus = registration?.approval_status || null;
+
+			// Check if user is owner or admin of the community
+			const { data: membership } = await supabase
+				.from("community_members")
+				.select("role")
+				.eq("community_id", community.id)
+				.eq("user_id", user.id)
+				.single();
+
+			isOwnerOrAdmin =
+				membership?.role === "owner" || membership?.role === "admin";
+
+			// Fetch user profile
+			const { data: profile } = await supabase
+				.from("profiles")
+				.select("*")
+				.eq("id", user.id)
+				.single();
+
+			userProfile = profile || null;
+		}
+
+		// Check if registration is still open
+		const now = new Date();
+		const eventStartTime = new Date(event.start_time);
+		const registrationDeadline = event.registration_deadline
+			? new Date(event.registration_deadline)
+			: eventStartTime;
+
+		const canRegister =
+			event.status === "published" &&
+			now < registrationDeadline &&
+			(!event.capacity || (registrationCount || 0) < event.capacity);
+
+		return {
+			registrationCount: registrationCount || 0,
+			isUserRegistered,
+			userRegistrationStatus,
+			canRegister,
+			user: user || null,
+			userProfile,
+			isOwnerOrAdmin,
+		};
+	})();
+
 	return {
 		event,
 		community,
-		registrationCount: registrationCount || 0,
-		isUserRegistered,
-		userRegistrationStatus,
-		canRegister,
-		user: user || null,
-		userProfile,
-		isOwnerOrAdmin,
 		origin,
+		userData: userDataPromise,
 	};
 }
+
+// Client loader for INSTANT navigation when event data is passed via navigation state
+export async function clientLoader({ serverLoader, params }: Route.ClientLoaderArgs) {
+	// Check if we have event data from navigation state (passed from EventCard)
+	const navigationState = window.history.state?.usr as { event?: Event } | null;
+	const passedEvent = navigationState?.event;
+
+	// If we have event data from navigation state, return IMMEDIATELY (no await)
+	// This makes navigation instant - page renders right away with passed data
+	if (passedEvent) {
+		// Return immediately - NO PROMISES, NO AWAIT
+		// User data will be fetched in the component via useEffect
+		return {
+			event: passedEvent,
+			community: { slug: params.slug } as Community,
+			origin: window.location.origin,
+			userData: null, // Will be fetched client-side in component
+			_fromNavigationState: true,
+		};
+	}
+
+	// No navigation state - use server loader (normal flow for direct URL access)
+	return serverLoader();
+}
+
+// Enable client loader hydration
+clientLoader.hydrate = true;
 
 export async function action({ request, params }: Route.ActionArgs) {
 	const { supabase } = createClient(request);
@@ -730,9 +779,385 @@ const typeIcons: Record<EventType, { icon: React.ReactNode; label: string }> = {
 };
 
 export default function EventPublicView() {
+	const loaderData = useLoaderData<LoaderData>();
+	const location = useLocation();
+
+	// Use passed event from navigation state as fallback for instant display
+	const passedEvent = (location.state as { event?: Event } | null)?.event;
+	const event = loaderData.event || passedEvent;
+	const community = loaderData.community;
+
+	// State for client-side fetched user data (when using instant navigation)
+	const [clientUserData, setClientUserData] = useState<DeferredUserData | null>(null);
+	const [isLoadingUserData, setIsLoadingUserData] = useState(loaderData.userData === null);
+	
+	// State for community data with counts (for skeleton)
+	const [communityData, setCommunityData] = useState<{
+		community: Community;
+		memberCount: number;
+		eventCount: number;
+		description?: string;
+		verified?: boolean;
+	} | null>(null);
+	const [pendingCommunity, setPendingCommunity] = useState<{
+		community: Community;
+		memberCount: number;
+		eventCount: number;
+		description?: string;
+		verified?: boolean;
+	} | null>(null);
+	
+	const navigation = useNavigation();
+
+	// Fetch user data client-side when using instant navigation (userData is null)
+	useEffect(() => {
+		if (loaderData.userData !== null || !event) return;
+
+		async function fetchUserData() {
+			try {
+				const supabase = createClientBrowser();
+
+				// Get registration count
+				const { count: registrationCount } = await supabase
+					.from("event_registrations")
+					.select("*", { count: "exact", head: true })
+					.eq("event_id", event.id)
+					.eq("approval_status", "approved");
+
+				// Check if current user is registered
+				const {
+					data: { user },
+				} = await supabase.auth.getUser();
+				let isUserRegistered = false;
+				let userRegistrationStatus: string | null = null;
+				let isOwnerOrAdmin = false;
+				let userProfile: Profile | null = null;
+
+				if (user) {
+					const { data: registration } = await supabase
+						.from("event_registrations")
+						.select("id, approval_status")
+						.eq("event_id", event.id)
+						.eq("user_id", user.id)
+						.single();
+
+					isUserRegistered = !!registration;
+					userRegistrationStatus = registration?.approval_status || null;
+
+					// Check if user is owner or admin of the community
+					const { data: membership } = await supabase
+						.from("community_members")
+						.select("role")
+						.eq("community_id", event.community_id)
+						.eq("user_id", user.id)
+						.single();
+
+					isOwnerOrAdmin =
+						membership?.role === "owner" || membership?.role === "admin";
+
+					// Fetch user profile
+					const { data: profile } = await supabase
+						.from("profiles")
+						.select("*")
+						.eq("id", user.id)
+						.single();
+
+					userProfile = profile || null;
+				}
+
+				// Check if registration is still open
+				const now = new Date();
+				const eventStartTime = new Date(event.start_time);
+				const registrationDeadline = event.registration_deadline
+					? new Date(event.registration_deadline)
+					: eventStartTime;
+
+				const canRegister =
+					event.status === "published" &&
+					now < registrationDeadline &&
+					(!event.capacity || (registrationCount || 0) < event.capacity);
+
+				setClientUserData({
+					registrationCount: registrationCount || 0,
+					isUserRegistered,
+					userRegistrationStatus,
+					canRegister,
+					user: user || null,
+					userProfile,
+					isOwnerOrAdmin,
+				});
+			} catch (error) {
+				console.error("Error fetching user data:", error);
+				setClientUserData({
+					registrationCount: 0,
+					isUserRegistered: false,
+					userRegistrationStatus: null,
+					canRegister: false,
+					user: null,
+					userProfile: null,
+					isOwnerOrAdmin: false,
+				});
+			} finally {
+				setIsLoadingUserData(false);
+			}
+		}
+
+		fetchUserData();
+	}, [event, loaderData.userData]);
+
+	// Fetch community data (memberCount, eventCount) when event/community is available
+	useEffect(() => {
+		if (!community || !community.id) return;
+
+		async function fetchCommunityData() {
+			try {
+				const supabase = createClientBrowser();
+
+				// Fetch member count and event count in parallel
+				const [memberCountResult, eventCountResult] = await Promise.all([
+					supabase
+						.from('community_members')
+						.select('*', { count: 'exact', head: true })
+						.eq('community_id', community.id),
+					supabase
+						.from('events')
+						.select('*', { count: 'exact', head: true })
+						.eq('community_id', community.id)
+						.eq('status', 'published')
+				]);
+
+				const memberCount = memberCountResult.count || 0;
+				const eventCount = eventCountResult.count || 0;
+
+				setCommunityData({
+					community,
+					memberCount,
+					eventCount,
+					description: community.description || undefined,
+					verified: community.verified || false,
+				});
+			} catch (error) {
+				console.error('Error fetching community data:', error);
+				// Set with default values if fetch fails
+				setCommunityData({
+					community,
+					memberCount: 0,
+					eventCount: 0,
+					description: community.description || undefined,
+					verified: community.verified || false,
+				});
+			}
+		}
+
+		fetchCommunityData();
+	}, [community]);
+
+	// Watch for navigation state changes to show skeleton instantly (like hub page)
+	useEffect(() => {
+		if (navigation.state === "loading" && navigation.location?.pathname.startsWith('/c/') && !navigation.location?.pathname.includes('/events')) {
+			const navState = navigation.location.state as {
+				community?: Community;
+				memberCount?: number;
+				eventCount?: number;
+				description?: string;
+				verified?: boolean;
+			} | undefined;
+
+			if (navState?.community) {
+				setPendingCommunity({
+					community: navState.community,
+					memberCount: navState.memberCount || 0,
+					eventCount: navState.eventCount || 0,
+					description: navState.description,
+					verified: navState.verified,
+				});
+			} else if (communityData) {
+				// Use stored community data if navigation state doesn't have it
+				setPendingCommunity(communityData);
+			}
+		} else if (navigation.state === "idle") {
+			// Clear when navigation completes
+			setPendingCommunity(null);
+		}
+	}, [navigation.state, navigation.location, communityData]);
+
+	// If no event data at all (shouldn't happen), show error
+	if (!event) {
+		return (
+			<main className="py-6 md:py-10">
+				<div className="text-center">
+					<p className="text-muted-foreground">Event not found</p>
+				</div>
+			</main>
+		);
+	}
+
+	// Get user for TopNavigation
+	const user = clientUserData?.user || (loaderData.userData instanceof Promise ? null : loaderData.userData?.user) || null;
+	const userProfile = clientUserData?.userProfile || (loaderData.userData instanceof Promise ? null : loaderData.userData?.userProfile) || null;
+	const topNavUser = userProfile ? {
+		id: userProfile.id,
+		avatar_url: userProfile.avatar_url,
+		full_name: userProfile.full_name,
+	} : null;
+
+	// INSTANT NAVIGATION: userData is null, show skeleton for user-dependent parts
+	if (loaderData.userData === null) {
+		// Show event data immediately, skeleton for user data
+		if (isLoadingUserData || !clientUserData) {
+			return (
+				<>
+					{/* Show skeleton overlay when navigating to community */}
+					{pendingCommunity && (
+						<div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+							<div className="min-h-screen container mx-auto px-4 sm:px-8 flex flex-col">
+								<TopNavigation user={topNavUser} />
+								<div className="lg:py-8 py-4 flex-1">
+									<CommunityPageSkeleton
+										community={{
+											...pendingCommunity.community,
+											memberCount: pendingCommunity.memberCount,
+											eventCount: pendingCommunity.eventCount,
+											description: pendingCommunity.description ?? undefined,
+											verified: pendingCommunity.verified ?? false,
+										} as Community & { memberCount?: number; eventCount?: number; description?: string; verified?: boolean }}
+									/>
+								</div>
+							</div>
+						</div>
+					)}
+					<EventPageSkeleton event={event} community={community} />
+				</>
+			);
+		}
+		// User data loaded, show full content
+		return (
+			<>
+				{/* Show skeleton overlay when navigating to community */}
+				{pendingCommunity && (
+					<div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+						<div className="min-h-screen container mx-auto px-4 sm:px-8 flex flex-col">
+							<TopNavigation user={topNavUser} />
+							<div className="lg:py-8 py-4 flex-1">
+								<CommunityPageSkeleton
+									community={{
+										...pendingCommunity.community,
+										memberCount: pendingCommunity.memberCount,
+										eventCount: pendingCommunity.eventCount,
+										description: pendingCommunity.description ?? undefined,
+										verified: pendingCommunity.verified ?? false,
+									} as Community & { memberCount?: number; eventCount?: number; description?: string; verified?: boolean }}
+								/>
+							</div>
+						</div>
+					</div>
+				)}
+				<EventPageContent
+					event={event}
+					community={community}
+					userData={clientUserData}
+					communityData={communityData}
+					setPendingCommunity={setPendingCommunity}
+				/>
+			</>
+		);
+	}
+
+	// NORMAL FLOW: userData is a Promise (server loaded), use Suspense
+	return (
+		<>
+			{/* Show skeleton overlay when navigating to community */}
+			{pendingCommunity && (
+				<div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+					<div className="min-h-screen container mx-auto px-4 sm:px-8 flex flex-col">
+						<TopNavigation user={topNavUser} />
+						<div className="lg:py-8 py-4 flex-1">
+							<CommunityPageSkeleton
+								community={{
+									...pendingCommunity.community,
+									memberCount: pendingCommunity.memberCount,
+									eventCount: pendingCommunity.eventCount,
+									description: pendingCommunity.description ?? undefined,
+									verified: pendingCommunity.verified ?? false,
+								} as Community & { memberCount?: number; eventCount?: number; description?: string; verified?: boolean }}
+							/>
+						</div>
+					</div>
+				</div>
+			)}
+			<Suspense fallback={<EventPageSkeleton event={event} community={community} />}>
+				<Await resolve={loaderData.userData}>
+					{(userData) => {
+						const resolvedTopNavUser = userData?.userProfile ? {
+							id: userData.userProfile.id,
+							avatar_url: userData.userProfile.avatar_url,
+							full_name: userData.userProfile.full_name,
+						} : null;
+						
+						return (
+							<>
+								{/* Update topNavUser when userData resolves */}
+								{pendingCommunity && (
+									<div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+										<div className="min-h-screen container mx-auto px-4 sm:px-8 flex flex-col">
+											<TopNavigation user={resolvedTopNavUser} />
+											<div className="lg:py-8 py-4 flex-1">
+												<CommunityPageSkeleton
+													community={{
+														...pendingCommunity.community,
+														memberCount: pendingCommunity.memberCount,
+														eventCount: pendingCommunity.eventCount,
+														description: pendingCommunity.description ?? undefined,
+														verified: pendingCommunity.verified ?? false,
+													} as Community & { memberCount?: number; eventCount?: number; description?: string; verified?: boolean }}
+												/>
+											</div>
+										</div>
+									</div>
+								)}
+								<EventPageContent
+									event={event}
+									community={community}
+									userData={userData}
+									communityData={communityData}
+									setPendingCommunity={setPendingCommunity}
+								/>
+							</>
+						);
+					}}
+				</Await>
+			</Suspense>
+		</>
+	);
+}
+
+// Main content component that receives resolved user data
+function EventPageContent({
+	event,
+	community,
+	userData,
+	communityData,
+	setPendingCommunity,
+}: {
+	event: Event;
+	community: Community;
+	userData: DeferredUserData;
+	communityData: {
+		community: Community;
+		memberCount: number;
+		eventCount: number;
+		description?: string;
+		verified?: boolean;
+	} | null;
+	setPendingCommunity: (data: {
+		community: Community;
+		memberCount: number;
+		eventCount: number;
+		description?: string;
+		verified?: boolean;
+	} | null) => void;
+}) {
 	const {
-		event,
-		community,
 		registrationCount,
 		isUserRegistered,
 		userRegistrationStatus,
@@ -740,7 +1165,8 @@ export default function EventPublicView() {
 		user,
 		userProfile,
 		isOwnerOrAdmin,
-	} = useLoaderData<LoaderData>();
+	} = userData;
+
 	const actionData = useActionData<{
 		success: boolean;
 		error?: string;
@@ -977,7 +1403,32 @@ export default function EventPublicView() {
 									</h3>
 									<Link
 										to={`/c/${community.slug}`}
+										state={communityData ? {
+											community: communityData.community,
+											memberCount: communityData.memberCount,
+											eventCount: communityData.eventCount,
+											description: communityData.description,
+											verified: communityData.verified
+										} : {
+											community,
+											description: community.description,
+											verified: community.verified
+										}}
 										className="flex items-center gap-2 bg-card transition-colors"
+										onClick={() => {
+											// Set pending community immediately on click for instant feedback
+											if (communityData) {
+												setPendingCommunity(communityData);
+											} else {
+												setPendingCommunity({
+													community,
+													memberCount: 0,
+													eventCount: 0,
+													description: community.description || undefined,
+													verified: community.verified || false,
+												});
+											}
+										}}
 									>
 											<Avatar className="h-8 w-8">
 											<AvatarImage

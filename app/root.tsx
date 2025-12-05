@@ -22,6 +22,10 @@ export const links: Route.LinksFunction = () => [
   { rel: "preload", href: manrope500Url, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
   { rel: "preload", href: manrope600Url, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
   { rel: "preload", href: manrope700Url, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+  // Nunito font for landing page logo
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+  { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;500;600;700;800;900&display=swap" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
