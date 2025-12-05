@@ -49,6 +49,10 @@ export default [
       "routes/dashboard/$slug.event.create.tsx"
     ),
     route("dashboard/:slug/attenders", "routes/dashboard/$slug.attenders.tsx"),
+    route(
+      "dashboard/:slug/events/create-external",
+      "routes/dashboard/$slug.event.create-external.tsx"
+    ),
   ]),
 
   route("logout", "routes/logout.tsx"),

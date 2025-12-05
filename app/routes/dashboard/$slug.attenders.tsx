@@ -103,18 +103,22 @@ export default function AttendersPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header - Renders immediately */}
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">Event Attenders</h1>
+          <h1 className="text-2xl font-semibold">
+            {event.registration_type === 'external' ? 'Event Subscribers' : 'Event Attenders'}
+          </h1>
           <div className="space-y-1">
             <h2 className="text-lg font-medium">{event.title}</h2>
             <p className="text-sm text-muted-foreground">
-              Manage and view all registered attenders for this event
+              {event.registration_type === 'external'
+                ? 'Manage and view all subscribers for this event'
+                : 'Manage and view all registered attenders for this event'}
             </p>
           </div>
         </div>
 
         {/* Attenders Table - Lazy loaded and fetches data client-side */}
         <Suspense fallback={<AttendersTableSkeleton />}>
-          <AttendersTable eventId={eventId} />
+          <AttendersTable eventId={eventId} isExternalEvent={event.registration_type === 'external'} />
         </Suspense>
       </div>
     </div>

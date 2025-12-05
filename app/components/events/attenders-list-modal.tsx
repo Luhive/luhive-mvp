@@ -27,6 +27,7 @@ interface AttendersListModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   eventId: string
+  isExternalEvent?: boolean
 }
 
 const AttenderItem = ({ attendee }: { attendee: Attender }) => {
@@ -69,6 +70,7 @@ export function AttendersListModal({
   open,
   onOpenChange,
   eventId,
+  isExternalEvent = false,
 }: AttendersListModalProps) {
   const isMobile = useIsMobile()
   const [attendees, setAttendees] = useState<Attender[]>([])
@@ -108,11 +110,11 @@ export function AttendersListModal({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Event Attendees</DrawerTitle>
+            <DrawerTitle>{isExternalEvent ? 'Event Subscribers' : 'Event Attendees'}</DrawerTitle>
             <DrawerDescription>
               {loading
-                ? 'Loading attendees...'
-                : `${attendees.length} ${attendees.length === 1 ? 'person' : 'people'} attending`}
+                ? isExternalEvent ? 'Loading subscribers...' : 'Loading attendees...'
+                : `${attendees.length} ${attendees.length === 1 ? 'person' : 'people'} ${isExternalEvent ? 'subscribed' : 'attending'}`}
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-4">
@@ -120,7 +122,7 @@ export function AttendersListModal({
               <AttendersListSkeleton />
             ) : attendees.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
-                No attendees yet
+                {isExternalEvent ? 'No subscribers yet' : 'No attendees yet'}
               </div>
             ) : (
               <div className="max-h-[60vh] overflow-y-auto">
@@ -141,11 +143,11 @@ export function AttendersListModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Event Attendees</DialogTitle>
+          <DialogTitle>{isExternalEvent ? 'Event Subscribers' : 'Event Attendees'}</DialogTitle>
           <DialogDescription>
             {loading
-              ? 'Loading attendees...'
-              : `${attendees.length} ${attendees.length === 1 ? 'person' : 'people'} attending`}
+              ? isExternalEvent ? 'Loading subscribers...' : 'Loading attendees...'
+              : `${attendees.length} ${attendees.length === 1 ? 'person' : 'people'} ${isExternalEvent ? 'subscribed' : 'attending'}`}
           </DialogDescription>
         </DialogHeader>
         <div>
@@ -153,7 +155,7 @@ export function AttendersListModal({
             <AttendersListSkeleton />
           ) : attendees.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">
-              No attendees yet
+              {isExternalEvent ? 'No subscribers yet' : 'No attendees yet'}
             </div>
           ) : (
             <div className="max-h-[60vh] overflow-y-auto">

@@ -3,6 +3,7 @@ import { EventVerificationEmail } from "~/templates/event-verification-email";
 import { EventConfirmationEmail } from "~/templates/event-confirmation-email";
 import { EventStatusUpdateEmail } from "~/templates/event-status-update-email";
 import { EventRegistrationRequestEmail } from "~/templates/event-registration-request-email";
+import { EventSubscriptionEmail } from "~/templates/event-subscription-email";
 import { CommunityWaitlistNotification } from "~/templates/community-waitlist-notification";
 import { generateICS } from "~/lib/icsManager";
 
@@ -180,6 +181,21 @@ interface CommunityWaitlistNotificationData {
   website?: string | null;
   description?: string | null;
   submittedAt: string;
+}
+
+interface SubscriptionEmailData {
+  eventTitle: string;
+  communityName: string;
+  eventDate: string;
+  eventTime: string;
+  eventLink: string;
+  externalRegistrationUrl: string;
+  externalPlatformName: string;
+  recipientName: string;
+  recipientEmail: string;
+  registerAccountLink: string;
+  locationAddress?: string;
+  onlineMeetingLink?: string;
 }
 
 export async function sendRegistrationRequestEmail(
@@ -626,6 +642,92 @@ export async function sendCommunityWaitlistNotification(
       recipientEmail,
       fromEmail: FROM_EMAIL,
       communityName,
+    });
+    throw error;
+  }
+}
+
+export async function sendSubscriptionConfirmationEmail(
+  data: SubscriptionEmailData
+) {
+  const {
+    eventTitle,
+    communityName,
+    eventDate,
+    eventTime,
+    eventLink,
+    externalRegistrationUrl,
+    externalPlatformName,
+    recipientName,
+    recipientEmail,
+    registerAccountLink,
+    locationAddress,
+    onlineMeetingLink,
+  } = data;
+
+  // Runtime validation
+  if (!resend) {
+    const errorMsg =
+      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  console.log(`📧 Attempting to send subscription confirmation email:`);
+  console.log(`   To: ${recipientEmail}`);
+  console.log(`   From: ${FROM_EMAIL}`);
+  console.log(`   Subject: You're subscribed for updates about ${eventTitle}!`);
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [recipientEmail],
+      subject: `You're subscribed for updates about ${eventTitle}!`,
+      react: EventSubscriptionEmail({
+        eventTitle,
+        communityName,
+        eventDate,
+        eventTime,
+        eventLink,
+        externalRegistrationUrl,
+        externalPlatformName,
+        recipientName,
+        registerAccountLink,
+        locationAddress,
+        onlineMeetingLink,
+      }),
+    });
+
+    if (error) {
+      const errorDetails: Record<string, unknown> = {
+        message: error.message,
+      };
+      if ("name" in error && typeof error.name === "string") {
+        errorDetails.name = error.name;
+      }
+      console.error("❌ Resend API error:", errorDetails);
+      throw new Error(`Failed to send subscription email: ${error.message}`);
+    }
+
+    console.log(`✅ Subscription confirmation email sent successfully:`, {
+      id: emailData?.id,
+      from: FROM_EMAIL,
+      to: recipientEmail,
+    });
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("❌ Error sending subscription confirmation email:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      recipientEmail,
+      fromEmail: FROM_EMAIL,
     });
     throw error;
   }

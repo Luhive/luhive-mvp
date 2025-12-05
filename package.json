@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/server.js",
+    "dev": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router dev",
+    "start": "NODE_OPTIONS='--import ./instrument.server.mjs' react-router-serve ./build/server/server.js",
     "typecheck": "react-router typegen && tsc",
     "prepare": "react-router typegen",
     "supabase-types": "npx supabase gen types typescript --project-id ncgqtxfchavfugucdnnh --schema public > app/models/database.types.ts",
@@ -38,7 +38,7 @@
     "@react-email/img": "0.0.11",
     "@react-router/node": "^7.9.2",
     "@react-router/serve": "^7.9.2",
-    "@sentry/react": "^10.27.0",
+    "@sentry/react-router": "^10.27.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.75.0",
     "@tabler/icons-react": "^3.35.0",
@@ -77,6 +77,7 @@
   },
   "devDependencies": {
     "@locator/babel-jsx": "^0.5.1",
+    "@locator/runtime": "^0.5.1",
     "@react-email/preview-server": "5.0.4",
     "@react-router/dev": "^7.9.2",
     "@tailwindcss/vite": "^4.1.13",
