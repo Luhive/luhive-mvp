@@ -188,7 +188,7 @@ export function LandingNavbar() {
               >
                 <Link
                 className={user ? 'bg-transparent hover:bg-transparent' : ''}
-                  to={user ? '/hub' : '/signup'}
+                  to={user ? '/profile' : '/signup'}
                   onClick={() => handleCTAClick(user ? 'User Hub - Header' : 'Sign Up - Header')}
                 >
                   {user ? (
@@ -293,7 +293,7 @@ export function LandingNavbar() {
             asChild
           >
             <Link
-              to={user ? '/hub' : '/signup'}
+              to={user ? '/profile' : '/signup'}
               onClick={() => {
                 handleCTAClick(user ? 'User Hub - Mobile' : 'Sign Up - Mobile');
                 setIsMenuOpen(false);
