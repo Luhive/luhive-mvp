@@ -21,7 +21,6 @@ type Event = Database['public']['Tables']['events']['Row'];
 export type { Event };
 
 interface EventListProps {
-<<<<<<< HEAD
 	communityId: string;
 	communitySlug: string;
 	limit?: number;
@@ -32,16 +31,6 @@ interface EventListProps {
 export function EventList({ communityId, communitySlug, limit = 3, onEventClick, onEventsLoaded }: EventListProps) {
 	const [events, setEvents] = useState<Event[]>([]);
 	const [loading, setLoading] = useState(true);
-=======
-  communityId: string;
-  communitySlug: string;
-  limit?: number;
-}
-
-export function EventList({ communityId, communitySlug, limit = 3 }: EventListProps) {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
->>>>>>> a5a4bfea11916e5027655f503ed050b1dc6c0bb2
 
   useEffect(() => {
     async function fetchEvents() {
@@ -58,7 +47,6 @@ export function EventList({ communityId, communitySlug, limit = 3 }: EventListPr
           .order('start_time', { ascending: false })
           .limit(limit);
 
-<<<<<<< HEAD
 				if (error) {
 					console.error('Error fetching events:', error);
 					setEvents([]);
@@ -75,21 +63,6 @@ export function EventList({ communityId, communitySlug, limit = 3 }: EventListPr
 				setLoading(false);
 			}
 		}
-=======
-        if (error) {
-          console.error('Error fetching events:', error);
-          setEvents([]);
-        } else {
-          setEvents(data || []);
-        }
-      } catch (error) {
-        console.error('Error fetching events:', error);
-        setEvents([]);
-      } finally {
-        setLoading(false);
-      }
-    }
->>>>>>> a5a4bfea11916e5027655f503ed050b1dc6c0bb2
 
     fetchEvents();
   }, [communityId, limit]);
@@ -102,7 +75,6 @@ export function EventList({ communityId, communitySlug, limit = 3 }: EventListPr
     return <EventListEmpty />;
   }
 
-<<<<<<< HEAD
 	return (
 		
 		<div className="space-y-3">
@@ -123,42 +95,6 @@ function EventCard({ event, communitySlug, onEventClick }: {
 	communitySlug: string;
 	onEventClick?: (event: Event) => void;
 }) {
-	const eventDate = dayjs(event.start_time).tz(event.timezone);
-	const eventEndDate = event.end_time ? dayjs(event.end_time).tz(event.timezone) : null;
-
-	return (
-		<Link
-			to={`/c/${communitySlug}/events/${event.id}`}
-			state={{ event }}
-			className="block p-4 rounded-lg border bg-card hover:border-accent/50 hover:shadow-md hover:shadow-accent/20 active:shadow-none transition-all duration-400 group"
-			onClick={() => onEventClick?.(event)}
-		>
-			<div className="flex gap-4">
-				{/* Event Cover - Small Square */}
-				<div className="relative aspect-square w-20 h-20 flex-shrink-0 bg-gradient-to-br from-primary/5 via-primary/10 to-background overflow-hidden rounded-lg border">
-					{event.cover_url ? (
-						<img
-							src={event.cover_url}
-							alt={event.title}
-							className="w-full h-full object-cover"
-						/>
-					) : (
-						<div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-							<Calendar className="h-8 w-8 text-primary/30" />
-						</div>
-					)}
-				</div>
-=======
-  return (
-    <div className="space-y-3">
-      {events.map((event) => (
-        <EventCard key={event.id} event={event} communitySlug={communitySlug} />
-      ))}
-    </div>
-  );
-}
-
-function EventCard({ event, communitySlug }: { event: Event; communitySlug: string }) {
   const eventDate = dayjs(event.start_time).tz(event.timezone);
   const eventEndDate = event.end_time ? dayjs(event.end_time).tz(event.timezone) : null;
 
@@ -166,13 +102,14 @@ function EventCard({ event, communitySlug }: { event: Event; communitySlug: stri
   const isExternalEvent = event.registration_type === 'external';
   const platform = event.external_platform as ExternalPlatform | null;
   const PlatformIcon = platform ? getExternalPlatformIcon(platform) : null;
->>>>>>> a5a4bfea11916e5027655f503ed050b1dc6c0bb2
 
   return (
     <Link
-      to={`/c/${communitySlug}/events/${event.id}`}
-      className="block p-4 rounded-lg border bg-card transition-all duration-400 group hover:border-accent/50 hover:shadow-md hover:shadow-accent/20 active:shadow-none"
-    >
+			to={`/c/${communitySlug}/events/${event.id}`}
+			state={{ event }}
+			className="block p-4 rounded-lg border bg-card hover:border-accent/50 hover:shadow-md hover:shadow-accent/20 active:shadow-none transition-all duration-400 group"
+			onClick={() => onEventClick?.(event)}
+		>
       <div className="flex gap-4">
         {/* Event Cover - Small Square */}
         <div className="relative aspect-square w-20 h-20 flex-shrink-0 overflow-hidden rounded-lg border bg-gradient-to-br from-primary/5 via-primary/10 to-background">

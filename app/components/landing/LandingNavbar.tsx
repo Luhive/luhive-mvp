@@ -187,7 +187,7 @@ export function LandingNavbar() {
                 asChild
               >
                 <Link
-                className='bg-transparent hover:bg-transparent'
+                className={user ? 'bg-transparent hover:bg-transparent' : ''}
                   to={user ? '/hub' : '/signup'}
                   onClick={() => handleCTAClick(user ? 'User Hub - Header' : 'Sign Up - Header')}
                 >

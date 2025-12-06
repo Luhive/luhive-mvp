@@ -6,12 +6,9 @@ import {
 	useActionData,
 	useSearchParams,
 	useNavigation,
-<<<<<<< HEAD
 	useLocation,
 	Await,
-=======
 	useSubmit,
->>>>>>> a5a4bfea11916e5027655f503ed050b1dc6c0bb2
 } from "react-router";
 import { redirect } from "react-router";
 import { createClient } from "~/lib/supabase.server";
@@ -190,8 +187,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		throw new Response("Event not available", { status: 404 });
 	}
 
-<<<<<<< HEAD
-=======
 	// Get registration/subscription count
 	// For external events, count all approved subscriptions
 	// For native events, count only approved registrations
@@ -255,7 +250,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 		now < registrationDeadline &&
 		(!event.capacity || (registrationCount || 0) < event.capacity);
 
->>>>>>> a5a4bfea11916e5027655f503ed050b1dc6c0bb2
 	// Get origin for absolute URLs in meta tags
 	const url = new URL(request.url);
 	const origin = url.origin;
