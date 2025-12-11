@@ -15,46 +15,38 @@ export function LandingHero() {
   };
 
   return (
-    <section className="min-h-screen flex items-center justify-center text-center pt-[120px] pb-20">
-      <div className="container mx-auto px-6">
-        <div className="max-w-[800px] mx-auto animate-fade-in-up">
-          <h1 className="text-[72px] md:text-[56px] sm:text-[50px] font-extrabold leading-[1.1] mb-6 tracking-[-2px]">
+    <section className="min-h-screen flex items-center justify-center text-center pt-4 lg:pt-32 pb-16 md:pb-20">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="max-w-3xl lg:max-w-4xl mx-auto animate-fade-in-up">
+          <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight mb-6 tracking-tight">
             {t('hero.title')}
             <br />
-            <span 
-              className="bg-clip-text text-transparent animate-gradient-flow"
-              style={{
-                background: 'linear-gradient(90deg, #FF8040 0%, #E66020 25%, #FF6B9D 50%, #FF8040 75%, #E66020 100%)',
-                backgroundSize: '200% auto',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
+            <span className="gradient-text animate-gradient-flow">
               {t('hero.titleHighlight')}
             </span>
           </h1>
-          <p className="text-xl md:text-lg text-muted-foreground mb-10 leading-relaxed max-w-[600px] mx-auto">
+          <p className="text-base md:text-lg lg:text-xl text-muted-foreground mb-8 md:mb-10 leading-relaxed max-w-xl lg:max-w-2xl mx-auto">
             {t('hero.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-4">
             <Button
               size="lg"
-              className="h-[52px] min-w-[120px] px-8 text-base"
+              className="h-12 md:h-14 min-w-28 md:min-w-32 px-6 md:px-8 text-base"
               asChild
             >
-              <Link
-                to="/hub"
-                prefetch="intent"
+              <a
+                href="/hub"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => handleCTAClick('Discover Communities - Hero')}
               >
                 {t('hero.ctaDiscover')}
-              </Link>
+              </a>
             </Button>
             <Button
               variant="outline"
               size="lg"
-              className="h-[52px] min-w-[120px] px-8 text-base border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              className="h-12 md:h-14 min-w-28 md:min-w-32 px-6 md:px-8 text-base border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
               asChild
             >
               <Link
@@ -65,7 +57,7 @@ export function LandingHero() {
               </Link>
             </Button>
           </div>
-          <p className="text-base text-muted-foreground/60">
+          <p className="text-sm md:text-base text-muted-foreground/60">
             <span className="text-primary font-semibold">{t('hero.tagline')}</span>
           </p>
         </div>
