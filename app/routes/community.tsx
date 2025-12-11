@@ -3,7 +3,7 @@ import { useLoaderData, Link, useNavigation, useActionData, useRevalidator, useL
 import { createClient } from "~/lib/supabase.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router';
-import { useEffect, useState, Suspense, lazy } from 'react';
+import { useEffect, useState, Suspense, lazy, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
@@ -43,7 +43,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Skeleton } from "~/components/ui/skeleton";
 import { EventListSkeleton } from "~/components/events/event-list";
 import { CommunityPageSkeleton } from "~/components/community-page-skeleton";
+import { EventPageSkeleton } from "~/components/events/event-page-skeleton";
+import { EventsListPageSkeleton } from "~/components/events/events-list-page-skeleton";
 import { useIsMobile } from "~/hooks/use-mobile";
+
+type Event = Database['public']['Tables']['events']['Row'];
 
 // Lazy load EventList component
 const EventList = lazy(() => import("~/components/events/event-list").then(module => ({ default: module.EventList })));
@@ -350,9 +354,9 @@ export default function Community() {
   const isDashboardLoading = navigation.state === "loading" &&
     navigation.location?.pathname.includes('/dashboard/')
 
-  // Check if navigating to events page
+  // Check if navigating to events list page (not individual event pages)
   const isEventsLoading = navigation.state === "loading" &&
-    navigation.location?.pathname.includes('/events')
+    navigation.location?.pathname.endsWith('/events')
 
   // Use community data if available, otherwise use default demo data
   const displayName = community?.name || "You Community Name";
@@ -371,8 +375,83 @@ export default function Community() {
 
   const [showStickyButton, setShowStickyButton] = useState(!isMember && !isOwner);
 
+  // State for instant event navigation overlay
+  const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
+
+  // State for instant events list page navigation
+  const [loadedEvents, setLoadedEvents] = useState<Event[]>([]);
+  const [pendingEventsPage, setPendingEventsPage] = useState(false);
+  const eventsPageOverlayRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToTopRef = useRef(false);
+
+  // Scroll to top when events page overlay FIRST appears (only once)
+  useEffect(() => {
+    if (pendingEventsPage && eventsPageOverlayRef.current && !hasScrolledToTopRef.current) {
+      eventsPageOverlayRef.current.scrollTop = 0;
+      hasScrolledToTopRef.current = true;
+    }
+    // Reset flag when overlay is cleared
+    if (!pendingEventsPage) {
+      hasScrolledToTopRef.current = false;
+    }
+  }, [pendingEventsPage]);
+
+  // Save scroll position before overlay unmounts
+  useEffect(() => {
+    // Save scroll position when overlay is about to be removed
+    if (!pendingEventsPage && eventsPageOverlayRef.current) {
+      const scrollPosition = eventsPageOverlayRef.current.scrollTop;
+      if (scrollPosition > 0) {
+        // Dispatch custom event to save scroll position
+        // Use a small delay to ensure event is captured before overlay unmounts
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('saveOverlayScroll', { detail: scrollPosition }));
+        }, 0);
+      }
+    }
+  }, [pendingEventsPage]);
+
+  // Clear pending states when navigation completes
+  useEffect(() => {
+    if (navigation.state === "idle") {
+      setPendingEvent(null);
+      setPendingEventsPage(false);
+    }
+  }, [navigation.state]);
+
   return (
     <>
+      {/* Instant Event Navigation Overlay */}
+      {pendingEvent && community && (
+        <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+          <div className="min-h-screen container mx-auto px-4 sm:px-8">
+            <EventPageSkeleton 
+              event={pendingEvent} 
+              community={community}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Instant Events List Page Navigation Overlay */}
+      {pendingEventsPage && community && (
+        <div 
+          ref={eventsPageOverlayRef}
+          className="fixed inset-0 z-50 bg-background overflow-y-auto"
+        >
+          <EventsListPageSkeleton 
+            events={loadedEvents}
+            communitySlug={community.slug}
+            community={community}
+            user={user}
+            onEventClick={(event) => {
+              setPendingEventsPage(false);
+              setPendingEvent(event);
+            }}
+          />
+        </div>
+      )}
+
       {/* Global Loading Overlay for Dashboard Navigation */}
       {isDashboardLoading && (
         <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center">
@@ -646,6 +725,8 @@ export default function Community() {
                       communityId={community.id}
                       communitySlug={community.slug}
                       limit={3}
+                      onEventClick={(event) => setPendingEvent(event)}
+                      onEventsLoaded={(events) => setLoadedEvents(events)}
                     />
                   </Suspense>
                 ) : (
@@ -668,8 +749,9 @@ export default function Community() {
                         <Link
                           to={`/c/${community.slug}/events`}
                           prefetch="intent"
-                          state={{ community }}
+                          state={{ community, events: loadedEvents }}
                           className="flex items-center gap-1.5"
+                          onClick={() => setPendingEventsPage(true)}
                         >
                           View All
                           <ArrowRight className="h-3.5 w-3.5" />

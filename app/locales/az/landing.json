@@ -1,0 +1,92 @@
+{
+  "nav": {
+    "about": "Haqqımızda",
+    "features": "Xüsusiyyətlər",
+    "communities": "İcmalar",
+    "forOrganizers": "Təşkilatçılar Üçün",
+    "contact": "Əlaqə",
+    "signUp": "Qeydiyyat"
+  },
+  "hero": {
+    "title": "Vahid Platforma.",
+    "titleHighlight": "Aktiv İcmalar.",
+    "subtitle": "Luhive icmanızı bir güclü, vahid platformada birləşdirir.",
+    "ctaDiscover": "İcmaları Kəşf Et",
+    "ctaCreate": "İcmanızı Yaradın",
+    "tagline": "Əhəmiyyətli icmalar qurun"
+  },
+  "about": {
+    "badge": "Luhive Haqqında",
+    "title": "İcma İdarəetməsinin Gələcəyi",
+    "description": "Biz təsdiqlənmiş təşkilatlar üçün mükəmməl icma platforması qururuq. Azərbaycandan başlayaraq, qlobal miqyasda böyüyürük.",
+    "problem": {
+      "title": "Problem",
+      "description": "Bu gün icmalar <strong>pərakəndədir</strong>. Tədbir idarəetməsi Google Forms-da aparılır. Elanlar Telegram, WhatsApp və Discord arasında səpələnib. Rəylər isə bu səs-küydə itib-batır.",
+      "highlight": "Dəyişiklik vaxtıdır."
+    },
+    "solution": {
+      "title": "Bizim Həllimiz",
+      "description": "Luhive hər şeyi — tədbirləri, ünsiyyəti, rəyləri və icma fəallığını — hamısını bir, gözəl dizayn edilmiş platformada birləşdirir."
+    },
+    "whoWeServe": {
+      "title": "Kimin Üçün Çalışırıq?",
+      "description": "Həqiqi əlaqələr və sıfır xaos istəyən <strong>təsdiqlənmiş icmalar</strong>. Texnoloji icmalardan tutmuş təhsil təşkilatlarına qədər."
+    },
+    "vision": {
+      "title": "Gələcəyə Baxışımız",
+      "description": "<strong>Azərbaycandan</strong> başlayaraq, <strong>qlobal</strong> miqyasda böyüyürük. Biz bütün dünyadakı icmalara birləşmək, fəaliyyət göstərmək və birlikdə inkişaf etmək imkanı verən bir platforma qururuq. Missiyamız maneələri aradan qaldırmaq, mənalı əlaqələr qurmaq və harada olmasından asılı olmayaraq hər bir icmanın çiçəklənə biləcəyi məkanlar yaratmaqdır."
+    }
+  },
+  "features": {
+    "badge": "Əsas Xüsusiyyətlər",
+    "title": "Sizə Lazım Olan Hər Şey, Lazım Olmayan Heç Nə",
+    "unifiedEvents": {
+      "title": "Vahid Tədbir İdarəetməsi",
+      "description": "Asanlıqla tədbirlər yaradın, idarə edin və izləyin. Artıq Google Forms-a ehtiyac yoxdur. Sadəcə işləyən bir güclü sistem."
+    },
+    "centralizedComm": {
+      "title": "Mərkəzləşdirilmiş Ünsiyyət",
+      "description": "Pərakəndə çatlara əlvida deyin. Bütün icma söhbətləriniz, elanlarınız və yeniləmələriniz bir yerdə."
+    },
+    "smartFeedback": {
+      "title": "Ağıllı Rəy Sistemi",
+      "description": "İcma rəylərini toplayın, sistemləşdirin və onlara uyğun hərəkət edin. Bir daha heç bir təklif və ya istəyi itirməyin."
+    },
+    "verified": {
+      "title": "Təsdiqlənmiş İcmalar",
+      "description": "Orijinal, təsdiqlənmiş icmalara qoşulun. Rəsmi icma nişanları ilə etibar və inam qazanın."
+    },
+    "analytics": {
+      "title": "Analitika və Statistikalar",
+      "description": "Güclü analitika ilə icmanızı daha yaxşı anlayın. Fəallığı, böyüməni və üzv aktivliyini izləyin."
+    },
+    "privacy": {
+      "title": "Məxfilik və Təhlükəsizlik",
+      "description": "İcmanızın məlumatları bizimlə təhlükəsizlikdədir. Korporativ səviyyəli təhlükəsizlik istifadəçi dostu dizaynla birləşir."
+    }
+  },
+  "contact": {
+    "badge": "İcmamıza Qoşulun",
+    "title": "Gələcəyin Bir Hissəsi Olun",
+    "getInTouch": "Əlaqə Saxlayın",
+    "description": "Suallarınız var? Luhive haqqında daha çox bilmək istəyirsiniz? Sizdən eşitmək məmnuniyyət duyarıq.",
+    "email": {
+      "label": "Bizə E-poçt Göndərin",
+      "value": "hi@luhive.com"
+    },
+    "linkedin": {
+      "label": "LinkedIn-də Qoşulun",
+      "value": "linkedin.com/company/luhive"
+    }
+  },
+  "footer": {
+    "tagline": "Birləşdir. Cəlb Et. İnkişaf Et.",
+    "description": "İcma idarəetməsinin gələcəyini qururuq.",
+    "product": "Məhsul",
+    "connect": "Əlaqə",
+    "email": "E-poçt",
+    "linkedin": "LinkedIn",
+    "copyright": "© 2025 Luhive. Bütün hüquqlar qorunur."
+  }
+}
+

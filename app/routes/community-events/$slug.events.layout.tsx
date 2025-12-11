@@ -1,5 +1,5 @@
 import type { Route } from './+types/$slug.events.layout';
-import { useLoaderData, Outlet, useNavigate, useMatches, useLocation } from 'react-router';
+import { useLoaderData, Outlet, useNavigate, useMatches, useLocation, useNavigation } from 'react-router';
 import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '~/lib/supabase.client';
 import type { Database } from '~/models/database.types';
@@ -7,8 +7,10 @@ import { Button } from '~/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { Skeleton } from '~/components/ui/skeleton';
 import { ArrowLeft, X } from 'lucide-react';
+import { EventPageSkeleton } from '~/components/events/event-page-skeleton';
 
 type Community = Database['public']['Tables']['communities']['Row'];
+type Event = Database['public']['Tables']['events']['Row'];
 
 interface LoaderData {
 	slug: string;
@@ -38,6 +40,10 @@ export default function EventsLayout() {
 	const navigate = useNavigate();
 	const matches = useMatches();
 	const location = useLocation();
+	const navigation = useNavigation();
+	
+	// State for instant event navigation overlay
+	const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
 	
 	// Priority 1: Get community from navigation state (instant when navigating from community page)
 	// Priority 2: Get from parent route matches
@@ -99,8 +105,27 @@ export default function EventsLayout() {
 		navigate(`/c/${slug}`, { replace: true });
 	};
 
+	// Clear pending event when navigation completes
+	useEffect(() => {
+		if (navigation.state === "idle") {
+			setPendingEvent(null);
+		}
+	}, [navigation.state]);
+
 	return (
 		<>
+			{/* Instant Event Navigation Overlay */}
+			{pendingEvent && community && (
+				<div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+					<div className="min-h-screen container mx-auto px-4 sm:px-8">
+						<EventPageSkeleton 
+							event={pendingEvent} 
+							community={community}
+						/>
+					</div>
+				</div>
+			)}
+
 			{/* Header */}
 			<div className="py-4 border-b">
 				<div className="flex items-center justify-between gap-4">
@@ -155,7 +180,7 @@ export default function EventsLayout() {
 			</div>
 
 			{/* Content Area */}
-			<Outlet context={{ community, loading, slug }} />
+			<Outlet context={{ community, loading, slug, onEventClick: setPendingEvent }} />
 		</>
 	);
 }

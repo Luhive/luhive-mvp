@@ -21,12 +21,17 @@ interface EventsContentProps {
 	community: Community | null;
 	loading: boolean;
 	slug: string;
+	initialEvents?: Event[];
+	onEventClick?: (event: Event) => void;
 }
 
-export function EventsContent({ community, loading, slug }: EventsContentProps) {
-	const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+export function EventsContent({ community, loading, slug, initialEvents = [], onEventClick }: EventsContentProps) {
+	// Use initial events if provided (instant display from navigation state)
+	const hasInitialEvents = initialEvents.length > 0;
+	const [upcomingEvents, setUpcomingEvents] = useState<Event[]>(initialEvents);
 	const [pastEvents, setPastEvents] = useState<Event[]>([]);
-	const [loadingUpcoming, setLoadingUpcoming] = useState(true);
+	// Skip loading state if we have initial events
+	const [loadingUpcoming, setLoadingUpcoming] = useState(!hasInitialEvents);
 	const [loadingPast, setLoadingPast] = useState(true);
 	const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
@@ -46,24 +51,26 @@ export function EventsContent({ community, loading, slug }: EventsContentProps) 
 					.eq('community_id', community.id)
 					.eq('status', 'published')
 					.gte('start_time', now)
-					.order('start_time', { ascending: true });
+					.order('start_time', { ascending: false });
 
 				if (error) {
 					console.error('Error fetching upcoming events:', error);
-					setUpcomingEvents([]);
+					// Keep initial events if fetch fails
+					if (!hasInitialEvents) setUpcomingEvents([]);
 				} else {
+					// Update with fresh data (may include more events than initial)
 					setUpcomingEvents(data || []);
 				}
 			} catch (error) {
 				console.error('Error fetching upcoming events:', error);
-				setUpcomingEvents([]);
+				if (!hasInitialEvents) setUpcomingEvents([]);
 			} finally {
 				setLoadingUpcoming(false);
 			}
 		}
 
 		fetchUpcomingEvents();
-	}, [community?.id]);
+	}, [community?.id, hasInitialEvents]);
 
 	useEffect(() => {
 		if (!community?.id) return;
@@ -148,7 +155,12 @@ export function EventsContent({ community, loading, slug }: EventsContentProps) 
 					) : (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							{upcomingEvents.map((event) => (
-								<EventGridCard key={event.id} event={event} communitySlug={slug} />
+								<EventGridCard 
+									key={event.id} 
+									event={event} 
+									communitySlug={slug}
+									onEventClick={onEventClick}
+								/>
 							))}
 						</div>
 					)}
@@ -162,7 +174,13 @@ export function EventsContent({ community, loading, slug }: EventsContentProps) 
 					) : (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							{pastEvents.map((event) => (
-								<EventGridCard key={event.id} event={event} communitySlug={slug} isPast />
+								<EventGridCard 
+									key={event.id} 
+									event={event} 
+									communitySlug={slug} 
+									isPast
+									onEventClick={onEventClick}
+								/>
 							))}
 						</div>
 					)}
@@ -176,16 +194,22 @@ function EventGridCard({
 	event,
 	communitySlug,
 	isPast = false,
+	onEventClick,
 }: {
 	event: Event;
 	communitySlug: string;
 	isPast?: boolean;
+	onEventClick?: (event: Event) => void;
 }) {
 	const eventDate = dayjs(event.start_time).tz(event.timezone);
 	const eventEndDate = event.end_time ? dayjs(event.end_time).tz(event.timezone) : null;
 
 	return (
-		<Link to={`/c/${communitySlug}/events/${event.id}`} className="group block">
+		<Link 
+			to={`/c/${communitySlug}/events/${event.id}`}
+			state={{ event }}
+			onClick={() => onEventClick?.(event)}
+			className="group block">
 			<Card className="overflow-hidden pb-0 pt-0 gap-0 border hover:border-primary/50 hover:shadow-lg transition-all duration-300">
 				{/* Event Cover */}
 				<div className="relative aspect-square w-full bg-gradient-to-br from-primary/5 via-primary/10 to-background overflow-hidden">

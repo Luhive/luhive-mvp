@@ -50,6 +50,7 @@
   --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+  --font-nunito: "Nunito", ui-sans-serif, system-ui, sans-serif;
 }
 
 html,
@@ -215,6 +216,63 @@ body {
     'alternate' = play forwards, then backwards (this is what makes it look nice!)
   */
   animation: sparkle 2s ease-in-out infinite alternate;
+}
+
+/* Landing page animations */
+@keyframes fadeInPage {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out 0.4s forwards;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.animate-gradient-flow {
+  animation: gradient-flow 3s ease infinite;
+}
+
+/* Gradient text for hero section */
+.gradient-text {
+  background: linear-gradient(90deg, #FF8040 0%, #E66020 25%, #FF6B9D 50%, #FF8040 75%, #E66020 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text::selection {
+  -webkit-text-fill-color: var(--primary-foreground);
+  background: var(--primary);
 }
 
 ::selection {
