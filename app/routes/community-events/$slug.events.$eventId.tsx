@@ -726,6 +726,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 				registerAccountLink,
 				locationAddress: event.location_address || undefined,
 				onlineMeetingLink: event.online_meeting_link || undefined,
+				startTimeISO: event.start_time,
+				endTimeISO: event.end_time || event.start_time,
 			});
 		} catch (error) {
 			console.error("Failed to send subscription confirmation email:", error);
@@ -979,6 +981,8 @@ export async function action({ request, params }: Route.ActionArgs) {
 				registerAccountLink,
 				locationAddress: event.location_address || undefined,
 				onlineMeetingLink: event.online_meeting_link || undefined,
+				startTimeISO: event.start_time,
+				endTimeISO: event.end_time || event.start_time,
 			});
 		} catch (error) {
 			console.error("Failed to send subscription email:", error);
@@ -1819,7 +1823,7 @@ function EventPageContent({
 												alt={community.name}
 											/>
 											<AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-												{community.name.substring(0, 2).toUpperCase()}
+												{community.name?.substring(0, 2).toUpperCase()}
 											</AvatarFallback>
 										</Avatar>
 										<div className="flex-1 min-w-0">

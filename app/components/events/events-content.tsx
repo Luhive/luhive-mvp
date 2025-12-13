@@ -51,7 +51,7 @@ export function EventsContent({ community, loading, slug, initialEvents = [], on
 					.eq('community_id', community.id)
 					.eq('status', 'published')
 					.gte('start_time', now)
-					.order('start_time', { ascending: false });
+					.order('start_time', { ascending: true });
 
 				if (error) {
 					console.error('Error fetching upcoming events:', error);
