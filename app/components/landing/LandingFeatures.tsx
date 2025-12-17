@@ -45,35 +45,32 @@ export function LandingFeatures() {
   ];
 
   return (
-    <section id="features" className="py-[120px]">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <span className="inline-block bg-primary/10 text-primary py-2 px-4 rounded-[20px] text-sm font-semibold tracking-wide mb-4">
+    <section id="features" className="py-16 md:py-24 lg:py-32">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="text-center mb-12 md:mb-16">
+          <span className="inline-block bg-primary/10 text-primary py-2 px-4 rounded-full text-sm font-semibold tracking-wide mb-4">
             {t('features.badge')}
           </span>
-          <h2 className="text-5xl md:text-[40px] sm:text-[32px] font-extrabold tracking-[-1px] text-foreground">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
             {t('features.title')}
           </h2>
         </div>
 
-        <div 
-          className="grid gap-8"
-          style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
               <div
                 key={index}
-                className="bg-white p-10 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary"
+                className="bg-white p-6 md:p-8 lg:p-10 rounded-2xl border border-border transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary"
               >
-                <div className="mb-6 w-16 h-16 bg-white rounded-full flex items-center justify-center border border-border">
-                  <Icon className="w-8 h-8 text-primary" />
+                <div className="mb-4 md:mb-6 w-12 h-12 md:w-16 md:h-16 bg-white rounded-full flex items-center justify-center border border-border">
+                  <Icon className="w-6 h-6 md:w-8 md:h-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-foreground">
+                <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-3 text-foreground">
                   {feature.title}
                 </h3>
-                <p className="text-[15px] leading-relaxed text-muted-foreground">
+                <p className="text-sm md:text-base leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>
               </div>

@@ -78,7 +78,7 @@ export default defineConfig((config) => {
       tsconfigPaths(),
       netlifyReactRouter(),
 
-      // ensureServerBuildEntry(),
+      ensureServerBuildEntry(),
     ],
     assetsInclude: ["**/*.lottie"],
   };

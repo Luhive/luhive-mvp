@@ -273,6 +273,20 @@ body {
   animation: gradient-flow 3s ease infinite;
 }
 
+/* Gradient text for hero section */
+.gradient-text {
+  background: linear-gradient(90deg, #FF8040 0%, #E66020 25%, #FF6B9D 50%, #FF8040 75%, #E66020 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text::selection {
+  -webkit-text-fill-color: var(--primary-foreground);
+  background: var(--primary);
+}
+
 ::selection {
   color: var(--primary-foreground);
   background: var(--primary);

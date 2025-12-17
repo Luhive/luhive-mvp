@@ -196,6 +196,8 @@ interface SubscriptionEmailData {
   registerAccountLink: string;
   locationAddress?: string;
   onlineMeetingLink?: string;
+  startTimeISO: string;
+  endTimeISO: string;
 }
 
 export async function sendRegistrationRequestEmail(
@@ -663,6 +665,8 @@ export async function sendSubscriptionConfirmationEmail(
     registerAccountLink,
     locationAddress,
     onlineMeetingLink,
+    startTimeISO,
+    endTimeISO,
   } = data;
 
   // Runtime validation
@@ -685,6 +689,20 @@ export async function sendSubscriptionConfirmationEmail(
   console.log(`   Subject: You're subscribed for updates about ${eventTitle}!`);
 
   try {
+    // Generate ICS file content
+    console.log(`   Generating ICS attachment...`);
+    const icsContent = generateICS({
+      title: eventTitle,
+      description: `${eventTitle}\n\nHosted by: ${communityName}\n\nView event details: ${eventLink}`,
+      location: locationAddress || onlineMeetingLink || "Online Event",
+      startTime: startTimeISO,
+      endTime: endTimeISO,
+      url: eventLink,
+      organizerName: communityName,
+      organizerEmail: "events@luhive.com",
+    });
+    console.log(`   ICS attachment created`);
+
     const { data: emailData, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [recipientEmail],
@@ -702,6 +720,13 @@ export async function sendSubscriptionConfirmationEmail(
         locationAddress,
         onlineMeetingLink,
       }),
+      // Add ICS calendar attachment
+      attachments: [
+        {
+          filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
+          content: Buffer.from(icsContent).toString("base64"),
+        },
+      ],
     });
 
     if (error) {
@@ -719,6 +744,7 @@ export async function sendSubscriptionConfirmationEmail(
       id: emailData?.id,
       from: FROM_EMAIL,
       to: recipientEmail,
+      hasAttachment: true,
     });
 
     return { success: true, data: emailData };
