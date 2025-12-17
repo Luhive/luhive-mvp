@@ -2,12 +2,20 @@ import type { Route } from './+types/index';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LandingNavbar } from '~/components/landing/LandingNavbar';
+import { LandingNavbarV2 } from '~/components/landingv2/LandingNavbarV2';
 import { LandingHero } from '~/components/landing/LandingHero';
 import { LandingAbout } from '~/components/landing/LandingAbout';
 import { LandingFeatures } from '~/components/landing/LandingFeatures';
 import { LandingContact } from '~/components/landing/LandingContact';
 import { LandingFooter } from '~/components/landing/LandingFooter';
 import '../lib/i18n';
+import { LandingAboutV2 } from '~/components/landingv2/LandingAboutV2';
+import { LandingPartnersV2 } from '~/components/landingv2/LandingPartnersV2';
+import { LandingFeaturesV2 } from '~/components/landingv2/LandingFeaturesV2';
+import { LandingPricingV2 } from '~/components/landingv2/LandingPricingV2';
+import { LandingBlogsV2 } from '~/components/landingv2/LandingBlogsV2';
+import { LandingFAQV2 } from '~/components/landingv2/LandingFAQV2';
+import { LandingFooterV2 } from '~/components/landingv2/LandingFooterV2';
 
 export function meta({ data }: Route.MetaArgs) {
   return [
@@ -129,12 +137,20 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <LandingNavbar />
-      <LandingHero />
-      <LandingAbout />
-      <LandingFeatures />
-      <LandingContact />
-      <LandingFooter />
+      {/* <LandingNavbar /> */}
+      <LandingNavbarV2 />
+      {/* <LandingHero /> */}
+      <LandingAboutV2 />
+      {/* <LandingAbout /> */}
+      <LandingPartnersV2 />
+      {/* <LandingFeatures /> */}
+      <LandingFeaturesV2 />
+      {/* <LandingContact /> */}
+      <LandingPricingV2 />
+      <LandingBlogsV2 />
+      <LandingFAQV2 />
+      {/* <LandingFooter /> */}
+      <LandingFooterV2 />
     </div>
   );
 }

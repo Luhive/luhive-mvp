@@ -218,6 +218,18 @@ body {
   animation: sparkle 2s ease-in-out infinite alternate;
 }
 
+.number-box-gamification-card{
+  top: 70%;
+  right: 20%;
+  transform: translate(-50%, -50%);
+}
+
+@media screen and (max-width: 768px) {
+  .footer-nav{
+    display: none !important;
+  }
+}
+
 /* Landing page animations */
 @keyframes fadeInPage {
   to {

@@ -7,6 +7,14 @@
     "contact": "Əlaqə",
     "signUp": "Qeydiyyat"
   },
+  "navV2": {
+    "about": "Haqqımızda",
+    "features": "Xüsusiyyətlər",
+    "pricing": "Qiymətləndirmə",
+    "faqs": "Tez-tez verilən suallar",
+    "contact": "Əlaqə",
+    "tryForFree": "Pulsuz yoxla"
+  },
   "hero": {
     "title": "Vahid Platforma.",
     "titleHighlight": "Aktiv İcmalar.",
@@ -65,6 +73,51 @@
       "description": "İcmanızın məlumatları bizimlə təhlükəsizlikdədir. Korporativ səviyyəli təhlükəsizlik istifadəçi dostu dizaynla birləşir."
     }
   },
+  "featuresV2": {
+    "headingLine1": "Möhtəşəm",
+    "headingLine2": "xüsusiyyətlərimizi kəşf edin",
+    "buildIntegrations": {
+      "title": "Daxili İnteqrasiyalar",
+      "description": "İstədiyiniz zaman istifadə edə biləcəyiniz daxili inteqrasiyalar."
+    },
+    "gamification": {
+      "title": "Gamifikasiya və Nişanlar",
+      "description": "Aktiv olun, nişanlar qazanın və təcrübənizdən maksimum yararlanın.",
+      "firstAdopter": "İlk İstifadəçi",
+      "verifiedByLuhive": "Luhive tərəfindən təsdiqlənib",
+      "moreBadges": "+3"
+    },
+    "analytics": {
+      "title": "Süni İntellekt Analitikası",
+      "description": "Daha ağıllı böyümə anlayışları əldə edin.",
+      "membersLabel": "Üzvlər",
+      "membersCount": "+2350",
+      "growthLabel": "Keçən ayla müqayisədə +180.1%",
+      "barChartAlt": "Zaman üzrə icma böyüməsini göstərən sütun qrafiki"
+    },
+    "manageCommunity": {
+      "title": "İcmanızı Sürətlə İdarə Edin",
+      "description": "Ən vacib açıq link və rəy kanallarınızı mərkəzləşdirərək iş axınınızı sadələşdirin.",
+      "quickActionsTitle": "Sürətli Fəaliyyətlər",
+      "viewAnalytics": "Analitikanı Görüntülə",
+      "createEvent": "Tədbir Yarat",
+      "copyPublicLink": "İctimai Linki Köçür"
+    },
+    "magicBox": {
+      "title": "Sehrli Qutu",
+      "description": "Süni intellekt bir neçə saniyəyə tədbirlər və elanlar yaradır.",
+      "sampleText": "Hə, demək olar ki, yeni proqram təlimi barədə deməyi unutmuşdum. Gərək insanlara deyək ki, gələn həftə, çərşənbə axşamı səhər saat on birdə olacaq—sadəcə onlara bunu çatdır...",
+      "announcement": "Elan",
+      "event": "Tədbir"
+    }
+  },
+  "partners": {
+    "badge": "Partnyorlar",
+    "title": "Bizə güvənirlər",
+    "supVcAlt": "SUP.VC loqosu",
+    "gdgBakuAlt": "GDG Baku loqosu",
+    "aimAzAlt": "AIM Azərbaycan loqosu"
+  },
   "contact": {
     "badge": "İcmamıza Qoşulun",
     "title": "Gələcəyin Bir Hissəsi Olun",
@@ -87,6 +140,99 @@
     "email": "E-poçt",
     "linkedin": "LinkedIn",
     "copyright": "© 2025 Luhive. Bütün hüquqlar qorunur."
+  },
+  "pricingV2": {
+    "badge": "Qiymətləndirmə",
+    "title": "Planınızı seçin",
+    "ribbon": "Son 20 icma!",
+    "planName": "Dərin Təmizlik",
+    "price": "39.99",
+    "currency": "USD / ay",
+    "features": {
+      "feature1": "Əsas planın hər şeyini əhatə edir",
+      "feature2": "Ətraflı mətbəx və vanna otağı təmizliyi",
+      "feature3": "Pəncərələrin və güzgülərin içərisi",
+      "feature4": "Döşəmə lövhələri, künclər və yüksək səthlər"
+    },
+    "cta": {
+      "title": "Öz icmanızı yaradın",
+      "description": "Əlaqələrinizi və çatdırılmasınızı sonsuz dərəcədə artırmaq üçün öz Rəqəmsal Şəbəkənizi qurun.",
+      "button": "Başlayın"
+    },
+    "benefits": {
+      "benefit1": {
+        "number": "01",
+        "title": "Mərkəzləşdirilmiş Güc",
+        "description": "Üzvləri, analitikanı, ünsiyyəti və böyüməni vahid idarəetmə panelindən idarə edin. Artıq alətlər arasında keçid etməyin."
+      },
+      "benefit2": {
+        "number": "02",
+        "title": "Asan İş Axını",
+        "description": "İdarəetmədən yorulmağı dayandırın. Daha az idarəetmə, daha çox əlaqə vaxtı sərf edin."
+      },
+      "benefit3": {
+        "number": "03",
+        "title": "Bağlı və Böyüyən",
+        "description": "Əsas platformalarla inteqrasiya platformalar arası kəşfiyyatı təmin edir. Hər yerdə görünün."
+      }
+    }
+  },
+  "blogsV2": {
+    "badge": "Bloqlar",
+    "title": "Daha çox öyrənmək üçün daha dərinə dalın",
+    "blogs": {
+      "digital-community-pillars": {
+        "title": "Rəqəmsal İcmanın 4 Sütunu",
+        "subtitle": "Bu platforma haqqında deyil; insanlar haqqındadır. Bunu işlətmək üçün lazım olan çərçivə budur."
+      },
+      "digital-belonging": {
+        "title": "Rəqəmsal Aidiyyət Fəlsəfəsi",
+        "subtitle": "Niyə biz hər zamankından daha çox bağlıyıq, amma yenə də təcrid olunmuş hiss edirik? Onlayn aidiyyət psixologiyasını araşdırırıq."
+      },
+      "measure-connection": {
+        "title": "Əlaqəni Necə Ölçmək Olar",
+        "subtitle": "Əgər məqsəd fəallıqdırsa, hansı metrikalar həqiqətən vacibdir? \"Etibar Skoru\" və daha çoxunu təqdim edirik."
+      },
+      "moderation-right-way": {
+        "title": "Moderasiya, Düzgün Şəkildə",
+        "subtitle": "Moderasiya reaksiya deyil; dizayn xüsusiyyətidir. Aydın, proaktiv siyasətləri necə hazırlamağı öyrənin."
+      }
+    }
+  },
+  "faqV2": {
+    "badge": "Tez-tez verilən suallar",
+    "title": "Siz soruşursunuz, biz cavab veririk",
+    "items": {
+      "pay-for-services": {
+        "question": "Təmizlik xidmətləri üçün necə ödəyəcəm?",
+        "answer": "Təmizlikdən sonra günü faylınızdakı kredit kartınızdan pul çəkirik. Visa və MasterCard qəbul edirik."
+      },
+      "be-home": {
+        "question": "Siz təmizləyəndə evdə olmalıyam?",
+        "answer": "Heç də yox. Müştərilərimizin çoxu təhlükəsiz giriş təmin edir ki, biz onlar yox ikən təmizləyə bilək."
+      },
+      "products": {
+        "question": "Hansı təmizlik məhsullarından istifadə edəcəksiniz?",
+        "answer": "Biz ailəniz, ev heyvanlarınız və səthlər üçün təhlükəsiz olan ekoloji cəhətdən təmiz, zəhərsiz məhsullardan istifadə edirik."
+      }
+    },
+    "cta": {
+      "titleLine1": "gəlin danışaq –",
+      "titleFree": "pulsuz",
+      "titleConsultation": "məsləhətəşmə təyin edin",
+      "button": "Demo əldə edin"
+    }
+  },
+  "footerV2": {
+    "createCommunity": "İcma yarat",
+    "tryForFree": "Pulsuz yoxla",
+    "nav": {
+      "about": "Haqqımızda",
+      "services": "Xidmətlər",
+      "products": "Məhsullar",
+      "plans": "Planlar",
+      "faqs": "Tez-tez verilən suallar"
+    }
   }
 }
 

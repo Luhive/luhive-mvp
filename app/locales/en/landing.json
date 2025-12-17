@@ -7,6 +7,14 @@
     "contact": "Contact",
     "signUp": "Sign Up"
   },
+  "navV2": {
+    "about": "About",
+    "features": "Features",
+    "pricing": "Pricing",
+    "faqs": "FAQ's",
+    "contact": "Contact",
+    "tryForFree": "Try for free"
+  },
   "hero": {
     "title": "One Platform.",
     "titleHighlight": "Engaged Communities.",
@@ -16,7 +24,7 @@
     "tagline": "Build communities that matter"
   },
   "about": {
-    "badge": "About Luhive",
+    "badge": "About",
     "title": "The Future of Community Management",
     "description": "We're building the ultimate community platform for verified organizations. Starting in Azerbaijan, scaling globally.",
     "problem": {
@@ -38,7 +46,7 @@
     }
   },
   "features": {
-    "badge": "Key Features",
+    "badge": "Features",
     "title": "Everything You Need, Nothing You Don't",
     "unifiedEvents": {
       "title": "Unified Event Management",
@@ -65,6 +73,51 @@
       "description": "Your community's data is safe with us. Enterprise-grade security meets user-friendly design."
     }
   },
+  "featuresV2": {
+    "headingLine1": "Discover our",
+    "headingLine2": "exceptional features",
+    "buildIntegrations": {
+      "title": "Built-in Integrations",
+      "description": "Built-in integrations for whenever you want."
+    },
+    "gamification": {
+      "title": "Gamification & Badges",
+      "description": "Stay active, earn badges, and make the most of your experience.",
+      "firstAdopter": "First Adopter",
+      "verifiedByLuhive": "Verified by Luhive",
+      "moreBadges": "+3"
+    },
+    "analytics": {
+      "title": "AI Powered Analytics",
+      "description": "Get smarter growth insights.",
+      "membersLabel": "Members",
+      "membersCount": "+2350",
+      "growthLabel": "+180.1% from last month",
+      "barChartAlt": "Bar chart showing community growth over time"
+    },
+    "manageCommunity": {
+      "title": "Manage Your Community Quickly",
+      "description": "Simplify your workflow by centralizing your most important public links and feedback channels.",
+      "quickActionsTitle": "Quick Actions",
+      "viewAnalytics": "View Analytics",
+      "createEvent": "Create an Event",
+      "copyPublicLink": "Copy Public Link"
+    },
+    "magicBox": {
+      "title": "Magic Box",
+      "description": "AI creates events and announcements you want only in seconds.",
+      "sampleText": "Oh yeah, almost forgot about the new software training thing. Need to tell people it's next week right on Tuesday morning at eleven am—I think. Just tell them...",
+      "announcement": "Announcement",
+      "event": "Event"
+    }
+  },
+  "partners": {
+    "badge": "Partners",
+    "title": "They trust us",
+    "supVcAlt": "SUP.VC logo",
+    "gdgBakuAlt": "GDG Baku logo",
+    "aimAzAlt": "AIM Azerbaijan logo"
+  },
   "contact": {
     "badge": "Join Our Community",
     "title": "Be Part of the Future",
@@ -87,6 +140,99 @@
     "email": "Email",
     "linkedin": "LinkedIn",
     "copyright": "© 2025 Luhive. All rights reserved."
+  },
+  "pricingV2": {
+    "badge": "Pricing",
+    "title": "Choose your plan",
+    "ribbon": "Last 20 communities!",
+    "planName": "Deep Clean",
+    "price": "39.99",
+    "currency": "USD / month",
+    "features": {
+      "feature1": "Includes everything in Basic",
+      "feature2": "Detailed kitchen & bathroom scrubbing",
+      "feature3": "Inside windows & mirrors",
+      "feature4": "Baseboards, corners, and high surfaces"
+    },
+    "cta": {
+      "title": "Create your own community",
+      "description": "Build the Digital Network of you to scale your connections & reach, infinitely.",
+      "button": "Get started"
+    },
+    "benefits": {
+      "benefit1": {
+        "number": "01",
+        "title": "Centralized Power",
+        "description": "Manage members, analytics, communication, and growth from a single dashboard. End tool juggling now."
+      },
+      "benefit2": {
+        "number": "02",
+        "title": "Effortless Workflow",
+        "description": "Stop feeling drained by admin. Spend less time managing and more time connecting."
+      },
+      "benefit3": {
+        "number": "03",
+        "title": "Connected & Growing",
+        "description": "Integration with major platforms drives cross‑platform discovery. Get seen everywhere."
+      }
+    }
+  },
+  "blogsV2": {
+    "badge": "Blogs",
+    "title": "Dive deeper to learn more",
+    "blogs": {
+      "digital-community-pillars": {
+        "title": "The 4 Pillars of a Digital Community",
+        "subtitle": "It's not about the platform; it's about the people. Here's the framework you need to make it work."
+      },
+      "digital-belonging": {
+        "title": "Philosophy of Digital Belonging",
+        "subtitle": "Why are we more connected than ever, yet still feel isolated? Exploring the psychology of belonging online."
+      },
+      "measure-connection": {
+        "title": "How to Measure Connection",
+        "subtitle": "If engagement is the goal, what metrics truly matter? We introduce the \"Trust Score\" and more."
+      },
+      "moderation-right-way": {
+        "title": "Moderation, Done The Right Way",
+        "subtitle": "Moderation isn't a reaction; it's a design feature. Learn how to craft clear, proactive policies."
+      }
+    }
+  },
+  "faqV2": {
+    "badge": "FAQ's",
+    "title": "You ask and we answer",
+    "items": {
+      "pay-for-services": {
+        "question": "How do I pay for my cleaning services?",
+        "answer": "We'll charge your credit card on file the day after your cleaning. We accept Visa and MasterCard."
+      },
+      "be-home": {
+        "question": "Do I have to be home when you are cleaning?",
+        "answer": "Not at all. Many of our clients provide secure access so we can clean while they are away."
+      },
+      "products": {
+        "question": "What cleaning products will you be using?",
+        "answer": "We use eco-friendly, non-toxic products that are safe for your family, pets, and surfaces."
+      }
+    },
+    "cta": {
+      "titleLine1": "let's talk – book a",
+      "titleFree": "free",
+      "titleConsultation": "consultation",
+      "button": "Get a demo"
+    }
+  },
+  "footerV2": {
+    "createCommunity": "Create community",
+    "tryForFree": "Try for free",
+    "nav": {
+      "about": "About",
+      "services": "Services",
+      "products": "Products",
+      "plans": "Plans",
+      "faqs": "FAQ's"
+    }
   }
 }
 
