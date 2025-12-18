@@ -33,7 +33,7 @@ export function LandingBlogsV2() {
   const { t } = useTranslation('landing');
 
   return (
-    <section className="bg-[#fff6e6] pb-24 pt-20 sm:pb-8 sm:pt-24">
+    <section className="bg-[#fff6e6] py-15">
       <div className="mx-auto w-[90vw]">
         <div className="mb-10 text-center">
           <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">

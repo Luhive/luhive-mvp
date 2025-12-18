@@ -17,7 +17,7 @@ export function LandingFAQV2() {
   return (
     <section
       id="faqs"
-      className="bg-[#fff6e6] pb-24 pt-20 sm:pb-28 sm:pt-24"
+      className="bg-[#fff6e6] py-15"
     >
       <div className="mx-auto w-[90vw]">
         <div className="mb-10 text-center">
@@ -30,7 +30,7 @@ export function LandingFAQV2() {
           </h2>
         </div>
 
-        <div className="divide-y w-[60%] mx-auto  divide-[#f3ecde] rounded-3xl bg-transparent">
+        <div className="divide-y w-full md:w-[60%] mx-auto  divide-[#f3ecde] rounded-3xl bg-transparent">
           {FAQ_ITEM_IDS.map((itemId) => {
             const isOpen = itemId === openId;
             return (

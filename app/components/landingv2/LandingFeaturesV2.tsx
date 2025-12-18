@@ -20,7 +20,7 @@ export function LandingFeaturesV2() {
   return (
     <section
       id="features"
-      className="bg-[#fff6e6] pb-24 pt-20 sm:pb-8 sm:pt-24"
+      className="bg-[#fff6e6] py-15"
     >
       <div className="mx-auto w-[90vw]">
         <div className="mb-10 text-center">
