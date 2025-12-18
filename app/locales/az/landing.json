@@ -16,8 +16,8 @@
     "tryForFree": "Pulsuz yoxla"
   },
   "hero": {
-    "title": "Vahid Platforma.",
-    "titleHighlight": "Aktiv İcmalar.",
+    "title": "Vahid Platforma",
+    "titleHighlight": "Aktiv İcmalar",
     "subtitle": "Luhive icmanızı bir güclü, vahid platformada birləşdirir.",
     "ctaDiscover": "İcmaları Kəşf Et",
     "ctaCreate": "İcmanızı Yaradın",
@@ -26,6 +26,7 @@
   "about": {
     "badge": "Luhive Haqqında",
     "title": "İcma İdarəetməsinin Gələcəyi",
+    "communities": "İcmalar.",
     "description": "Biz təsdiqlənmiş təşkilatlar üçün mükəmməl icma platforması qururuq. Azərbaycandan başlayaraq, qlobal miqyasda böyüyürük.",
     "problem": {
       "title": "Problem",
