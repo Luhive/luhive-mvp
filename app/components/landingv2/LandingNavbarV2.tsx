@@ -7,10 +7,10 @@ import { Button } from '~/components/ui/button';
 import { LanguageSwitcher } from '../landing/LanguageSwitcher';
 import { createClient } from '~/lib/supabase.client';
 import logo from '/landing/LogoLuhive.svg';
-import xPlatform from '/landing/xplatfrom.png';
-import linkedin from '/landing/Linkedin.png';
-import telegram from '/landing/Telegram.png';
-import instagram from '/landing/Instagram.png';
+import xPlatform from '/landing/xplatfrom.svg';
+import linkedin from '/landing/Linkedin.svg';
+import telegram from '/landing/Telegram.svg';
+import instagram from '/landing/Instagram.svg';
 
 interface UserData {
   id: string;

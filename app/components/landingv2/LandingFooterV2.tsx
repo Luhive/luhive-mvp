@@ -3,10 +3,10 @@ import { Link } from 'react-router';
 
 import { Button } from '~/components/ui/button';
 import logo from '/landing/LogoLuhive.svg';
-import xPlatform from '/landing/xplatfrom.png';
-import linkedin from '/landing/Linkedin.png';
-import telegram from '/landing/Telegram.png';
-import instagram from '/landing/Instagram.png';
+import xPlatform from '/landing/xplatfrom.svg';
+import linkedin from '/landing/Linkedin.svg';
+import telegram from '/landing/Telegram.svg';
+import instagram from '/landing/Instagram.svg';
 
 const SOCIAL_LINKS = [
   {
@@ -39,7 +39,7 @@ export function LandingFooterV2() {
   const { t } = useTranslation('landing');
 
   return (
-    <footer id="contact" className="border-t border-[#E5E5E5] bg-[#FFFDF5] pb-10 pt-8">
+    <footer id="contact" className="bg-[#FFFDF5] pb-10 pt-8">
       <div className="mx-auto w-[90vw]">
         {/* Desktop: Social | Logo | CTAs | Mobile: CTAs | Social | Logo */}
         <div className="relative mb-4 flex flex-col-reverse items-center gap-6 md:flex-row md:justify-between">
@@ -67,7 +67,7 @@ export function LandingFooterV2() {
           <div className="flex w-full items-center justify-center gap-3 md:order-3 md:w-auto">
             <Button
               variant="outline"
-              className="h-9 rounded-full border-[#ff7a1a] px-5 text-xs font-semibold text-[#ff7a1a] hover:rounded-md hover:bg-white"
+              className="h-9 rounded-full border-[#ff7a1a] px-5 bg-transparent text-xs font-semibold text-[#ff7a1a] hover:rounded-md hover:bg-transparent"
               asChild
             >
               <Link to="/create-community">{t('footerV2.createCommunity')}</Link>

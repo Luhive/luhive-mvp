@@ -10,9 +10,9 @@ import AIDiagramCircle from '/landing/AIDiagramCircle.png';
 import excelLogo from '/landing/ExcelLogo.png';
 import sixthIntegratedLogo from '/landing/SixthIntegratedLogo.png';
 import barChart from '/landing/bar-chart.png';
-import sancaqIMG from '/landing/sancaq.png';
-import AnnouncementIcon from '/landing/AnnouncementIcon.png';
-import stars from '/landing/stars.png';
+import sancaqIMG from '/landing/sancaq.svg';
+import AnnouncementIcon from '/landing/AnnouncementIcon.svg';
+import stars from '/landing/stars.svg';
 
 export function LandingFeaturesV2() {
   const { t } = useTranslation('landing');
@@ -209,7 +209,7 @@ export function LandingFeaturesV2() {
       <div className="mb-4 flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-full">
           <img
-            src="/landing/star.png"
+            src="/landing/star.svg"
             alt="Quick Actions"
             className="h-4 w-4"
           />
@@ -223,7 +223,7 @@ export function LandingFeaturesV2() {
       <div className="space-y-3 text-sm">
         <div className="flex items-center gap-3 rounded-full border border-muted px-4 py-1">
           <img
-            src="/landing/QuickActDiagram.png"
+            src="/landing/QuickActDiagram.svg"
             alt="View Analytics"
             className="h-4 w-4"
           />
@@ -234,7 +234,7 @@ export function LandingFeaturesV2() {
 
         <div className="flex items-center gap-3 rounded-full border border-muted px-4 py-1">
           <img
-            src="/landing/calendar.png"
+            src="/landing/calendar.svg"
             alt="Create Event"
             className="h-4 w-4"
           />
@@ -245,7 +245,7 @@ export function LandingFeaturesV2() {
 
         <div className="flex items-center gap-3 rounded-full border border-muted px-4 py-1">
           <img
-            src="/landing/copy.png"
+            src="/landing/copy.svg"
             alt="Copy Public Link"
             className="h-4 w-4"
           />
@@ -287,7 +287,7 @@ export function LandingFeaturesV2() {
         </span>
         <span className="flex items-center gap-1  px-3 py-1 text-[12px] font-medium text-[#FF7A1A]">
           {/* calendar icon */}
-          <img src="/landing/calendar.png" alt="Stars" className="h-4 w-4" />
+          <img src="/landing/calendar.svg" alt="Stars" className="h-4 w-4" />
           {t('featuresV2.magicBox.event')}
         </span>
       </div>

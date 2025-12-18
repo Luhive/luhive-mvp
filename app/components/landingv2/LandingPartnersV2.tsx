@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 
-import supVCLogo from '/landing/supVCLogo.png';
-import gdgBakuLogo from '/landing/GDGBakuLogo.png';
-import aimAzLogo from '/landing/AIMAzLogo.png';
+import supVCLogo from '/landing/supVCLogo.svg';
+import gdgBakuLogo from '/landing/GDGBakuLogo.svg';
+import aimAzLogo from '/landing/AIMAzLogo.svg';
 
 export function LandingPartnersV2() {
   const { t } = useTranslation('landing');
