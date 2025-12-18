@@ -246,7 +246,7 @@ export function LandingNavbarV2() {
             onClick={() => setIsMobileMenuOpen(false)}
           />
           {/* Sidebar */}
-          <div className="fixed inset-y-0 right-0 z-70 w-full bg-[#FFFDF5] h-screen shadow-xl md:hidden">
+          <div className="fixed inset-y-0 right-0 z-70 w-full bg-[#FFFDF5] h-[100svh] shadow-xl md:hidden">
             <div className="flex h-full flex-col bg-[#FF6D230F]">
               {/* Header with close button */}
               <div className="flex items-center justify-end p-4">
