@@ -197,13 +197,13 @@ export function LandingFeaturesV2() {
   <div className="relative mx-auto h-[210px] max-w-[300px]">
 
     {/* Back card 1 */}
-    <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-[28px] border border-[#FF6D23]/30 bg-white" />
+    <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-md border border-[#FF6D23]/30 bg-white" />
 
     {/* Back card 2 */}
-    <div className="absolute inset-0 -rotate-4 translate-x-2 translate-y-8 rounded-[28px] border border-[#FF6D23]/40 bg-white" />
+    <div className="absolute inset-0 -rotate-4 translate-x-2 translate-y-8 rounded-md border border-[#FF6D23]/40 bg-white" />
 
     {/* Front card */}
-    <div className="absolute w-full top-12 -rotate-6 z-10 h-full rounded-[28px] bg-white p-4 border border-[#FF6D23]/40">
+    <div className="absolute w-full top-12 -rotate-6 z-10 h-full rounded-md bg-white p-4 border border-[#FF6D23]/40">
 
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
