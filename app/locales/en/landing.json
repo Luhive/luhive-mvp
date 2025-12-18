@@ -16,16 +16,17 @@
     "tryForFree": "Try for free"
   },
   "hero": {
-    "title": "One Platform.",
-    "titleHighlight": "Engaged Communities.",
+    "title": "One Platform",
+    "titleHighlight": "Engaged",
     "subtitle": "Luhive brings your community together in one powerful, unified platform.",
     "ctaDiscover": "Discover Communities",
-    "ctaCreate": "Create Your Community",
+    "ctaCreate": "Create community",
     "tagline": "Build communities that matter"
   },
   "about": {
     "badge": "About",
     "title": "The Future of Community Management",
+    "communities": "Communities.",
     "description": "We're building the ultimate community platform for verified organizations. Starting in Azerbaijan, scaling globally.",
     "problem": {
       "title": "The Problem",

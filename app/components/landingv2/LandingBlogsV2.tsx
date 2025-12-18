@@ -34,13 +34,13 @@ export function LandingBlogsV2() {
 
   return (
     <section className="bg-[#fff6e6] pb-24 pt-20 sm:pb-8 sm:pt-24">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto w-[90vw]">
         <div className="mb-10 text-center">
-          <div className="mb-3 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
+          <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
             <span>{t('blogsV2.badge')}</span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {t('blogsV2.title')}
           </h2>
         </div>

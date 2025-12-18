@@ -19,18 +19,18 @@ export function LandingFAQV2() {
       id="faqs"
       className="bg-[#fff6e6] pb-24 pt-20 sm:pb-28 sm:pt-24"
     >
-      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+      <div className="mx-auto w-[90vw]">
         <div className="mb-10 text-center">
-          <div className="mb-3 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
+          <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
             <span>{t('faqV2.badge')}</span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {t('faqV2.title')}
           </h2>
         </div>
 
-        <div className="divide-y divide-[#f3ecde] rounded-3xl bg-white/70">
+        <div className="divide-y w-[60%] mx-auto  divide-[#f3ecde] rounded-3xl bg-transparent">
           {FAQ_ITEM_IDS.map((itemId) => {
             const isOpen = itemId === openId;
             return (
@@ -38,16 +38,16 @@ export function LandingFAQV2() {
                 key={itemId}
                 type="button"
                 onClick={() => toggleItem(itemId)}
-                className="flex w-full flex-col items-stretch px-5 py-5 text-left text-sm text-foreground sm:px-7 sm:py-6"
+                className="flex w-full flex-col items-stretch px-5 py-5 text-left text-lg text-foreground sm:px-7 sm:py-6"
               >
                 <div className="flex items-center justify-between gap-4">
                   <span className="font-medium">{t(`faqV2.items.${itemId}.question`)}</span>
-                  <span className="text-lg text-muted-foreground">
+                  <span className="text-3xl text-muted-foreground">
                     {isOpen ? '−' : '+'}
                   </span>
                 </div>
                 {isOpen && (
-                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-md">
                     {t(`faqV2.items.${itemId}.answer`)}
                   </p>
                 )}

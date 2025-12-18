@@ -22,13 +22,13 @@ export function LandingFeaturesV2() {
       id="features"
       className="bg-[#fff6e6] pb-24 pt-20 sm:pb-8 sm:pt-24"
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto w-[90vw]">
         <div className="mb-10 text-center">
-          <div className="mb-3 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
+          <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
             <span>{t('features.badge')}</span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {t('featuresV2.headingLine1')}
             <br />
             <span className="text-foreground">{t('featuresV2.headingLine2')}</span>
@@ -152,7 +152,7 @@ export function LandingFeaturesV2() {
       </span>
     </p>
 
-    <div className="mt-2 flex items-end">
+    <div className="mt-2 flex items-end justify-end">
       <img
         src={barChart}
         alt={t('featuresV2.analytics.barChartAlt')}
@@ -206,7 +206,7 @@ export function LandingFeaturesV2() {
     <div className="absolute w-full top-12 -rotate-6 z-10 h-full rounded-[28px] bg-white p-4 border border-[#FF6D23]/40">
 
       {/* Header */}
-      <div className="mb-1 flex items-center gap-3">
+      <div className="mb-4 flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-full">
           <img
             src="/landing/star.png"
@@ -232,7 +232,7 @@ export function LandingFeaturesV2() {
           </span>
         </div>
 
-        <div className="flex items-center gap-3 rounded-full border border-muted px-4 py-3">
+        <div className="flex items-center gap-3 rounded-full border border-muted px-4 py-1">
           <img
             src="/landing/calendar.png"
             alt="Create Event"
@@ -243,7 +243,7 @@ export function LandingFeaturesV2() {
           </span>
         </div>
 
-        <div className="flex items-center gap-3 rounded-full border border-muted px-4 py-3">
+        <div className="flex items-center gap-3 rounded-full border border-muted px-4 py-1">
           <img
             src="/landing/copy.png"
             alt="Copy Public Link"
@@ -270,7 +270,7 @@ export function LandingFeaturesV2() {
   </p>
 
   {/* Inner Card */}
-  <div className="rounded-xl bg-white p-4 w-100 mx-auto border border-[#FF6D23]/40">
+  <div className="rounded-xl w-full md:w-100 bg-white p-4 mx-auto border border-[#FF6D23]/40">
     <p className="mb-4 text-sm leading-relaxed text-[#9CA3AF]">
       {t('featuresV2.magicBox.sampleText')}
     </p>

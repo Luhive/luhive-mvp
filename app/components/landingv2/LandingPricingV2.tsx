@@ -21,13 +21,13 @@ export function LandingPricingV2() {
       id="pricing"
       className="bg-[#fff6e6] pb-24 pt-20 sm:pb-8 sm:pt-24"
     >
-      <div className="mx-auto max-w-5xl px-4 text-center sm:px-6">
+      <div className="mx-auto w-[90vw] text-center">
         <div className="mb-10">
-          <div className="mb-3 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
+          <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
             <span>{t('pricingV2.badge')}</span>
           </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {t('pricingV2.title')}
           </h2>
         </div>
@@ -97,7 +97,7 @@ export function LandingPricingV2() {
             <div className="flex justify-center">
               <Button
                 variant="outline"
-                className="h-10 rounded-full border-[#FF7A1A] px-8 text-sm font-semibold text-[#FF7A1A] hover:bg-[#FF7A1A] hover:text-white"
+                className="h-10 rounded-full border-[#FF7A1A] px-8 text-sm font-semibold text-[#FF7A1A] hover:rounded-md hover:bg-white"
                 asChild
               >
                 <Link
@@ -122,8 +122,8 @@ export function LandingPricingV2() {
             </p>
             <Button
               size="lg"
-              className="mx-auto inline-flex h-10 rounded-full bg-white px-8 text-sm font-semibold text-[#111]
-              hover:bg-white/90 sm:h-11"
+              className="mx-auto inline-flex h-10 rounded-full bg-[#000000] px-8 text-sm font-semibold text-[#ffffff]
+              hover:rounded-md hover:bg-[#000000] hover:text-[#ffffff] sm:h-11"
               asChild
             >
               <Link

@@ -40,7 +40,7 @@ export function LandingFooterV2() {
 
   return (
     <footer id="contact" className="border-t border-[#E5E5E5] bg-[#FFFDF5] pb-10 pt-8">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto w-[90vw]">
         {/* Desktop: Social | Logo | CTAs | Mobile: CTAs | Social | Logo */}
         <div className="relative mb-4 flex flex-col-reverse items-center gap-6 md:flex-row md:justify-between">
           {/* Desktop: Social icons on left | Mobile: Social icons in middle */}
@@ -67,13 +67,13 @@ export function LandingFooterV2() {
           <div className="flex w-full items-center justify-center gap-3 md:order-3 md:w-auto">
             <Button
               variant="outline"
-              className="h-9 rounded-full border-[#ff7a1a] px-5 text-xs font-semibold text-[#ff7a1a] hover:bg-[#ff7a1a]/5"
+              className="h-9 rounded-full border-[#ff7a1a] px-5 text-xs font-semibold text-[#ff7a1a] hover:rounded-md hover:bg-white"
               asChild
             >
               <Link to="/create-community">{t('footerV2.createCommunity')}</Link>
             </Button>
             <Button
-              className="h-9 rounded-full bg-[#ff7a1a] px-5 text-xs font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
+              className="h-9 rounded-full bg-[#ff7a1a] px-5 text-xs font-semibold text-white shadow-sm hover:rounded-md hover:bg-[#FF7A1A]"
               asChild
             >
               <Link to="/signup">{t('footerV2.tryForFree')}</Link>
@@ -85,7 +85,7 @@ export function LandingFooterV2() {
         <div className="flex items-center mt-5 gap-3 w-full justify-center">
           <img src={logo} alt="Luhive logo" className="md:h-12 h-9 w-auto" />
           <span
-            className="md:text-6xl text-4xl tracking-tight text-foreground"
+            className="md:text-6xl font-bold text-4xl tracking-tight text-foreground"
             style={{ fontFamily: 'var(--font-nunito), sans-serif' }}
           >
             Luhive

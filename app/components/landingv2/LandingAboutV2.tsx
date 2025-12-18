@@ -20,29 +20,34 @@ export function LandingAboutV2() {
       id="about"
       className="bg-[#fff6e6] pb-15 pt-24 sm:pb-8 sm:pt-28"
     >
-      <div className="mx-auto max-w-5xl px-4 text-center sm:px-6">
-        <div className="mb-3 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
+      <div className="mx-auto w-[90vw] text-center">
+        <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
           <span>{t('about.badge')}</span>
         </div>
 
-        <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl md:text-[40px] md:leading-tight">
+        <h2 className="mb-4 text-4xl font-extrabold trcking-tight text-foreground md:text-7xl md:leading-tight">
           {t('hero.title')}
           <br />
           <span className="text-foreground">
-            {t('hero.titleHighlight')}
+            {t('hero.titleHighlight')}  <span className="mb-4 text-4xl font-extrabold tracking-tight text-[#FF6D23] md:text-7xl md:leading-tight">
+          {t('about.communities')}
+        </span>
           </span>
         </h2>
+
+        
 
         <p className="mx-auto mb-8 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
           {t('hero.subtitle')} {t('hero.subtitle')}
         </p>
 
-        <div className="mb-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
+        <div className='flex flex-col-reverse md:flex-col gap-5 mt:gap-0'>
+        <div className="mb-10 md:mt-0 flex flex-row items-center justify-center gap-4 md:gap-2">
           <Button
             variant="outline"
             size="lg"
-            className="h-11 rounded-full border-[#FF7A1A] px-8 text-sm font-semibold text-[#FF7A1A] hover:bg-[#FF7A1A] hover:text-white sm:h-12 sm:px-10"
+            className="hidden md:flex h-11 rounded-full bg-transparent hover:bg-transparent hover:rounded-md border-[#FF7A1A] px-8 text-sm font-semibold text-[#FF7A1A]  sm:h-12 sm:px-10"
             asChild
           >
             <Link
@@ -55,7 +60,7 @@ export function LandingAboutV2() {
 
           <Button
             size="lg"
-            className="h-11 rounded-full bg-[#FF7A1A] px-8 text-sm font-semibold text-white shadow-sm hover:bg-[#ff8e3a] sm:h-12 sm:px-10"
+            className="h-11 rounded-full bg-[#FF7A1A] px-8 text-sm font-semibold hover:bg-[#FF7A1A] text-white shadow-sm hover:rounded-md sm:h-12 sm:px-10"
             asChild
           >
             <Link
@@ -67,10 +72,10 @@ export function LandingAboutV2() {
           </Button>
         </div>
 
-        <div className="mx-auto mt-4 max-w-5xl">
-          <div className="relative overflow-hidden rounded-[32px] bg-[#FF7A1A]">
+        <div className="mx-auto mt-4 w-full md:w-[70vw]">
+          <div className="relative overflow-hidden rounded-xl bg-[#FF7A1A]">
             <video
-              className="h-[260px] w-full object-cover sm:h-[320px] md:h-[360px]"
+              className="h-[260px] md:h-[460px] w-full object-cover "
               src="/landing/luhiveLandingVideo.mp4"
               autoPlay
               loop
@@ -83,6 +88,9 @@ export function LandingAboutV2() {
             />
           </div>
         </div>
+        </div>
+
+        
       </div>
     </section>
   );

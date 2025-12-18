@@ -176,13 +176,13 @@ export function LandingNavbarV2() {
 
   return (
     <nav
-      className={`fixed inset-x-0 top-0 z-50 border-b border-border/40 transition-colors ${
+      className={`fixed inset-x-0 top-0 z-50 transition-colors ${
         scrolled ? 'bg-[#fff6e6]/95 backdrop-blur-md' : 'bg-[#fff6e6]'
       }`}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:h-20 sm:px-6 lg:px-0">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Luhive Logo" className="h-8 w-auto sm:h-9" />
+      <div className="mx-auto flex h-16 w-[90vw] items-center justify-between sm:h-20">
+        <Link to="/" className="flex items-center gap-4 w-[15.5vw]">
+          <img src={logo} alt="Luhive Logo" className="h-8 w-auto sm:h-7" />
           <span
             className="text-lg font-bold tracking-tight text-foreground sm:text-xl"
             style={{ fontFamily: 'var(--font-nunito), sans-serif' }}
@@ -209,13 +209,13 @@ export function LandingNavbarV2() {
           })}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-max">
           <div className="hidden items-center md:flex">
             <LanguageSwitcher />
           </div>
           <Button
             size="sm"
-            className="hidden h-10 rounded-full bg-[#FF7A1A] px-5 text-sm font-semibold text-white shadow-sm hover:bg-[#ff8e3a] sm:inline-flex sm:h-11 sm:px-6"
+            className="hidden h-10 rounded-full bg-[#FF7A1A] px-5 text-sm font-semibold text-white shadow-sm hover:rounded-md hover:bg-[#FF7A1A] sm:inline-flex sm:h-11 sm:px-6"
             asChild
           >
             <Link
@@ -242,12 +242,12 @@ export function LandingNavbarV2() {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[60] bg-black/50"
+            className="fixed inset-0 z-60 bg-black/50"
             onClick={() => setIsMobileMenuOpen(false)}
           />
           {/* Sidebar */}
-          <div className="fixed inset-y-0 right-0 z-[70] w-full bg-[#FFFDF5] shadow-xl md:hidden">
-            <div className="flex h-full flex-col">
+          <div className="fixed inset-y-0 right-0 z-70 w-full bg-[#FFFDF5] shadow-xl md:hidden">
+            <div className="flex h-full flex-col bg-[#FF6D230F]">
               {/* Header with close button */}
               <div className="flex items-center justify-end p-4">
                 <button
@@ -282,8 +282,9 @@ export function LandingNavbarV2() {
               {/* Bottom Section: CTA, Language, Social */}
               <div className="border-t border-border p-6">
                 {/* Try for free button */}
+                <div className='mb-6 flex justify-around items-center'>
                 <Button
-                  className="mb-6 w-full rounded-full bg-[#FF7A1A] py-6 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
+                  className="flex items-center w-[65vw] rounded-full bg-[#FF7A1A] py-6 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
                   asChild
                 >
                   <Link
@@ -296,24 +297,26 @@ export function LandingNavbarV2() {
                     {t('navV2.tryForFree')}
                   </Link>
                 </Button>
+                <LanguageSwitcher />
+                </div>
+
 
                 {/* Language Switcher and Social Icons */}
-                <div className="flex items-center justify-between">
-                  <LanguageSwitcher />
-                  <div className="flex items-center gap-2">
+                <div className="flex w-full items-center justify-between">
+                  <div className="flex w-full items-center justify-between gap-2">
                     {SOCIAL_LINKS.map((social) => (
                       <a
                         key={social.id}
                         href={social.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-10 w-10 items-center justify-center rounded-xl bg-white transition-colors hover:bg-muted"
+                        className="flex h-13 w-13 items-center justify-center rounded-xl bg-white transition-colors hover:bg-muted"
                         aria-label={social.label}
                       >
                         <img
                           src={social.icon}
                           alt={social.label}
-                          className="h-6 w-6 object-contain"
+                          className="h-13 w-13 object-contain"
                         />
                       </a>
                     ))}
