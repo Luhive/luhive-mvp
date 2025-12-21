@@ -20,7 +20,7 @@ export function LandingAboutV2() {
   return (
     <section
       id="about"
-      className="bg-[#F6F4F1] pb-15 pt-24 sm:pb-8 sm:pt-28"
+      className="bg-[#F6F4F1] lg:pb-15 lg:pt-24 pb-8 pt-28"
     >
       <div className="mx-auto w-[95vw] 3xl:w-[60rem] text-center">
         <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
@@ -42,11 +42,6 @@ export function LandingAboutV2() {
               transition={{
                 opacity: { duration: 0.6 },
                 y: { type: 'spring', stiffness: 100, damping: 15 },
-                scale: {
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                },
               }}
               style={{ willChange: 'transform, opacity' }}
             >

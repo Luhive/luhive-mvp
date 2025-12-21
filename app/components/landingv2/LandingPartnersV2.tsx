@@ -1,9 +1,5 @@
 import { useTranslation } from 'react-i18next';
 
-import supVCLogo from '/landing/supVCLogo.svg';
-import gdgBakuLogo from '/landing/GDGBakuLogoV2.svg';
-import aimAzLogo from '/landing/AIMAzLogoV2.svg';
-
 export function LandingPartnersV2() {
   const { t } = useTranslation('landing');
 
@@ -21,18 +17,18 @@ export function LandingPartnersV2() {
 
         <div className="flex w-full gap-5 md:w-[58.5rem] mx-auto flex-row items-center justify-between">
           <img
-            src={supVCLogo}
+            src="/landing/supVCLogo.svg"
             alt={t('partners.supVcAlt')}
-              className="w-[5.13644rem] h-[1.78569rem] md:h-[4.076rem] md:w-[11.72419rem] object-contain"
+            className="w-[5.13644rem] h-[1.78569rem] md:h-[4.076rem] md:w-[11.72419rem] object-contain"
           />
           <div className='flex gap-5 flex-row items-center justify-between'>
           <img
-            src={gdgBakuLogo}
+              src="/landing/GDGBakuLogoV2.svg"
             alt={t('partners.gdgBakuAlt')}
             className="w-[7.89475rem] h-[1.78569rem] md:h-[4.076rem] md:w-[18.02013rem] object-contain"
           />
           <img
-            src={aimAzLogo}
+              src="/landing/AIMAzLogoV2.svg"
             alt={t('partners.aimAzAlt')}
             className="h-5 md:h-18 w-auto object-contain"
           />

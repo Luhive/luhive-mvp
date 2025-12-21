@@ -72,7 +72,7 @@ export default function Index() {
   // Analytics & Third-party integrations
   useGoogleAnalytics('G-EM0ZMM2JPL');
   useMicrosoftClarity('tkds3gt0au');
-  useTawkTo('6929db60c886de1982f18ed6', '1jb5o1s8c');
+  // useTawkTo('6929db60c886de1982f18ed6', '1jb5o1s8c');
 
   useEffect(() => {
     // Add smooth scroll behavior
