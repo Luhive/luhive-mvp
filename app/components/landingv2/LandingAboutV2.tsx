@@ -72,10 +72,10 @@ export function LandingAboutV2() {
           </Button>
         </div>
 
-        <div className="mx-auto mt-4 w-full md:w-[70vw]">
+        <div className="mx-auto mt-4 w-full md:w-[74.75rem]">
           <div className="relative overflow-hidden rounded-xl bg-[#FF7A1A]">
             <video
-              className="h-[260px] md:h-[460px] w-full object-cover "
+              className="h-[260px] md:h-[29.375rem] md:w-[74.75rem] w-full object-cover "
               src="/landing/luhiveLandingVideo.mp4"
               autoPlay
               loop
