@@ -17,8 +17,8 @@
   },
   "hero": {
     "title": "Vahid Platforma",
-    "titleHighlight": "Aktiv İcmalar",
-    "subtitle": "Luhive icmanızı bir güclü, vahid platformada birləşdirir.",
+    "titleHighlight": "Aktiv",
+    "subtitle": "Məlumatlarınızı, tədbirlərinizi və elanlarınızı birləşdirin. Nəhayət, icmanız üçün vahid həqiqət mənbəyi.",
     "ctaDiscover": "İcmaları Kəşf Et",
     "ctaCreate": "İcmanızı Yaradın",
     "tagline": "Əhəmiyyətli icmalar qurun"
@@ -26,7 +26,8 @@
   "about": {
     "badge": "Luhive Haqqında",
     "title": "İcma İdarəetməsinin Gələcəyi",
-    "communities": "İcmalar.",
+    "communities": "İcmalar",
+    "startYourCommunity": "İcmanızı Qurun",
     "description": "Biz təsdiqlənmiş təşkilatlar üçün mükəmməl icma platforması qururuq. Azərbaycandan başlayaraq, qlobal miqyasda böyüyürük.",
     "problem": {
       "title": "Problem",

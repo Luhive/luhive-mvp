@@ -91,7 +91,7 @@ export default function Index() {
       <LandingFeaturesV2 />
       {/* <LandingContact /> */}
       <LandingPricingV2 />
-      <LandingBlogsV2 />
+      {/* <LandingBlogsV2 /> */}
       <LandingFAQV2 />
       {/* <LandingFooter /> */}
       <LandingFooterV2 />
