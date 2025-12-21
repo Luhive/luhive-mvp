@@ -22,19 +22,19 @@ export function LandingAboutV2() {
       id="about"
       className="bg-[#F6F4F1] pb-15 pt-24 sm:pb-8 sm:pt-28"
     >
-      <div className="mx-auto w-[90vw] 3xl:w-[60rem] text-center">
+      <div className="mx-auto w-[95vw] 3xl:w-[60rem] text-center">
         <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
           <span>{t('about.badge')}</span>
         </div>
 
-        <h2 className="mb-4 text-5xl font-extrabold trcking-tight text-foreground md:text-7xl md:leading-tight">
+        <h2 className="mb-4 text-5xl font-extrabold trcking-tight text-foreground lg:text-7xl md:leading-tight">
           {t('hero.title')}
           <br />
           <span className="text-foreground">
             {t('hero.titleHighlight')}{' '}
             <motion.span
-              className="mb-4 inline-block text-5xl font-extrabold tracking-tight text-primary px-6 rounded-2xl py-2 lg:py-0 md:rounded-2xl lg:rounded-3xl bg-primary/20 md:text-7xl md:leading-tight"
+              className="mb-4 inline-block text-5xl font-extrabold tracking-tight text-primary px-6 rounded-2xl py-2 lg:py-0 md:rounded-2xl lg:rounded-3xl bg-primary/20 lg:text-7xl md:leading-tight"
               initial={{ opacity: 0, y: 15, scale: 0.95 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true, margin: '-100px' }}
