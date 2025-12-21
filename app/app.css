@@ -224,6 +224,10 @@ body {
   transform: translate(-50%, -50%);
 }
 
+.partners-gap{
+  gap: calc(20vw + 0.5px) !important;
+}
+
 @media screen and (max-width: 768px) {
   .footer-nav{
     display: none !important;

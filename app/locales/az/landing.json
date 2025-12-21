@@ -149,6 +149,9 @@
     "planName": "Dərin Təmizlik",
     "price": "39.99",
     "currency": "USD / ay",
+    "premiumCommunity": "Premium İcma",
+    "free": "Pulsuz",
+    "bookDemo": "Demo Təyin Et",
     "features": {
       "feature1": "Əsas planın hər şeyini əhatə edir",
       "feature2": "Ətraflı mətbəx və vanna otağı təmizliyi",

@@ -149,6 +149,9 @@
     "planName": "Deep Clean",
     "price": "39.99",
     "currency": "USD / month",
+    "premiumCommunity": "Premium Community",
+    "free": "Free",
+    "bookDemo": "Book a Demo",
     "features": {
       "feature1": "Includes everything in Basic",
       "feature2": "Detailed kitchen & bathroom scrubbing",

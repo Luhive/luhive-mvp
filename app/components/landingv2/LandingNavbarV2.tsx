@@ -177,12 +177,12 @@ export function LandingNavbarV2() {
   return (
     <nav
       className={`fixed inset-x-0 top-0 z-50 transition-colors ${
-        scrolled ? 'bg-[#fff6e6]/95 backdrop-blur-md' : 'bg-[#fff6e6]'
+        scrolled ? 'bg-[#F6F4F1]/95 backdrop-blur-md' : 'bg-[#F6F4F1]'
       }`}
     >
-      <div className="mx-auto flex h-16 w-[90vw] items-center justify-between sm:h-20">
+      <div className="mx-auto flex h-16 w-[90vw] 2xl:w-[90rem] items-center justify-between sm:h-20">
         <Link to="/" className="flex items-center gap-4 w-[15.5vw]">
-          <img src={logo} alt="Luhive Logo" className="h-8 w-auto sm:h-7" />
+          <img src={logo} alt="Luhive Logo" className="h-[2.25rem] w-[2.25rem]" />
           <span
             className="text-lg font-bold tracking-tight text-foreground sm:text-xl"
             style={{ fontFamily: 'var(--font-nunito), sans-serif' }}
@@ -246,8 +246,8 @@ export function LandingNavbarV2() {
             onClick={() => setIsMobileMenuOpen(false)}
           />
           {/* Sidebar */}
-          <div className="fixed inset-y-0 right-0 z-70 w-full bg-[#FFFDF5] h-[100svh] shadow-xl md:hidden">
-            <div className="flex h-full flex-col bg-[#FF6D230F]">
+          <div className="fixed inset-y-0 right-0 z-70 w-full bg-[#F6F4F1] h-[100svh] shadow-xl md:hidden">
+            <div className="flex w-[80vw] mx-auto h-full flex-col bg-[#F6F4F1]">
               {/* Header with close button */}
               <div className="flex items-center justify-end p-4">
                 <button
@@ -280,11 +280,11 @@ export function LandingNavbarV2() {
               </nav>
 
               {/* Bottom Section: CTA, Language, Social */}
-              <div className="border-t border-border p-6">
+              <div className="p-6">
                 {/* Try for free button */}
-                <div className='mb-6 flex justify-around items-center'>
+                <div className='mb-6 flex justify-between items-center'>
                 <Button
-                  className="flex items-center w-[65vw] rounded-full bg-[#FF7A1A] py-6 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
+                  className="flex items-center w-[9.375rem] rounded-full bg-[#FF7A1A] py-6 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
                   asChild
                 >
                   <Link

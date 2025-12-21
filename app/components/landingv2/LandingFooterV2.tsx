@@ -40,7 +40,7 @@ export function LandingFooterV2() {
 
   return (
     <footer id="contact" className="bg-[#FFFDF5] pb-10 pt-8">
-      <div className="mx-auto w-[90vw]">
+      <div className="mx-auto w-[90vw] 2xl:w-[90rem]">
         {/* Desktop: Social | Logo | CTAs | Mobile: CTAs | Social | Logo */}
         <div className="relative mb-4 flex flex-col-reverse items-center gap-6 md:flex-row md:justify-between">
           {/* Desktop: Social icons on left | Mobile: Social icons in middle */}
@@ -67,13 +67,13 @@ export function LandingFooterV2() {
           <div className="flex w-full items-center justify-center gap-3 md:order-3 md:w-auto">
             <Button
               variant="outline"
-              className="h-9 rounded-full border-[#ff7a1a] px-5 bg-transparent text-xs font-semibold text-[#ff7a1a] hover:rounded-md hover:bg-transparent"
+              className="h-[3.1rem] md:h-9 rounded-full border-[#ff7a1a] px-5 bg-transparent text-xs font-semibold text-[#ff7a1a] hover:rounded-md hover:bg-transparent"
               asChild
             >
               <Link to="/create-community">{t('footerV2.createCommunity')}</Link>
             </Button>
             <Button
-              className="h-9 rounded-full bg-[#ff7a1a] px-5 text-xs font-semibold text-white shadow-sm hover:rounded-md hover:bg-[#FF7A1A]"
+              className="h-[3.1rem] md:h-9 rounded-full bg-[#ff7a1a] px-5 text-xs font-semibold text-white shadow-sm hover:rounded-md hover:bg-[#FF7A1A]"
               asChild
             >
               <Link to="/signup">{t('footerV2.tryForFree')}</Link>

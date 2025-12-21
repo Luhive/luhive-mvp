@@ -17,9 +17,9 @@ export function LandingFAQV2() {
   return (
     <section
       id="faqs"
-      className="bg-[#fff6e6] py-15"
+      className="bg-[#F6F4F1] py-15"
     >
-      <div className="mx-auto w-[90vw]">
+      <div className="mx-auto w-[90vw] 2xl:w-[90rem]">
         <div className="mb-10 text-center">
           <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
@@ -38,7 +38,7 @@ export function LandingFAQV2() {
                 key={itemId}
                 type="button"
                 onClick={() => toggleItem(itemId)}
-                className="flex w-full flex-col items-stretch px-5 py-5 text-left text-lg text-foreground sm:px-7 sm:py-6"
+                className="flex w-full flex-col items-stretch px-0 md:px-5 py-5 text-left text-lg text-foreground sm:px-7 sm:py-6"
               >
                 <div className="flex items-center justify-between gap-4">
                   <span className="font-medium">{t(`faqV2.items.${itemId}.question`)}</span>

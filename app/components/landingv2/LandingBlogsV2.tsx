@@ -33,8 +33,8 @@ export function LandingBlogsV2() {
   const { t } = useTranslation('landing');
 
   return (
-    <section className="bg-[#fff6e6] py-15">
-      <div className="mx-auto w-[90vw]">
+    <section className="bg-[#F6F4F1] py-15">
+      <div className="mx-auto w-[90vw] 2xl:w-[90rem]">
         <div className="mb-10 text-center">
           <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
@@ -58,11 +58,11 @@ export function LandingBlogsV2() {
                   className="h-44 w-full object-cover transition-transform duration-300 hover:scale-105 md:h-48"
                 />
               </div>
-              <h3 className="mt-4 text-sm font-semibold leading-snug text-foreground sm:text-base">
+              <h3 className="mt-4 text-[1.5rem] md:text-[1.875rem] font-semibold leading-snug text-foreground sm:text-base">
                 {t(`blogsV2.blogs.${blog.id}.title`)}
               </h3>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-                {t(`blogsV2.blogs.${blog.id}.subtitle`)}
+              <p className="mt-2 text-[0.875rem] leading-relaxed text-muted-foreground sm:text-sm">
+                {t(`blogsV2.blogs.${blog.id}.subtitle`).length > 100 ? t(`blogsV2.blogs.${blog.id}.subtitle`).substring(0, 100) + '...' : t(`blogsV2.blogs.${blog.id}.subtitle`)}
               </p>
             </article>
           ))}

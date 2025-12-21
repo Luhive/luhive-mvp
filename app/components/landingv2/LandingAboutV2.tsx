@@ -18,9 +18,9 @@ export function LandingAboutV2() {
   return (
     <section
       id="about"
-      className="bg-[#fff6e6] pb-15 pt-24 sm:pb-8 sm:pt-28"
+      className="bg-[#F6F4F1] pb-15 pt-24 sm:pb-8 sm:pt-28"
     >
-      <div className="mx-auto w-[90vw] text-center">
+      <div className="mx-auto w-[90vw] 3xl:w-[60rem] text-center">
         <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
           <span>{t('about.badge')}</span>
@@ -60,7 +60,7 @@ export function LandingAboutV2() {
 
           <Button
             size="lg"
-            className="h-11 rounded-full bg-[#FF7A1A] px-8 text-sm font-semibold hover:bg-[#FF7A1A] text-white shadow-sm hover:rounded-md sm:h-12 sm:px-10"
+            className="h-[3.1rem] rounded-full bg-[#FF7A1A] px-8 text-sm font-semibold hover:bg-[#FF7A1A] text-white shadow-sm hover:rounded-md sm:h-12 sm:px-10"
             asChild
           >
             <Link
