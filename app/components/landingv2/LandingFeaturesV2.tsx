@@ -12,9 +12,9 @@ export function LandingFeaturesV2() {
         <div className="mb-10 text-center">
           <div className="mb-3 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
-            <span>{t('features.badge')}</span>
+            <span className='text-[1rem]'>{t('features.badge')}</span>
           </div>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground lg:text-5xl">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground leading-[3rem] lg:text-[3rem]">
             {t('featuresV2.headingLine1')}
             <br />
             <span className="text-foreground">{t('featuresV2.headingLine2')}</span>
@@ -24,10 +24,10 @@ export function LandingFeaturesV2() {
         <div className="grid gap-6 md:grid-cols-3">
           {/* Build in Integrations */}
           <div className="rounded-[28px] bg-[#FF6D230D] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)]">
-            <h3 className="mb-1 text-center font-semibold text-foreground text-[1.25rem]">
+            <h3 className="mb-1 text-center font-semibold text-foreground text-[1.25rem] md:text-[1.75rem]">
               {t('featuresV2.buildIntegrations.title')}
             </h3>
-            <p className="mb-6 text-[0.875rem] text-center max-w-3/5 mx-auto text-muted-foreground">
+            <p className="mb-6 text-[0.875rem] md:text-[1.125rem] text-center font-normal max-w-3/5 mx-auto text-muted-foreground">
               {t('featuresV2.buildIntegrations.description')}
             </p>
 
@@ -48,7 +48,7 @@ export function LandingFeaturesV2() {
               </div>
               <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
                 <img
-                  src="/landing/googleDrive.svg"
+                  src="/landing/GoogleDrive.svg"
                   alt="Google Drive"
                   className="h-full w-full object-contain"
                 />
@@ -79,18 +79,18 @@ export function LandingFeaturesV2() {
 
           {/* Gamification & Badges */}
           <div className="rounded-[28px] bg-[#FF6D230D] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)]">
-            <h3 className="mb-2 text-center text-[1.25rem] font-semibold text-foreground">
+            <h3 className="mb-2 text-center text-[1.25rem] md:text-[1.75rem] font-semibold text-foreground">
               {t('featuresV2.gamification.title')}
             </h3>
 
-            <p className="mx-auto mb-6 max-w-[260px] text-center text-[0.875rem] text-muted-foreground">
+            <p className="mx-auto mb-6 text-center md:max-w-[10rem] md:max-w-[16rem] mx-autotext-[0.875rem] md:text-[1.125rem] text-muted-foreground">
               {t('featuresV2.gamification.description')}
             </p>
 
             <div className="relative mx-auto w-full max-w-[14rem] md:max-w-[19rem] flex flex-col items-center gap-3 md:gap-4">
               {/* First Adopter */}
               <div className="relative w-full flex justify-start">
-                <div className="inline-flex items-center justify-center gap-[0.3rem] md:gap-[0.4rem] rounded-[0.625rem] md:rounded-[0.75rem] border-[0.09375rem] border-[#ff8040] bg-[#ffebe2] px-[0.875rem] md:px-[1.5rem] py-[0.5rem] md:py-[0.875rem] font-medium text-[#ff8040] text-[0.8rem] md:text-[1.125rem] leading-[1.2] shadow-[0px_0.125rem_0.4375rem_0px_rgba(255,128,64,0.24)]">
+                <div className="inline-flex items-center justify-center gap-[0.3rem] md:gap-[0.4rem] rounded-[0.625rem] md:rounded-[0.75rem] border-[0.09375rem] border-[#ff8040] bg-[#ffebe2] px-[0.875rem] md:px-[1.5rem] py-[0.5rem] md:py-[0.875rem] font-medium text-[#ff8040] text-[0.8rem] md:text-[0.875rem] md:text-[1.125rem] leading-[1.2] shadow-[0px_0.125rem_0.4375rem_0px_rgba(255,128,64,0.24)]">
                   <img src="/landing/landing-heart.svg" alt="Heart" className="size-[0.875rem] md:size-[1.125rem]" />
                   {t('featuresV2.gamification.firstAdopter')}
                 </div>
@@ -102,7 +102,7 @@ export function LandingFeaturesV2() {
 
               {/* Verified by Luhive */}
               <div className="w-full flex justify-end">
-                <div className="inline-flex items-center justify-center gap-[0.3rem] md:gap-[0.4rem] rounded-[0.625rem] md:rounded-[0.75rem] border-[0.09375rem] border-[#009966] bg-[#e6eee6] px-[0.875rem] md:px-[1.5rem] py-[0.5rem] md:py-[0.875rem] font-medium text-[#009966] text-[0.8rem] md:text-[1.125rem] leading-[1.2] shadow-[0px_0.125rem_0.4375rem_0px_rgba(0,153,102,0.24)]">
+                <div className="inline-flex items-center justify-center gap-[0.3rem] md:gap-[0.4rem] rounded-[0.625rem] md:rounded-[0.75rem] border-[0.09375rem] border-[#009966] bg-[#e6eee6] px-[0.875rem] md:px-[1.5rem] py-[0.5rem] md:py-[0.875rem] font-medium text-[#009966] text-[0.8rem] md:text-[0.875rem] md:text-[1.125rem] leading-[1.2] shadow-[0px_0.125rem_0.4375rem_0px_rgba(0,153,102,0.24)]">
                   <img src="/landing/tick-landing.svg" alt="Verified" className="size-[0.875rem] md:size-[1.125rem]" />
                   {t('featuresV2.gamification.verifiedByLuhive')}
                 </div>
@@ -113,15 +113,15 @@ export function LandingFeaturesV2() {
 
           {/* AI Powered Analytics */}
           <div className="relative overflow-hidden rounded-[28px] bg-[#FF6D230D] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)]">
-            <h3 className="mb-1 text-center font-semibold text-foreground text-[1.25rem]">
+            <h3 className="mb-1 text-center font-semibold text-foreground text-[1.25rem] md:text-[1.75rem]">
               {t('featuresV2.analytics.title')}
             </h3>
-            <p className="mb-6 text-[0.875rem] text-center text-muted-foreground">
+            <p className="mb-6 text-[0.875rem] md:text-[1.125rem] text-center text-muted-foreground">
               {t('featuresV2.analytics.description')}
             </p>
 
             {/* White Analytics Box */}
-            <div className="relative -mr-10 ml-14 rounded-3xl bg-white p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
+            <div className="relative -mr-10 ml-14 rounded-3xl bg-white p-4 shadow-[0_0.375rem_1.75rem_0_rgba(255,128,64,0.2)]">
               <p className="mb-1 text-xs font-semibold text-foreground">
                 {t('featuresV2.analytics.membersLabel')}
               </p>
@@ -166,28 +166,28 @@ export function LandingFeaturesV2() {
         <div className="mt-6 md:grid gap-6 md:grid-cols-2 flex flex-col-reverse">
           {/* Manage Your Community Quickly */}
           <div className="rounded-[28px] bg-[#FF6D230D] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)]">
-            <h3 className="mb-2 text-[1.25rem] text-center font-semibold text-foreground">
+            <h3 className="mb-2 text-[1.25rem] md:text-[1.75rem] text-center font-semibold text-foreground">
               {t('featuresV2.manageCommunity.title')}
             </h3>
 
-            <p className="mb-8 text-center w-full text-[0.875rem] text-muted-foreground">
+            <p className="mb-8 text-center max-w-[30rem] mx-auto w-full text-[0.875rem] md:text-[1.125rem] text-muted-foreground">
               {t('featuresV2.manageCommunity.description')}
             </p>
 
             {/* Cards Stack */}
-            <div className="relative mx-auto h-[17rem] px-[1.5625rem] py-[0.0625rem] max-w-[22.5625rem]">
+            <div className="relative mx-auto h-[17rem] px-[1.5625rem] py-[0.0625rem] max-w-[22.5625rem] shadow-[0_2px_7px_0_rgba(255,109,35,0.24)]">
 
               {/* Back card 1 */}
-              <div className="absolute inset-0 translate-x-4 translate-y-4 rounded-md border border-[#FF6D23]/30 bg-white" />
+              <div className="absolute inset-0 translate-x-0 translate-y-0 rounded-md border border-[#FF6D23]/30 bg-white shadow-[0_2px_7px_0_rgba(255,109,35,0.24)]" />
 
               {/* Back card 2 */}
-              <div className="absolute inset-0 -rotate-4 translate-x-3 translate-y-9 rounded-md border border-[#FF6D23]/40 bg-white" />
+              <div className="absolute inset-0 -rotate-3 -translate-x-2 translate-y-5 rounded-md border border-[#FF6D23]/40 bg-white shadow-[0_2px_7px_0_rgba(255,109,35,0.24)]" />
 
               {/* Front card */}
-              <div className="absolute w-full right-0 top-14 -rotate-6 z-10 h-full rounded-md bg-white p-4 border border-[#FF6D23]/40">
+              <div className="absolute w-full right-4 top-10 -rotate-6 z-10 h-full rounded-md bg-white p-4 border border-[#FF6D23]/40 shadow-[0_2px_7px_0_rgba(255,109,35,0.24)]">
 
                 {/* Header */}
-                <div className="mb-4 flex items-center gap-3">
+                <div className="mb-4 flex items-center gap-[0.5rem]">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full">
                     <img
                       src="/landing/star.svg"
@@ -195,7 +195,7 @@ export function LandingFeaturesV2() {
                       className="h-[1.25rem] w-[1.25rem]"
                     />
                   </div>
-                  <p className="text-sm font-semibold text-foreground">
+                  <p className="text-[0.875rem] md:text-[1.125rem] font-semibold text-foreground">
                     {t('featuresV2.manageCommunity.quickActionsTitle')}
                   </p>
                 </div>
@@ -208,7 +208,7 @@ export function LandingFeaturesV2() {
                       alt="View Analytics"
                       className="h-[1.25rem] w-[1.25rem]"
                     />
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-muted-foreground text-[0.875rem">
                       {t('featuresV2.manageCommunity.viewAnalytics')}
                     </span>
                   </div>
@@ -219,7 +219,7 @@ export function LandingFeaturesV2() {
                       alt="Create Event"
                       className="h-[1.25rem] w-[1.25rem]"
                     />
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-muted-foreground text-[0.875rem">
                       {t('featuresV2.manageCommunity.createEvent')}
                     </span>
                   </div>
@@ -230,7 +230,7 @@ export function LandingFeaturesV2() {
                       alt="Copy Public Link"
                       className="h-[1.25rem] w-[1.25rem]"
                     />
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-muted-foreground text-[0.875rem]">
                       {t('featuresV2.manageCommunity.copyPublicLink')}
                     </span>
                   </div>
@@ -243,10 +243,10 @@ export function LandingFeaturesV2() {
           {/* Magic Box – pixel-matched, i18n-safe */}
           <div className="rounded-[28px] bg-[#FF6D230D] p-4 md:p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)] overflow-hidden">
             {/* Header */}
-            <h3 className="mb-1 text-center text-[1rem] md:text-[1.25rem] font-semibold text-[#1F2937]">
+            <h3 className="mb-1 text-center text-[1rem] md:text-[1.25rem] md:text-[1.75rem] font-semibold text-[#1F2937]">
               {t('featuresV2.magicBox.title')}
             </h3>
-            <p className="mb-4 md:mb-6 max-w-[16rem] md:w-80 mx-auto text-center text-xs md:text-sm leading-relaxed text-[#6B7280]">
+            <p className="mb-4 max-w-[14rem] md:max-w-[20rem] md:mb-6 md:w-80 mx-auto text-center text-xs md:text-[0.875rem] md:text-[1.125rem] leading-relaxed text-[#6B7280]">
               {t('featuresV2.magicBox.description')}
             </p>
 

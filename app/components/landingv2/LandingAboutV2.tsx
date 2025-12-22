@@ -25,7 +25,7 @@ export function LandingAboutV2() {
       <div className="mx-auto w-[95vw] 3xl:w-[60rem] text-center">
         <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
-          <span>{t('about.badge')}</span>
+          <span className="text-[1.3125rem">{t('about.badge')}</span>
         </div>
 
         <h2 className="mb-4 text-5xl font-extrabold trcking-tight text-foreground lg:text-7xl md:leading-tight">

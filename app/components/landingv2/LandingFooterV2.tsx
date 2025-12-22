@@ -61,7 +61,7 @@ export function LandingFooterV2() {
           {/* Desktop: CTAs on right | Mobile: CTAs at top */}
           <div className="flex w-full items-center justify-center gap-3 md:order-3 md:w-auto">
             <Button
-              className="h-[3.1rem] md:h-9 rounded-full bg-[#ff7a1a] px-5 text-xs font-semibold text-white shadow-sm hover:rounded-md hover:bg-[#FF7A1A]"
+              className="h-[3.125rem] md:h-9 w-[12.125rem] py-[0.625rem] rounded-full border border-[#FF6D23] bg-transparent px-[2.75rem] text-[0.875rem] font-semibold text-[#FF6D23] shadow-sm hover:bg-transparent hover:rounded-md"
               asChild
             >
               <a
@@ -69,17 +69,20 @@ export function LandingFooterV2() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t('about.startYourCommunity')}
+                {t('footerV2.createCommunity')}
               </a>
             </Button>
             <Button
-              variant="link"
-              className="h-[3.1rem] md:h-9 px-5 text-xs font-semibold text-[#ff7a1a] hover:text-[#E55A1A]"
+              className="h-[3.1rem] md:h-9 px-5 rounded-[1.875rem] text-xs font-semibold text-white bg-[#FF6D23] hover:bg-[#FF6D23] hover:rounded-md"
               asChild
             >
-              <Link to="/hub">
-                Discover Hub
-              </Link>
+              <a
+                href="https://tally.so/r/NpDVoG"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t('footerV2.tryForFree')}
+              </a>
             </Button>
           </div>
         </div>

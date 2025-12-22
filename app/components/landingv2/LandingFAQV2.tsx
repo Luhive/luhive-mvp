@@ -16,7 +16,7 @@ export function LandingFAQV2() {
   return (
     <section
       id="faqs"
-      className="bg-[#F6F4F1] py-15"
+      className="bg-[#F6F4F1] py-10"
     >
       <div className="mx-auto w-[90vw] 2xl:w-[90rem]">
         <div className="mb-10 text-center">
@@ -77,7 +77,7 @@ export function LandingFAQV2() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <span>{t('about.startYourCommunity')}</span>
+                <span>{t('faqV2.cta.button')}</span>
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-sm">
                   →
                 </span>

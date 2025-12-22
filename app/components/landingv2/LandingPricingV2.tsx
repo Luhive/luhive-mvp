@@ -19,48 +19,96 @@ export function LandingPricingV2() {
   return (
     <section
       id="pricing"
-      className="bg-[#F6F4F1] py-15"
+      className="bg-[#F6F4F1] py-10"
     >
       <div className="mx-auto w-[90vw] 2xl:w-[90rem] text-center">
 
-        {/* <div className="mb-10">
+        <div className="mb-10">
           <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
             <span>{t('pricingV2.badge')}</span>
           </div>
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[3rem]">
             {t('pricingV2.title')}
           </h2>
-        </div> */}
+        </div>
 
         {/* Main pricing card */}
-        {/* <div className="relative md:w-[42.1875rem] mx-auto rounded-[32px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-          <div className="absolute -top-4 right-8 inline-flex items-center rounded-full bg-[#FF7A1A] px-5 py-1 text-xs font-semibold text-white shadow-sm">
+        <div className="relative md:w-[42.1875rem] py-[2.1875rem] mx-auto rounded-[32px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
+          <div className="absolute -top-[1.6875rem] left-0 md:left-auto md:right-8 inline-flex items-center -rotate-[0.969deg] rounded-[3.75rem] bg-[#FF7A1A] h-[3.13413rem] p-[0.25rem] px-[1.25rem] text-[1rem] font-semibold text-white shadow-sm">
             {t('pricingV2.ribbon')}
           </div>
 
-          <div className="flex flex-col items-stretch gap-6 px-8 pb-8 pt-12 text-left sm:flex-row sm:items-center sm:gap-10 sm:px-10 sm:pb-10 sm:pt-14">
-            <div className="flex-1 space-y-2">
+          
+
+          <div className='flex flex-col px-[2.125rem] md:px-[2.5rem] gap-[1.5rem]'>
+          <div className='flex justify-center items-center'>
+            <h3 className="text-2xl hidden md:block font-semibold text-foreground sm:text-[1.875rem]">
+                {t('pricingV2.premiumCommunity')}
+              </h3>
+          </div>
+          <div className="flex flex-col items-stretch justify-between px-0 md:px-8 text-left sm:flex-row sm:items-center sm:gap-10">
+            <div className="w-max hidden md:block">
               <div className="text-[1.875rem] text-muted-foreground">
-                <span className="line-through">${t('pricingV2.price')}</span>
+                <span className="relative inline-block">${t('pricingV2.price')}
+                <span className="absolute left-0 top-1/2 w-full h-[0.125rem] bg-[#FF6D23] -translate-y-1/2"></span>
+                </span>
               </div>
               <div className="text-[3rem] font-medium text-foreground">
                 {t('pricingV2.free')}
               </div>
             </div>
 
-            <div className="flex-1">
-              <h3 className="mb-4 text-2xl font-bold text-foreground sm:text-3xl">
-                {t('pricingV2.premiumCommunity')}
-              </h3>
-              <ul className="space-y-1.5 text-sm text-muted-foreground">
+            <div className='md:hidden flex flex-col justify-between items-center'>
+                          {/* deep clean */}
+              <div className='flex w-full justify-between items-center'>
+              <div className="flex flex-col items-center justify-center">
+                <h3 className="w-max font-semibold text-foreground text-[1.125rem]">{t('pricingV2.planName')}</h3>
+              </div>
+  
+              <div className='w-max flex flex-col justify-center items-center md:hidden'>
+                <div className="w-max block md:hidden">
+                  <div className="text-[1.25rem] text-muted-foreground">
+                    <span className="relative inline-block">${t('pricingV2.price')}
+                    <span className="absolute left-0 top-1/2 w-full h-[0.125rem] bg-[#FF6D23] -translate-y-1/2"></span>
+                    </span>
+                  </div>
+                  <div className="text-[1.5rem] font-medium text-foreground">
+                    {t('pricingV2.free')}
+                  </div>
+                </div>
+              </div>
+              </div>
+
+              <div className="block md:hidden my-5">
+            <div className="flex justify-center items-center w-full">
+              <Button
+                className="relative inline-flex md:w-[15.1875rem] h-[2.5rem] md:h-10 items-center gap-2 rounded-[1.875rem] bg-transparent px-[2.75rem] text-sm font-semibold text-[#FF6D23] hover:bg-transparent hover:rounded-md border border-[#FF6D23]"
+                asChild
+              >
+                <a
+                  href="https://tally.so/r/NpDVoG"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className='text-[0.875rem] font-bold'
+                  onClick={() => handleCTAClick('Start Your Community - Pricing V2')}
+                >
+                  {t('pricingV2.bookDemo')}
+                </a>
+              </Button>
+            </div>
+            </div>
+            </div>
+
+            <div className="w-max">
+              <ul className="space-y-1.5 w-max text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <img
                     src="/landing/confirm-icon.png"
                     alt=""
                     className="mt-1 h-3 w-3 object-contain"
                   />
-                  <span>{t('pricingV2.features.feature1')}</span>
+                  <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature1')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <img
@@ -68,7 +116,7 @@ export function LandingPricingV2() {
                     alt=""
                     className="mt-1 h-3 w-3 object-contain"
                   />
-                  <span>{t('pricingV2.features.feature2')}</span>
+                  <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature2')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <img
@@ -76,7 +124,7 @@ export function LandingPricingV2() {
                     alt=""
                     className="mt-1 h-3 w-3 object-contain"
                   />
-                  <span>{t('pricingV2.features.feature3')}</span>
+                  <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature3')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <img
@@ -84,13 +132,13 @@ export function LandingPricingV2() {
                     alt=""
                     className="mt-1 h-3 w-3 object-contain"
                   />
-                  <span>{t('pricingV2.features.feature4')}</span>
+                  <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature4')}</span>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-[#f4efe6] px-8 py-5 sm:px-10">
+          <div className="hidden md:block">
             <div className="flex justify-center">
               <Button
                 className="relative inline-flex md:w-[15.1875rem] h-[3.1rem] md:h-10 items-center gap-2 rounded-[1.875rem] bg-transparent px-[2.75rem] text-sm font-semibold text-[#FF6D23] hover:bg-transparent hover:rounded-md border border-[#FF6D23]"
@@ -100,6 +148,7 @@ export function LandingPricingV2() {
                   href="https://tally.so/r/NpDVoG"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className='text-[0.875rem] font-bold'
                   onClick={() => handleCTAClick('Start Your Community - Pricing V2')}
                 >
                   {t('about.startYourCommunity')}
@@ -108,7 +157,8 @@ export function LandingPricingV2() {
               </Button>
             </div>
           </div>
-        </div> */}
+          </div>
+        </div>
 
         {/* Gradient CTA block */}
         <div className="mt-12 rounded-[40px] bg-[url('/landing/pricing-bg.svg')] bg-cover bg-center px-6 py-12 text-left text-white sm:px-12 sm:py-14">

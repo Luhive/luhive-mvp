@@ -4,14 +4,14 @@ export function LandingPartnersV2() {
   const { t } = useTranslation('landing');
 
   return (
-    <section className="bg-[#F6F4F1] py-15">
+    <section className="bg-[#F6F4F1] py-10">
       <div className="mx-auto flex w-[90vw] 2xl:w-[100rem] flex-col items-center text-center">
         <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
-          <span>{t('partners.badge')}</span>
+          <span className='text-[1rem]'>{t('partners.badge')}</span>
         </div>
 
-        <h2 className="mb-10 lg:mb-15 text-2xl font-semibold tracking-tight text-foreground lg:text-5xl">
+        <h2 className="mb-10 lg:mb-15 text-2xl font-semibold tracking-tight text-foreground lg:text-[3rem]">
           {t('partners.title')}
         </h2>
 
