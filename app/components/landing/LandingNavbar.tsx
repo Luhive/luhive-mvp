@@ -5,7 +5,6 @@ import { Button } from '~/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '~/components/ui/avatar';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { createClient } from '~/lib/supabase.client';
-import logo from '/landing/LogoLuhive.svg';
 
 interface UserData {
   id: string;
@@ -126,7 +125,7 @@ export function LandingNavbar() {
         <div className="flex items-center justify-between py-4 md:py-5">
           <Link to="/" className="flex items-center gap-2 md:gap-3">
             <img
-              src={logo}
+              src="/landing/LogoLuhive.svg"
               alt="Luhive Logo"
               className="h-7 md:h-8 w-auto"
             />

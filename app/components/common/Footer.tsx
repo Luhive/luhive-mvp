@@ -21,7 +21,7 @@ export default function Footer() {
         <div className="h-1 w-1 rounded-full bg-gray-600">
         </div>
 
-        <a href="#" className="hover:text-black transition text-xs opacity-70 font-sans">Discover</a>
+        <a href="/hub" className="hover:text-black transition text-xs opacity-70 font-sans">Discover</a>
         <a href="#" className="hover:text-black transition text-xs opacity-70 font-sans">Help</a>
 
       </div>
