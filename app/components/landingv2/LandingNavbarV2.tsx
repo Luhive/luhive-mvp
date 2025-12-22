@@ -218,12 +218,14 @@ export function LandingNavbarV2() {
             className="hidden h-10 rounded-full bg-[#FF7A1A] px-5 text-sm font-semibold text-white shadow-sm hover:rounded-md hover:bg-[#FF7A1A] sm:inline-flex sm:h-11 sm:px-6"
             asChild
           >
-            <Link
-              to={user ? '/profile' : '/signup'}
-              onClick={() => handleCTAClick('Try for free - Header V2')}
+            <a
+              href="https://tally.so/r/NpDVoG"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => handleCTAClick('Start Your Community - Header V2')}
             >
-              {t('navV2.tryForFree')}
-            </Link>
+              {t('about.startYourCommunity')}
+            </a>
           </Button>
           {/* Hamburger button for mobile */}
           <button
@@ -238,95 +240,108 @@ export function LandingNavbarV2() {
       </div>
 
       {/* Mobile Menu Sidebar */}
-      {isMobileMenuOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-60 bg-black/50"
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          {/* Sidebar */}
-          <div className="fixed inset-y-0 right-0 z-70 w-full bg-[#F6F4F1] h-[100svh] shadow-xl md:hidden">
-            <div className="flex w-[80vw] mx-auto h-full flex-col bg-[#F6F4F1]">
-              {/* Header with close button */}
-              <div className="flex items-center justify-end p-4">
-                <button
-                  type="button"
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-60 bg-black/50 transition-opacity duration-300 ease-out md:hidden ${
+          isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+      {/* Sidebar */}
+      <div
+        className={`fixed inset-y-0 right-0 z-70 w-full bg-[#F6F4F1] h-[100svh] shadow-xl md:hidden transition-transform duration-300 ease-out ${
+          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex w-[80vw] mx-auto h-full flex-col bg-[#F6F4F1]">
+          {/* Header with close button */}
+          <div className="flex items-center justify-end p-4">
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted"
+              aria-label="Close menu"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="flex flex-1 flex-col items-center justify-center gap-8 px-6">
+            {navItems.map((item, index) => {
+              const isActive = activeSection === item.id;
+              return (
+                <a
+                  key={item.id}
+                  href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-foreground hover:bg-muted"
-                  aria-label="Close menu"
+                  className={`text-2xl font-medium transition-all duration-300 ${
+                    isMobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                  } ${isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  style={{
+                    transitionDelay: isMobileMenuOpen ? `${100 + index * 50}ms` : '0ms',
+                  }}
                 >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
+                  {t(item.labelKey)}
+                </a>
+              );
+            })}
+          </nav>
 
-              {/* Navigation Links */}
-              <nav className="flex flex-1 flex-col items-center justify-center gap-6 px-6">
-                {navItems.map((item) => {
-                  const isActive = activeSection === item.id;
-                  return (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={`text-lg font-medium transition-colors ${
-                        isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {t(item.labelKey)}
-                    </a>
-                  );
-                })}
-              </nav>
-
-              {/* Bottom Section: CTA, Language, Social */}
-              <div className="p-6">
-                {/* Try for free button */}
-                <div className='mb-6 flex justify-between items-center'>
-                <Button
-                  className="flex items-center w-[9.375rem] rounded-full bg-[#FF7A1A] py-6 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
-                  asChild
+          {/* Bottom Section: CTA, Language, Social */}
+          <div
+            className={`p-6 transition-all duration-300 ${
+              isMobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{
+              transitionDelay: isMobileMenuOpen ? '350ms' : '0ms',
+            }}
+          >
+            {/* Try for free button */}
+            <div className="mb-6 flex justify-between items-center">
+              <Button
+                className="flex items-center w-auto min-w-max rounded-full bg-[#FF7A1A] px-6 py-6 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
+                asChild
+              >
+                <a
+                  href="https://tally.so/r/NpDVoG"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    handleCTAClick('Start Your Community - Mobile Menu V2');
+                    setIsMobileMenuOpen(false);
+                  }}
                 >
-                  <Link
-                    to={user ? '/profile' : '/signup'}
-                    onClick={() => {
-                      handleCTAClick('Try for free - Mobile Menu V2');
-                      setIsMobileMenuOpen(false);
-                    }}
+                  {t('about.startYourCommunity')}
+                </a>
+              </Button>
+              <LanguageSwitcher />
+            </div>
+
+            {/* Language Switcher and Social Icons */}
+            <div className="flex w-full items-center justify-between">
+              <div className="flex w-full items-center justify-between gap-2">
+                {SOCIAL_LINKS.map((social) => (
+                  <a
+                    key={social.id}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-13 w-13 items-center justify-center rounded-xl bg-white transition-colors hover:bg-muted"
+                    aria-label={social.label}
                   >
-                    {t('navV2.tryForFree')}
-                  </Link>
-                </Button>
-                <LanguageSwitcher />
-                </div>
-
-
-                {/* Language Switcher and Social Icons */}
-                <div className="flex w-full items-center justify-between">
-                  <div className="flex w-full items-center justify-between gap-2">
-                    {SOCIAL_LINKS.map((social) => (
-                      <a
-                        key={social.id}
-                        href={social.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex h-13 w-13 items-center justify-center rounded-xl bg-white transition-colors hover:bg-muted"
-                        aria-label={social.label}
-                      >
-                        <img
-                          src={social.icon}
-                          alt={social.label}
-                          className="h-13 w-13 object-contain"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                </div>
+                    <img
+                      src={social.icon}
+                      alt={social.label}
+                      className="h-13 w-13 object-contain"
+                    />
+                  </a>
+                ))}
               </div>
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </nav>
   );
 }

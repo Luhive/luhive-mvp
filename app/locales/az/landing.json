@@ -86,7 +86,7 @@
       "title": "Gamifikasiya və Nişanlar",
       "description": "Aktiv olun, nişanlar qazanın və təcrübənizdən maksimum yararlanın.",
       "firstAdopter": "İlk İstifadəçi",
-      "verifiedByLuhive": "Luhive tərəfindən təsdiqlənib",
+      "verifiedByLuhive": "Luhive təsdiq edib",
       "moreBadges": "+3"
     },
     "analytics": {
@@ -208,17 +208,21 @@
     "badge": "Tez-tez verilən suallar",
     "title": "Siz soruşursunuz, biz cavab veririk",
     "items": {
-      "pay-for-services": {
-        "question": "Təmizlik xidmətləri üçün necə ödəyəcəm?",
-        "answer": "Təmizlikdən sonra günü faylınızdakı kredit kartınızdan pul çəkirik. Visa və MasterCard qəbul edirik."
+      "what-is-luhive": {
+        "question": "Luhive nədir?",
+        "answer": "Luhive icma menecerləri və təşkilatçılar üçün xüsusi olaraq qurulmuş hərtərəfli \"Əməliyyat Sistemi\"dir. Biz səpələnmiş alətləri aradan qaldıraraq, icmanızı idarə etmək, təhlil etmək və əvvəlkindən daha sürətlə genişləndirmək üçün vahid mərkəz təqdim edirik."
       },
-      "be-home": {
-        "question": "Siz təmizləyəndə evdə olmalıyam?",
-        "answer": "Heç də yox. Müştərilərimizin çoxu təhlükəsiz giriş təmin edir ki, biz onlar yox ikən təmizləyə bilək."
+      "who-is-luhive-built-for": {
+        "question": "Luhive kimlər üçün yaradılıb?",
+        "answer": "Biz İcma Administratorları və Təşkilatçılarına yönəldik. Əgər təşkilat, qrup və ya icma idarə edirsinizsə, Luhive idarəetməni asan və effektiv etmək üçün vacib alətinizdir."
       },
-      "products": {
-        "question": "Hansı təmizlik məhsullarından istifadə edəcəksiniz?",
-        "answer": "Biz ailəniz, ev heyvanlarınız və səthlər üçün təhlükəsiz olan ekoloji cəhətdən təmiz, zəhərsiz məhsullardan istifadə edirik."
+      "what-problem-does-luhive-solve": {
+        "question": "Luhive hansı problemi həll edir?",
+        "answer": "Biz parçalanmış ekosistem problemini həll edirik. Formalar, tədbirlər, elanlar və izləmə üçün 4-5 fərqli xarici alət istifadə etmək əvəzinə, siz bir, vahid platformadan istifadə edirsiniz. Bu vaxt itkisini və mürəkkəbliyi azaldır. Luhive sadəliyi tərifləyir"
+      },
+      "how-does-luhive-provide-deep-analytics": {
+        "question": "Luhive \"Dərin Analitika\"nı necə təmin edir?",
+        "answer": "Platformamız üzv aktivliyi tarixçəsini, tədbir iştirakını və fəallığı izləyir. Bu zəngin məlumatlarla Üzv CRM sistemidir. Biz sizə nəyin işlədiyini, ən aktiv üzvlərinizin kim olduğunu və AI həllərimizlə növbəti tədbirinizi necə təkmilləşdirmək lazım olduğunu başa düşmək üçün lazım olan fəaliyyətə yönəldilmiş kəşfiyyatı veririk."
       }
     },
     "cta": {

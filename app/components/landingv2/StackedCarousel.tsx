@@ -118,9 +118,9 @@ export function StackedCarousel() {
                 opacity: 1 
               }}
               exit={{ 
-                x: '-100%', 
+                x: '0', 
                 opacity: 0, 
-                rotate: -8,
+                rotate: 0,
               }}
               transition={{
                 duration: 0.6,

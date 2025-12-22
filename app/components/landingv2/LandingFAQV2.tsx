@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 
 import { Button } from '~/components/ui/button';
 
-const FAQ_ITEM_IDS = ['pay-for-services', 'be-home', 'products'];
+const FAQ_ITEM_IDS = ['what-is-luhive', 'who-is-luhive-built-for', 'what-problem-does-luhive-solve', 'how-does-luhive-provide-deep-analytics'];
 
 export function LandingFAQV2() {
   const { t } = useTranslation('landing');
@@ -38,19 +37,27 @@ export function LandingFAQV2() {
                 key={itemId}
                 type="button"
                 onClick={() => toggleItem(itemId)}
-                className="flex w-full flex-col items-stretch px-0 md:px-5 py-5 text-left text-lg text-foreground sm:px-7 sm:py-6"
+                className="flex w-full flex-col items-stretch px-0 md:px-5 py-5 text-left text-lg text-foreground sm:px-7 sm:py-6 transition-colors hover:bg-muted/30 rounded-lg"
               >
                 <div className="flex items-center justify-between gap-4">
                   <span className="font-medium">{t(`faqV2.items.${itemId}.question`)}</span>
-                  <span className="text-3xl text-muted-foreground">
+                  <span 
+                    className={`text-3xl text-muted-foreground transition-transform duration-300 ease-in-out ${
+                      isOpen ? 'rotate-0' : 'rotate-0'
+                    }`}
+                  >
                     {isOpen ? '−' : '+'}
                   </span>
                 </div>
-                {isOpen && (
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-md">
                     {t(`faqV2.items.${itemId}.answer`)}
                   </p>
-                )}
+                </div>
               </button>
             );
           })}
@@ -65,12 +72,16 @@ export function LandingFAQV2() {
               className="inline-flex h-12 items-center gap-3 rounded-full bg-[#FF7A1A] px-8 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
               asChild
             >
-              <Link to="/contact">
-                <span>{t('faqV2.cta.button')}</span>
+              <a
+                href="https://tally.so/r/NpDVoG"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>{t('about.startYourCommunity')}</span>
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-sm">
                   →
                 </span>
-              </Link>
+              </a>
             </Button>
             <span className="inline-block">{t('faqV2.cta.titleConsultation')}</span>
           </h3>

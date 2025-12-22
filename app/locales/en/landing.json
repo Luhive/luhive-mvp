@@ -208,17 +208,21 @@
     "badge": "FAQ's",
     "title": "You ask and we answer",
     "items": {
-      "pay-for-services": {
-        "question": "How do I pay for my cleaning services?",
-        "answer": "We'll charge your credit card on file the day after your cleaning. We accept Visa and MasterCard."
+      "what-is-luhive": {
+        "question": "What is Luhive?",
+        "answer": "Luhive is the all-in-one \"Operating System\" built specifically for community managers and organizers. We eliminate the scattered tools by giving you a unified hub to manage, analyze, and scale your community faster than ever before."
       },
-      "be-home": {
-        "question": "Do I have to be home when you are cleaning?",
-        "answer": "Not at all. Many of our clients provide secure access so we can clean while they are away."
+      "who-is-luhive-built-for": {
+        "question": "Who is Luhive built for?",
+        "answer": "We are focused on Community Admins and Organizers. If you manage an organization, a group, or a community, Luhive is your essential tool for making management easy and effective."
       },
-      "products": {
-        "question": "What cleaning products will you be using?",
-        "answer": "We use eco-friendly, non-toxic products that are safe for your family, pets, and surfaces."
+      "what-problem-does-luhive-solve": {
+        "question": "What problem does Luhive solve?",
+        "answer": "We solve the fragmented ecosystem problem. Instead of using 4-5 different external tools for forms, events, announcements, and tracking, you use one, single platform. This cuts down on time waste and complexity. Luhive praises simplicity"
+      },
+      "how-does-luhive-provide-deep-analytics": {
+        "question": "How does Luhive provide \"Deep Analytics\"?",
+        "answer": "Our platform tracks member activity history, event attendance, and engagement. It's a Member CRM with rich data. We give you the actionable intelligence needed to understand what works, who your most active members are, and how to improve your next event with our AI solutions."
       }
     },
     "cta": {

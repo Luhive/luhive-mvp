@@ -24,7 +24,8 @@ export function LandingPricingV2() {
       className="bg-[#F6F4F1] py-15"
     >
       <div className="mx-auto w-[90vw] 2xl:w-[90rem] text-center">
-        <div className="mb-10">
+
+        {/* <div className="mb-10">
           <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
             <span>{t('pricingV2.badge')}</span>
@@ -32,17 +33,15 @@ export function LandingPricingV2() {
           <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {t('pricingV2.title')}
           </h2>
-        </div>
+        </div> */}
 
         {/* Main pricing card */}
-        <div className="relative md:w-[42.1875rem] mx-auto rounded-[32px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-          {/* Ribbon */}
+        {/* <div className="relative md:w-[42.1875rem] mx-auto rounded-[32px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
           <div className="absolute -top-4 right-8 inline-flex items-center rounded-full bg-[#FF7A1A] px-5 py-1 text-xs font-semibold text-white shadow-sm">
             {t('pricingV2.ribbon')}
           </div>
 
           <div className="flex flex-col items-stretch gap-6 px-8 pb-8 pt-12 text-left sm:flex-row sm:items-center sm:gap-10 sm:px-10 sm:pb-10 sm:pt-14">
-            {/* Left side - Pricing */}
             <div className="flex-1 space-y-2">
               <div className="text-[1.875rem] text-muted-foreground">
                 <span className="line-through">${t('pricingV2.price')}</span>
@@ -52,7 +51,6 @@ export function LandingPricingV2() {
               </div>
             </div>
 
-            {/* Right side - Title and Features */}
             <div className="flex-1">
               <h3 className="mb-4 text-2xl font-bold text-foreground sm:text-3xl">
                 {t('pricingV2.premiumCommunity')}
@@ -100,17 +98,19 @@ export function LandingPricingV2() {
                 className="relative inline-flex md:w-[15.1875rem] h-[3.1rem] md:h-10 items-center gap-2 rounded-[1.875rem] bg-transparent px-[2.75rem] text-sm font-semibold text-[#FF6D23] hover:bg-transparent hover:rounded-md border border-[#FF6D23]"
                 asChild
               >
-                <Link
-                  to="/signup"
-                  onClick={() => handleCTAClick('Book a Demo - Pricing V2')}
+                <a
+                  href="https://tally.so/r/NpDVoG"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => handleCTAClick('Start Your Community - Pricing V2')}
                 >
-                  {t('pricingV2.bookDemo')}
+                  {t('about.startYourCommunity')}
                   <Flame className="h-4 w-4" />
-                </Link>
+                </a>
               </Button>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Gradient CTA block */}
         <div className="mt-12 rounded-[40px] bg-[url('/landing/pricing-bg.svg')] bg-cover bg-center px-6 py-12 text-left text-white sm:px-12 sm:py-14">
@@ -127,19 +127,21 @@ export function LandingPricingV2() {
               hover:rounded-md hover:bg-[#000000] hover:text-[#ffffff] sm:h-11"
               asChild
             >
-              <Link
-                to="/create-community"
-                onClick={() => handleCTAClick('Get started - Pricing CTA V2')}
+              <a
+                href="https://tally.so/r/NpDVoG"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => handleCTAClick('Start Your Community - Pricing CTA V2')}
               >
-                {t('pricingV2.cta.button')}
-              </Link>
+                {t('about.startYourCommunity')}
+              </a>
             </Button>
           </div>
         </div>
 
         {/* Three benefit cards */}
         <div className="mt-6 grid gap-4 text-left sm:grid-cols-3">
-          <div className="rounded-[24px] bg-[#FF6D2312] p-4 text-xs text-muted-foreground sm:text-sm">
+          <div className="rounded-[24px] bg-[#FF6D2312] p-6 text-xs text-muted-foreground sm:text-sm">
             <p className="mb-1 text-[1rem] font-semibold text-[#000000]">
               <span className='text-[#ff7a1a]'>{t('pricingV2.benefits.benefit1.number')}&nbsp;</span> {t('pricingV2.benefits.benefit1.title')}
             </p>
@@ -147,7 +149,7 @@ export function LandingPricingV2() {
               <span className='text-[0.875rem]'>{t('pricingV2.benefits.benefit1.description')}</span>
             </p>
           </div>
-          <div className="rounded-[24px] bg-[#FF6D2312] p-4 text-xs text-muted-foreground sm:text-sm">
+          <div className="rounded-[24px] bg-[#FF6D2312] p-6 text-xs text-muted-foreground sm:text-sm">
             <p className="mb-1 text-[1rem] font-semibold text-[#000000]">
               <span className='text-[#ff7a1a]'>{t('pricingV2.benefits.benefit2.number')}&nbsp;</span> {t('pricingV2.benefits.benefit2.title')}
             </p>
@@ -155,7 +157,7 @@ export function LandingPricingV2() {
               <span className='text-[0.875rem]'>{t('pricingV2.benefits.benefit2.description')}</span>
             </p>
           </div>
-          <div className="rounded-[24px] bg-[#FF6D2312] p-4 text-xs text-muted-foreground sm:text-sm">
+          <div className="rounded-[24px] bg-[#FF6D2312] p-6 text-xs text-muted-foreground sm:text-sm">
             <p className="mb-1 text-[1rem] font-semibold text-[#000000]">
               <span className='text-[#ff7a1a]'>{t('pricingV2.benefits.benefit3.number')}&nbsp;</span> {t('pricingV2.benefits.benefit3.title')}
             </p>

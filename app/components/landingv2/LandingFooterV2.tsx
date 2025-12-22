@@ -66,17 +66,25 @@ export function LandingFooterV2() {
           {/* Desktop: CTAs on right | Mobile: CTAs at top */}
           <div className="flex w-full items-center justify-center gap-3 md:order-3 md:w-auto">
             <Button
-              variant="outline"
-              className="h-[3.1rem] md:h-9 rounded-full border-[#ff7a1a] px-5 bg-transparent text-xs font-semibold text-[#ff7a1a] hover:rounded-md hover:bg-transparent"
-              asChild
-            >
-              <Link to="/create-community">{t('footerV2.createCommunity')}</Link>
-            </Button>
-            <Button
               className="h-[3.1rem] md:h-9 rounded-full bg-[#ff7a1a] px-5 text-xs font-semibold text-white shadow-sm hover:rounded-md hover:bg-[#FF7A1A]"
               asChild
             >
-              <Link to="/signup">{t('footerV2.tryForFree')}</Link>
+              <a
+                href="https://tally.so/r/NpDVoG"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t('about.startYourCommunity')}
+              </a>
+            </Button>
+            <Button
+              variant="link"
+              className="h-[3.1rem] md:h-9 px-5 text-xs font-semibold text-[#ff7a1a] hover:text-[#E55A1A]"
+              asChild
+            >
+              <Link to="/hub">
+                Discover Hub
+              </Link>
             </Button>
           </div>
         </div>

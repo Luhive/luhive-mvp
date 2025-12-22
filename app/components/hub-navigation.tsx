@@ -50,16 +50,15 @@ export function TopNavigation({ user }: TopNavigationProps) {
             variant="default"
               size="sm"
             className="underline-offset-4 bg-transparent hover:bg-transparent hidden sm:flex"
-              onClick={(e) => {
-                e.preventDefault();
-                if (!user) {
-                  navigate("/signup");
-                } else {
-                  navigate("/create-community");
-                }
-              }}
+              asChild
             >
-            <span className="text-sm text-primary/60 hover:text-primary transition-colors">Create Community</span>
+              <a
+                href="https://tally.so/r/NpDVoG"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="text-sm text-primary/60 hover:text-primary transition-colors">Create Community</span>
+              </a>
           </Button>
 
           {user ? (

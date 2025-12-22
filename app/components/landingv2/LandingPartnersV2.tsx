@@ -5,34 +5,32 @@ export function LandingPartnersV2() {
 
   return (
     <section className="bg-[#F6F4F1] py-15">
-      <div className="mx-auto flex w-[90vw] 2xl:w-[90rem] flex-col items-center text-center">
+      <div className="mx-auto flex w-[90vw] 2xl:w-[100rem] flex-col items-center text-center">
         <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
           <span>{t('partners.badge')}</span>
         </div>
 
-        <h2 className="mb-10 text-3xl font-semibold tracking-tight text-foreground sm:text-3xl">
+        <h2 className="mb-10 lg:mb-15 text-2xl font-semibold tracking-tight text-foreground lg:text-5xl">
           {t('partners.title')}
         </h2>
 
-        <div className="flex w-full gap-5 md:w-[58.5rem] mx-auto flex-row items-center justify-between">
+        <div className="w-full max-w-5xl mx-auto grid grid-cols-3 place-items-center gap-4">
           <img
             src="/landing/supVCLogo.svg"
             alt={t('partners.supVcAlt')}
-            className="w-[5.13644rem] h-[1.78569rem] md:h-[4.076rem] md:w-[11.72419rem] object-contain"
+            className="h-[clamp(1.8rem,5vw,4rem)] w-auto"
           />
-          <div className='flex gap-5 flex-row items-center justify-between'>
           <img
-              src="/landing/GDGBakuLogoV2.svg"
+            src="/landing/GDGBakuLogoV2.svg"
             alt={t('partners.gdgBakuAlt')}
-            className="w-[7.89475rem] h-[1.78569rem] md:h-[4.076rem] md:w-[18.02013rem] object-contain"
+            className="h-[clamp(2rem,5vw,4rem)] w-auto"
           />
           <img
-              src="/landing/AIMAzLogoV2.svg"
+            src="/landing/AIMAzLogoV2.svg"
             alt={t('partners.aimAzAlt')}
-            className="h-5 md:h-18 w-auto object-contain"
+            className="h-[clamp(1.4rem,5vw,2.8rem)] w-auto"
           />
-          </div>
         </div>
       </div>
     </section>
