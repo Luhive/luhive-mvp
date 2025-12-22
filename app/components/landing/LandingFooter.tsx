@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-import logo from '/landing/LogoLuhive.svg';
 
 export function LandingFooter() {
   const { t } = useTranslation('landing');
@@ -15,7 +14,7 @@ export function LandingFooter() {
             {/* logo */}
             <Link to="/" className="flex items-center gap-2 md:gap-3 mb-4">
               <img
-                src={logo}
+                src="/landing/LogoLuhive.svg"
                 alt="Luhive Logo"
                 className="h-7 md:h-8 w-auto brightness-0 invert"
               />

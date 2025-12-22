@@ -1,6 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Globe } from 'lucide-react';
-import LanguageChangeIcon from '/landing/change-language.svg';
 import { Button } from '~/components/ui/button';
 
 export function LanguageSwitcher() {
@@ -22,7 +20,7 @@ export function LanguageSwitcher() {
       className="flex items-center gap-2 font-semibold hover:bg-transparent hover:text-black"
       aria-label="Switch language"
     >
-      <img src={LanguageChangeIcon} alt="Language Change Icon" className="h-5 w-5" />
+      <img src="/landing/change-language.svg" alt="Language Change Icon" className="h-5 w-5" />
       <span className="text-sm font-semibold">{currentLang === 'en' ? 'EN' : 'AZ'}</span>
     </Button>
   );

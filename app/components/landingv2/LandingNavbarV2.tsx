@@ -6,11 +6,6 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { LanguageSwitcher } from '../landing/LanguageSwitcher';
 import { createClient } from '~/lib/supabase.client';
-import logo from '/landing/LogoLuhive.svg';
-import xPlatform from '/landing/xplatfrom.svg';
-import linkedin from '/landing/Linkedin.svg';
-import telegram from '/landing/Telegram.svg';
-import instagram from '/landing/Instagram.svg';
 
 interface UserData {
   id: string;
@@ -21,25 +16,25 @@ interface UserData {
 const SOCIAL_LINKS = [
   {
     id: 'x',
-    icon: xPlatform,
+    icon: '/landing/xplatfrom.svg',
     href: 'https://twitter.com/luhive_',
     label: 'X (Twitter)',
   },
   {
     id: 'linkedin',
-    icon: linkedin,
+    icon: '/landing/Linkedin.svg',
     href: 'https://www.linkedin.com/company/luhive',
     label: 'LinkedIn',
   },
   {
     id: 'telegram',
-    icon: telegram,
+    icon: '/landing/Telegram.svg',
     href: 'https://t.me/luhive',
     label: 'Telegram',
   },
   {
     id: 'instagram',
-    icon: instagram,
+    icon: '/landing/Instagram.svg',
     href: 'https://instagram.com/luhive',
     label: 'Instagram',
   },
@@ -182,7 +177,7 @@ export function LandingNavbarV2() {
     >
       <div className="mx-auto flex h-16 w-[90vw] 2xl:w-[90rem] items-center justify-between sm:h-20">
         <Link to="/" className="flex items-center gap-4 w-[15.5vw]">
-          <img src={logo} alt="Luhive Logo" className="h-[2.25rem] w-[2.25rem]" />
+          <img src="/landing/LogoLuhive.svg" alt="Luhive Logo" className="h-[2.25rem] w-[2.25rem]" />
           <span
             className="text-lg font-bold tracking-tight text-foreground sm:text-xl"
             style={{ fontFamily: 'var(--font-nunito), sans-serif' }}

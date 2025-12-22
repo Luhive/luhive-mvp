@@ -2,34 +2,29 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { Button } from '~/components/ui/button';
-import logo from '/landing/LogoLuhive.svg';
-import xPlatform from '/landing/xplatfrom.svg';
-import linkedin from '/landing/Linkedin.svg';
-import telegram from '/landing/Telegram.svg';
-import instagram from '/landing/Instagram.svg';
 
 const SOCIAL_LINKS = [
   {
     id: 'x',
-    icon: xPlatform,
+    icon: '/landing/xplatfrom.svg',
     href: 'https://twitter.com/luhive_',
     label: 'X (Twitter)',
   },
   {
     id: 'linkedin',
-    icon: linkedin,
+    icon: '/landing/Linkedin.svg',
     href: 'https://www.linkedin.com/company/luhive',
     label: 'LinkedIn',
   },
   {
     id: 'telegram',
-    icon: telegram,
+    icon: '/landing/Telegram.svg',
     href: 'https://t.me/luhive',
     label: 'Telegram',
   },
   {
     id: 'instagram',
-    icon: instagram,
+    icon: '/landing/Instagram.svg',
     href: 'https://instagram.com/luhive',
     label: 'Instagram',
   },
@@ -91,7 +86,7 @@ export function LandingFooterV2() {
 
         {/* Desktop: Logo in center | Mobile: Logo at bottom */}
         <div className="flex items-center mt-5 gap-3 w-full justify-center">
-          <img src={logo} alt="Luhive logo" className="md:h-12 h-9 w-auto" />
+          <img src="/landing/LogoLuhive.svg" alt="Luhive logo" className="md:h-12 h-9 w-auto" />
           <span
             className="md:text-6xl font-bold text-4xl tracking-tight text-foreground"
             style={{ fontFamily: 'var(--font-nunito), sans-serif' }}

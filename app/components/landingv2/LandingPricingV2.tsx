@@ -1,10 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { Flame } from 'lucide-react';
-import pricingBg from '/landing/pricing-bg.svg';
 
 import { Button } from '~/components/ui/button';
-import confirmIcon from '/landing/confirm-icon.png';
 
 export function LandingPricingV2() {
   const { t } = useTranslation('landing');
@@ -58,7 +56,7 @@ export function LandingPricingV2() {
               <ul className="space-y-1.5 text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <img
-                    src={confirmIcon}
+                    src="/landing/confirm-icon.png"
                     alt=""
                     className="mt-1 h-3 w-3 object-contain"
                   />
@@ -66,7 +64,7 @@ export function LandingPricingV2() {
                 </li>
                 <li className="flex items-start gap-2">
                   <img
-                    src={confirmIcon}
+                    src="/landing/confirm-icon.png"
                     alt=""
                     className="mt-1 h-3 w-3 object-contain"
                   />
@@ -74,7 +72,7 @@ export function LandingPricingV2() {
                 </li>
                 <li className="flex items-start gap-2">
                   <img
-                    src={confirmIcon}
+                    src="/landing/confirm-icon.png"
                     alt=""
                     className="mt-1 h-3 w-3 object-contain"
                   />
@@ -82,7 +80,7 @@ export function LandingPricingV2() {
                 </li>
                 <li className="flex items-start gap-2">
                   <img
-                    src={confirmIcon}
+                    src="/landing/confirm-icon.png"
                     alt=""
                     className="mt-1 h-3 w-3 object-contain"
                   />

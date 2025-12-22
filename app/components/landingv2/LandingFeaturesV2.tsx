@@ -1,19 +1,5 @@
 import { useTranslation } from 'react-i18next';
 
-import calendarGoogle from '/landing/calendarGoogle.svg';
-import microsoftForm from '/landing/microsoftForm.svg';
-import googleDrive from '/landing/googleDrive.svg';
-import airtable from '/landing/airtable.svg';
-import AIDiagram from '/landing/AIDiagram.png';
-import AIIncrease from '/landing/AIIncrease.png';
-import AIDiagramCircle from '/landing/AIDiagramCircle.png';
-import excelLogo from '/landing/microsoftExcel.svg';
-import googleForms from '/landing/googleForm.svg';
-import barChart from '/landing/bar-chart.png';
-import sancaqIMG from '/landing/sancaq.svg';
-import AnnouncementIcon from '/landing/AnnouncementIcon.svg';
-import stars from '/landing/stars.svg';
-
 export function LandingFeaturesV2() {
   const { t } = useTranslation('landing');
 
@@ -48,42 +34,42 @@ export function LandingFeaturesV2() {
             <div className="grid grid-cols-3 mx-auto max-w-[100%] md:max-w-[90%] lg:max-w-[80%] gap-4 justify-items-center">
               <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
                 <img
-                  src={calendarGoogle}
+                  src="/landing/calendarGoogle.svg"
                   alt="Google Calendar"
                   className="h-full w-full object-contain"
                 />
               </div>
               <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
                 <img
-                  src={microsoftForm}
+                  src="/landing/microsoftForm.svg"
                   alt="Integration app"
                   className="h-full w-full object-contain"
                 />
               </div>
               <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
                 <img
-                  src={googleDrive}
+                  src="/landing/googleDrive.svg"
                   alt="Google Drive"
                   className="h-full w-full object-contain"
                 />
               </div>
               <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
                 <img
-                  src={airtable}
+                  src="/landing/airtable.svg"
                   alt="Integration app"
                   className="h-full w-full object-contain"
                 />
               </div>
               <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
                 <img
-                  src={excelLogo}
+                  src="/landing/microsoftExcel.svg"
                   alt="Excel"
                   className="h-full w-full object-contain"
                 />
               </div>
               <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
                 <img
-                  src={googleForms}
+                  src="/landing/googleForm.svg"
                   alt="Integration app"
                   className="h-full w-full object-contain"
                 />
@@ -149,24 +135,24 @@ export function LandingFeaturesV2() {
 
               <div className="mt-2 flex-1 shrink-0 basis-0 flex items-end justify-end">
                 <img
-                  src={barChart}
+                  src="/landing/bar-chart.png"
                   alt={t('featuresV2.analytics.barChartAlt')}
                   className="h-22 w-auto object-contain"
                 />
               </div>
               {/* Top Left */}
               <div className="absolute -top-6 right-6 flex h-12 w-12 items-center justify-center rounded-xl rotate-[-8deg]">
-                <img src={AIDiagram} alt="AI Diagram" className="h-12 w-12" />
+                <img src="/landing/AIDiagram.png" alt="AI Diagram" className="h-12 w-12" />
               </div>
 
               {/* Top Right */}
               <div className="absolute -top-6 -left-6 flex h-12 w-12 items-center justify-center rounded-xl rotate-[8deg]">
-                <img src={AIIncrease} alt="AI Increase" className="h-12 w-12" />
+                <img src="/landing/AIIncrease.png" alt="AI Increase" className="h-12 w-12" />
               </div>
 
               {/* Bottom Left */}
               <div className="absolute -bottom-6 -left-6 flex h-12 w-12 items-center justify-center rounded-xl rotate-[6deg]">
-                <img src={AIDiagramCircle} alt="AI Diagram Circle" className="h-12 w-12" />
+                <img src="/landing/AIDiagramCircle.png" alt="AI Diagram Circle" className="h-12 w-12" />
               </div>
             </div>
 
@@ -274,10 +260,10 @@ export function LandingFeaturesV2() {
               <div className="flex items-center justify-between">
                 <div className='flex gap-1 justify-center items-center'>
 
-                  <img src={sancaqIMG} alt="Sancaq" className="size-7 md:size-9" />
+                  <img src="/landing/sancaq.svg" alt="Sancaq" className="size-7 md:size-9" />
                   <div className="flex px-1 py-1 rounded-[2.37rem] bg-[#FFD6B633]">
                     <span className="flex items-center gap-1 rounded-[2.37rem] bg-[#FF6D231A] px-2 md:px-3 py-2 md:py-2 text-xs md:text-sm font-medium text-[#FF7A1A]">
-                      <img src={AnnouncementIcon} alt="Announcement" className="size-3 md:size-4" />
+                      <img src="/landing/AnnouncementIcon.svg" alt="Announcement" className="size-3 md:size-4" />
                       {t('featuresV2.magicBox.announcement')}
                     </span>
                     <span className="flex items-center gap-1 px-2 md:px-3 py-1 text-xs md:text-sm font-medium text-[#FF7A1A]">
@@ -289,7 +275,7 @@ export function LandingFeaturesV2() {
                 </div>
 
                 {/* Spark Button */}
-                <img src={stars} alt="Stars" className="size-6 md:size-9" />
+                <img src="/landing/stars.svg" alt="Stars" className="size-6 md:size-9" />
               </div>
             </div>
           </div>

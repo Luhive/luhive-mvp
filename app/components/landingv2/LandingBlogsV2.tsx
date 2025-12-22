@@ -1,10 +1,5 @@
 import { useTranslation } from 'react-i18next';
 
-import blog1 from '/landing/blog1.png';
-import blog2 from '/landing/blog2.png';
-import blog3 from '/landing/blog3.png';
-import blog4 from '/landing/blog4.png';
-
 interface BlogCard {
   id: string;
   image: string;
@@ -13,19 +8,19 @@ interface BlogCard {
 const BLOG_IDS: BlogCard[] = [
   {
     id: 'digital-community-pillars',
-    image: blog1,
+    image: '/landing/blog1.png',
   },
   {
     id: 'digital-belonging',
-    image: blog2,
+    image: '/landing/blog2.png',
   },
   {
     id: 'measure-connection',
-    image: blog3,
+    image: '/landing/blog3.png',
   },
   {
     id: 'moderation-right-way',
-    image: blog4,
+    image: '/landing/blog4.png',
   },
 ];
 
