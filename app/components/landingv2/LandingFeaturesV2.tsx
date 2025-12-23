@@ -31,47 +31,47 @@ export function LandingFeaturesV2() {
               {t('featuresV2.buildIntegrations.description')}
             </p>
 
-            <div className="grid grid-cols-3 mx-auto max-w-[100%] md:max-w-[90%] lg:max-w-[80%] gap-4 justify-items-center">
-              <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
+            <div className="grid grid-cols-3 grid-rows-2 mx-auto w-[20.625rem] gap-4 justify-items-center">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
                 <img
                   src="/landing/calendarGoogle.svg"
                   alt="Google Calendar"
-                  className="h-full w-full object-contain"
+                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
                 />
               </div>
-              <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
                 <img
                   src="/landing/microsoftForm.svg"
                   alt="Integration app"
-                  className="h-full w-full object-contain"
+                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
                 />
               </div>
-              <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
                 <img
                   src="/landing/GoogleDrive.svg"
                   alt="Google Drive"
-                  className="h-full w-full object-contain"
+                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
                 />
               </div>
-              <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
                 <img
                   src="/landing/airtable.svg"
                   alt="Integration app"
-                  className="h-full w-full object-contain"
+                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
                 />
               </div>
-              <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
                 <img
                   src="/landing/microsoftExcel.svg"
                   alt="Excel"
-                  className="h-full w-full object-contain"
+                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
                 />
               </div>
-              <div className="flex items-center justify-center rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] p-[0.625rem] size-[4.2rem] md:size-[4.5rem]">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
                 <img
                   src="/landing/googleForm.svg"
                   alt="Integration app"
-                  className="h-full w-full object-contain"
+                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
                 />
               </div>
             </div>
@@ -83,7 +83,7 @@ export function LandingFeaturesV2() {
               {t('featuresV2.gamification.title')}
             </h3>
 
-            <p className="mx-auto mb-6 text-center md:max-w-[10rem] md:max-w-[16rem] mx-autotext-[0.875rem] md:text-[1.125rem] text-muted-foreground">
+            <p className="mx-auto mb-6 text-center md:max-w-[10rem] md:max-w-[18rem] mx-autotext-[0.875rem] md:text-[1.125rem] text-muted-foreground">
               {t('featuresV2.gamification.description')}
             </p>
 
