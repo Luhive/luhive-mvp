@@ -204,7 +204,7 @@ export function LandingNavbarV2() {
           })}
         </div>
 
-        <div className="flex items-center w-[12.875rem] gap-4 w-max">
+        <div className="flex items-center gap-4 w-max">
           <div className="hidden items-center md:flex">
             <LanguageSwitcher />
           </div>

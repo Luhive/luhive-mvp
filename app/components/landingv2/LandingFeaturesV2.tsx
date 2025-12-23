@@ -24,54 +24,54 @@ export function LandingFeaturesV2() {
         <div className="grid gap-6 md:grid-cols-3">
           {/* Build in Integrations */}
           <div className="rounded-[28px] bg-[#FF6D230D] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)]">
-            <h3 className="mb-1 text-center font-semibold text-foreground text-[1.25rem] md:text-[1.75rem]">
+            <h3 className="mb-1 text-center font-semibold text-foreground text-[1.25rem]">
               {t('featuresV2.buildIntegrations.title')}
             </h3>
-            <p className="mb-6 text-[0.875rem] md:text-[1.125rem] text-center font-normal max-w-3/5 mx-auto text-muted-foreground">
+            <p className="mb-6 text-[0.875rem] text-center font-normal max-w-3/5 mx-auto text-muted-foreground">
               {t('featuresV2.buildIntegrations.description')}
             </p>
 
-            <div className="grid grid-cols-3 grid-rows-2 mx-auto w-[20.625rem] gap-4 justify-items-center">
-              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
+            <div className="grid grid-cols-3 grid-rows-2 mx-auto w-[16.5rem] gap-4 justify-items-center">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[4.5rem] h-[4.5rem] p-[0.625rem] justify-center items-center shrink-0">
                 <img
                   src="/landing/calendarGoogle.svg"
                   alt="Google Calendar"
-                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
+                  className="w-[3.5rem] h-[3.5rem] object-contain"
                 />
               </div>
-              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[4.5rem] h-[4.5rem] p-[0.625rem] justify-center items-center shrink-0">
                 <img
                   src="/landing/microsoftForm.svg"
-                  alt="Integration app"
-                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
+                  alt="Microsoft Forms"
+                  className="w-[3.5rem] h-[3.5rem] object-contain"
                 />
               </div>
-              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[4.5rem] h-[4.5rem] p-[0.625rem] justify-center items-center shrink-0">
                 <img
-                  src="/landing/GoogleDrive.svg"
+                  src="/landing/googleDrive.svg"
                   alt="Google Drive"
-                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
+                  className="w-[3.5rem] h-[3.5rem] object-contain"
                 />
               </div>
-              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[4.5rem] h-[4.5rem] p-[0.625rem] justify-center items-center shrink-0">
                 <img
                   src="/landing/airtable.svg"
-                  alt="Integration app"
-                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
+                  alt="Airtable"
+                  className="w-[3.5rem] h-[3.5rem] object-contain"
                 />
               </div>
-              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[4.5rem] h-[4.5rem] p-[0.625rem] justify-center items-center shrink-0">
                 <img
                   src="/landing/microsoftExcel.svg"
-                  alt="Excel"
-                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
+                  alt="Microsoft Excel"
+                  className="w-[3.5rem] h-[3.5rem] object-contain"
                 />
               </div>
-              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[6rem] h-[6rem] p-[0.625rem] justify-center items-center gap-[0.625rem] shrink-0">
+              <div className="rounded-[0.75rem] md:rounded-[1rem] border-[0.03125rem] border-[rgba(255,109,35,0.1)] border-solid shadow-[0_0_0.25rem_0_rgba(255,109,35,0.30)] flex w-[4.5rem] h-[4.5rem] p-[0.625rem] justify-center items-center shrink-0">
                 <img
                   src="/landing/googleForm.svg"
-                  alt="Integration app"
-                  className="w-[4rem] h-[3.9rem] shrink-0 aspect-[60/55.84]"
+                  alt="Google Forms"
+                  className="w-[3.5rem] h-[3.5rem] object-contain"
                 />
               </div>
             </div>
@@ -79,11 +79,11 @@ export function LandingFeaturesV2() {
 
           {/* Gamification & Badges */}
           <div className="rounded-[28px] bg-[#FF6D230D] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)]">
-            <h3 className="mb-2 text-center text-[1.25rem] md:text-[1.75rem] font-semibold text-foreground">
+            <h3 className="mb-2 text-center text-[1.25rem] font-semibold text-foreground">
               {t('featuresV2.gamification.title')}
             </h3>
 
-            <p className="mx-auto mb-6 text-center md:max-w-[10rem] md:max-w-[18rem] mx-autotext-[0.875rem] md:text-[1.125rem] text-muted-foreground">
+            <p className="mb-6 text-center md:max-w-[18rem] mx-auto text-[0.875rem] text-muted-foreground">
               {t('featuresV2.gamification.description')}
             </p>
 
@@ -113,10 +113,10 @@ export function LandingFeaturesV2() {
 
           {/* AI Powered Analytics */}
           <div className="relative overflow-hidden rounded-[28px] bg-[#FF6D230D] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)]">
-            <h3 className="mb-1 text-center font-semibold text-foreground text-[1.25rem] md:text-[1.75rem]">
+            <h3 className="mb-1 text-center font-semibold text-foreground text-[1.25rem]">
               {t('featuresV2.analytics.title')}
             </h3>
-            <p className="mb-6 text-[0.875rem] md:text-[1.125rem] text-center text-muted-foreground">
+            <p className="mb-6 text-[0.875rem] text-center text-muted-foreground">
               {t('featuresV2.analytics.description')}
             </p>
 
@@ -166,11 +166,11 @@ export function LandingFeaturesV2() {
         <div className="mt-6 md:grid gap-6 md:grid-cols-2 flex flex-col-reverse">
           {/* Manage Your Community Quickly */}
           <div className="rounded-[28px] bg-[#FF6D230D] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)]">
-            <h3 className="mb-2 text-[1.25rem] md:text-[1.75rem] text-center font-semibold text-foreground">
+            <h3 className="mb-2 text-[1.25rem] text-center font-semibold text-foreground">
               {t('featuresV2.manageCommunity.title')}
             </h3>
 
-            <p className="mb-8 text-center max-w-[30rem] mx-auto w-full text-[0.875rem] md:text-[1.125rem] text-muted-foreground">
+            <p className="mb-8 text-center max-w-[30rem] mx-auto w-full text-[0.875rem] text-muted-foreground">
               {t('featuresV2.manageCommunity.description')}
             </p>
 
@@ -243,10 +243,10 @@ export function LandingFeaturesV2() {
           {/* Magic Box – pixel-matched, i18n-safe */}
           <div className="rounded-[28px] bg-[#FF6D230D] p-4 md:p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)] overflow-hidden">
             {/* Header */}
-            <h3 className="mb-1 text-center text-[1.25rem] md:text-[1.75rem] font-semibold text-[#1F2937]">
+            <h3 className="mb-1 text-center text-[1.25rem] font-semibold text-[#1F2937]">
               {t('featuresV2.magicBox.title')}
             </h3>
-            <p className="mb-4 max-w-[16rem] md:max-w-[20rem] md:mb-6 md:w-80 mx-auto text-center text-[0.875rem] md:text-[1.125rem] leading-relaxed text-[#6B7280]">
+            <p className="mb-4 max-w-[16rem] md:max-w-[20rem] md:mb-6 md:w-80 mx-auto text-center text-[0.875rem] leading-relaxed text-[#6B7280]">
               {t('featuresV2.magicBox.description')}
             </p>
 

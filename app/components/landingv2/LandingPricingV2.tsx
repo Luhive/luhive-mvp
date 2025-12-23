@@ -171,7 +171,7 @@ export function LandingPricingV2() {
             </p>
             <Button
               size="lg"
-              className="mx-auto inline-flex h-[3.1rem] md:h-10 rounded-full bg-[#000000] px-8 text-sm font-semibold text-[#ffffff]
+              className="mx-auto inline-flex h-[3.2rem] rounded-[25px] bg-[#000000] px-8 text-sm font-semibold text-[#ffffff]
               hover:rounded-md hover:bg-[#000000] hover:text-[#ffffff] sm:h-11"
               asChild
             >

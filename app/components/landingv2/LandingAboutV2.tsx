@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Globe } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
 import { StackedCarousel } from './StackedCarousel';
@@ -100,7 +100,7 @@ export function LandingAboutV2() {
               className="inline-flex items-center gap-2 text-base font-medium text-[#FF6D23] hover:text-[#E55A1A] transition-colors duration-200 group"
             >
               <span className='text-md lg:text-lg font-medium underlines'>Discover Hub</span>
-              <ExternalLink className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1" />
+              <Globe className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1" />
             </a>
           </div>
         </div>

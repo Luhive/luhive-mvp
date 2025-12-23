@@ -13,7 +13,7 @@
     "pricing": "Qiymətləndirmə",
     "faqs": "Tez-tez verilən suallar",
     "contact": "Əlaqə",
-    "tryForFree": "Pulsuz yoxla"
+    "tryForFree": "İcmanızı Başladın"
   },
   "hero": {
     "title": "Vahid Platforma",
@@ -152,7 +152,7 @@
     "currency": "USD / ay",
     "premiumCommunity": "Premium İcma",
     "free": "Pulsuz",
-    "bookDemo": "Demo Təyin Et",
+    "bookDemo": "Icmanızı başladın",
     "features": {
       "feature1": "Əsas planın hər şeyini əhatə edir",
       "feature2": "Ətraflı mətbəx və vanna otağı təmizliyi",
@@ -229,12 +229,12 @@
       "titleLine1": "gəlin danışaq –",
       "titleFree": "pulsuz",
       "titleConsultation": "məsləhətəşmə təyin edin",
-      "button": "Demo əldə edin"
+      "button": "Icmanızı başladın"
     }
   },
   "footerV2": {
     "createCommunity": "İcma yarat",
-    "tryForFree": "Pulsuz yoxla",
+    "tryForFree": "İcmanızı Başladın",
     "nav": {
       "about": "Haqqımızda",
       "services": "Xidmətlər",
