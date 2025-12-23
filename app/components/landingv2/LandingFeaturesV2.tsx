@@ -246,7 +246,7 @@ export function LandingFeaturesV2() {
             <h3 className="mb-1 text-center text-[1.25rem] md:text-[1.75rem] font-semibold text-[#1F2937]">
               {t('featuresV2.magicBox.title')}
             </h3>
-            <p className="mb-4 max-w-[14rem] md:max-w-[20rem] md:mb-6 md:w-80 mx-auto text-center text-[0.875rem] md:text-[1.125rem] leading-relaxed text-[#6B7280]">
+            <p className="mb-4 max-w-[16rem] md:max-w-[20rem] md:mb-6 md:w-80 mx-auto text-center text-[0.875rem] md:text-[1.125rem] leading-relaxed text-[#6B7280]">
               {t('featuresV2.magicBox.description')}
             </p>
 
