@@ -14,7 +14,7 @@ export function LandingFeaturesV2() {
             <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
             <span className='text-[1rem]'>{t('features.badge')}</span>
           </div>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground leading-[3rem] lg:text-[3rem]">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground md:leading-[3rem] leading-[2.25rem] lg:text-[3rem]">
             {t('featuresV2.headingLine1')}
             <br />
             <span className="text-foreground">{t('featuresV2.headingLine2')}</span>
@@ -243,10 +243,10 @@ export function LandingFeaturesV2() {
           {/* Magic Box – pixel-matched, i18n-safe */}
           <div className="rounded-[28px] bg-[#FF6D230D] p-4 md:p-6 shadow-[0_18px_40px_rgba(0,0,0,0.03)] overflow-hidden">
             {/* Header */}
-            <h3 className="mb-1 text-center text-[1rem] md:text-[1.25rem] md:text-[1.75rem] font-semibold text-[#1F2937]">
+            <h3 className="mb-1 text-center text-[1.25rem] md:text-[1.75rem] font-semibold text-[#1F2937]">
               {t('featuresV2.magicBox.title')}
             </h3>
-            <p className="mb-4 max-w-[14rem] md:max-w-[20rem] md:mb-6 md:w-80 mx-auto text-center text-xs md:text-[0.875rem] md:text-[1.125rem] leading-relaxed text-[#6B7280]">
+            <p className="mb-4 max-w-[14rem] md:max-w-[20rem] md:mb-6 md:w-80 mx-auto text-center text-[0.875rem] md:text-[1.125rem] leading-relaxed text-[#6B7280]">
               {t('featuresV2.magicBox.description')}
             </p>
 
