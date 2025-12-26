@@ -5,6 +5,7 @@ import { EventStatusUpdateEmail } from "~/templates/event-status-update-email";
 import { EventRegistrationRequestEmail } from "~/templates/event-registration-request-email";
 import { EventSubscriptionEmail } from "~/templates/event-subscription-email";
 import { CommunityWaitlistNotification } from "~/templates/community-waitlist-notification";
+import { CommunityJoinNotification } from "~/templates/community-join-notification";
 import { generateICS } from "~/lib/icsManager";
 
 // Utility function to mask sensitive values for logging
@@ -181,6 +182,15 @@ interface CommunityWaitlistNotificationData {
   website?: string | null;
   description?: string | null;
   submittedAt: string;
+}
+
+interface CommunityJoinNotificationData {
+  communityName: string;
+  communitySlug: string;
+  memberName: string;
+  memberEmail: string;
+  ownerEmail: string;
+  joinedAt: string;
 }
 
 interface SubscriptionEmailData {
@@ -642,6 +652,88 @@ export async function sendCommunityWaitlistNotification(
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       recipientEmail,
+      fromEmail: FROM_EMAIL,
+      communityName,
+    });
+    throw error;
+  }
+}
+
+export async function sendCommunityJoinNotification(
+  data: CommunityJoinNotificationData
+) {
+  const {
+    communityName,
+    communitySlug,
+    memberName,
+    memberEmail,
+    ownerEmail,
+    joinedAt,
+  } = data;
+
+  // Runtime validation
+  if (!resend) {
+    const errorMsg =
+      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  const dashboardLink = `${process.env.APP_URL || "https://luhive.com"}/dashboard/${communitySlug}/members`;
+
+  console.log(`📧 Attempting to send community join notification email:`);
+  console.log(`   To: ${ownerEmail}`);
+  console.log(`   From: ${FROM_EMAIL}`);
+  console.log(`   Subject: New member joined ${communityName}!`);
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [ownerEmail],
+      subject: `New member joined ${communityName}!`,
+      react: CommunityJoinNotification({
+        communityName,
+        communitySlug,
+        memberName,
+        memberEmail,
+        joinedAt,
+        dashboardLink,
+      }),
+    });
+
+    if (error) {
+      const errorDetails: Record<string, unknown> = {
+        message: error.message,
+      };
+      if ("name" in error && typeof error.name === "string") {
+        errorDetails.name = error.name;
+      }
+      console.error("❌ Resend API error:", errorDetails);
+      throw new Error(
+        `Failed to send community join notification email: ${error.message}`
+      );
+    }
+
+    console.log(`✅ Community join notification email sent successfully:`, {
+      id: emailData?.id,
+      from: FROM_EMAIL,
+      to: ownerEmail,
+      communityName,
+      memberName,
+    });
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("❌ Error sending community join notification email:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      ownerEmail,
       fromEmail: FROM_EMAIL,
       communityName,
     });

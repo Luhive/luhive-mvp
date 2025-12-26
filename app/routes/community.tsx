@@ -1,6 +1,7 @@
 import type { Route } from "./+types/community";
 import { useLoaderData, Link, useNavigation, useActionData, useRevalidator, useLocation } from "react-router";
-import { createClient } from "~/lib/supabase.server";
+import { createClient, createServiceRoleClient } from "~/lib/supabase.server";
+import { sendCommunityJoinNotification } from "~/lib/email.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router';
 import { useEffect, useState, Suspense, lazy, useRef } from 'react';
@@ -219,6 +220,48 @@ export async function action({ request }: Route.ActionArgs) {
       if (memberError) {
         console.error('Failed to add community member:', memberError);
         return { success: false, error: 'Failed to join community' };
+      }
+
+      // Send email notification to community owner (non-blocking)
+      try {
+        // Fetch community details to get owner ID and community info
+        const { data: community } = await supabase
+          .from('communities')
+          .select('name, slug, created_by')
+          .eq('id', communityId)
+          .single();
+
+        if (community && community.created_by) {
+          // Get joining user's profile
+          const { data: memberProfile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single();
+
+          // Use service role client to get owner's email from auth
+          const serviceClient = createServiceRoleClient();
+          const { data: ownerData } = await serviceClient.auth.admin.getUserById(
+            community.created_by
+          );
+
+          if (ownerData?.user?.email) {
+            // Send notification email (don't await to avoid blocking)
+            sendCommunityJoinNotification({
+              communityName: community.name,
+              communitySlug: community.slug,
+              memberName: memberProfile?.full_name || user.email?.split('@')[0] || 'A new member',
+              memberEmail: user.email || 'unknown',
+              ownerEmail: ownerData.user.email,
+              joinedAt: new Date().toLocaleString(),
+            }).catch((emailError) => {
+              console.error('Failed to send community join notification email:', emailError);
+            });
+          }
+        }
+      } catch (emailError) {
+        // Log but don't fail the join operation
+        console.error('Error sending community join notification:', emailError);
       }
 
       return { success: true, message: 'Successfully joined the community!' };
