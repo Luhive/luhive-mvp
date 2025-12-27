@@ -13,7 +13,7 @@
     "pricing": "Pricing",
     "faqs": "FAQ's",
     "contact": "Contact",
-    "tryForFree": "Try for free"
+    "tryForFree": "Start Your Community"
   },
   "hero": {
     "title": "One Platform",
@@ -152,7 +152,7 @@
     "currency": "USD / month",
     "premiumCommunity": "Premium Community",
     "free": "Free",
-    "bookDemo": "Book a Demo",
+    "bookDemo": "Start Your Community",
     "features": {
       "feature1": "Includes everything in Basic",
       "feature2": "Detailed kitchen & bathroom scrubbing",
@@ -229,12 +229,12 @@
       "titleLine1": "let's talk – book a",
       "titleFree": "free",
       "titleConsultation": "consultation",
-      "button": "Get a demo"
+      "button": "Start Your Community"
     }
   },
   "footerV2": {
     "createCommunity": "Create community",
-    "tryForFree": "Try for free",
+    "tryForFree": "Start Your Community",
     "nav": {
       "about": "About",
       "services": "Services",

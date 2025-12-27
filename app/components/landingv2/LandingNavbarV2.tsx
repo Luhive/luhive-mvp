@@ -175,11 +175,11 @@ export function LandingNavbarV2() {
         scrolled ? 'bg-[#F6F4F1]/95 backdrop-blur-md' : 'bg-[#F6F4F1]'
       }`}
     >
-      <div className="mx-auto flex h-16 w-[90vw] 2xl:w-[90rem] items-center justify-between sm:h-20">
-        <Link to="/" className="flex items-center gap-4 w-[15.5vw]">
+      <div className="mx-auto flex py-[1.25rem] w-[90vw] 2xl:w-[90rem] items-center justify-between">
+        <Link to="/" className="flex items-center gap-4 w-[12.875rem] h-[3.875rem]">
           <img src="/landing/LogoLuhive.svg" alt="Luhive Logo" className="h-[2.25rem] w-[2.25rem]" />
           <span
-            className="text-lg font-bold tracking-tight text-foreground sm:text-xl"
+            className="text-center font-manrope text-[1.5rem] font-bold leading-normal tracking-[-0.045rem]"
             style={{ fontFamily: 'var(--font-nunito), sans-serif' }}
           >
             Luhive
@@ -193,12 +193,12 @@ export function LandingNavbarV2() {
               <a
                 key={item.id}
                 href={item.href}
-                className={`relative flex items-center gap-2 transition-colors ${
+                className={`relative flex px-[0.625rem] py-[0.125rem] justify-center items-center gap-2 self-stretch transition-colors ${
                   isActive ? 'text-foreground' : 'hover:text-foreground'
                 }`}
               >
-                {isActive && <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />}
-                <span>{t(item.labelKey)}</span>
+                {isActive && <span className="w-2 h-2 aspect-square rounded-full bg-[#FF7A1A]" />}
+                <span className='text-[0.875rem] font-medium leadin-[1.3125rem]'>{t(item.labelKey)}</span>
               </a>
             );
           })}
@@ -219,7 +219,7 @@ export function LandingNavbarV2() {
               rel="noopener noreferrer"
               onClick={() => handleCTAClick('Start Your Community - Header V2')}
             >
-              {t('about.startYourCommunity')}
+              {t('navV2.tryForFree')}
             </a>
           </Button>
           {/* Hamburger button for mobile */}

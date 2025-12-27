@@ -16,7 +16,7 @@ export function LandingFAQV2() {
   return (
     <section
       id="faqs"
-      className="bg-[#F6F4F1] py-15"
+      className="bg-[#F6F4F1] py-25 lg:py-38"
     >
       <div className="mx-auto w-[90vw] 2xl:w-[90rem]">
         <div className="mb-10 text-center">
@@ -64,12 +64,15 @@ export function LandingFAQV2() {
         </div>
 
         {/* Bottom CTA */}
-        <div className="mt-16 text-center">
-          <h3 className="flex flex-wrap items-center justify-center gap-3 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            <span className="block w-full">{t('faqV2.cta.titleLine1')}</span>
-            <span className="inline-block">{t('faqV2.cta.titleFree')}</span>
+        <div className="my-25 md:my-36 text-center">
+          {/* Mobile layout: stacked text + button below */}
+          <div className="flex flex-col items-center gap-6 md:hidden">
+            <h3 className="text-4xl font-semibold text-foreground sm:text-4xl">
+              <span className="block">{t('faqV2.cta.titleLine1')}</span>
+              <span>{t('faqV2.cta.titleFree')} {t('faqV2.cta.titleConsultation')}</span>
+            </h3>
             <Button
-              className="inline-flex h-12 items-center gap-3 rounded-full bg-[#FF7A1A] px-8 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
+              className="inline-flex h-13 items-center gap-3 rounded-full bg-[#FF6D23] pl-5 pr-1 text-sm text-white shadow-sm hover:bg-[#ff8e3a]"
               asChild
             >
               <a
@@ -77,9 +80,30 @@ export function LandingFAQV2() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <span>{t('about.startYourCommunity')}</span>
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-sm">
-                  →
+                <span>{t('faqV2.cta.button')}</span>
+                <span className="flex h-11 w-11 text-xl items-center justify-center rounded-full bg-black">
+                  <img src="/landing/LandingRightArrow.svg" alt="Arrow Right" />
+                </span>
+              </a>
+            </Button>
+          </div>
+
+          {/* Desktop layout: inline button */}
+          <h3 className="hidden md:flex flex-wrap items-center justify-center gap-3 text-5xl lg:text-6xl font-semibold text-foreground">
+            <span className="block w-full">{t('faqV2.cta.titleLine1')}</span>
+            <span className="inline-block">{t('faqV2.cta.titleFree')}</span>
+            <Button
+              className="inline-flex h-13 items-center gap-3 rounded-full bg-[#FF6D23] pl-5 pr-1 text-base text-white shadow-sm hover:bg-[#ff8e3a]"
+              asChild
+            >
+              <a
+                href="https://tally.so/r/NpDVoG"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>{t('faqV2.cta.button')}</span>
+                <span className="flex h-11 w-11 text-xl items-center justify-center rounded-full bg-black">
+                  <img src="/landing/LandingRightArrow.svg" alt="Arrow Right" />
                 </span>
               </a>
             </Button>
