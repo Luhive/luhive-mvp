@@ -8,11 +8,7 @@ import { LandingAbout } from '~/components/landing/LandingAbout';
 import { LandingFeatures } from '~/components/landing/LandingFeatures';
 import { LandingContact } from '~/components/landing/LandingContact';
 import { LandingFooter } from '~/components/landing/LandingFooter';
-import {
-  useGoogleAnalytics,
-  useMicrosoftClarity,
-  useTawkTo,
-} from '~/hooks/use-analytics';
+import { useMicrosoftClarity } from '~/hooks/use-analytics';
 import '../lib/i18n';
 import { LandingAboutV2 } from '~/components/landingv2/LandingAboutV2';
 import { LandingPartnersV2 } from '~/components/landingv2/LandingPartnersV2';
@@ -70,9 +66,8 @@ export default function Index() {
   const { i18n } = useTranslation();
 
   // Analytics & Third-party integrations
-  useGoogleAnalytics('G-EM0ZMM2JPL');
-  useMicrosoftClarity('tkds3gt0au');
-  // useTawkTo('6929db60c886de1982f18ed6', '1jb5o1s8c');
+  // Google Analytics is now initialized in root.tsx via react-ga4 SDK
+  //useMicrosoftClarity('tkds3gt0au');
 
   useEffect(() => {
     // Add smooth scroll behavior

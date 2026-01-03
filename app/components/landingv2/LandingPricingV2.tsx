@@ -1,20 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 import { Flame } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
+import { AnalyticsEvents } from '~/lib/analytics';
 
 export function LandingPricingV2() {
   const { t } = useTranslation('landing');
-
-  const handleCTAClick = (label: string) => {
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'click', {
-        event_category: 'CTA',
-        event_label: label,
-      });
-    }
-  };
 
   return (
     <section
@@ -104,7 +95,7 @@ export function LandingPricingV2() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className='text-[0.875rem] font-bold'
-                  onClick={() => handleCTAClick('Start Your Community - Pricing V2')}
+                        onClick={() => AnalyticsEvents.bookDemoClick('Pricing V2')}
                 >
                   {t('pricingV2.bookDemo')}
                 </a>
@@ -170,7 +161,7 @@ export function LandingPricingV2() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className='text-[0.875rem] font-bold'
-                  onClick={() => handleCTAClick('Start Your Community - Pricing V2')}
+                    onClick={() => AnalyticsEvents.bookDemoClick('Pricing V2')}
                 >
                   {t('about.startYourCommunity')}
                   <Flame className="h-4 w-4" />
@@ -200,7 +191,7 @@ export function LandingPricingV2() {
                 href="https://tally.so/r/NpDVoG"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => handleCTAClick('Start Your Community - Pricing CTA V2')}
+                onClick={() => AnalyticsEvents.startCommunityClick('Pricing CTA V2')}
               >
                 {t('about.startYourCommunity')}
               </a>

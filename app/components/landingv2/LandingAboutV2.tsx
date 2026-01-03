@@ -1,21 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
-import { ExternalLink, Globe } from 'lucide-react';
+import { Globe } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
 import { StackedCarousel } from './StackedCarousel';
+import { AnalyticsEvents } from '~/lib/analytics';
 
 export function LandingAboutV2() {
   const { t } = useTranslation('landing');
-
-  const handleCTAClick = (label: string) => {
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'click', {
-        event_category: 'CTA',
-        event_label: label,
-      });
-    }
-  };
 
   return (
     <section
@@ -67,7 +59,7 @@ export function LandingAboutV2() {
                 href="https://tally.so/r/NpDVoG"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => handleCTAClick('Start Your Community - About V2')}
+                onClick={() => AnalyticsEvents.startCommunityClick('About V2')}
             >
                 {t('about.startYourCommunity')}
               </a>
@@ -98,6 +90,7 @@ export function LandingAboutV2() {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-base font-medium text-[#FF6D23] hover:text-[#E55A1A] transition-colors duration-200 group"
+              onClick={() => AnalyticsEvents.discoverHubClick('About V2')}
             >
               <span className='text-md lg:text-lg font-medium underlines'>Discover Hub</span>
               <Globe className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1" />
