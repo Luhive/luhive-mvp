@@ -46,6 +46,7 @@ export default function EventsLayout() {
 	// State for event preview sidebar
 	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 	const [isEventSidebarOpen, setIsEventSidebarOpen] = useState(false);
+	const [eventRegistrationCount, setEventRegistrationCount] = useState<number | undefined>(undefined);
 	
 	// State for instant event navigation overlay (when navigating from sidebar)
 	const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
@@ -116,6 +117,32 @@ export default function EventsLayout() {
 			setPendingEvent(null);
 		}
 	}, [navigation.state]);
+
+	// Fetch registration count when event is selected
+	useEffect(() => {
+		if (!selectedEvent?.id) {
+			setEventRegistrationCount(undefined);
+			return;
+		}
+
+		async function fetchRegistrationCount() {
+			try {
+				const supabase = createClient();
+				const { count } = await supabase
+					.from("event_registrations")
+					.select("*", { count: "exact", head: true })
+					.eq("event_id", selectedEvent.id)
+					.eq("approval_status", "approved");
+				
+				setEventRegistrationCount(count || 0);
+			} catch (error) {
+				console.error("Error fetching registration count:", error);
+				setEventRegistrationCount(undefined);
+			}
+		}
+
+		fetchRegistrationCount();
+	}, [selectedEvent?.id]);
 
 	return (
 		<>
@@ -204,6 +231,7 @@ export default function EventsLayout() {
 					setIsEventSidebarOpen(open);
 					if (!open) {
 						setSelectedEvent(null);
+						setEventRegistrationCount(undefined);
 					}
 				}}
 				onNavigateToEvent={() => {
@@ -211,6 +239,7 @@ export default function EventsLayout() {
 						setPendingEvent(selectedEvent);
 					}
 				}}
+				registrationCount={eventRegistrationCount}
 			/>
 		</>
 	);

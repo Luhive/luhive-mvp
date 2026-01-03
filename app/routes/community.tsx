@@ -1,6 +1,7 @@
 import type { Route } from "./+types/community";
 import { useLoaderData, Link, useNavigation, useActionData, useRevalidator, useLocation } from "react-router";
 import { createClient, createServiceRoleClient } from "~/lib/supabase.server";
+import { createClient as createClientBrowser } from "~/lib/supabase.client";
 import { sendCommunityJoinNotification } from "~/lib/email.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router';
@@ -422,6 +423,7 @@ export default function Community() {
   // State for event preview sidebar
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isEventSidebarOpen, setIsEventSidebarOpen] = useState(false);
+  const [eventRegistrationCount, setEventRegistrationCount] = useState<number | undefined>(undefined);
 
   // State for instant event navigation overlay (when navigating from sidebar)
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
@@ -466,6 +468,34 @@ export default function Community() {
       setPendingEventsPage(false);
     }
   }, [navigation.state]);
+
+  // Fetch registration count when event is selected
+  useEffect(() => {
+    if (!selectedEvent?.id) {
+      setEventRegistrationCount(undefined);
+      return;
+    }
+
+    const eventId = selectedEvent.id;
+
+    async function fetchRegistrationCount() {
+      try {
+        const supabase = createClientBrowser();
+        const { count } = await supabase
+          .from("event_registrations")
+          .select("*", { count: "exact", head: true })
+          .eq("event_id", eventId)
+          .eq("approval_status", "approved");
+        
+        setEventRegistrationCount(count || 0);
+      } catch (error) {
+        console.error("Error fetching registration count:", error);
+        setEventRegistrationCount(undefined);
+      }
+    }
+
+    fetchRegistrationCount();
+  }, [selectedEvent?.id]);
 
   return (
     <>
@@ -890,6 +920,7 @@ export default function Community() {
           setIsEventSidebarOpen(open);
           if (!open) {
             setSelectedEvent(null);
+            setEventRegistrationCount(undefined);
           }
         }}
         onNavigateToEvent={() => {
@@ -897,6 +928,7 @@ export default function Community() {
             setPendingEvent(selectedEvent);
           }
         }}
+        registrationCount={eventRegistrationCount}
       />
 
       {/* Sticky Mobile Join Button - Only show if not owner and not member */}

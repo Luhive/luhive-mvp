@@ -354,3 +354,26 @@ select:-webkit-autofill:active {
   -webkit-text-fill-color: oklch(0.985 0 0) !important;
   caret-color: oklch(0.985 0 0) !important;
 }
+
+
+/* scrollbar styles */
+.event-sidebar-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  background: white;
+}
+
+.event-sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: #ff8040;
+  border-radius: 2px;
+}
+
+.event-sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ff8040;
+}
+
+/* Custom scrollbar for Firefox */
+.event-sidebar-scrollbar{
+  scrollbar-width: none;
+  scrollbar-color: #ff8040 white;
+}
+/* 

@@ -1,8 +1,8 @@
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { Calendar, MapPin, ChevronRight, Copy, ExternalLink, Users } from "lucide-react";
+import { Calendar, MapPin, Copy, ExternalLink, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -16,6 +16,7 @@ import type { Database } from "~/models/database.types";
 import type { ExternalPlatform } from "~/models/event.types";
 import { getExternalPlatformName, getExternalPlatformIcon } from "~/lib/utils/external-platform";
 import { Badge } from "~/components/ui/badge";
+import AttendersAvatars from "./attenders-avatars";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -29,6 +30,7 @@ interface EventPreviewSidebarProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onNavigateToEvent?: () => void;
+  registrationCount?: number;
 }
 
 export function EventPreviewSidebar({
@@ -37,6 +39,7 @@ export function EventPreviewSidebar({
   open,
   onOpenChange,
   onNavigateToEvent,
+  registrationCount,
 }: EventPreviewSidebarProps) {
   const navigate = useNavigate();
 
@@ -82,30 +85,8 @@ export function EventPreviewSidebar({
         className="w-full sm:max-w-lg p-0 flex flex-col overflow-hidden [&>button]:hidden"
       >
         {/* Header with action buttons */}
-        <SheetHeader className="flex-shrink-0 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <SheetHeader className="shrink-0 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-              className="h-8 w-8 shrink-0"
-            >
-              <ChevronRight className="h-4 w-4" />
-              <span className="sr-only">Close sidebar</span>
-            </Button>
-            
-            <div className="flex-1" />
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyLink}
-              className="gap-1.5"
-            >
-              <Copy className="h-3.5 w-3.5" />
-              Copy Link
-            </Button>
-            
             <Button
               variant="outline"
               size="sm"
@@ -115,155 +96,198 @@ export function EventPreviewSidebar({
               Event Page
               <ExternalLink className="h-3.5 w-3.5" />
             </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyLink}
+              className="gap-1.5"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              Copy
+            </Button>
           </div>
           <SheetTitle className="sr-only">{event.title}</SheetTitle>
         </SheetHeader>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Event Cover */}
-          <div className="relative aspect-square w-full bg-gradient-to-br from-primary/5 via-primary/10 to-background overflow-hidden">
-            {event.cover_url ? (
-              <img
-                src={event.cover_url}
-                alt={event.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-                <Calendar className="h-16 w-16 text-primary/30" />
-              </div>
-            )}
-            
-            {/* Past Event Overlay */}
-            {isPastEvent && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                <Badge
-                  variant="outline"
-                  className="bg-black/60 text-white border-white/20"
-                >
-                  Past Event
-                </Badge>
-              </div>
-            )}
+        <div className="flex-1 overflow-y-auto event-sidebar-scrollbar">
+          {/* Event Cover - 300x300px */}
+          <div className="p-4 pb-0">
+            <div className="relative h-[300px] w-[300px] m-auto rounded-xl overflow-hidden bg-gradient-to-br from-primary/5 via-primary/10 to-background">
+              {event.cover_url ? (
+                <img
+                  src={event.cover_url}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                  <Calendar className="h-16 w-16 text-primary/30" />
+                </div>
+              )}
+              
+              {/* Past Event Overlay */}
+              {isPastEvent && (
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                  <Badge
+                    variant="outline"
+                    className="bg-black/60 text-white border-white/20"
+                  >
+                    Past Event
+                  </Badge>
+                </div>
+              )}
 
-            {/* External badge overlay on cover */}
-            {isExternalEvent && (
-              <div className="absolute bottom-3 right-3">
-                <Badge
-                  variant="outline"
-                  className="bg-background/90 border-primary/50 text-primary"
-                >
-                  {PlatformIcon ? (
-                    <PlatformIcon className="w-3 h-3 mr-1" />
-                  ) : (
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                  )}
-                  {platform ? getExternalPlatformName(platform) : "External"}
-                </Badge>
-              </div>
-            )}
+              {/* External badge overlay on cover */}
+              {isExternalEvent && (
+                <div className="absolute bottom-3 right-3">
+                  <Badge
+                    variant="outline"
+                    className="bg-background/90 border-primary/50 text-primary"
+                  >
+                    {PlatformIcon ? (
+                      <PlatformIcon className="w-3 h-3 mr-1" />
+                    ) : (
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                    )}
+                    {platform ? getExternalPlatformName(platform) : "External"}
+                  </Badge>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Event Details */}
-          <div className="p-6 space-y-6">
+          <div className="p-4 space-y-4">
             {/* Title */}
-            <h2 className="text-2xl font-bold leading-tight">
+            <h2 className="text-xl font-bold leading-tight">
               {event.title}
             </h2>
 
-            {/* Host Info */}
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
-              <Avatar className="h-10 w-10">
-                <AvatarImage
-                  src={community.logo_url || ""}
-                  alt={community.name}
-                />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                  {community.name?.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">Hosted by</p>
-                <p className="font-semibold text-sm truncate">
-                  {community.name}
+            {/* Date & Location - Side by side */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Date Card */}
+              <div className="rounded-lg bg-card p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center justify-center h-6 w-6 rounded bg-orange-100">
+                    <Calendar className="h-4 w-4 text-orange-700" />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">Date</span>
+                </div>
+                <p className="text-sm font-semibold">
+                  {eventDate.format("MMM D, YYYY")}
                 </p>
-              </div>
-            </div>
-
-            {/* Date & Time */}
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <Calendar className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-semibold text-base">
-                  {eventDate.format("dddd, MMMM D, YYYY")}
-                </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {eventDate.format("h:mm A")}
                   {eventEndDate && ` - ${eventEndDate.format("h:mm A")}`}
-                  {" "}{event.timezone}
                 </p>
+              </div>
+
+              {/* Location Card */}
+              <div className="rounded-lg bg-card p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center justify-center h-6 w-6 rounded bg-orange-100">
+                    <MapPin className="h-4 w-4 text-orange-700" />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">Location</span>
+                </div>
+                {event.location_address ? (
+                  <>
+                    <p className="text-sm font-semibold truncate">
+                      {event.location_address.split(",")[0]}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {event.location_address.split(",").slice(1).join(",").trim() || "View on map"}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold">
+                      {event.event_type === "online" ? "Online Event" : "TBA"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {event.event_type === "online" ? "Virtual attendance" : "Location pending"}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Location */}
-            {event.location_address && (
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <MapPin className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-semibold text-base">
-                    {event.location_address.split(",")[0]}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {event.location_address.split(",").slice(1).join(",").trim()}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Capacity (for native events) */}
-            {!isExternalEvent && event.capacity && (
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-semibold text-base">
-                    {event.capacity} spots available
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Limited capacity event
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Description preview */}
+            {/* Description */}
             {event.description && (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-sm text-muted-foreground">About</h3>
-                <p className="text-sm text-muted-foreground line-clamp-4 whitespace-pre-wrap">
+              <div className="rounded-lg bg-card p-3">
+                <h3 className="text-xs text-muted-foreground font-medium mb-2">About</h3>
+                <p className="text-sm text-foreground line-clamp-4 whitespace-pre-wrap">
                   {event.description}
                 </p>
               </div>
             )}
+
+            {/* Hosted by & Attenders - Side by side */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Hosted by */}
+              <div className="rounded-lg bg-card p-3">
+                <span className="text-xs text-muted-foreground font-medium block mb-2">Hosted by</span>
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage
+                      src={community.logo_url || ""}
+                      alt={community.name}
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                      {community.name?.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">
+                      {community.name}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attenders */}
+              <div className="rounded-lg bg-card p-3">
+                <span className="text-xs text-muted-foreground font-medium block mb-2">Attending</span>
+                <AttendersAvatars 
+                  eventId={event.id} 
+                  maxVisible={4} 
+                  isExternalEvent={isExternalEvent}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Footer CTA */}
-        <div className="flex-shrink-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <Button
-            onClick={handleNavigateToEvent}
-            className="w-full"
-            size="lg"
-          >
-            View Full Event Details
-            <ExternalLink className="h-4 w-4 ml-2" />
-          </Button>
+        {/* Footer CTA with Free text */}
+        <div className="shrink-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex items-center justify-between gap-4">
+            <div className="shrink-0">
+              <p className="text-lg font-bold">Free</p>
+            </div>
+            <Button
+              onClick={handleNavigateToEvent}
+              className="w-[20rem]"
+              size="lg"
+            >
+              {isPastEvent ? (
+                <>
+                  View Event Details
+                  <ExternalLink className="h-4 w-4 ml-2" />
+                </>
+              ) : isExternalEvent ? (
+                <>
+                  <Bell className="h-4 w-4 mr-2" />
+                  Subscribe for Updates
+                </>
+              ) : (
+                <>
+                  Register
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
