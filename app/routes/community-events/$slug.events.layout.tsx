@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { Skeleton } from '~/components/ui/skeleton';
 import { ArrowLeft, X } from 'lucide-react';
 import { EventPageSkeleton } from '~/components/events/event-page-skeleton';
+import { EventPreviewSidebar } from '~/components/events/event-preview-sidebar';
 
 type Community = Database['public']['Tables']['communities']['Row'];
 type Event = Database['public']['Tables']['events']['Row'];
@@ -42,7 +43,11 @@ export default function EventsLayout() {
 	const location = useLocation();
 	const navigation = useNavigation();
 	
-	// State for instant event navigation overlay
+	// State for event preview sidebar
+	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+	const [isEventSidebarOpen, setIsEventSidebarOpen] = useState(false);
+	
+	// State for instant event navigation overlay (when navigating from sidebar)
 	const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
 	
 	// Priority 1: Get community from navigation state (instant when navigating from community page)
@@ -180,7 +185,33 @@ export default function EventsLayout() {
 			</div>
 
 			{/* Content Area */}
-			<Outlet context={{ community, loading, slug, onEventClick: setPendingEvent }} />
+			<Outlet context={{ 
+				community, 
+				loading, 
+				slug, 
+				onEventClick: (event: Event) => {
+					setSelectedEvent(event);
+					setIsEventSidebarOpen(true);
+				}
+			}} />
+
+			{/* Event Preview Sidebar */}
+			<EventPreviewSidebar
+				event={selectedEvent}
+				community={community}
+				open={isEventSidebarOpen}
+				onOpenChange={(open) => {
+					setIsEventSidebarOpen(open);
+					if (!open) {
+						setSelectedEvent(null);
+					}
+				}}
+				onNavigateToEvent={() => {
+					if (selectedEvent) {
+						setPendingEvent(selectedEvent);
+					}
+				}}
+			/>
 		</>
 	);
 }
