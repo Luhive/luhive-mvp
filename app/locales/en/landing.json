@@ -146,18 +146,19 @@
   "pricingV2": {
     "badge": "Pricing",
     "title": "Choose your plan",
-    "ribbon": "Last 20 communities!",
+    "ribbon": "Last 15 founding communities!",
     "planName": "Deep Clean",
     "price": "39.99",
     "currency": "USD / month",
     "premiumCommunity": "Premium Community",
     "free": "Free",
-    "bookDemo": "Start Your Community",
+    "bookDemo": "Claim Your Founding Spot",
     "features": {
-      "feature1": "Includes everything in Basic",
-      "feature2": "Detailed kitchen & bathroom scrubbing",
-      "feature3": "Inside windows & mirrors",
-      "feature4": "Baseboards, corners, and high surfaces"
+      "feature1": "Full platform access",
+      "feature2": "All integrations & AI features",
+      "feature3": "Priority support & feature requests",
+      "feature4": "Grandfathered pricing when we launch",
+      "feature5": "Shape the product roadmap"
     },
     "cta": {
       "title": "Create your own community",
