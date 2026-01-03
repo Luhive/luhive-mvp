@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { Calendar, MapPin, Copy, ExternalLink, Bell } from "lucide-react";
+import { Calendar, MapPin, Copy, ExternalLink, Bell, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -88,6 +88,18 @@ export function EventPreviewSidebar({
         <SheetHeader className="shrink-0 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center gap-2">
             <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8"
+            >
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <span className="sr-only">Close sidebar</span>
+            </Button>
+            
+            <div className="flex-1" />
+            
+            <Button
               variant="outline"
               size="sm"
               onClick={handleNavigateToEvent}
@@ -170,9 +182,7 @@ export function EventPreviewSidebar({
               {/* Date Card */}
               <div className="rounded-lg bg-card p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="flex items-center justify-center h-6 w-6 rounded bg-orange-100">
-                    <Calendar className="h-4 w-4 text-orange-700" />
-                  </div>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground font-medium">Date</span>
                 </div>
                 <p className="text-sm font-semibold">
@@ -187,9 +197,7 @@ export function EventPreviewSidebar({
               {/* Location Card */}
               <div className="rounded-lg bg-card p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="flex items-center justify-center h-6 w-6 rounded bg-orange-100">
-                    <MapPin className="h-4 w-4 text-orange-700" />
-                  </div>
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground font-medium">Location</span>
                 </div>
                 {event.location_address ? (
