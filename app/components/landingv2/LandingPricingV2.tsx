@@ -1,20 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 import { Flame } from 'lucide-react';
 
 import { Button } from '~/components/ui/button';
+import { AnalyticsEvents } from '~/lib/analytics';
 
 export function LandingPricingV2() {
   const { t } = useTranslation('landing');
-
-  const handleCTAClick = (label: string) => {
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'click', {
-        event_category: 'CTA',
-        event_label: label,
-      });
-    }
-  };
 
   return (
     <section
@@ -35,8 +26,21 @@ export function LandingPricingV2() {
 
         {/* Main pricing card */}
         <div className="relative md:w-[42.1875rem] py-[2.1875rem] mx-auto rounded-[32px] bg-white shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-          <div className="absolute -top-[1.6875rem] left-0 md:left-auto md:right-8 inline-flex items-center -rotate-[0.969deg] rounded-[3.75rem] bg-[#FF7A1A] h-[3.13413rem] p-[0.25rem] px-[1.25rem] text-[1rem] font-semibold text-white shadow-sm">
-            {t('pricingV2.ribbon')}
+          <div className="absolute -top-[1.6875rem] left-0 md:left-auto md:right-8 inline-flex items-center -rotate-[0.969deg] rounded-[3.75rem] bg-[#FF7A1A] h-[3.13413rem] p-[0.25rem] px-[1.25rem] text-[1rem] font-semibold text-white shadow-sm overflow-hidden">
+            <span className="relative z-10">{t('pricingV2.ribbon')}</span>
+            <span
+              className="absolute inset-0 z-0"
+              style={{
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                animation: 'shimmer 2.5s infinite',
+              }}
+            />
+            <style>{`
+              @keyframes shimmer {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+              }
+            `}</style>
           </div>
 
           
@@ -91,7 +95,7 @@ export function LandingPricingV2() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className='text-[0.875rem] font-bold'
-                  onClick={() => handleCTAClick('Start Your Community - Pricing V2')}
+                        onClick={() => AnalyticsEvents.bookDemoClick('Pricing V2')}
                 >
                   {t('pricingV2.bookDemo')}
                 </a>
@@ -134,6 +138,14 @@ export function LandingPricingV2() {
                   />
                   <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature4')}</span>
                 </li>
+                  <li className="flex items-start gap-2">
+                    <img
+                      src="/landing/confirm-icon.png"
+                      alt=""
+                      className="mt-1 h-3 w-3 object-contain"
+                    />
+                    <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature5')}</span>
+                  </li>
               </ul>
             </div>
           </div>
@@ -149,7 +161,7 @@ export function LandingPricingV2() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className='text-[0.875rem] font-bold'
-                  onClick={() => handleCTAClick('Start Your Community - Pricing V2')}
+                    onClick={() => AnalyticsEvents.bookDemoClick('Pricing V2')}
                 >
                   {t('about.startYourCommunity')}
                   <Flame className="h-4 w-4" />
@@ -179,7 +191,7 @@ export function LandingPricingV2() {
                 href="https://tally.so/r/NpDVoG"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => handleCTAClick('Start Your Community - Pricing CTA V2')}
+                onClick={() => AnalyticsEvents.startCommunityClick('Pricing CTA V2')}
               >
                 {t('about.startYourCommunity')}
               </a>

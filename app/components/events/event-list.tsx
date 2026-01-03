@@ -5,7 +5,7 @@ import type { Database } from '~/models/database.types';
 import type { ExternalPlatform } from '~/models/event.types';
 import { Badge } from '~/components/ui/badge';
 import { Calendar, MapPin, Users, CalendarX, ExternalLink } from 'lucide-react';
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -103,86 +103,134 @@ function EventCard({ event, communitySlug, onEventClick }: {
   const platform = event.external_platform as ExternalPlatform | null;
   const PlatformIcon = platform ? getExternalPlatformIcon(platform) : null;
 
+  // If onEventClick is provided, render as a button to prevent navigation
+  // and let the parent handle the click (e.g., open sidebar)
+  if (onEventClick) {
+    return (
+      <button
+        type="button"
+        className="block w-full text-left p-4 rounded-lg border bg-card hover:border-accent/50 hover:shadow-md hover:shadow-accent/20 active:shadow-none transition-all duration-400 group cursor-pointer"
+        onClick={() => onEventClick(event)}
+      >
+        <EventCardContent 
+          event={event} 
+          eventDate={eventDate} 
+          eventEndDate={eventEndDate}
+          isExternalEvent={isExternalEvent}
+          platform={platform}
+          PlatformIcon={PlatformIcon}
+        />
+      </button>
+    );
+  }
+
   return (
     <Link
 			to={`/c/${communitySlug}/events/${event.id}`}
 			state={{ event }}
 			className="block p-4 rounded-lg border bg-card hover:border-accent/50 hover:shadow-md hover:shadow-accent/20 active:shadow-none transition-all duration-400 group"
-			onClick={() => onEventClick?.(event)}
 		>
-      <div className="flex gap-4">
-        {/* Event Cover - Small Square */}
-        <div className="relative aspect-square w-20 h-20 flex-shrink-0 overflow-hidden rounded-lg border bg-gradient-to-br from-primary/5 via-primary/10 to-background">
-          {event.cover_url ? (
-            <img src={event.cover_url} alt={event.title} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-              <Calendar className="h-8 w-8 text-primary/30" />
-            </div>
-          )}
-          {/* External badge overlay on cover */}
-          {isExternalEvent && (
-            <div className="absolute bottom-1 right-1">
-              <Badge
-                variant="outline"
-                className="h-5 px-1 text-[10px] bg-primary/10 border-primary/50 text-primary"
-              >
-                {PlatformIcon ? (
-                  <PlatformIcon className="w-3 h-3 text-primary" />
-                ) : (
-                  <ExternalLink className="w-3 h-3" />
-                )}
-              </Badge>
-            </div>
-          )}
+      <EventCardContent 
+        event={event} 
+        eventDate={eventDate} 
+        eventEndDate={eventEndDate}
+        isExternalEvent={isExternalEvent}
+        platform={platform}
+        PlatformIcon={PlatformIcon}
+      />
+    </Link>
+  );
+}
+
+// Extracted content component to avoid duplication
+function EventCardContent({ 
+  event, 
+  eventDate, 
+  eventEndDate,
+  isExternalEvent,
+  platform,
+  PlatformIcon,
+}: { 
+  event: Event;
+  eventDate: Dayjs;
+  eventEndDate: Dayjs | null;
+  isExternalEvent: boolean;
+  platform: ExternalPlatform | null;
+  PlatformIcon: React.ComponentType<{ className?: string }> | null;
+}) {
+  return (
+    <div className="flex gap-4">
+      {/* Event Cover - Small Square */}
+      <div className="relative aspect-square w-20 h-20 flex-shrink-0 overflow-hidden rounded-lg border bg-gradient-to-br from-primary/5 via-primary/10 to-background">
+        {event.cover_url ? (
+          <img src={event.cover_url} alt={event.title} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+            <Calendar className="h-8 w-8 text-primary/30" />
+          </div>
+        )}
+        {/* External badge overlay on cover */}
+        {isExternalEvent && (
+          <div className="absolute bottom-1 right-1">
+            <Badge
+              variant="outline"
+              className="h-5 px-1 text-[10px] bg-primary/10 border-primary/50 text-primary"
+            >
+              {PlatformIcon ? (
+                <PlatformIcon className="w-3 h-3 text-primary" />
+              ) : (
+                <ExternalLink className="w-3 h-3" />
+              )}
+            </Badge>
+          </div>
+        )}
+      </div>
+
+      {/* Event Details */}
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-foreground text-sm transition-colors truncate group-hover:text-primary">
+            {event.title}
+          </h3>
         </div>
 
-        {/* Event Details */}
-        <div className="flex-1 min-w-0 space-y-2">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-foreground text-sm transition-colors truncate group-hover:text-primary">
-              {event.title}
-            </h3>
-          </div>
+        {/* Date & Time */}
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate">
+            {eventDate.format('MMM D, YYYY')} • {eventDate.format('h:mm A')}
+            {eventEndDate && ` - ${eventEndDate.format('h:mm A')}`}
+          </span>
+        </div>
 
-          {/* Date & Time */}
+        {/* Location */}
+        {event.location_address && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="truncate">
-              {eventDate.format('MMM D, YYYY')} • {eventDate.format('h:mm A')}
-              {eventEndDate && ` - ${eventEndDate.format('h:mm A')}`}
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="truncate">{event.location_address.split(',')[0]}</span>
+          </div>
+        )}
+
+        {/* Capacity / External Registration Info */}
+        {isExternalEvent ? (
+          <div className="flex items-center gap-1.5 text-xs text-primary">
+            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+            <span>
+              {platform
+                ? `Register on ${getExternalPlatformName(platform)}`
+                : 'External Registration'}
             </span>
           </div>
-
-          {/* Location */}
-          {event.location_address && (
+        ) : (
+          event.capacity && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate">{event.location_address.split(',')[0]}</span>
+              <Users className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>{event.capacity} spots</span>
             </div>
-          )}
-
-          {/* Capacity / External Registration Info */}
-          {isExternalEvent ? (
-            <div className="flex items-center gap-1.5 text-xs text-primary">
-              <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
-              <span>
-                {platform
-                  ? `Register on ${getExternalPlatformName(platform)}`
-                  : 'External Registration'}
-              </span>
-            </div>
-          ) : (
-            event.capacity && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Users className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>{event.capacity} spots</span>
-              </div>
-              )
-          )}
-        </div>
+            )
+        )}
       </div>
-    </Link>
+    </div>
   );
 }
 

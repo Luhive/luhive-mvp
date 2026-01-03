@@ -6,6 +6,7 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { LanguageSwitcher } from '../landing/LanguageSwitcher';
 import { createClient } from '~/lib/supabase.client';
+import { AnalyticsEvents } from '~/lib/analytics';
 
 interface UserData {
   id: string;
@@ -125,15 +126,6 @@ export function LandingNavbarV2() {
     checkAuth();
   }, []);
 
-  const handleCTAClick = (label: string) => {
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'click', {
-        event_category: 'CTA',
-        event_label: label,
-      });
-    }
-  };
-
   const navItems: Array<{
     id: 'about' | 'features' | 'pricing' | 'faqs' | 'contact';
     href: string;
@@ -217,7 +209,7 @@ export function LandingNavbarV2() {
               href="https://tally.so/r/NpDVoG"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => handleCTAClick('Start Your Community - Header V2')}
+              onClick={() => AnalyticsEvents.startCommunityClick('Header V2')}
             >
               {t('navV2.tryForFree')}
             </a>
@@ -303,7 +295,7 @@ export function LandingNavbarV2() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => {
-                    handleCTAClick('Start Your Community - Mobile Menu V2');
+                    AnalyticsEvents.startCommunityClick('Mobile Menu V2');
                     setIsMobileMenuOpen(false);
                   }}
                 >

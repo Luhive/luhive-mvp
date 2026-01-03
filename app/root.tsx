@@ -5,9 +5,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
+import { useEffect } from "react";
 
 import * as Sentry from "@sentry/react-router";
+import { initGA, trackPageView } from "~/lib/analytics";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -33,6 +36,17 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+
+  // Initialize Google Analytics on mount
+  useEffect(() => {
+    initGA();
+  }, []);
+
+  // Track page views on route changes
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
 
   return (
     <html lang="en">

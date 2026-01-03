@@ -1,6 +1,7 @@
 import type { Route } from "./+types/community";
 import { useLoaderData, Link, useNavigation, useActionData, useRevalidator, useLocation } from "react-router";
 import { createClient, createServiceRoleClient } from "~/lib/supabase.server";
+import { createClient as createClientBrowser } from "~/lib/supabase.client";
 import { sendCommunityJoinNotification } from "~/lib/email.server";
 import type { Database } from "~/models/database.types";
 import { useSubmit } from 'react-router';
@@ -46,6 +47,7 @@ import { EventListSkeleton } from "~/components/events/event-list";
 import { CommunityPageSkeleton } from "~/components/community-page-skeleton";
 import { EventPageSkeleton } from "~/components/events/event-page-skeleton";
 import { EventsListPageSkeleton } from "~/components/events/events-list-page-skeleton";
+import { EventPreviewSidebar } from "~/components/events/event-preview-sidebar";
 import { useIsMobile } from "~/hooks/use-mobile";
 
 type Event = Database['public']['Tables']['events']['Row'];
@@ -418,7 +420,12 @@ export default function Community() {
 
   const [showStickyButton, setShowStickyButton] = useState(!isMember && !isOwner);
 
-  // State for instant event navigation overlay
+  // State for event preview sidebar
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isEventSidebarOpen, setIsEventSidebarOpen] = useState(false);
+  const [eventRegistrationCount, setEventRegistrationCount] = useState<number | undefined>(undefined);
+
+  // State for instant event navigation overlay (when navigating from sidebar)
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
 
   // State for instant events list page navigation
@@ -461,6 +468,34 @@ export default function Community() {
       setPendingEventsPage(false);
     }
   }, [navigation.state]);
+
+  // Fetch registration count when event is selected
+  useEffect(() => {
+    if (!selectedEvent?.id) {
+      setEventRegistrationCount(undefined);
+      return;
+    }
+
+    const eventId = selectedEvent.id;
+
+    async function fetchRegistrationCount() {
+      try {
+        const supabase = createClientBrowser();
+        const { count } = await supabase
+          .from("event_registrations")
+          .select("*", { count: "exact", head: true })
+          .eq("event_id", eventId)
+          .eq("approval_status", "approved");
+        
+        setEventRegistrationCount(count || 0);
+      } catch (error) {
+        console.error("Error fetching registration count:", error);
+        setEventRegistrationCount(undefined);
+      }
+    }
+
+    fetchRegistrationCount();
+  }, [selectedEvent?.id]);
 
   return (
     <>
@@ -768,7 +803,10 @@ export default function Community() {
                       communityId={community.id}
                       communitySlug={community.slug}
                       limit={3}
-                      onEventClick={(event) => setPendingEvent(event)}
+                      onEventClick={(event) => {
+                        setSelectedEvent(event);
+                        setIsEventSidebarOpen(true);
+                      }}
                       onEventsLoaded={(events) => setLoadedEvents(events)}
                     />
                   </Suspense>
@@ -872,6 +910,26 @@ export default function Community() {
 
         </div>
       </main>
+
+      {/* Event Preview Sidebar */}
+      <EventPreviewSidebar
+        event={selectedEvent}
+        community={community}
+        open={isEventSidebarOpen}
+        onOpenChange={(open) => {
+          setIsEventSidebarOpen(open);
+          if (!open) {
+            setSelectedEvent(null);
+            setEventRegistrationCount(undefined);
+          }
+        }}
+        onNavigateToEvent={() => {
+          if (selectedEvent) {
+            setPendingEvent(selectedEvent);
+          }
+        }}
+        registrationCount={eventRegistrationCount}
+      />
 
       {/* Sticky Mobile Join Button - Only show if not owner and not member */}
       {isMobile && community && showStickyButton && (

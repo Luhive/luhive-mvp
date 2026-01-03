@@ -1,8 +1,7 @@
-import { ExternalLink, Globe } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 
-import { Button } from '~/components/ui/button';
+import { AnalyticsEvents } from '~/lib/analytics';
 
 const SOCIAL_LINKS = [
   {
@@ -49,6 +48,7 @@ export function LandingFooterV2() {
                 rel="noopener noreferrer"
                 className="flex h-12 w-12 items-center justify-center rounded-xl "
                 aria-label={social.label}
+                onClick={() => AnalyticsEvents.socialLinkClick(social.label)}
               >
                 <img
                   src={social.icon}
@@ -66,6 +66,7 @@ export function LandingFooterV2() {
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-base font-medium text-[#FF6D23] hover:text-[#E55A1A] transition-colors duration-200 group"
+              onClick={() => AnalyticsEvents.discoverHubClick('Footer V2')}
             >
               <span className='text-md lg:text-lg font-medium underlines'>Discover Hub</span>
               <Globe className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1" />
