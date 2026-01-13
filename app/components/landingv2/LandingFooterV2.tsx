@@ -19,14 +19,20 @@ const SOCIAL_LINKS = [
   {
     id: 'telegram',
     icon: '/landing/Telegram.svg',
-    href: 'https://t.me/luhive',
+    href: 'https://t.me/Luhive_bot',
     label: 'Telegram',
   },
   {
     id: 'instagram',
     icon: '/landing/Instagram.svg',
-    href: 'https://instagram.com/luhive',
+    href: 'https://www.instagram.com/luhiv.e/',
     label: 'Instagram',
+  },
+  {
+    id: 'tiktok',
+    icon: '/landing/tiktok.svg',
+    href: 'https://www.tiktok.com/@lu.hive',
+    label: 'TikTok',
   },
 ];
 
