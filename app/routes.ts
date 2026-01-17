@@ -53,6 +53,9 @@ export default [
       "dashboard/:slug/events/create-external",
       "routes/dashboard/$slug.event.create-external.tsx"
     ),
+    // Google Forms routes
+    route("dashboard/:slug/forms", "routes/dashboard/$slug.forms.tsx"),
+    route("dashboard/:slug/forms/:formId", "routes/dashboard/$slug.forms.$formId.tsx"),
   ]),
 
   route("logout", "routes/logout.tsx"),
@@ -72,4 +75,13 @@ export default [
     "routes/api.update-registration-status.tsx"
   ),
   route("api/email-debug", "routes/api.email-debug.tsx"),
+
+  // Google Forms API routes
+  route("api/google-forms/auth", "routes/api.google-forms.auth.tsx"),
+  route("api/google-forms/callback", "routes/api.google-forms.callback.tsx"),
+  route("api/google-forms/status", "routes/api.google-forms.status.tsx"),
+  route("api/google-forms/list", "routes/api.google-forms.list.tsx"),
+  route("api/google-forms/disconnect", "routes/api.google-forms.disconnect.tsx"),
+  route("api/google-forms/:formId", "routes/api.google-forms.$formId.tsx"),
+  route("api/google-forms/:formId/responses", "routes/api.google-forms.$formId.responses.tsx"),
 ] satisfies RouteConfig;

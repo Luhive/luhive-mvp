@@ -72,7 +72,9 @@ const AttendersAvatars = ({ eventId, maxVisible = 3, isExternalEvent = false }: 
   }
 
   if (attendees.length === 0) {
-    return null
+    return (
+      <p className="text-sm text-muted-foreground">no attenders</p>
+    )
   }
 
   const visibleAttendees = attendees.slice(0, maxVisible)

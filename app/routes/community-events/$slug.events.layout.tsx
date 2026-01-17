@@ -240,6 +240,9 @@ export default function EventsLayout() {
 					}
 				}}
 				registrationCount={eventRegistrationCount}
+				user={null} // User info not available in this layout
+				userProfile={null}
+				isUserRegistered={false}
 			/>
 		</>
 	);
