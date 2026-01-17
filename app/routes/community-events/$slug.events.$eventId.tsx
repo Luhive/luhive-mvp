@@ -1835,12 +1835,9 @@ function EventPageContent({
 									</div>
 
 
-									<div className="space-y-2">
-										<span className="text-xs text-muted-foreground font-medium block">Attending</span>
-										<Suspense fallback={<AttendersAvatarsSkeleton />}>
-											<AttendersAvatars eventId={event.id} maxVisible={3} isExternalEvent={isExternalEvent} />
-										</Suspense>
-									</div>
+									<Suspense fallback={<AttendersAvatarsSkeleton />}>
+									<AttendersAvatars eventId={event.id} maxVisible={3} isExternalEvent={isExternalEvent} />
+									</Suspense>
 
 
 								{/* Capacity Indicator (only for native events) */}
@@ -1925,85 +1922,52 @@ function EventPageContent({
 						{/* Right Column: Title + Content */}
 						<div className="contents lg:block lg:space-y-6">
 							{/* Event Title - Mobile Order 2 */}
-							<div className="order-2 py-4 md:py-6">
-								<h1 className="text-3xl md:text-4xl font-bold leading-tight text-center">
+							<div className="order-2">
+								<h1 className="text-3xl md:text-4xl font-bold leading-tight">
 									{event.title}
 								</h1>
 							</div>
 
 							{/* Main Content - Mobile Order 4 */}
 							<div className="order-4 space-y-6">
-								{/* Date & Location - Side by Side Layout (First Image Design) */}
-								<div className="rounded-lg bg-card p-4 border">
-									<div className="flex items-start gap-6">
-										{/* Date Section - Left Side */}
-										<div className="flex items-start gap-3 flex-1">
-											{/* Calendar Block - Square/Rectangular Gray Block */}
-											<div className="bg-muted/60 rounded-sm p-2.5 min-w-[56px] h-[56px] flex flex-col items-center justify-center text-center border border-muted-foreground/20">
-												<p className="text-[10px] font-medium text-muted-foreground uppercase leading-tight mb-0.5">
-													{eventDate.format("MMM")}
-												</p>
-												<p className="text-2xl font-bold text-foreground leading-none">
-													{eventDate.format("D")}
-												</p>
-											</div>
-											{/* Date and Time Text */}
-											<div className="flex flex-col gap-1 pt-0.5">
-												<p className="text-base font-bold text-foreground leading-tight">
-													{eventDate.format("dddd, MMMM D")}
-												</p>
-												<p className="text-sm text-muted-foreground leading-tight">
-													{eventDate.format("h:mm A")}
-													{eventEndDate &&
-														` - ${eventEndDate.format("h:mm A")}`}{" "}
-													{event.timezone}
-												</p>
-											</div>
-										</div>
-
-										{/* Location Section - Right Side */}
-										{event.location_address && (
-											<div className="flex items-start gap-3 flex-1">
-												{/* Location Pin Icon - Circular Outlined */}
-												<div className="mt-0.5 flex-shrink-0">
-													<div className="h-8 w-8 rounded-full border-2 border-muted-foreground/40 bg-background flex items-center justify-center">
-														<MapPin className="h-4 w-4 text-muted-foreground" />
-													</div>
-												</div>
-												{/* Location Text */}
-												<div className="flex flex-col gap-1 pt-0.5">
-													{isUserRegistered || isOwnerOrAdmin ? (
-														<>
-															<p className="text-base font-bold text-foreground leading-tight">
-																{event.location_address.split(",")[0]}
-															</p>
-															<p className="text-sm text-muted-foreground leading-tight">
-																{event.location_address
-																	.split(",")
-																	.slice(1)
-																	.join(",")
-																	.trim()}
-															</p>
-														</>
-													) : (
-														<>
-															<p className="text-base font-bold text-foreground leading-tight">
-																Register to See Address
-															</p>
-															<p className="text-sm text-muted-foreground leading-tight">
-																{event.location_address
-																	.split(",")
-																	.slice(1)
-																	.join(",")
-																	.trim() || "San Carlos, California"}
-															</p>
-														</>
-													)}
-												</div>
-											</div>
-										)}
+								{/* Date & Time */}
+								<div className="flex items-start gap-3">
+									<div className="mt-1">
+										<Calendar className="h-5 w-5 text-muted-foreground" />
+									</div>
+									<div>
+										<p className="font-semibold text-base">
+											{eventDate.format("dddd, MMMM D")}
+										</p>
+										<p className="text-sm text-muted-foreground">
+											{eventDate.format("h:mm A")}
+											{eventEndDate &&
+												` - ${eventEndDate.format("h:mm A")}`}{" "}
+											{event.timezone}
+										</p>
 									</div>
 								</div>
+
+								{/* Location */}
+								<Activity mode={event.location_address ? "visible" : "hidden"}>
+									<div className="flex items-start gap-3">
+										<div className="mt-1">
+											<MapPin className="h-5 w-5 text-muted-foreground" />
+										</div>
+										<div>
+											<p className="font-semibold text-base">
+												{event.location_address?.split(",")[0] || ""}
+											</p>
+											<p className="text-sm text-muted-foreground">
+												{event.location_address
+													?.split(",")
+													.slice(1)
+													.join(",")
+													.trim() || ""}
+											</p>
+										</div>
+									</div>
+								</Activity>
 
 								<Separator />
 
