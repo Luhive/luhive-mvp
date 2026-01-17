@@ -59,7 +59,22 @@ export async function action({ request, params }: { request: Request; params: Re
     return { success: false, error: 'Community not found' };
   }
 
-  if (community.created_by !== user.id) {
+  // Check if user is creator, owner, or admin
+  const isCreator = community.created_by === user.id;
+  let hasPermission = isCreator;
+
+  if (!hasPermission) {
+    const { data: membership } = await supabase
+      .from('community_members')
+      .select('role')
+      .eq('community_id', community.id)
+      .eq('user_id', user.id)
+      .single();
+
+    hasPermission = membership && (membership.role === 'owner' || membership.role === 'admin');
+  }
+
+  if (!hasPermission) {
     return { success: false, error: 'Permission denied' };
   }
 

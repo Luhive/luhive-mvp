@@ -65,8 +65,9 @@ export async function loader({ request, params }: { request: Request; params: Re
       .eq('user_id', user.id)
       .single()
 
-    if (membership && membership.role === 'admin') {
-      role = 'admin'
+    // Allow access if user has 'owner' or 'admin' role in community_members
+    if (membership && (membership.role === 'admin' || membership.role === 'owner')) {
+      role = membership.role === 'owner' ? 'owner' : 'admin'
     }
   }
 
@@ -118,6 +119,7 @@ export async function loader({ request, params }: { request: Request; params: Re
 function getHeaderTitle(pathname: string): string {
   if (pathname.includes('/profile')) return 'Edit Community Profile'
   if (pathname.includes('/events')) return 'Events Management'
+  if (pathname.includes('/forms')) return 'Google Forms'
   if (pathname.includes('/settings')) return 'Settings'
   return 'Dashboard Overview'
 }

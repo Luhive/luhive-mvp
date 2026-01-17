@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router";
+import { useNavigate, Form, useNavigation } from "react-router";
+import { useState } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -17,12 +18,15 @@ import type { ExternalPlatform } from "~/models/event.types";
 import { getExternalPlatformName, getExternalPlatformIcon } from "~/lib/utils/external-platform";
 import { Badge } from "~/components/ui/badge";
 import AttendersAvatars from "./attenders-avatars";
+import { AnonymousRegistrationDialog } from "./anonymous-registration-dialog";
+import { AnonymousSubscriptionDialog } from "./anonymous-subscription-dialog";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type Community = Database["public"]["Tables"]["communities"]["Row"];
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface EventPreviewSidebarProps {
   event: Event | null;
@@ -31,6 +35,9 @@ interface EventPreviewSidebarProps {
   onOpenChange: (open: boolean) => void;
   onNavigateToEvent?: () => void;
   registrationCount?: number;
+  user?: { id: string; email?: string | null } | null;
+  userProfile?: Profile | null;
+  isUserRegistered?: boolean;
 }
 
 export function EventPreviewSidebar({
@@ -40,8 +47,16 @@ export function EventPreviewSidebar({
   onOpenChange,
   onNavigateToEvent,
   registrationCount,
+  user,
+  userProfile,
+  isUserRegistered = false,
 }: EventPreviewSidebarProps) {
   const navigate = useNavigate();
+  const navigation = useNavigation();
+  const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
+  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
+  
+  const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
 
   if (!event || !community) return null;
 
@@ -78,6 +93,39 @@ export function EventPreviewSidebar({
     });
   };
 
+  const handleRegisterClick = () => {
+    // For past events, navigate to event page
+    if (isPastEvent) {
+      handleNavigateToEvent();
+      return;
+    }
+
+    // For external events, handle subscription
+    if (isExternalEvent) {
+      if (user) {
+        // Logged-in user: navigate to external URL or show subscription dialog
+        if (event.external_registration_url) {
+          window.open(event.external_registration_url, "_blank", "noopener,noreferrer");
+        } else {
+          setShowSubscribeDialog(true);
+        }
+      } else {
+        // Not logged in: show subscription dialog
+        setShowSubscribeDialog(true);
+      }
+      return;
+    }
+
+    // For regular events
+    if (user) {
+      // Logged-in user: submit registration form directly
+      // The form will be rendered below
+    } else {
+      // Not logged in: show anonymous registration dialog
+      setShowAnonymousDialog(true);
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -103,19 +151,19 @@ export function EventPreviewSidebar({
               variant="outline"
               size="sm"
               onClick={handleNavigateToEvent}
-              className="gap-1.5"
+              className="gap-1.5 transition-all duration-300 hover:scale-105 hover:shadow-md active:scale-95"
             >
               Event Page
-              <ExternalLink className="h-3.5 w-3.5" />
+              <ExternalLink className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
             </Button>
             
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              className="gap-1.5"
+              className="gap-1.5 transition-all duration-300 hover:scale-105 hover:shadow-md active:scale-95"
             >
-              <Copy className="h-3.5 w-3.5" />
+              <Copy className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-12" />
               Copy
             </Button>
           </div>
@@ -274,30 +322,78 @@ export function EventPreviewSidebar({
             <div className="shrink-0">
               <p className="text-lg font-bold">Free</p>
             </div>
-            <Button
-              onClick={handleNavigateToEvent}
-              className="w-[20rem]"
-              size="lg"
-            >
-              {isPastEvent ? (
-                <>
-                  View Event Details
+            {isPastEvent ? (
+              <Button
+                onClick={handleNavigateToEvent}
+                className="w-[20rem]"
+                size="lg"
+              >
+                View Event Details
+                <ExternalLink className="h-4 w-4 ml-2" />
+              </Button>
+            ) : isExternalEvent ? (
+              <Button
+                onClick={handleRegisterClick}
+                className="w-[20rem]"
+                size="lg"
+                disabled={isSubmitting}
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                {isSubmitting ? "Processing..." : "Subscribe for Updates"}
+              </Button>
+            ) : user ? (
+              // Logged-in user: show registration form
+              isUserRegistered ? (
+                <Button
+                  onClick={handleNavigateToEvent}
+                  className="w-[20rem]"
+                  size="lg"
+                  variant="outline"
+                >
+                  View Registration
                   <ExternalLink className="h-4 w-4 ml-2" />
-                </>
-              ) : isExternalEvent ? (
-                <>
-                  <Bell className="h-4 w-4 mr-2" />
-                  Subscribe for Updates
-                </>
+                </Button>
               ) : (
-                <>
-                  Register
-                </>
-              )}
-            </Button>
+                <Form method="post" action={`/c/${community.slug}/events/${event.id}`}>
+                  <input type="hidden" name="intent" value="register" />
+                  <Button
+                    type="submit"
+                    className="w-[20rem]"
+                    size="lg"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Registering..." : "Register"}
+                  </Button>
+                </Form>
+              )
+            ) : (
+              // Not logged in: show register button that opens dialog
+              <Button
+                onClick={handleRegisterClick}
+                className="w-[20rem]"
+                size="lg"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Processing..." : "Register"}
+              </Button>
+            )}
           </div>
         </div>
       </SheetContent>
+
+      {/* Registration Dialogs */}
+      <AnonymousRegistrationDialog
+        open={showAnonymousDialog}
+        onOpenChange={setShowAnonymousDialog}
+        eventId={event.id}
+        communitySlug={community.slug}
+      />
+      <AnonymousSubscriptionDialog
+        open={showSubscribeDialog}
+        onOpenChange={setShowSubscribeDialog}
+        eventId={event.id}
+        communitySlug={community.slug}
+      />
     </Sheet>
   );
 }

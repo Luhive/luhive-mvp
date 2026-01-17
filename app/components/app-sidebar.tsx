@@ -13,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/components/ui/sidebar"
-import { Home, Calendar, Settings, HelpCircle, Heart, LucideLayoutDashboard, Info, SquarePen } from "lucide-react"
+import { Home, Calendar, Settings, HelpCircle, Heart, LucideLayoutDashboard, Info, SquarePen, FileText } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import type { Database } from "~/models/database.types"
 
@@ -53,6 +53,12 @@ export function AppSidebar({ community, user, userEmail, role, currentPath, ...p
       url: `/dashboard/${communitySlug}/events`,
       icon: Calendar,
       isActive: currentPath?.includes('/events') || false,
+    },
+    {
+      title: "Forms",
+      url: `/dashboard/${communitySlug}/forms`,
+      icon: FileText,
+      isActive: currentPath?.includes('/forms') || false,
     },
     {
       title: "Community Profile",

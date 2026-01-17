@@ -105,16 +105,16 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     throw new Response('Community not found', { status: 404 });
   }
 
-  // Check if user is the owner (no query needed)
-  const isOwner = user ? community.created_by === user.id : false;
+  // Check if user is the creator
+  const isCreator = user ? community.created_by === user.id : false;
 
   // Parallelize all dependent queries after fetching community
   const [membershipResult, memberCountResult, eventCountResult] = await Promise.all([
-    // Check if user is a member (only if user exists)
+    // Check if user is a member and get their role (only if user exists)
     user
       ? supabase
         .from('community_members')
-        .select('id')
+        .select('id, role')
         .eq('user_id', user.id)
         .eq('community_id', community.id)
         .limit(1)
@@ -134,6 +134,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   ]);
 
   const isMember = !!membershipResult.data;
+  
+  // User is owner/admin if they are creator OR have owner/admin role in community_members
+  const isOwner = isCreator || (membershipResult.data && (membershipResult.data.role === 'owner' || membershipResult.data.role === 'admin'));
 
   return {
     community,
@@ -929,6 +932,9 @@ export default function Community() {
           }
         }}
         registrationCount={eventRegistrationCount}
+        user={user ? { id: user.id, email: user.email } : null}
+        userProfile={user ? null : null} // Profile not loaded in community page
+        isUserRegistered={false} // Will be checked client-side if needed
       />
 
       {/* Sticky Mobile Join Button - Only show if not owner and not member */}
