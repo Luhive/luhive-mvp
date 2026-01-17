@@ -419,6 +419,7 @@ export default function Community() {
     website?: string;
     instagram?: string;
     linkedin?: string;
+    whatsapp?: string;
   } | null;
 
   const [showStickyButton, setShowStickyButton] = useState(!isMember && !isOwner);
@@ -698,6 +699,27 @@ export default function Community() {
                           </TooltipTrigger>
                           <TooltipContent side="bottom" className="bg-popover border text-popover-foreground">
                             <p className="text-xs">{socialLinks?.linkedin}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                  </Activity>
+
+                  <Activity mode={socialLinks?.whatsapp ? "visible" : "hidden"}>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                              aria-label="WhatsApp"
+                              onClick={() => window.open(socialLinks?.whatsapp, '_blank', 'noopener,noreferrer')}
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="bg-popover border text-popover-foreground">
+                            <p className="text-xs">{socialLinks?.whatsapp}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
