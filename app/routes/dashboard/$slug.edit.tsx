@@ -19,6 +19,7 @@ import {
   Globe,
   Save,
   Check,
+  MessageCircle,
 } from 'lucide-react';
 
 import LuhiveLogo from '~/assets/images/LuhiveLogo.png';
@@ -48,7 +49,7 @@ export async function action({ request, params }: { request: Request; params: Re
     return { success: false, error: 'Authentication required' };
   }
 
-  // Verify user has permission to edit this community
+  // Verify community exists
   const { data: community, error: communityError } = await supabase
     .from('communities')
     .select('id, created_by, slug')
@@ -59,25 +60,6 @@ export async function action({ request, params }: { request: Request; params: Re
     return { success: false, error: 'Community not found' };
   }
 
-  // Check if user is creator, owner, or admin
-  const isCreator = community.created_by === user.id;
-  let hasPermission = isCreator;
-
-  if (!hasPermission) {
-    const { data: membership } = await supabase
-      .from('community_members')
-      .select('role')
-      .eq('community_id', community.id)
-      .eq('user_id', user.id)
-      .single();
-
-    hasPermission = membership && (membership.role === 'owner' || membership.role === 'admin');
-  }
-
-  if (!hasPermission) {
-    return { success: false, error: 'Permission denied' };
-  }
-
   // Get form data
   const name = formData.get('name') as string;
   const tagline = formData.get('tagline') as string;
@@ -85,6 +67,7 @@ export async function action({ request, params }: { request: Request; params: Re
   const website = formData.get('website') as string;
   const instagram = formData.get('instagram') as string;
   const linkedin = formData.get('linkedin') as string;
+  const whatsapp = formData.get('whatsapp') as string;
   const logo_url = formData.get('logo_url') as string;
 
   // Word count validation helper
@@ -110,6 +93,7 @@ export async function action({ request, params }: { request: Request; params: Re
     website: website || null,
     instagram: instagram || null,
     linkedin: linkedin || null,
+    whatsapp: whatsapp || null,
   };
 
   // Update community
@@ -151,7 +135,7 @@ export default function CommunityEdit() {
   const { community, user, role } = data;
 
   // Parse social links
-  const socialLinks = community.social_links as { website?: string; instagram?: string; linkedin?: string } | null;
+  const socialLinks = community.social_links as { website?: string; instagram?: string; linkedin?: string; whatsapp?: string } | null;
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>(community.logo_url || '');
@@ -358,6 +342,17 @@ export default function CommunityEdit() {
                       name="linkedin"
                       defaultValue={socialLinks?.linkedin || ''}
                       placeholder="https://www.linkedin.com/in/username/"
+                      className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                      type="url"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <MessageCircle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <Input
+                      name="whatsapp"
+                      defaultValue={socialLinks?.whatsapp || ''}
+                      placeholder="https://wa.me/1234567890"
                       className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                       type="url"
                     />
