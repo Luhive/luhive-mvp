@@ -309,7 +309,7 @@ function HubContent({
                             {community.name}
                           </CardTitle>
                           {community.tagline && (
-                            <p className="text-sm text-primary font-medium truncate">
+                            <p className="text-sm text-primary font-medium truncate whitespace-normal">
                               {community.tagline}
                             </p>
                           )}

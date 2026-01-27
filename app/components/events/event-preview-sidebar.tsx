@@ -151,19 +151,19 @@ export function EventPreviewSidebar({
               variant="outline"
               size="sm"
               onClick={handleNavigateToEvent}
-              className="gap-1.5 transition-all duration-300 hover:scale-105 hover:shadow-md active:scale-95"
+              className="gap-1.5"
             >
               Event Page
-              <ExternalLink className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+              <ExternalLink className="h-3.5 w-3.5" />
             </Button>
             
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              className="gap-1.5 transition-all duration-300 hover:scale-105 hover:shadow-md active:scale-95"
+              className="gap-1.5"
             >
-              <Copy className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-12" />
+              <Copy className="h-3.5 w-3.5" />
               Copy
             </Button>
           </div>
