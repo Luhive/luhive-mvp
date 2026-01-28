@@ -41,7 +41,7 @@ export function meta({ data }: Route.MetaArgs) {
       content:
         'One platform for engaged communities. Unified event management, centralized communication, and smart feedback systems. Build communities that matter.',
     },
-    { property: 'og:image', content: 'https://luhive.com/LandingSS.png' },
+    { property: 'og:image', content: 'https://luhive.com/ogimage.png' },
     { property: 'og:image:width', content: '1200' },
     { property: 'og:image:height', content: '630' },
     { property: 'og:site_name', content: 'Luhive' },
@@ -54,7 +54,7 @@ export function meta({ data }: Route.MetaArgs) {
       content:
         'One platform for engaged communities. Unified event management, centralized communication, and smart feedback systems.',
     },
-    { name: 'twitter:image', content: 'https://luhive.com/LandingSS.png' },
+    { name: 'twitter:image', content: 'https://luhive.com/ogimage.png' },
     { name: 'twitter:creator', content: '@luhive' },
     { name: 'twitter:site', content: '@luhive' },
     { name: 'theme-color', content: '#FF8040' },
