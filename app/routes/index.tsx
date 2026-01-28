@@ -1,13 +1,7 @@
 import type { Route } from './+types/index';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LandingNavbar } from '~/components/landing/LandingNavbar';
-import { LandingHero } from '~/components/landing/LandingHero';
-import { LandingAbout } from '~/components/landing/LandingAbout';
-import { LandingFeatures } from '~/components/landing/LandingFeatures';
-import { LandingContact } from '~/components/landing/LandingContact';
-import { LandingFooter } from '~/components/landing/LandingFooter';
-import { useMicrosoftClarity } from '~/hooks/use-analytics';
+
 import '../lib/i18n';
 import { LandingNavbarV2 } from '~/components/landing/LandingNavbarV2';
 import { LandingAboutV2 } from '~/components/landing/LandingAboutV2';
