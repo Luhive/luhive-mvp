@@ -1,9 +1,9 @@
 import * as React from "react"
 
-import { NavDocuments } from "~/components/nav-documents"
-import { NavMain } from "~/components/nav-main"
-import { NavSecondary } from "~/components/nav-secondary"
-import { NavUser } from "~/components/nav-user"
+import { NavDocuments } from "~/components/navigation/NavDocuments"
+import { NavMain } from "~/components/navigation/NavMain"
+import { NavSecondary } from "~/components/navigation/NavSecondary"
+import { NavUser } from "~/components/navigation/NavUser"
 import {
   Sidebar,
   SidebarContent,

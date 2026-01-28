@@ -3,7 +3,9 @@ import { Form, Link, useRouteLoaderData, useActionData, useNavigation, useLocati
 import { createClient } from '~/lib/supabase.server';
 import type { DashboardLoaderData } from './layout';
 import { useIsMobile } from '~/hooks/use-mobile';
-import { uploadCommunityLogo } from '~/services/object-storage';
+import { uploadCommunityLogo } from '~/services/object-storage.service';
+import { countWords } from '~/lib/utils/text';
+import { useWordCount } from '~/hooks/use-word-count';
 
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -11,7 +13,7 @@ import { Label } from '~/components/ui/label';
 import { Textarea } from '~/components/ui/textarea';
 import { Button } from '~/components/ui/button';
 import { Spinner } from '~/components/ui/spinner';
-import { ProfilePictureUpload } from '~/components/profile-picture-upload';
+import { ProfilePictureUpload } from '~/components/community/ProfilePictureUpload';
 import { toast } from 'sonner';
 import { 
   Instagram, 
@@ -69,12 +71,6 @@ export async function action({ request, params }: { request: Request; params: Re
   const linkedin = formData.get('linkedin') as string;
   const whatsapp = formData.get('whatsapp') as string;
   const logo_url = formData.get('logo_url') as string;
-
-  // Word count validation helper
-  const countWords = (text: string): number => {
-    if (!text || text.trim() === '') return 0;
-    return text.trim().split(/\s+/).length;
-  };
 
   // Validate word limits
   const taglineWordCount = countWords(tagline);
@@ -139,14 +135,16 @@ export default function CommunityEdit() {
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string>(community.logo_url || '');
-  const [taglineWordCount, setTaglineWordCount] = useState(0);
-  const [descriptionWordCount, setDescriptionWordCount] = useState(0);
-
-  // Word counting function
-  const countWords = (text: string): number => {
-    if (!text || text.trim() === '') return 0;
-    return text.trim().split(/\s+/).length;
-  };
+  const {
+    wordCount: taglineWordCount,
+    handleChange: handleTaglineChange,
+    setWordCount: setTaglineWordCount,
+  } = useWordCount<HTMLInputElement>();
+  const {
+    wordCount: descriptionWordCount,
+    handleChange: handleDescriptionChange,
+    setWordCount: setDescriptionWordCount,
+  } = useWordCount<HTMLTextAreaElement>();
 
   // Get host from React Router location
   const host = typeof window !== 'undefined' ? window.location.host : '';
@@ -173,16 +171,6 @@ export default function CommunityEdit() {
 
   const handleLogoUpdate = (newLogoUrl: string) => {
     setLogoUrl(newLogoUrl);
-  };
-
-  const handleTaglineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const words = countWords(e.target.value);
-    setTaglineWordCount(words);
-  };
-
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const words = countWords(e.target.value);
-    setDescriptionWordCount(words);
   };
 
   return (

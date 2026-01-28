@@ -1,0 +1,1 @@
+export { LandingAboutV2 } from "~/components/landingv2/LandingAboutV2";
