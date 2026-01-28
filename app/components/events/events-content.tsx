@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import { createClient } from '~/lib/supabase.client';
 import type { Database } from '~/models/database.types';
 import { Card, CardContent } from '~/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
@@ -10,6 +9,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { cn } from '~/lib/utils';
+import { getEventsByCommunityClient } from '~/services/events.service';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -42,16 +42,13 @@ export function EventsContent({ community, loading, slug, initialEvents = [], on
 			if (!community) return;
 
 			try {
-				const supabase = createClient();
 				const now = new Date().toISOString();
 
-				const { data, error } = await supabase
-					.from('events')
-					.select('*')
-					.eq('community_id', community.id)
-					.eq('status', 'published')
-					.gte('start_time', now)
-					.order('start_time', { ascending: true });
+        const { events: data, error } = await getEventsByCommunityClient(community.id, {
+          status: 'published',
+          startTimeGte: now,
+          order: { column: 'start_time', ascending: true },
+        });
 
 				if (error) {
 					console.error('Error fetching upcoming events:', error);
@@ -79,16 +76,13 @@ export function EventsContent({ community, loading, slug, initialEvents = [], on
 			if (!community) return;
 
 			try {
-				const supabase = createClient();
 				const now = new Date().toISOString();
 
-				const { data, error } = await supabase
-					.from('events')
-					.select('*')
-					.eq('community_id', community.id)
-					.eq('status', 'published')
-					.lt('start_time', now)
-					.order('start_time', { ascending: false });
+        const { events: data, error } = await getEventsByCommunityClient(community.id, {
+          status: 'published',
+          startTimeLt: now,
+          order: { column: 'start_time', ascending: false },
+        });
 
 				if (error) {
 					console.error('Error fetching past events:', error);

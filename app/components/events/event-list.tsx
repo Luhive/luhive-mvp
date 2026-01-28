@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { createClient } from '~/lib/supabase.client';
 import type { Database } from '~/models/database.types';
 import type { ExternalPlatform } from '~/models/event.types';
 import { Badge } from '~/components/ui/badge';
@@ -11,6 +10,7 @@ import timezone from 'dayjs/plugin/timezone';
 import { Skeleton } from '~/components/ui/skeleton';
 import { cn } from '~/lib/utils';
 import { getExternalPlatformName, getExternalPlatformIcon } from '~/lib/utils/external-platform';
+import { getEventsByCommunityClient } from '~/services/events.service';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -35,17 +35,14 @@ export function EventList({ communityId, communitySlug, limit = 3, onEventClick,
   useEffect(() => {
     async function fetchEvents() {
       try {
-        const supabase = createClient();
         const now = new Date().toISOString();
 
-        const { data, error } = await supabase
-          .from('events')
-          .select('*')
-          .eq('community_id', communityId)
-          .eq('status', 'published')
-          .gte('start_time', now)
-          .order('start_time', { ascending: true })
-          .limit(limit);
+        const { events: data, error } = await getEventsByCommunityClient(communityId, {
+          status: 'published',
+          startTimeGte: now,
+          order: { column: 'start_time', ascending: true },
+          limit,
+        });
 
 				if (error) {
 					console.error('Error fetching events:', error);

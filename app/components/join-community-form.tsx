@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 import { Users, Loader2, UserCheck, LogOut } from "lucide-react"
 import { useIsMobile } from "~/hooks/use-mobile"
 import { Button } from "~/components/ui/button"
@@ -36,22 +35,12 @@ import {
 import { Input } from "~/components/ui/input"
 import { Spinner } from "~/components/ui/spinner"
 import { useSubmit, useNavigation, useNavigate } from "react-router"
-
-// Schema for non-logged-in users
-const guestJoinSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  surname: z.string().min(2, "Surname must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  communityId: z.string().min(1, "Community ID is required"),
-})
-
-// Schema for logged-in users (just community consent)
-const memberJoinSchema = z.object({
-  communityId: z.string().min(1, "Community ID is required"),
-})
-
-type GuestJoinFormValues = z.infer<typeof guestJoinSchema>
-type MemberJoinFormValues = z.infer<typeof memberJoinSchema>
+import {
+  guestJoinSchema,
+  memberJoinSchema,
+  type GuestJoinFormValues,
+  type MemberJoinFormValues,
+} from "~/schemas/registration.schema"
 
 interface JoinCommunityFormProps {
   communityId: string
