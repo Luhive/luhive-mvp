@@ -272,6 +272,7 @@ function HubContent({
             {communities.map((community) => {
               const memberCount = community.memberCount || 0;
               const eventCount = community.eventCount || 0;
+              if (!community.is_show) return null; // Extra safety check
               return (
                 <NavLink
                   key={community.id}
