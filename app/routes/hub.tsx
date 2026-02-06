@@ -43,10 +43,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     // Get current user session
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Fetch all communities
+    // Fetch only is_show=true  communities
     const { data: communities, error } = await supabase
       .from('communities')
       .select('*')
+      .eq('is_show', true)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -271,7 +272,6 @@ function HubContent({
             {communities.map((community) => {
               const memberCount = community.memberCount || 0;
               const eventCount = community.eventCount || 0;
-
               return (
                 <NavLink
                   key={community.id}
