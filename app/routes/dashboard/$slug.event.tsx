@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useRouteLoaderData } from 'react-router';
 import type { DashboardLoaderData } from './layout';
 import { EventList } from '~/components/events/event-list-admin';
-import { createClient } from '~/lib/supabase.client';
 import { toast } from 'sonner';
 import type { Database } from '~/models/database.types';
+import { deleteEventClient, getEventsWithRegistrationCountsClient } from '~/services/events.service';
 
 type Event = Database['public']['Tables']['events']['Row'];
 
@@ -24,17 +24,10 @@ export default function EventsPage() {
     if (!parentData?.community) return;
 
     const fetchEvents = async () => {
-      const supabase = createClient();
-      
       try {
         setLoading(true);
 
-        // Fetch events for this community
-        const { data: eventsData, error } = await supabase
-          .from('events')
-          .select('*')
-          .eq('community_id', parentData.community.id)
-          .order('start_time', { ascending: false });
+        const { events, error } = await getEventsWithRegistrationCountsClient(parentData.community.id);
 
         if (error) {
           console.error('Error fetching events:', error);
@@ -43,30 +36,7 @@ export default function EventsPage() {
           return;
         }
 
-        // For each event, get registration count
-        const eventsWithCounts = await Promise.all(
-          (eventsData || []).map(async (event) => {
-            let query = supabase
-              .from('event_registrations')
-              .select('*', { count: 'exact', head: true })
-              .eq('event_id', event.id);
-
-            // If event requires approval, only count approved registrations
-            // For events without approval requirement, count all registrations (including null approval_status)
-            if (event.is_approve_required) {
-              query = query.eq('approval_status', 'approved');
-            }
-
-            const { count } = await query;
-
-            return {
-              ...event,
-              registration_count: count || 0,
-            };
-          })
-        );
-
-        setEvents(eventsWithCounts);
+        setEvents(events);
       } catch (error) {
         console.error('Error:', error);
         toast.error('Failed to load events');
@@ -89,14 +59,8 @@ export default function EventsPage() {
       return;
     }
 
-    const supabase = createClient();
-
     try {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', eventId)
-        .eq('community_id', community.id);
+      const { error } = await deleteEventClient(eventId, community.id);
 
       if (error) {
         console.error('Error deleting event:', error);

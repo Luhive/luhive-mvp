@@ -1,22 +1,16 @@
 import type { Route } from './+types/index';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LandingNavbar } from '~/components/landing/LandingNavbar';
-import { LandingNavbarV2 } from '~/components/landingv2/LandingNavbarV2';
-import { LandingHero } from '~/components/landing/LandingHero';
-import { LandingAbout } from '~/components/landing/LandingAbout';
-import { LandingFeatures } from '~/components/landing/LandingFeatures';
-import { LandingContact } from '~/components/landing/LandingContact';
-import { LandingFooter } from '~/components/landing/LandingFooter';
-import { useMicrosoftClarity } from '~/hooks/use-analytics';
+
 import '../lib/i18n';
-import { LandingAboutV2 } from '~/components/landingv2/LandingAboutV2';
-import { LandingPartnersV2 } from '~/components/landingv2/LandingPartnersV2';
-import { LandingFeaturesV2 } from '~/components/landingv2/LandingFeaturesV2';
-import { LandingPricingV2 } from '~/components/landingv2/LandingPricingV2';
-import { LandingBlogsV2 } from '~/components/landingv2/LandingBlogsV2';
-import { LandingFAQV2 } from '~/components/landingv2/LandingFAQV2';
-import { LandingFooterV2 } from '~/components/landingv2/LandingFooterV2';
+import { LandingNavbarV2 } from '~/components/landing/LandingNavbarV2';
+import { LandingAboutV2 } from '~/components/landing/LandingAboutV2';
+import { LandingPartnersV2 } from '~/components/landing/LandingPartnersV2';
+import { LandingFeaturesV2 } from '~/components/landing/LandingFeaturesV2';
+import { LandingPricingV2 } from '~/components/landing/LandingPricingV2';
+import { LandingBlogsV2 } from '~/components/landing/LandingBlogsV2';
+import { LandingFAQV2 } from '~/components/landing/LandingFAQV2';
+import { LandingFooterV2 } from '~/components/landing/LandingFooterV2';
 
 export function meta({ data }: Route.MetaArgs) {
   return [
