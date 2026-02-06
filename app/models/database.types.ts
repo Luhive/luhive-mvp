@@ -32,6 +32,7 @@ export type Database = {
           tagline: string | null
           updated_at: string | null
           verified: boolean | null
+          is_show: boolean | null
         }
         Insert: {
           cover_url?: string | null
