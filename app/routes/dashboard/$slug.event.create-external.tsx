@@ -1,6 +1,6 @@
-import { useRouteLoaderData } from 'react-router';
-import type { DashboardLoaderData } from './layout';
 import { ExternalEventForm } from '~/components/events/external-event-form';
+import { useDashboardCommunity } from '~/hooks/use-dashboard-community';
+import { DashboardEventFormSkeleton } from '~/components/dashboard/dashboard-event-form-skeleton';
 
 export function meta() {
   return [
@@ -10,13 +10,13 @@ export function meta() {
 }
 
 export default function CreateExternalEventPage() {
-  const parentData = useRouteLoaderData<DashboardLoaderData>('routes/dashboard/layout');
+  const { data, loading } = useDashboardCommunity();
 
-  if (!parentData) {
-    return <div>Loading...</div>;
+  if (loading || !data) {
+    return <DashboardEventFormSkeleton />;
   }
 
-  const { community } = parentData;
+  const { community } = data;
 
   return (
     <div className="py-4 px-4 md:px-6">

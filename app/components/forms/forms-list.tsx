@@ -46,9 +46,9 @@ export function FormsList({ forms, communitySlug }: FormsListProps) {
         <Link 
           key={form.id} 
           to={`/dashboard/${communitySlug}/forms/${form.id}`}
-          className="group"
+          className="group block"
         >
-          <Card className="h-full transition-all hover:border-primary/50 hover:shadow-md">
+          <Card className="h-full cursor-pointer transition-all hover:border-primary/50 hover:shadow-md">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
@@ -60,7 +60,7 @@ export function FormsList({ forms, communitySlug }: FormsListProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground z-10 relative"
                     title="Open in Google Forms"
                   >
                     <ExternalLink className="h-4 w-4" />

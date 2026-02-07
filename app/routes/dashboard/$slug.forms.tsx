@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useLoaderData, useSearchParams, useNavigate } from "react-router"
+import { useLoaderData, useSearchParams, useNavigate, useNavigation } from "react-router"
 import { createClient } from "~/lib/supabase.server"
 import { 
   createOAuth2Client, 
@@ -8,6 +8,8 @@ import {
   type GoogleFormsToken 
 } from "~/lib/google-forms.server"
 import type { Route } from "./+types/$slug.forms"
+import { useDashboardCommunity } from "~/hooks/use-dashboard-community"
+import { DashboardFormsSkeleton } from "~/components/dashboard/dashboard-forms-skeleton"
 
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
@@ -101,13 +103,17 @@ export async function loader({ request, params }: Route.LoaderArgs): Promise<Loa
 }
 
 export default function FormsPage() {
+  const { data: dashboardData, loading: dashboardLoading } = useDashboardCommunity()
   const { connected, forms, error, communitySlug } = useLoaderData<LoaderData>()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const navigation = useNavigation()
   
   const [showSignInModal, setShowSignInModal] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
+  
+  const isLoading = navigation.state === "loading" || dashboardLoading
 
   // Handle URL params for success/error messages
   useEffect(() => {
@@ -165,6 +171,16 @@ export default function FormsPage() {
     } finally {
       setIsDisconnecting(false)
     }
+  }
+
+  // Show skeleton while dashboard data is loading
+  if (dashboardLoading || !dashboardData) {
+    return <DashboardFormsSkeleton />;
+  }
+
+  // Show skeleton while forms are loading
+  if (isLoading && forms.length === 0 && !error) {
+    return <DashboardFormsSkeleton />;
   }
 
   return (
