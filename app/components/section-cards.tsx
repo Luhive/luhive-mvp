@@ -1,6 +1,5 @@
 import { IconTrendingDown, IconTrendingUp } from "@tabler/icons-react"
 import { Eye, Users, UserCheck } from "lucide-react"
-import { useRouteLoaderData } from "react-router"
 import { useEffect, useState } from "react"
 
 import { Badge } from "~/components/ui/badge"
@@ -14,10 +13,10 @@ import {
 } from "~/components/ui/card"
 import { Skeleton } from "~/components/ui/skeleton"
 import { createClient } from "~/lib/supabase.client"
-import { DashboardLoaderData } from "~/routes/dashboard/layout"
+import { useDashboardCommunity } from "~/hooks/use-dashboard-community"
 
 export function SectionCards() {
-  const parentData = useRouteLoaderData<DashboardLoaderData>('routes/dashboard/layout')
+  const { data: parentData } = useDashboardCommunity()
 
   const [stats, setStats] = useState({
     totalVisits: 0,

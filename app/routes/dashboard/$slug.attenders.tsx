@@ -1,8 +1,8 @@
-import { useLoaderData, useRouteLoaderData, useSearchParams } from 'react-router';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { lazy, Suspense } from 'react';
-import type { Route } from './+types/$slug.attenders';
-import type { DashboardLoaderData } from './layout';
-import { createClient } from '~/lib/supabase.server';
+import { useDashboardCommunity } from '~/hooks/use-dashboard-community';
+import { getEventByIdClient } from '~/services/events.service';
 import { AttendersTableSkeleton } from '~/components/events/attenders-table-skeleton';
 import type { Database } from '~/models/database.types';
 import { Skeleton } from '~/components/ui/skeleton';
@@ -12,48 +12,7 @@ const AttendersTable = lazy(() =>
   import('~/components/events/attenders-table').then(m => ({ default: m.AttendersTable }))
 );
 
-type LoaderData = {
-  event: Database['public']['Tables']['events']['Row'] | null;
-  eventId: string | null;
-};
-
-
-export async function loader({ request, params }: Route.LoaderArgs) {
-  const { supabase } = createClient(request);
-  const slug = params.slug;
-  const url = new URL(request.url);
-  const eventId = url.searchParams.get('eventId');
-
-  if (!slug || !eventId) {
-    return { event: null, eventId: null };
-  }
-
-  // Get community ID from slug
-  const { data: community } = await supabase
-    .from('communities')
-    .select('id')
-    .eq('slug', slug)
-    .single();
-
-  if (!community) {
-    return { event: null, eventId: null };
-  }
-
-  // Verify event belongs to community (fast validation only)
-  const { data: event, error: eventError } = await supabase
-    .from('events')
-    .select('*')
-    .eq('id', eventId)
-    .eq('community_id', community.id)
-    .single();
-
-  if (eventError || !event) {
-    return { event: null, eventId: null };
-  }
-
-  // Return only event data - attenders will be fetched client-side
-  return { event, eventId };
-}
+type Event = Database['public']['Tables']['events']['Row'];
 
 export function meta() {
   return [
@@ -63,10 +22,78 @@ export function meta() {
 }
 
 export default function AttendersPage() {
-  const parentData = useRouteLoaderData<DashboardLoaderData>('routes/dashboard/layout');
-  const { event, eventId } = useLoaderData<typeof loader>();
+  const { data: dashboardData, loading: dashboardLoading } = useDashboardCommunity();
+  const [searchParams] = useSearchParams();
+  const eventId = searchParams.get('eventId');
+  
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!parentData) {
+  useEffect(() => {
+    if (!dashboardData?.community || !eventId) {
+      setLoading(false);
+      return;
+    }
+
+    async function fetchEvent() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const { event: eventData, error: eventError } = await getEventByIdClient(
+          eventId,
+          dashboardData.community.id
+        );
+
+        if (eventError || !eventData) {
+          setError(eventError?.message || 'Event not found');
+          setEvent(null);
+        } else {
+          setEvent(eventData);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch event');
+        setEvent(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchEvent();
+  }, [dashboardData?.community, eventId]);
+
+  if (dashboardLoading) {
+    return (
+      <div className="py-4 px-4 md:px-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-6 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <AttendersTableSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return (
+      <div className="py-4 px-4 md:px-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-6 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <AttendersTableSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
     return (
       <div className="py-4 px-4 md:px-6">
         <div className="max-w-7xl mx-auto space-y-6">
@@ -89,7 +116,7 @@ export default function AttendersPage() {
             <div className="text-center">
               <h2 className="text-lg font-semibold mb-2">Event Not Found</h2>
               <p className="text-muted-foreground">
-                Please select an event to view attenders.
+                {error || 'Please select an event to view attenders.'}
               </p>
             </div>
           </div>

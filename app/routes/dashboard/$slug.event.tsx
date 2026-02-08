@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useRouteLoaderData } from 'react-router';
-import type { DashboardLoaderData } from './layout';
 import { EventList } from '~/components/events/event-list-admin';
 import { toast } from 'sonner';
 import type { Database } from '~/models/database.types';
 import { deleteEventClient, getEventsWithRegistrationCountsClient } from '~/services/events.service';
+import { useDashboardCommunity } from '~/hooks/use-dashboard-community';
+import { DashboardEventsListSkeleton } from '~/components/dashboard/dashboard-events-list-skeleton';
 
 type Event = Database['public']['Tables']['events']['Row'];
 
@@ -16,18 +16,18 @@ export function meta() {
 }
 
 export default function EventsPage() {
-  const parentData = useRouteLoaderData<DashboardLoaderData>('routes/dashboard/layout');
+  const { data, loading: dashboardLoading } = useDashboardCommunity();
   const [events, setEvents] = useState<(Event & { registration_count?: number })[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!parentData?.community) return;
+    if (!data?.community) return;
 
     const fetchEvents = async () => {
       try {
         setLoading(true);
 
-        const { events, error } = await getEventsWithRegistrationCountsClient(parentData.community.id);
+        const { events, error } = await getEventsWithRegistrationCountsClient(data.community.id);
 
         if (error) {
           console.error('Error fetching events:', error);
@@ -46,13 +46,13 @@ export default function EventsPage() {
     };
 
     fetchEvents();
-  }, [parentData?.community]);
+  }, [data?.community]);
 
-  if (!parentData) {
-    return <div>Loading...</div>;
+  if (dashboardLoading || !data) {
+    return <DashboardEventsListSkeleton />;
   }
 
-  const { community } = parentData;
+  const { community } = data;
 
   const handleDelete = async (eventId: string) => {
     if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
@@ -78,15 +78,7 @@ export default function EventsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50/50">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <DashboardEventsListSkeleton />;
   }
 
   return (
