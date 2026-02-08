@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Form, Link, useRouteLoaderData, useActionData, useNavigation, useLocation } from 'react-router';
+import { Form, Link, useActionData, useNavigation, useLocation } from 'react-router';
 import { createClient } from '~/lib/supabase.server';
-import type { DashboardLoaderData } from './layout';
 import { useIsMobile } from '~/hooks/use-mobile';
 import { uploadCommunityLogo } from '~/services/object-storage.service';
 import { countWords } from '~/lib/utils/text';
 import { useWordCount } from '~/hooks/use-word-count';
+import { useDashboardCommunity } from '~/hooks/use-dashboard-community';
+import { DashboardEditSkeleton } from '~/components/dashboard/dashboard-edit-skeleton';
 
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -116,25 +117,17 @@ export async function action({ request, params }: { request: Request; params: Re
 }
 
 export default function CommunityEdit() {
-  // Access parent layout loader data
-  const data = useRouteLoaderData<DashboardLoaderData>('routes/dashboard/layout');
+  // Access parent layout data via CSR hook
+  const { data, loading: dashboardLoading } = useDashboardCommunity();
   const actionData = useActionData<{ success: boolean; error?: string; message?: string }>();
   const navigation = useNavigation();
   const location = useLocation();
   const isMobile = useIsMobile();
   const isSubmitting = navigation.state === 'submitting';
 
-  if (!data) {
-    return <div>Loading...</div>;
-  }
-
-  const { community, user, role } = data;
-
-  // Parse social links
-  const socialLinks = community.social_links as { website?: string; instagram?: string; linkedin?: string; whatsapp?: string } | null;
-
+  // All hooks must be called before any early returns
   const [showSuccess, setShowSuccess] = useState(false);
-  const [logoUrl, setLogoUrl] = useState<string>(community.logo_url || '');
+  const [logoUrl, setLogoUrl] = useState<string>('');
   const {
     wordCount: taglineWordCount,
     handleChange: handleTaglineChange,
@@ -149,11 +142,14 @@ export default function CommunityEdit() {
   // Get host from React Router location
   const host = typeof window !== 'undefined' ? window.location.host : '';
 
-  // Initialize word counts on mount
+  // Initialize word counts when community data is available
   useEffect(() => {
-    setTaglineWordCount(countWords(community.tagline || ''));
-    setDescriptionWordCount(countWords(community.description || ''));
-  }, [community.tagline, community.description]);
+    if (data?.community) {
+      setLogoUrl(data.community.logo_url || '');
+      setTaglineWordCount(countWords(data.community.tagline || ''));
+      setDescriptionWordCount(countWords(data.community.description || ''));
+    }
+  }, [data?.community, setTaglineWordCount, setDescriptionWordCount]);
 
   // Show toast on action result
   useEffect(() => {
@@ -168,6 +164,16 @@ export default function CommunityEdit() {
       }
     }
   }, [actionData]);
+
+  // Early return after all hooks are called
+  if (dashboardLoading || !data) {
+    return <DashboardEditSkeleton />;
+  }
+
+  const { community, user, role } = data;
+
+  // Parse social links
+  const socialLinks = community.social_links as { website?: string; instagram?: string; linkedin?: string; whatsapp?: string } | null;
 
   const handleLogoUpdate = (newLogoUrl: string) => {
     setLogoUrl(newLogoUrl);

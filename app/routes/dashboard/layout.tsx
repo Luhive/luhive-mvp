@@ -1,10 +1,8 @@
-import { redirect } from "react-router"
-import { Outlet, useLoaderData, useLocation } from "react-router"
+import { Outlet, useLocation } from "react-router"
 import { useEffect } from "react"
-import { createClient } from "~/lib/supabase.server"
 import type { Database } from "~/models/database.types"
 import { setUser, setCommunityContext } from "~/services/sentry"
-
+import { useDashboardCommunity } from "~/hooks/use-dashboard-community"
 import { AppSidebar } from "~/components/app-sidebar"
 import { SiteHeader } from "~/components/site-header"
 import {
@@ -12,107 +10,17 @@ import {
   SidebarProvider,
 } from "~/components/ui/sidebar"
 import Footer from "~/components/common/Footer"
+import { DashboardLayoutSkeleton } from "~/components/dashboard/dashboard-layout-skeleton"
 
 type Community = Database['public']['Tables']['communities']['Row']
 type Profile = Database['public']['Tables']['profiles']['Row']
 
+// Keep type for backward compatibility with components that reference it
 export type DashboardLoaderData = {
   community: Community
   user: Profile
   userEmail: string
   role: 'owner' | 'admin'
-}
-
-export async function loader({ request, params }: { request: Request; params: Record<string, string | undefined> }) {
-  const { supabase, headers } = createClient(request)
-
-  // Check authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    return redirect('/login', { headers })
-  }
-
-  // Get slug from params
-  const slug = (params as { slug?: string }).slug
-
-  if (!slug) {
-    return redirect('/', { headers })
-  }
-
-  // Fetch community data
-  const { data: community, error: communityError } = await supabase
-    .from('communities')
-    .select('*')
-    .eq('slug', slug)
-    .single()
-
-  if (communityError || !community) {
-    return redirect(`/c/${slug}`, { headers })
-  }
-
-  // Check if user is owner or admin
-  const isOwner = community.created_by === user.id
-  let role: 'owner' | 'admin' | null = null
-
-  if (isOwner) {
-    role = 'owner'
-  } else {
-    const { data: membership } = await supabase
-      .from('community_members')
-      .select('role')
-      .eq('community_id', community.id)
-      .eq('user_id', user.id)
-      .single()
-
-    // Allow access if user has 'owner' or 'admin' role in community_members
-    if (membership && (membership.role === 'admin' || membership.role === 'owner')) {
-      role = membership.role === 'owner' ? 'owner' : 'admin'
-    }
-  }
-
-  // If not owner or admin, redirect
-  if (!role) {
-    return redirect(`/c/${slug}`, { headers })
-  }
-
-  // Get user email from auth
-  const userEmail = user.email || 'user@example.com'
-
-  // Fetch user profile
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (profileError || !profile) {
-    const defaultProfile: Profile = {
-      id: user.id,
-      full_name: user.email?.split('@')[0] || 'User',
-      avatar_url: null,
-      bio: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      settings: null,
-      gamification: null,
-      metadata: null,
-    }
-    
-    return {
-      community,
-      user: defaultProfile,
-      userEmail,
-      role,
-    }
-  }
-
-  return {
-    community,
-    user: profile,
-    userEmail,
-    role,
-  }
 }
 
 // Helper to get dynamic header title based on current path
@@ -125,22 +33,42 @@ function getHeaderTitle(pathname: string): string {
 }
 
 export default function DashboardLayout() {
-  const { community, user, userEmail, role } = useLoaderData<DashboardLoaderData>()
   const location = useLocation()
+  const { data, loading, error } = useDashboardCommunity()
 
   // Set Sentry user and community context
   useEffect(() => {
-    setUser({
-      id: user.id,
-      email: userEmail,
-      username: user.full_name || undefined,
-    });
-    setCommunityContext({
-      id: community.id,
-      slug: community.slug,
-      name: community.name,
-    });
-  }, [user, userEmail, community]);
+    if (data) {
+      setUser({
+        id: data.user.id,
+        email: data.userEmail,
+        username: data.user.full_name || undefined,
+      });
+      setCommunityContext({
+        id: data.community.id,
+        slug: data.community.slug,
+        name: data.community.name,
+      });
+    }
+  }, [data]);
+
+  // Show loading skeleton while fetching
+  if (loading) {
+    return <DashboardLayoutSkeleton />;
+  }
+
+  // Show error state (redirects are handled in hook)
+  if (error || !data) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">{error || "Failed to load dashboard"}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { community, user, userEmail, role } = data;
 
   return (
     <SidebarProvider

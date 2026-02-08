@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useLoaderData, useNavigate, Link } from "react-router"
+import { useLoaderData, useNavigate, Link, useNavigation } from "react-router"
 import { createClient } from "~/lib/supabase.server"
 import { 
   createOAuth2Client, 
@@ -12,6 +12,8 @@ import {
   type ParsedResponse
 } from "~/lib/google-forms.server"
 import type { Route } from "./+types/$slug.forms.$formId"
+import { useDashboardCommunity } from "~/hooks/use-dashboard-community"
+import { DashboardFormDetailSkeleton } from "~/components/dashboard/dashboard-form-detail-skeleton"
 
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
@@ -113,6 +115,7 @@ export async function loader({ request, params }: Route.LoaderArgs): Promise<Loa
 }
 
 export default function FormResponsesPage() {
+  const { data: dashboardData, loading: dashboardLoading } = useDashboardCommunity()
   const { 
     formId, 
     formTitle, 
@@ -126,8 +129,11 @@ export default function FormResponsesPage() {
   } = useLoaderData<LoaderData>()
   
   const navigate = useNavigate()
+  const navigation = useNavigation()
   const [selectedResponse, setSelectedResponse] = useState<ParsedResponse | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  const isLoading = navigation.state === "loading" || dashboardLoading
 
   const handleRefresh = () => {
     setIsRefreshing(true)
@@ -137,6 +143,16 @@ export default function FormResponsesPage() {
 
   const handleViewResponse = (response: ParsedResponse) => {
     setSelectedResponse(response)
+  }
+
+  // Show skeleton while dashboard data is loading
+  if (dashboardLoading || !dashboardData) {
+    return <DashboardFormDetailSkeleton />;
+  }
+
+  // Show skeleton while navigating/loading
+  if (isLoading && !error) {
+    return <DashboardFormDetailSkeleton />;
   }
 
   if (error) {

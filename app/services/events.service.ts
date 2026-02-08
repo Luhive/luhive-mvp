@@ -41,6 +41,23 @@ export async function getEventsByCommunityClient(communityId: string, options?: 
   return { events: (data || []) as Event[], error };
 }
 
+export async function getEventByIdClient(eventId: string, communityId?: string) {
+  const supabase = createBrowserClient();
+
+  let query = supabase
+    .from("events")
+    .select("*")
+    .eq("id", eventId);
+
+  if (communityId) {
+    query = query.eq("community_id", communityId);
+  }
+
+  const { data, error } = await query.single();
+
+  return { event: data as Event | null, error };
+}
+
 export async function getEventCustomQuestionsClient(eventId: string) {
   const supabase = createBrowserClient();
 
