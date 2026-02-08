@@ -46,12 +46,16 @@ export function LandingPricingV2() {
           
 
           <div className='flex flex-col px-[2.125rem] md:px-[2.5rem] gap-[1.5rem]'>
+            {/* Desktop title */}
           <div className='flex justify-center items-center'>
-            <h3 className="text-2xl hidden md:block font-semibold text-foreground sm:text-[1.875rem]">
+              <h3 className="text-2xl font-semibold text-foreground sm:text-[1.875rem]">
                 {t('pricingV2.premiumCommunity')}
               </h3>
           </div>
+
+            {/* Main content container */}
           <div className="flex flex-col items-stretch justify-between px-0 md:px-8 text-left sm:flex-row sm:items-center sm:gap-10">
+              {/* Desktop pricing - hidden on mobile */}
             <div className="w-max hidden md:block">
               <div className="text-[1.875rem] text-muted-foreground">
                 <span className="relative inline-block">${t('pricingV2.price')}
@@ -63,54 +67,47 @@ export function LandingPricingV2() {
               </div>
             </div>
 
-            <div className='md:hidden flex flex-col justify-between items-center'>
-                          {/* deep clean */}
-              <div className='flex w-full justify-between items-center'>
-              <div className="flex flex-col items-center justify-center">
-                <h3 className="w-max font-semibold text-foreground text-[1.125rem]">{t('pricingV2.planName')}</h3>
-              </div>
-  
-              <div className='w-max flex flex-col justify-center items-center md:hidden'>
-                <div className="w-max block md:hidden">
+              {/* Mobile layout - stacked vertically */}
+              <div className='md:hidden flex flex-col items-center gap-4 w-full'>
+                {/* Pricing */}
+                <div className="flex flex-col items-center">
                   <div className="text-[1.25rem] text-muted-foreground">
                     <span className="relative inline-block">${t('pricingV2.price')}
-                    <span className="absolute left-0 top-1/2 w-full h-[0.125rem] bg-[#FF6D23] -translate-y-1/2"></span>
+                      <span className="absolute left-0 top-1/2 w-full h-[0.125rem] bg-[#FF6D23] -translate-y-1/2"></span>
                     </span>
                   </div>
                   <div className="text-[1.5rem] font-medium text-foreground">
                     {t('pricingV2.free')}
                   </div>
                 </div>
-              </div>
+
+                {/* Button */}
+                <div className="w-full flex justify-center">
+                  <Button
+                    className="relative inline-flex w-full max-w-[15.1875rem] h-[2.5rem] items-center justify-center gap-2 rounded-[1.875rem] bg-transparent px-[2.75rem] text-sm font-semibold text-[#FF6D23] hover:bg-transparent hover:rounded-md border border-[#FF6D23]"
+                    asChild
+                  >
+                    <a
+                      href="https://tally.so/r/NpDVoG"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className='text-[0.875rem] font-bold'
+                      onClick={() => AnalyticsEvents.bookDemoClick('Pricing V2')}
+                    >
+                      {t('pricingV2.bookDemo')}
+                    </a>
+                  </Button>
+                </div>
               </div>
 
-              <div className="block md:hidden my-5">
-            <div className="flex justify-center items-center w-full">
-              <Button
-                className="relative inline-flex md:w-[15.1875rem] h-[2.5rem] md:h-10 items-center gap-2 rounded-[1.875rem] bg-transparent px-[2.75rem] text-sm font-semibold text-[#FF6D23] hover:bg-transparent hover:rounded-md border border-[#FF6D23]"
-                asChild
-              >
-                <a
-                  href="https://tally.so/r/NpDVoG"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className='text-[0.875rem] font-bold'
-                        onClick={() => AnalyticsEvents.bookDemoClick('Pricing V2')}
-                >
-                  {t('pricingV2.bookDemo')}
-                </a>
-              </Button>
-            </div>
-            </div>
-            </div>
-
-            <div className="w-max">
-              <ul className="space-y-1.5 w-max text-sm text-muted-foreground">
+              {/* Features list */}
+              <div className="w-full md:w-max">
+                <ul className="space-y-1.5 w-full md:w-max text-sm text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <img
                     src="/landing/confirm-icon.png"
                     alt=""
-                    className="mt-1 h-3 w-3 object-contain"
+                      className="mt-1 h-3 w-3 object-contain flex-shrink-0"
                   />
                   <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature1')}</span>
                 </li>
@@ -118,7 +115,7 @@ export function LandingPricingV2() {
                   <img
                     src="/landing/confirm-icon.png"
                     alt=""
-                    className="mt-1 h-3 w-3 object-contain"
+                      className="mt-1 h-3 w-3 object-contain flex-shrink-0"
                   />
                   <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature2')}</span>
                 </li>
@@ -126,7 +123,7 @@ export function LandingPricingV2() {
                   <img
                     src="/landing/confirm-icon.png"
                     alt=""
-                    className="mt-1 h-3 w-3 object-contain"
+                      className="mt-1 h-3 w-3 object-contain flex-shrink-0"
                   />
                   <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature3')}</span>
                 </li>
@@ -134,7 +131,7 @@ export function LandingPricingV2() {
                   <img
                     src="/landing/confirm-icon.png"
                     alt=""
-                    className="mt-1 h-3 w-3 object-contain"
+                      className="mt-1 h-3 w-3 object-contain flex-shrink-0"
                   />
                   <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature4')}</span>
                 </li>
@@ -142,7 +139,7 @@ export function LandingPricingV2() {
                     <img
                       src="/landing/confirm-icon.png"
                       alt=""
-                      className="mt-1 h-3 w-3 object-contain"
+                      className="mt-1 h-3 w-3 object-contain flex-shrink-0"
                     />
                     <span className='text-[#141414] text-[0.75rem] md:text-[1rem]'>{t('pricingV2.features.feature5')}</span>
                   </li>
