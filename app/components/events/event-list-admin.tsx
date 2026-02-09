@@ -661,9 +661,17 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                           </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-48">
-                                          <DropdownMenuItem disabled>
-                                            <Edit className="w-4 h-4 mr-2" />
-                                            Edit Details
+                                          <DropdownMenuItem asChild>
+                                            <Link
+                                              to={
+                                                isExternal
+                                                  ? `/dashboard/${communitySlug}/events/${event.id}/edit-external`
+                                                  : `/dashboard/${communitySlug}/events/${event.id}/edit`
+                                              }
+                                            >
+                                              <Edit className="w-4 h-4 mr-2" />
+                                              Edit Details
+                                            </Link>
                                           </DropdownMenuItem>
                                           {!isExternal && (
                                             <DropdownMenuItem asChild>

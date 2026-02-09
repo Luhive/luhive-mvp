@@ -405,7 +405,7 @@ export function ExternalEventForm({
         </div>
 
         {/* Right Column - Form Fields */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 max-h-[75svh] overflow-y-scroll">
           {/* Basic Information */}
           <Card>
             <CardHeader>
