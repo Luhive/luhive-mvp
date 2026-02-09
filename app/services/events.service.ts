@@ -4,6 +4,7 @@ import { createClient as createBrowserClient } from "~/lib/supabase.client";
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type EventRegistration =
   Database["public"]["Tables"]["event_registrations"]["Row"];
+type EventStatus = Database["public"]["Enums"]["event_status"];
 
 export async function getEventsByCommunityClient(communityId: string, options?: {
   status?: string;
@@ -172,6 +173,22 @@ export async function deleteEventClient(eventId: string, communityId: string) {
   const { error } = await supabase
     .from("events")
     .delete()
+    .eq("id", eventId)
+    .eq("community_id", communityId);
+
+  return { error };
+}
+
+export async function updateEventStatusClient(
+  eventId: string,
+  communityId: string,
+  status: Extract<EventStatus, "draft" | "published">
+) {
+  const supabase = createBrowserClient();
+
+  const { error } = await supabase
+    .from("events")
+    .update({ status })
     .eq("id", eventId)
     .eq("community_id", communityId);
 

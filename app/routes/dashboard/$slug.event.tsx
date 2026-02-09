@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { EventList } from '~/components/events/event-list-admin';
 import { toast } from 'sonner';
 import type { Database } from '~/models/database.types';
-import { deleteEventClient, getEventsWithRegistrationCountsClient } from '~/services/events.service';
+import { deleteEventClient, getEventsWithRegistrationCountsClient, updateEventStatusClient } from '~/services/events.service';
 import { useDashboardCommunity } from '~/hooks/use-dashboard-community';
 import { DashboardEventsListSkeleton } from '~/components/dashboard/dashboard-events-list-skeleton';
 
@@ -77,6 +77,31 @@ export default function EventsPage() {
     }
   };
 
+  const handleStatusChange = async (eventId: string, newStatus: 'draft' | 'published') => {
+    try {
+      const { error } = await updateEventStatusClient(eventId, community.id, newStatus);
+
+      if (error) {
+        console.error('Error updating event status:', error);
+        toast.error('Failed to update event status');
+        return;
+      }
+
+      setEvents((prev) =>
+        prev.map((e) => (e.id === eventId ? { ...e, status: newStatus } : e))
+      );
+
+      toast.success(
+        newStatus === 'published'
+          ? 'Event published successfully'
+          : 'Event moved to drafts successfully'
+      );
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to update event status');
+    }
+  };
+
   if (loading) {
     return <DashboardEventsListSkeleton />;
   }
@@ -88,6 +113,7 @@ export default function EventsPage() {
           events={events}
           communitySlug={community.slug}
           onDelete={handleDelete}
+          onStatusChange={handleStatusChange}
         />
       </div>
     </div>
