@@ -45,6 +45,10 @@ export default [
     route("dashboard/:slug/profile", "routes/dashboard/$slug.edit.tsx"),
     route("dashboard/:slug/events", "routes/dashboard/$slug.event.tsx"),
     route(
+      "dashboard/:slug/events/:eventId/edit",
+      "routes/dashboard/$slug.event.$eventId.edit.tsx"
+    ),
+    route(
       "dashboard/:slug/events/create",
       "routes/dashboard/$slug.event.create.tsx"
     ),
@@ -52,6 +56,10 @@ export default [
     route(
       "dashboard/:slug/events/create-external",
       "routes/dashboard/$slug.event.create-external.tsx"
+    ),
+    route(
+      "dashboard/:slug/events/:eventId/edit-external",
+      "routes/dashboard/$slug.event.$eventId.edit-external.tsx"
     ),
     // Google Forms routes
     route("dashboard/:slug/forms", "routes/dashboard/$slug.forms.tsx"),
