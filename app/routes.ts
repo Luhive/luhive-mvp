@@ -82,6 +82,10 @@ export default [
     "api/update-registration-status",
     "routes/api.update-registration-status.tsx"
   ),
+  route(
+    "api/event-schedule-update",
+    "routes/api.event-schedule-update.tsx"
+  ),
   route("api/email-debug", "routes/api.email-debug.tsx"),
 
   // Google Forms API routes

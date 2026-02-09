@@ -33,6 +33,8 @@ import {
   ChevronDown,
   Link as LinkIcon,
   Bell,
+  Eye,
+  FileText,
 } from 'lucide-react';
 import type { Database } from '~/models/database.types';
 import type { ExternalPlatform } from '~/models/event.types';
@@ -52,9 +54,10 @@ interface EventListProps {
   events: (Event & { registration_count?: number })[];
   communitySlug: string;
   onDelete?: (eventId: string) => void;
+  onStatusChange?: (eventId: string, newStatus: Extract<EventStatus, 'draft' | 'published'>) => void;
 }
 
-export function EventList({ events, communitySlug, onDelete }: EventListProps) {
+export function EventList({ events, communitySlug, onDelete, onStatusChange }: EventListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<EventStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all');
@@ -661,6 +664,29 @@ export function EventList({ events, communitySlug, onDelete }: EventListProps) {
                                           </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-48">
+                                          {onStatusChange && (
+                                            <DropdownMenuItem
+                                              onClick={() =>
+                                                onStatusChange(
+                                                  event.id,
+                                                  event.status === 'published' ? 'draft' : 'published'
+                                                )
+                                              }
+                                            >
+                                              {event.status === 'published' ? (
+                                                <>
+                                                  <FileText className="w-4 h-4 mr-2" />
+                                                  Move to Drafts
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Eye className="w-4 h-4 mr-2" />
+                                                  Publish Event
+                                                </>
+                                              )}
+                                            </DropdownMenuItem>
+                                          )}
+                                          {onStatusChange && <DropdownMenuSeparator />}
                                           <DropdownMenuItem asChild>
                                             <Link
                                               to={
