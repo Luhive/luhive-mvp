@@ -160,6 +160,11 @@ export function EventPreviewSidebar({
     });
   };
 
+  const handleOpenEventPageInNewTab = () => {
+    onOpenChange(false);
+    window.open(eventUrl, "_blank", "noopener,noreferrer");
+  };
+
   const handleRegisterClick = () => {
     // For past events, navigate to event page
     if (isPastEvent) {
@@ -232,7 +237,7 @@ export function EventPreviewSidebar({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleNavigateToEvent}
+              onClick={handleOpenEventPageInNewTab}
               className="gap-1.5"
             >
               Event Page
