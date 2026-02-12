@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
@@ -86,6 +86,7 @@ export function ExternalEventForm({
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNudge, setShowNudge] = useState(true);
+  const initialRef = useRef(initialData);
 
   // Form state
   const [title, setTitle] = useState(initialData?.title || '');
@@ -237,6 +238,50 @@ export function ExternalEventForm({
           console.error('Error updating event:', error);
           toast.error(error.message || 'Failed to update event');
           return;
+        }
+
+        // For external events, also notify attendees if only schedule/location changed
+        const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
+        const initial = initialRef.current;
+
+        if (submitStatus === 'published' && initial) {
+          const sameDate = (a?: Date, b?: Date) => {
+            if (!a && !b) return true;
+            if (!a || !b) return false;
+            return dayjs(a).isSame(dayjs(b), 'day');
+          };
+
+          const sameOrDefault = (a: string | undefined, b: string | undefined, fallback: string) =>
+            (a || fallback) === (b || fallback);
+
+          const nonScheduleChanged =
+            (initial.title || '') !== title ||
+            (initial.description || '') !== description ||
+            (initial.eventType || 'in-person') !== eventType ||
+            (initial.discussionLink || '') !== discussionLink ||
+            (initial.coverUrl || '') !== coverUrl ||
+            (initial.timezone || 'Asia/Baku') !== timezoneValue;
+
+          const scheduleChanged =
+            !sameDate(initial.startDate, startDate) ||
+            !sameOrDefault(initial.startTime, startTime, '09:00') ||
+            !sameOrDefault(initial.endTime, endTime, '10:00') ||
+            (initial.locationAddress || '') !== locationAddress ||
+            (initial.onlineMeetingLink || '') !== onlineMeetingLink;
+
+          if (!nonScheduleChanged && scheduleChanged) {
+            try {
+              await fetch('/api/event-schedule-update', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ eventId }),
+              });
+            } catch (notifyError) {
+              console.error('Failed to trigger schedule update emails:', notifyError);
+            }
+          }
         }
 
         toast.success('Event updated successfully!');
@@ -405,7 +450,7 @@ export function ExternalEventForm({
         </div>
 
         {/* Right Column - Form Fields */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 max-h-[75svh] overflow-y-scroll">
           {/* Basic Information */}
           <Card>
             <CardHeader>

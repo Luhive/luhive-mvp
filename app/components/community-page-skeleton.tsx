@@ -45,7 +45,7 @@ export function CommunityPageSkeleton({ community }: CommunityPageSkeletonProps)
           )}
 
           {/* Profile Content */}
-          <div className="pb-8 flex flex-col items-center justify-center text-center flex-1 space-y-4 -mt-10 sm:-mt-12">
+          <div className="pb-4 flex flex-col items-center justify-center text-center flex-1 space-y-4 -mt-10 sm:-mt-12">
             {displayLogo ? (
               <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg">
                 <AvatarImage src={displayLogo} alt={displayName} />

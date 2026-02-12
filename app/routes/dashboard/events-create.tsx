@@ -1,6 +1,6 @@
 import { EventForm } from '~/components/events/event-form';
-import { useDashboardCommunity } from '~/hooks/use-dashboard-community';
-import { DashboardEventFormSkeleton } from '~/components/dashboard/dashboard-event-form-skeleton';
+import { useOutletContext } from 'react-router';
+import type { DashboardLoaderData } from '~/routes/dashboard/layout';
 
 export function meta() {
   return [
@@ -10,13 +10,13 @@ export function meta() {
 }
 
 export default function CreateEventPage() {
-  const { data, loading } = useDashboardCommunity();
+  const { dashboardData } = useOutletContext<{ dashboardData: DashboardLoaderData }>();
 
-  if (loading || !data) {
-    return <DashboardEventFormSkeleton />;
+  if (!dashboardData) {
+    return null;
   }
 
-  const { community } = data;
+  const { community } = dashboardData;
 
   return (
     <div className="py-4 px-4 md:px-6">

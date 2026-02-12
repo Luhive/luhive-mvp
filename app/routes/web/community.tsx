@@ -608,7 +608,7 @@ export default function Community() {
                 )}
 
                 {/* Profile Content */}
-                <div className="pb-8 flex flex-col items-center justify-center text-center flex-1 space-y-4 -mt-10 sm:-mt-12">
+                <div className="pb-4 flex flex-col items-center justify-center text-center flex-1 space-y-4 -mt-10 sm:-mt-12">
                   <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg">
                     <AvatarImage src={displayLogo} alt={displayName} />
                     <AvatarFallback className="text-xl sm:text-2xl bg-primary/10 text-primary">
@@ -975,7 +975,7 @@ export default function Community() {
                 >
                   <span className="flex items-center justify-center gap-2">
                     <Users className="h-5 w-5" />
-                    <span>Join Our Community</span>
+                    <span>Join</span>
                   </span>
                 </Button>
               }

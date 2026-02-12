@@ -45,6 +45,10 @@ export default [
     route("dashboard/:slug/profile", "routes/dashboard/edit-profile.tsx"),
     route("dashboard/:slug/events", "routes/dashboard/events.tsx"),
     route(
+      "dashboard/:slug/events/:eventId/edit",
+      "routes/dashboard/event-edit.tsx"
+    ),
+    route(
       "dashboard/:slug/events/create",
       "routes/dashboard/events-create.tsx"
     ),
@@ -53,8 +57,15 @@ export default [
       "dashboard/:slug/events/create-external",
       "routes/dashboard/events-create-external.tsx"
     ),
+
     route("dashboard/:slug/forms", "routes/dashboard/forms.tsx"),
     route("dashboard/:slug/forms/:formId", "routes/dashboard/forms-detail.tsx"),
+
+    route(
+      "dashboard/:slug/events/:eventId/edit-external",
+      "routes/dashboard/event-edit-external.tsx"
+    ),
+
   ]),
 
   route("logout", "routes/auth/logout.tsx"),
@@ -72,6 +83,10 @@ export default [
   route(
     "api/update-registration-status",
     "routes/api/update-registration-status.tsx"
+  ),
+
+  route(
+    "api/event-schedule-update", "routes/api/event-schedule-update.tsx"
   ),
   route("api/email-debug", "routes/api/email-debug.tsx"),
 

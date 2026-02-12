@@ -91,7 +91,7 @@ export default function DashboardLayout() {
         <SiteHeader title={getHeaderTitle(location.pathname)} />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <Outlet />
+            <Outlet context={{ dashboardData: data }} />
           </div>
         </div>
         <Footer />
