@@ -9,7 +9,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "~/components/ui/sidebar"
-import Footer from "~/components/common/Footer"
+import Footer from "~/components/common/footer"
 import { DashboardLayoutSkeleton } from "~/components/dashboard/dashboard-layout-skeleton"
 
 type Community = Database['public']['Tables']['communities']['Row']

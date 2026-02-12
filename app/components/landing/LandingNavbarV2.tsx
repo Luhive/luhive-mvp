@@ -1,1 +1,0 @@
-export { LandingNavbarV2 } from "~/components/landingv2/LandingNavbarV2";

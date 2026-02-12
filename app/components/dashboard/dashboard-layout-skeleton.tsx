@@ -3,7 +3,7 @@ import {
   SidebarProvider,
 } from "~/components/ui/sidebar"
 import { Skeleton } from "~/components/ui/skeleton"
-import Footer from "~/components/common/Footer"
+import Footer from "~/components/common/footer"
 
 export function DashboardLayoutSkeleton() {
   return (
