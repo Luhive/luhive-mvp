@@ -12,6 +12,7 @@ import { EventPreviewSidebar } from '~/components/events/event-preview-sidebar';
 
 type Community = Database['public']['Tables']['communities']['Row'];
 type Event = Database['public']['Tables']['events']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface LoaderData {
 	slug: string;
@@ -61,6 +62,16 @@ export default function EventsLayout() {
 			const data = match.data as any;
 			if (data && 'community' in data && data.community) {
 				return data as CommunityLoaderData;
+			}
+		}
+		return null;
+	}, [matches]);
+
+	const parentNavigationUser = useMemo(() => {
+		for (const match of matches) {
+			const data = match.data as any;
+			if (data && 'user' in data && !('community' in data)) {
+				return (data.user as Profile | null) || null;
 			}
 		}
 		return null;
@@ -240,8 +251,8 @@ export default function EventsLayout() {
 					}
 				}}
 				registrationCount={eventRegistrationCount}
-				user={null} // User info not available in this layout
-				userProfile={null}
+				user={parentNavigationUser ? { id: parentNavigationUser.id, email: null } : null}
+				userProfile={parentNavigationUser}
 				isUserRegistered={false}
 			/>
 		</>
