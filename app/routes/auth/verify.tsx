@@ -128,8 +128,8 @@ export async function loader({ request }: Route.LoaderArgs) {
         return redirect(`/c/${community.slug}`, { headers });
       }
 
-      // Default redirect
-      return redirect('/', { headers });
+      // No created community yet; send user to hub.
+      return redirect('/hub', { headers });
     }
   }
 
@@ -172,8 +172,8 @@ export async function loader({ request }: Route.LoaderArgs) {
         }
       }
       
-      // Default redirect
-      return redirect('/', { headers });
+      // No created community yet; send user to hub.
+      return redirect('/hub', { headers });
     }
   }
   

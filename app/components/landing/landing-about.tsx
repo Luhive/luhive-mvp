@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { Globe } from 'lucide-react';
+import { Link } from 'react-router';
 
 import { Button } from '~/components/ui/button';
 import { StackedCarousel } from "./stacked-carousel";
@@ -55,14 +56,9 @@ export function LandingAbout() {
               className="h-auto rounded-full bg-[#FF6D23] px-8 py-3.5 text-base leading-[1.5] text-white shadow-[0px_2px_6px_0px_rgba(255,109,35,0.35)] hover:bg-[#E55A1A] hover:shadow-[0px_4px_8px_0px_rgba(255,109,35,0.45)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6D23]/50 focus-visible:ring-offset-2 md:px-11"
               asChild
             >
-              <a
-                href="https://tally.so/r/NpDVoG"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => AnalyticsEvents.startCommunityClick('About V2')}
-              >
-                {t('about.startYourCommunity')}
-              </a>
+              <Link to="/signup" onClick={() => AnalyticsEvents.startCommunityClick('About V2')}>
+                Get Started
+              </Link>
             </Button>
           </div>
 

@@ -60,6 +60,8 @@ export function EventPreviewSidebar({
   const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
   const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
   const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
+  const [anonymousName, setAnonymousName] = useState<string | null>(null);
+  const [anonymousEmail, setAnonymousEmail] = useState<string | null>(null);
   const [localIsRegistered, setLocalIsRegistered] = useState(isUserRegistered);
   const lastSubmittedIntentRef = useRef<SubmissionIntent | null>(null);
   const prevEventIdRef = useRef<string | null>(null);
@@ -80,6 +82,10 @@ export function EventPreviewSidebar({
     ) {
       setLocalIsRegistered(false);
       lastSubmittedIntentRef.current = null;
+      setAnonymousName(null);
+      setAnonymousEmail(null);
+      setShowAnonymousDialog(false);
+      setShowCustomQuestionsForm(false);
     }
 
     prevEventIdRef.current = currentEventId;
@@ -91,6 +97,8 @@ export function EventPreviewSidebar({
     if (!open || !user || !event) {
       return;
     }
+    const eventId = event.id;
+    const userId = user.id;
 
     async function checkRegistrationStatus() {
       try {
@@ -98,8 +106,8 @@ export function EventPreviewSidebar({
         const { data: registration } = await supabase
           .from("event_registrations")
           .select("id")
-          .eq("event_id", event.id)
-          .eq("user_id", user.id)
+          .eq("event_id", eventId)
+          .eq("user_id", userId)
           .maybeSingle();
 
         setLocalIsRegistered(!!registration);
@@ -229,12 +237,19 @@ export function EventPreviewSidebar({
   };
 
   const handleCustomQuestionsSubmit = (answers: any) => {
+    const isAnonymousFlow = !user && !!anonymousName && !!anonymousEmail;
     lastSubmittedIntentRef.current = "register";
 
     // Use fetcher to submit without navigation (fetcher doesn't navigate by default)
     const formData = new FormData();
-    formData.append('intent', 'register');
+    formData.append('intent', isAnonymousFlow ? 'anonymous-custom-questions' : 'register');
     formData.append('custom_answers', JSON.stringify(answers));
+
+    if (isAnonymousFlow) {
+      formData.append('name', anonymousName);
+      formData.append('email', anonymousEmail);
+      formData.append('_source', 'sidebar');
+    }
 
     fetcher.submit(formData, { 
       method: 'POST',
@@ -243,7 +258,8 @@ export function EventPreviewSidebar({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
         className="w-full sm:max-w-lg p-0 flex flex-col overflow-hidden [&>button]:hidden"
@@ -522,12 +538,27 @@ export function EventPreviewSidebar({
         </div>
       </SheetContent>
 
+      </Sheet>
+
       {/* Registration Dialogs */}
       <AnonymousRegistrationDialog
         open={showAnonymousDialog}
         onOpenChange={setShowAnonymousDialog}
         eventId={event.id}
         communitySlug={community.slug}
+        preventNavigation
+        onSuccess={() => {
+          toast.success("Check your email to verify your registration!");
+          setAnonymousName(null);
+          setAnonymousEmail(null);
+          setShowAnonymousDialog(false);
+        }}
+        onNeedsCustomQuestions={({ anonymousName: nextAnonymousName, anonymousEmail: nextAnonymousEmail }) => {
+          setAnonymousName(nextAnonymousName);
+          setAnonymousEmail(nextAnonymousEmail);
+          setShowAnonymousDialog(false);
+          setShowCustomQuestionsForm(true);
+        }}
       />
       <AnonymousSubscriptionDialog
         open={showSubscribeDialog}
@@ -545,11 +576,13 @@ export function EventPreviewSidebar({
           userEmail={user?.email || undefined}
           userAvatarUrl={userProfile?.avatar_url || undefined}
           userPhone={userPhone}
+          anonymousName={anonymousName || undefined}
+          anonymousEmail={anonymousEmail || undefined}
           onSubmit={handleCustomQuestionsSubmit}
           isSubmitting={isSubmitting}
         />
       )}
-    </Sheet>
+    </>
   );
 }
 

@@ -17,5 +17,5 @@ export async function action({ request }: ActionFunctionArgs) {
   clearUser()
 
   // Redirect to dashboard or home page after successful sign-in
-  return redirect('/', { headers })
+  return redirect('/hub', { headers })
 }

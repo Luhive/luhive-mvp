@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { registerSchema } from '~/schemas/auth.schema'
 import { Input } from '~/components/ui/input'
 import { Button } from '~/components/ui/button'
-import { Label } from '~/components/ui/label'
 import { createClient } from '~/lib/supabase.server'
 import LuhiveLogo from '~/assets/images/LuhiveLogo.svg'
 import { Spinner } from '~/components/ui/spinner'
@@ -38,8 +37,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       return redirect(`/c/${community.slug}`, { headers });
     }
 
-    // If no community found, redirect to home
-    return redirect('/', { headers });
+    // If no community found, redirect to hub
+    return redirect('/hub', { headers });
   }
 
   return Response.json({ user: null }, { headers });
@@ -154,8 +153,8 @@ export async function action({ request }: Route.ActionArgs) {
     return redirect(`/auth/email-sent/verify?email=${encodeURIComponent(email)}`, { headers });
   }
 
-  // If email confirmation is required, redirect to email sent page
-  return redirect(`/auth/email-sent/verify?email=${encodeURIComponent(email)}`, { headers });
+  // User is signed in but has no community yet; send them to hub.
+  return redirect('/hub', { headers });
 }
 
 type ActionData = {
@@ -183,6 +182,9 @@ const Register = () => {
 
   const [formKey, setFormKey] = useState(0)
   const [showPassword, setShowPassword] = useState(false)
+  const [emailValue, setEmailValue] = useState('')
+  const [isEmailStepComplete, setIsEmailStepComplete] = useState(false)
+  const [emailStepError, setEmailStepError] = useState<string | null>(null)
 
   // Get URL params for pre-filling
   const nameParam = searchParams.get('name') || ''
@@ -193,6 +195,30 @@ const Register = () => {
 
   // Get field errors
   const fieldErrors = actionData?.fieldErrors
+  const hasDetailsErrors = Boolean(fieldErrors?.name || fieldErrors?.surname || fieldErrors?.password)
+
+  useEffect(() => {
+    setEmailValue(emailParam)
+  }, [emailParam])
+
+  useEffect(() => {
+    if (nameParam || surnameParam || hasDetailsErrors) {
+      setIsEmailStepComplete(true)
+    }
+  }, [nameParam, surnameParam, hasDetailsErrors])
+
+  const handleContinueWithEmail = () => {
+    const trimmedEmail = emailValue.trim()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setEmailStepError('Please enter a valid email address.')
+      return
+    }
+
+    setEmailStepError(null)
+    setIsEmailStepComplete(true)
+  }
 
   useEffect(() => {
     if (actionData) {
@@ -229,99 +255,6 @@ const Register = () => {
           </div>
         )}
 
-        <Form key={formKey} method="post" className="flex flex-col gap-4">
-          <input type="hidden" name="intent" value="password" />
-          {communityIdParam && <input type="hidden" name="communityId" value={communityIdParam} />}
-		  <div className="flex flex-col gap-2">
-            <Label htmlFor="name" className={fieldErrors?.name ? 'text-destructive' : ''}>
-              Name
-            </Label>
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              placeholder="Elizabeth"
-              defaultValue={nameParam}
-              className={fieldErrors?.name ? 'border-destructive' : ''}
-            />
-            {fieldErrors?.name && (
-              <p className="text-sm text-destructive">{fieldErrors.name[0]}</p>
-            )}
-          </div>
-		  <div className="flex flex-col gap-2">
-            <Label htmlFor="surname" className={fieldErrors?.surname ? 'text-destructive' : ''}>
-              Surname
-            </Label>
-            <Input
-              id="surname"
-              name="surname"
-              type="text"
-              placeholder="Queen"
-              defaultValue={surnameParam}
-              className={fieldErrors?.surname ? 'border-destructive' : ''}
-            />
-            {fieldErrors?.surname && (
-              <p className="text-sm text-destructive">{fieldErrors.surname[0]}</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email" className={fieldErrors?.email ? 'text-destructive' : ''}>
-              Email
-            </Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="you@example.com"
-              defaultValue={emailParam}
-              className={fieldErrors?.email ? 'border-destructive' : ''}
-            />
-            {fieldErrors?.email && (
-              <p className="text-sm text-destructive">{fieldErrors.email[0]}</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password" className={fieldErrors?.password ? 'text-destructive' : ''}>
-                Password
-              </Label>
-            </div>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Your password"
-                className={fieldErrors?.password ? 'border-destructive pr-10' : 'pr-10'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-            {fieldErrors?.password && (
-              <p className="text-sm text-destructive">{fieldErrors.password[0]}</p>
-            )}
-          </div>
-          <Button disabled={isSubmittingPassword} type="submit">
-            {isSubmittingPassword ? <Spinner /> : (communityNameParam ? 'Sign Up & Join' : 'Sign Up')}
-          </Button>
-        </Form>
-
-        <div className="my-6 flex items-center gap-4">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
         <Form method="post" className="flex" replace>
           <input type="hidden" name="intent" value="oauth" />
           <input type="hidden" name="provider" value="google" />
@@ -345,6 +278,103 @@ const Register = () => {
             </svg>
             {isSubmittingOAuth ? <Spinner /> : 'Continue with Google'}
           </Button>
+        </Form>
+
+        <div className="my-6 flex items-center gap-4">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">or</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <Form key={formKey} method="post" className="flex flex-col gap-4">
+          <input type="hidden" name="intent" value="password" />
+          {communityIdParam && <input type="hidden" name="communityId" value={communityIdParam} />}
+          <div className="flex flex-col gap-2">
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Emall"
+              value={emailValue}
+              onChange={(event) => {
+                setEmailValue(event.target.value)
+                if (emailStepError) {
+                  setEmailStepError(null)
+                }
+              }}
+              className={fieldErrors?.email || emailStepError ? 'border-destructive' : ''}
+            />
+            {fieldErrors?.email && (
+              <p className="text-sm text-destructive">{fieldErrors.email[0]}</p>
+            )}
+            {emailStepError && (
+              <p className="text-sm text-destructive">{emailStepError}</p>
+            )}
+          </div>
+
+          {!isEmailStepComplete ? (
+            <Button type="button" onClick={handleContinueWithEmail}>
+              Sign up with Email
+            </Button>
+          ) : (
+            <>
+              <div className="flex flex-col gap-2">
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                    placeholder="Name"
+                    defaultValue={nameParam}
+                    className={fieldErrors?.name ? 'border-destructive' : ''}
+                  />
+                  {fieldErrors?.name && (
+                    <p className="text-sm text-destructive">{fieldErrors.name[0]}</p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    id="surname"
+                    name="surname"
+                    type="text"
+                    placeholder="Surname"
+                    defaultValue={surnameParam}
+                    className={fieldErrors?.surname ? 'border-destructive' : ''}
+                  />
+                  {fieldErrors?.surname && (
+                    <p className="text-sm text-destructive">{fieldErrors.surname[0]}</p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      placeholder="Password"
+                      className={fieldErrors?.password ? 'border-destructive pr-10' : 'pr-10'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  {fieldErrors?.password && (
+                    <p className="text-sm text-destructive">{fieldErrors.password[0]}</p>
+                  )}
+                </div>
+                <Button disabled={isSubmittingPassword} type="submit">
+                  {isSubmittingPassword ? <Spinner /> : 'Sign up with Email'}
+                </Button>
+            </>
+          )}
         </Form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">

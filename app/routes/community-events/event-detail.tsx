@@ -626,6 +626,11 @@ export async function action({ request, params }: Route.ActionArgs) {
 			// Continue anyway - user can request resend
 		}
 
+		const submissionSource = formData.get("_source");
+		if (submissionSource === "sidebar") {
+			return { success: true, verificationSent: true, email };
+		}
+
 		// Redirect to email sent page
 		console.log("Redirecting to verification-sent page");
 		return redirect(
