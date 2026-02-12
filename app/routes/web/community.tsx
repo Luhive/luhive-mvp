@@ -1,5 +1,5 @@
 import type { Route } from "./+types/community";
-import { useLoaderData, Link, useNavigation, useActionData, useRevalidator } from "react-router";
+import { useLoaderData, Link, useNavigation, useActionData, useRevalidator, useLocation } from "react-router";
 import { createClient, createServiceRoleClient } from "~/lib/supabase.server";
 import { createClient as createClientBrowser } from "~/lib/supabase.client";
 import { sendCommunityJoinNotification } from "~/lib/email.server";
@@ -44,6 +44,7 @@ import { CoverPictureUpload } from "~/components/cover-picture-upload";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EventListSkeleton } from "~/components/events/event-list";
+import { CommunityPageSkeleton } from "~/components/community-page-skeleton";
 import { EventPageSkeleton } from "~/components/events/event-page-skeleton";
 import { EventsListPageSkeleton } from "~/components/events/events-list-page-skeleton";
 import { EventPreviewSidebar } from "~/components/events/event-preview-sidebar";
@@ -55,24 +56,15 @@ type Event = Database['public']['Tables']['events']['Row'];
 const EventList = lazy(() => import("~/components/events/event-list").then(module => ({ default: module.EventList })));
 
 type Community = Database['public']['Tables']['communities']['Row'];
-type CommunityWithCounts = Community & {
-  memberCount?: number;
-  eventCount?: number;
-};
-type LoaderUser = {
-  id: string;
-  email?: string | null;
-} | null;
 
 type LoaderData = {
   community: Community | null;
   isOwner: boolean;
   isMember: boolean;
-  user: LoaderUser;
-  analytics?: VisitAnalytics;
+  user: { id: string } | null;
+  analytics: VisitAnalytics;
   memberCount: number;
   eventCount: number;
-  _fromNavigationState?: boolean;
 };
 
 export async function loader({ request, params }: Route.LoaderArgs) {
@@ -156,26 +148,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     eventCount: eventCountResult.count || 0,
   };
 }
-
-export async function clientLoader({ serverLoader, params }: Route.ClientLoaderArgs) {
-  const navigationState = window.history.state?.usr as { community?: CommunityWithCounts } | null;
-  const passedCommunity = navigationState?.community;
-
-  if (passedCommunity && passedCommunity.slug === params.slug) {
-    return {
-      community: passedCommunity,
-      isOwner: false,
-      isMember: false,
-      user: null,
-      memberCount: passedCommunity.memberCount || 0,
-      eventCount: passedCommunity.eventCount || 0,
-      _fromNavigationState: true,
-    };
-  }
-
-  return serverLoader();
-}
-clientLoader.hydrate = true;
 
 export async function action({ request }: Route.ActionArgs) {
   const { supabase } = createClient(request);
@@ -351,103 +323,44 @@ export function meta({ data }: { data?: LoaderData }) {
 }
 
 export default function Community() {
-  const loaderData = useLoaderData() as LoaderData;
+  const loaderData = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const submit = useSubmit();
   const navigation = useNavigation();
+  const location = useLocation();
   const revalidator = useRevalidator();
   const isMobile = useIsMobile();
 
+  // Get community data from navigation state (when coming from hub)
+  const navigationState = location.state as {
+    community?: Community & {
+      memberCount?: number;
+      eventCount?: number;
+      description?: string;
+      verified?: boolean;
+    };
+    description?: string;
+    verified?: boolean;
+  } | null;
+
+  const stateCommunity = navigationState?.community;
+  const isNavigating = navigation.state === "loading";
+  const isNavigatingFromHub = isNavigating && !!stateCommunity;
+
+  // Merge additional data from navigation state if available
+  const skeletonCommunity = stateCommunity ? {
+    ...stateCommunity,
+    description: stateCommunity.description || navigationState?.description || undefined,
+    verified: stateCommunity.verified ?? navigationState?.verified ?? false,
+  } : null;
+
   // Extract data from loader
-  const {
-    community,
-    isOwner: serverIsOwner,
-    isMember: serverIsMember,
-    user: serverUser,
-    analytics,
-    memberCount,
-    eventCount,
-    _fromNavigationState,
-  } = loaderData;
-  const [clientAuthData, setClientAuthData] = useState<{
-    isOwner: boolean;
-    isMember: boolean;
-    user: LoaderUser;
-  } | null>(null);
-  const [isClientAuthLoading, setIsClientAuthLoading] = useState(
-    Boolean(_fromNavigationState && community?.id),
-  );
-  const isOwner = _fromNavigationState ? (clientAuthData?.isOwner ?? false) : serverIsOwner;
-  const isMember = _fromNavigationState ? (clientAuthData?.isMember ?? false) : serverIsMember;
-  const user = _fromNavigationState ? (clientAuthData?.user ?? null) : serverUser;
-
-  useEffect(() => {
-    if (!_fromNavigationState || !community?.id) {
-      setIsClientAuthLoading(false);
-      return;
-    }
-
-    let isCancelled = false;
-
-    const hydrateAuthData = async () => {
-      setIsClientAuthLoading(true);
-      try {
-        const supabase = createClientBrowser();
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (isCancelled) return;
-
-        if (!authUser) {
-          setClientAuthData({
-            isOwner: false,
-            isMember: false,
-            user: null,
-          });
-          return;
-        }
-
-        const { data: membership } = await supabase
-          .from("community_members")
-          .select("role")
-          .eq("user_id", authUser.id)
-          .eq("community_id", community.id)
-          .limit(1)
-          .maybeSingle();
-        if (isCancelled) return;
-
-        const memberRole = membership?.role ?? null;
-        const isCreator = community.created_by === authUser.id;
-        setClientAuthData({
-          isOwner: isCreator || memberRole === "owner" || memberRole === "admin",
-          isMember: Boolean(membership),
-          user: { id: authUser.id, email: authUser.email ?? null },
-        });
-      } catch (error) {
-        console.error("Failed to hydrate community auth state:", error);
-        if (!isCancelled) {
-          setClientAuthData({
-            isOwner: false,
-            isMember: false,
-            user: null,
-          });
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsClientAuthLoading(false);
-        }
-      }
-    };
-
-    hydrateAuthData();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [_fromNavigationState, community?.id, community?.created_by]);
+  const { community, isOwner, isMember, user, analytics, memberCount, eventCount } = loaderData;
 
   // Track visit on component mount
   useEffect(() => {
-    if (_fromNavigationState || !community?.id || !analytics) return;
+    if (!community?.id) return; // Don't track if no community
 
     // Check if we should track this visit (5-minute window)
     if (shouldTrackVisit(community.id)) {
@@ -470,7 +383,7 @@ export default function Community() {
       // Fire and forget - don't wait for response
       submit(formData, { method: 'post' });
     }
-  }, [_fromNavigationState, community?.id, analytics, submit]);
+  }, [community?.id, analytics, submit]);
 
   // Show toast notifications based on action results
   useEffect(() => {
@@ -512,7 +425,7 @@ export default function Community() {
     whatsapp?: string;
   } | null;
 
-  const showStickyButton = !isClientAuthLoading && !isMember && !isOwner;
+  const [showStickyButton, setShowStickyButton] = useState(!isMember && !isOwner);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // State for event preview sidebar
@@ -864,13 +777,7 @@ export default function Community() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3 lg:gap-4">
-                {isClientAuthLoading ? (
-                  <>
-                    <Skeleton className="h-12 w-full rounded-sm bg-muted" />
-                    <Skeleton className="h-12 w-full rounded-sm bg-muted" />
-                    <Skeleton className="h-12 w-full rounded-sm bg-muted" />
-                  </>
-                ) : isOwner ? (
+                {isOwner ? (
                   <Button
                     className="w-full py-5.5 lg:py-6 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background"
                     asChild
