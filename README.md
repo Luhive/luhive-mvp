@@ -1,87 +1,48 @@
-## Welcome to React Router!
+# Luhive
 
-A modern, production-ready template for building full-stack React applications using React Router.
+<div align="center">
+  <img src="app/assets/images/LuhiveLogo.png" alt="Luhive Logo" width="200"/>
+</div>
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## All-in-One Community Management Platform
 
-## Features
+**Luhive** brings your community together in one powerful platform. Unified event management, centralized communication, and smart feedback systems for verified communities. Starting in Azerbaijan, scaling globally.
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
+### Key Features
+
+- 🎯 **Unified Event Management** - Organize and manage community events seamlessly
+- 💬 **Centralized Communication** - Keep your community connected in one place
+- 🤖 **AI-Powered Analytics** - Get insights into your community's growth and engagement
+- 🎮 **Gamification & Badges** - Recognize and reward active community members
+- 🔌 **Built-in Integrations** - Connect with Google Calendar, Microsoft Forms, Google Drive, Airtable, Excel, and more
+- ⚡ **Quick Actions** - Manage your community efficiently with instant access to key features
+- ✨ **Magic Box** - AI-powered content generation for announcements and events
+
+<div align="center">
+  <img src="app/assets/images/characters/male-face.png" alt="Community Member" width="150"/>
+  <img src="app/assets/images/characters/woman-face.png" alt="Community Member" width="150"/>
+</div>
+
+## Tech Stack
+
+- 🚀 **React Router V7** - Server-side rendering and modern routing
+- ⚡️ **Hot Module Replacement (HMR)** - Fast development experience
+- 📦 **Asset bundling and optimization** - Production-ready builds
+- 🔄 **Data loading and mutations** - Efficient data management
+- 🔒 **TypeScript** - Type-safe development
+- 🎨 **TailwindCSS** - Modern styling with shadcn/ui components
+- 🗄️ **Supabase** - Backend, authentication, and real-time features
 - 📖 [React Router docs](https://reactrouter.com/)
 
-## Getting Started
 
-### Installation
+## Learn More
 
-Install the dependencies:
-
-```bash
-npm install
-```
-
-### Development
-
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+- Visit [Luhive Hub](https://luhive.com/hub) to discover more about our platform
+- [Start Your Community](https://tally.so/r/NpDVoG) - Get started with Luhive today
 
 ---
 
-Built with ❤️ using React Router.
+<div align="center">
+  <img src="app/assets/images/LuhiveLogo.svg" alt="Luhive" width="100"/>
+  <p>Built with ❤️ for communities that matter</p>
+</div>

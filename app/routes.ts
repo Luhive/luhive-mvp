@@ -7,93 +7,95 @@ import {
 
 export default [
   // Landing page (standalone, no navigation layout)
-  index("routes/index.tsx"),
+  index("routes/web/index.tsx"),
 
   // Routes with top navigation layout
-  layout("routes/navigation-layout.tsx", [
-    route("hub", "routes/hub.tsx"),
-    route("profile", "routes/profile.tsx"),
-    route("c/:slug", "routes/community.tsx"),
-    route("create-community", "routes/create-community.tsx"),
-    route("create-community/success", "routes/create-community.success.tsx"),
+  layout("routes/layouts/navigation-layout.tsx", [
+    route("hub", "routes/web/hub.tsx"),
+    route("profile", "routes/web/profile.tsx"),
+    route("c/:slug", "routes/web/community.tsx"),
+    route("create-community", "routes/web/create-community.tsx"),
+    route("create-community/success", "routes/web/create-community-success.tsx"),
 
     // Events routes with nested layout
-    route("c/:slug/events", "routes/community-events/$slug.events.layout.tsx", [
-      index("routes/community-events/$slug.events._index.tsx"),
+    route("c/:slug/events", "routes/community-events/layout.tsx", [
+      index("routes/community-events/index.tsx"),
     ]),
 
     route(
       "c/:slug/events/:eventId",
-      "routes/community-events/$slug.events.$eventId.tsx"
+      "routes/community-events/event-detail.tsx"
     ),
     route(
       "c/:slug/events/:eventId/verify",
-      "routes/community-events/$slug.events.$eventId.verify.tsx"
+      "routes/community-events/event-verify.tsx"
     ),
     route(
       "c/:slug/events/:eventId/verification-sent",
-      "routes/community-events/$slug.events.$eventId.verification-sent.tsx"
+      "routes/community-events/event-verification-sent.tsx"
     ),
   ]),
 
-  route("login", "routes/login.tsx"),
-  route("signup", "routes/register.tsx"),
+  route("login", "routes/auth/login.tsx"),
+  route("signup", "routes/auth/register.tsx"),
 
   // Dashboard with layout and nested routes
   layout("routes/dashboard/layout.tsx", [
-    route("dashboard/:slug", "routes/dashboard/$slug.tsx"),
-    route("dashboard/:slug/profile", "routes/dashboard/$slug.edit.tsx"),
-    route("dashboard/:slug/events", "routes/dashboard/$slug.event.tsx"),
+    route("dashboard/:slug", "routes/dashboard/overview.tsx"),
+    route("dashboard/:slug/profile", "routes/dashboard/edit-profile.tsx"),
+    route("dashboard/:slug/events", "routes/dashboard/events.tsx"),
     route(
       "dashboard/:slug/events/:eventId/edit",
-      "routes/dashboard/$slug.event.$eventId.edit.tsx"
+      "routes/dashboard/event-edit.tsx"
     ),
     route(
       "dashboard/:slug/events/create",
-      "routes/dashboard/$slug.event.create.tsx"
+      "routes/dashboard/events-create.tsx"
     ),
-    route("dashboard/:slug/attenders", "routes/dashboard/$slug.attenders.tsx"),
+    route("dashboard/:slug/attenders", "routes/dashboard/attenders.tsx"),
     route(
       "dashboard/:slug/events/create-external",
-      "routes/dashboard/$slug.event.create-external.tsx"
+      "routes/dashboard/events-create-external.tsx"
     ),
+
+    route("dashboard/:slug/forms", "routes/dashboard/forms.tsx"),
+    route("dashboard/:slug/forms/:formId", "routes/dashboard/forms-detail.tsx"),
+
     route(
       "dashboard/:slug/events/:eventId/edit-external",
-      "routes/dashboard/$slug.event.$eventId.edit-external.tsx"
+      "routes/dashboard/event-edit-external.tsx"
     ),
-    // Google Forms routes
-    route("dashboard/:slug/forms", "routes/dashboard/$slug.forms.tsx"),
-    route("dashboard/:slug/forms/:formId", "routes/dashboard/$slug.forms.$formId.tsx"),
+
   ]),
 
-  route("logout", "routes/logout.tsx"),
+  route("logout", "routes/auth/logout.tsx"),
 
-  route("auth/email-sent/verify", "routes/verify-email-sent.tsx"),
-  route("auth/email-sent/reset", "routes/reset-password-email-sent.tsx"),
+  route("auth/email-sent/verify", "routes/auth/verify-email-sent.tsx"),
+  route("auth/email-sent/reset", "routes/auth/reset-password-email-sent.tsx"),
 
-  route("auth/verify", "routes/auth.verify.tsx"),
-  route("auth/forgot-password", "routes/forgot-password.tsx"),
-  route("auth/verify/reset-password", "routes/auth.reset-password.tsx"),
+  route("auth/verify", "routes/auth/verify.tsx"),
+  route("auth/forgot-password", "routes/auth/forgot-password.tsx"),
+  route("auth/verify/reset-password", "routes/auth/verify-reset-password.tsx"),
 
   // API routes
-  route("api/attenders-emails", "routes/dashboard/api.attenders-emails.tsx"),
-  route("api/attenders-list", "routes/api.attenders-list.tsx"),
+  route("api/attenders-emails", "routes/dashboard/attenders-emails.tsx"),
+  route("api/attenders-list", "routes/api/attenders-list.tsx"),
   route(
     "api/update-registration-status",
-    "routes/api.update-registration-status.tsx"
+    "routes/api/update-registration-status.tsx"
   ),
+
   route(
-    "api/event-schedule-update",
-    "routes/api.event-schedule-update.tsx"
+    "api/event-schedule-update", "routes/api/event-schedule-update.tsx"
   ),
-  route("api/email-debug", "routes/api.email-debug.tsx"),
+  route("api/email-debug", "routes/api/email-debug.tsx"),
 
   // Google Forms API routes
-  route("api/google-forms/auth", "routes/api.google-forms.auth.tsx"),
-  route("api/google-forms/callback", "routes/api.google-forms.callback.tsx"),
-  route("api/google-forms/status", "routes/api.google-forms.status.tsx"),
-  route("api/google-forms/list", "routes/api.google-forms.list.tsx"),
-  route("api/google-forms/disconnect", "routes/api.google-forms.disconnect.tsx"),
-  route("api/google-forms/:formId", "routes/api.google-forms.$formId.tsx"),
-  route("api/google-forms/:formId/responses", "routes/api.google-forms.$formId.responses.tsx"),
+  route("api/google-forms/auth", "routes/api/google-forms/auth.tsx"),
+  route("api/google-forms/callback", "routes/api/google-forms/callback.tsx"),
+  route("api/google-forms/status", "routes/api/google-forms/status.tsx"),
+  route("api/google-forms/list", "routes/api/google-forms/list.tsx"),
+  route("api/google-forms/disconnect", "routes/api/google-forms/disconnect.tsx"),
+  route("api/google-forms/:formId", "routes/api/google-forms/form-id.tsx"),
+  route("api/google-forms/:formId/responses", "routes/api/google-forms/form-id-responses.tsx"),
 ] satisfies RouteConfig;

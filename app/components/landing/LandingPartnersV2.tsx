@@ -1,1 +1,0 @@
-export { LandingPartnersV2 } from "~/components/landingv2/LandingPartnersV2";
