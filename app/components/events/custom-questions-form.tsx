@@ -63,7 +63,8 @@ export function CustomQuestionsForm({
   isSubmitting = false,
 }: CustomQuestionsFormProps) {
   const isMobile = useIsMobile();
-  const isAuthenticated = !!userName;
+  const isAuthenticated = Boolean(userEmail || userName);
+  const authenticatedFallbackName = userEmail?.split('@')[0]?.trim() || 'User';
 
   // Form state
   const [phone, setPhone] = useState('');
@@ -168,7 +169,9 @@ export function CustomQuestionsForm({
     onSubmit(answers);
   };
 
-  const displayName = isAuthenticated ? userName : anonymousName;
+  const displayName = isAuthenticated
+    ? (userName?.trim() || authenticatedFallbackName)
+    : anonymousName;
   const displayEmail = isAuthenticated ? userEmail : anonymousEmail;
   const displayAvatar = isAuthenticated ? userAvatarUrl : null;
 

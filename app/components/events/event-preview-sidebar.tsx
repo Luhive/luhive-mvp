@@ -1,5 +1,5 @@
 import { useNavigate, Form, useNavigation, useFetcher } from "react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -29,6 +29,7 @@ dayjs.extend(timezone);
 type Event = Database["public"]["Tables"]["events"]["Row"];
 type Community = Database["public"]["Tables"]["communities"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type SubmissionIntent = "register" | "unregister";
 
 interface EventPreviewSidebarProps {
   event: Event | null;
@@ -60,11 +61,29 @@ export function EventPreviewSidebar({
   const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
   const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
   const [localIsRegistered, setLocalIsRegistered] = useState(isUserRegistered);
+  const lastSubmittedIntentRef = useRef<SubmissionIntent | null>(null);
+  const prevEventIdRef = useRef<string | null>(null);
   
   // Sync local state with prop when it changes
   useEffect(() => {
     setLocalIsRegistered(isUserRegistered);
   }, [isUserRegistered]);
+
+  // Reset transient registration state only when switching between different events
+  useEffect(() => {
+    const currentEventId = event?.id ?? null;
+
+    if (
+      prevEventIdRef.current !== null &&
+      currentEventId !== null &&
+      prevEventIdRef.current !== currentEventId
+    ) {
+      setLocalIsRegistered(false);
+      lastSubmittedIntentRef.current = null;
+    }
+
+    prevEventIdRef.current = currentEventId;
+  }, [event?.id]);
   
   // Check registration status client-side when sidebar opens or event/user changes
   useEffect(() => {
@@ -83,9 +102,7 @@ export function EventPreviewSidebar({
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (registration) {
-          setLocalIsRegistered(true);
-        }
+        setLocalIsRegistered(!!registration);
       } catch (error) {
         console.error("Error checking registration status:", error);
         // Don't update state on error, keep current state
@@ -98,21 +115,31 @@ export function EventPreviewSidebar({
   // Monitor fetcher data for successful registration
   useEffect(() => {
     if (fetcher.data) {
+      const lastSubmittedIntent = lastSubmittedIntentRef.current;
+
       if (fetcher.data.success) {
-        setLocalIsRegistered(true);
-        setShowCustomQuestionsForm(false);
-        if (fetcher.data.message) {
-          toast.success(fetcher.data.message);
+        if (lastSubmittedIntent === "unregister") {
+          setLocalIsRegistered(false);
         } else {
-          toast.success("Successfully registered for the event!");
+          setLocalIsRegistered(true);
+          setShowCustomQuestionsForm(false);
+          if (fetcher.data.message) {
+            toast.success(fetcher.data.message);
+          } else {
+            toast.success("Successfully registered for the event!");
+          }
         }
       } else if (fetcher.data.error) {
         toast.error(fetcher.data.error);
       }
+
+      lastSubmittedIntentRef.current = null;
     }
   }, [fetcher.data]);
   
   const isSubmitting = fetcher.state === "submitting" || fetcher.state === "loading";
+  const currentSubmittingIntent = fetcher.formData?.get("intent");
+  const isUnregistering = isSubmitting && currentSubmittingIntent === "unregister";
 
   if (!event || !community) return null;
 
@@ -202,6 +229,8 @@ export function EventPreviewSidebar({
   };
 
   const handleCustomQuestionsSubmit = (answers: any) => {
+    lastSubmittedIntentRef.current = "register";
+
     // Use fetcher to submit without navigation (fetcher doesn't navigate by default)
     const formData = new FormData();
     formData.append('intent', 'register');
@@ -431,15 +460,24 @@ export function EventPreviewSidebar({
             ) : user ? (
               // Logged-in user: show registration form
               localIsRegistered ? (
-                <Button
-                  onClick={handleNavigateToEvent}
-                  className="w-[20rem]"
-                  size="lg"
-                  variant="outline"
+                <fetcher.Form
+                  method="post"
+                  action={`/c/${community.slug}/events/${event.id}`}
+                  onSubmit={() => {
+                    lastSubmittedIntentRef.current = "unregister";
+                  }}
                 >
-                  View Registration
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                </Button>
+                  <input type="hidden" name="intent" value="unregister" />
+                  <Button
+                    type="submit"
+                    className="w-[20rem]"
+                    size="lg"
+                    variant="outline"
+                    disabled={isSubmitting}
+                  >
+                    {isUnregistering ? "Unregistering..." : "Unregister"}
+                  </Button>
+                </fetcher.Form>
               ) : hasCustomQuestions ? (
                 // Show button that opens custom questions form
                 <Button
@@ -451,7 +489,13 @@ export function EventPreviewSidebar({
                   {isSubmitting ? "Registering..." : "Register"}
                 </Button>
               ) : (
-                <fetcher.Form method="post" action={`/c/${community.slug}/events/${event.id}`}>
+                <fetcher.Form
+                  method="post"
+                  action={`/c/${community.slug}/events/${event.id}`}
+                  onSubmit={() => {
+                    lastSubmittedIntentRef.current = "register";
+                  }}
+                >
                   <input type="hidden" name="intent" value="register" />
                   <Button
                     type="submit"
