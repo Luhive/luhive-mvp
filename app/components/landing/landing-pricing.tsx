@@ -170,7 +170,7 @@ export function LandingPricing() {
         </div>
 
         {/* Gradient CTA block */}
-        <div className="mt-12 rounded-[40px] bg-[url('/landing/pricing-bg.svg')] bg-cover bg-center px-6 py-12 text-left text-white sm:px-12 sm:py-14">
+        {/* <div className="mt-12 rounded-[40px] bg-[url('/landing/pricing-bg.svg')] bg-cover bg-center px-6 py-12 text-left text-white sm:px-12 sm:py-14">
           <div className="mx-auto max-w-3xl text-center">
             <h3 className="mb-4 md:text-[3rem] font-semibold tracking-tight text-[2rem]">
               {t('pricingV2.cta.title')}
@@ -194,10 +194,10 @@ export function LandingPricing() {
               </a>
             </Button>
           </div>
-        </div>
+        </div> */}
 
         {/* Three benefit cards */}
-        <div className="mt-6 grid gap-4 text-left sm:grid-cols-3">
+        {/* <div className="mt-6 grid gap-4 text-left sm:grid-cols-3">
           <div className="rounded-[24px] bg-[#FF6D2312] p-6 text-xs text-muted-foreground sm:text-sm">
             <p className="mb-1 text-[1rem] font-semibold text-[#000000]">
               <span className='text-[#ff7a1a]'>{t('pricingV2.benefits.benefit1.number')}&nbsp;</span> {t('pricingV2.benefits.benefit1.title')}
@@ -222,7 +222,7 @@ export function LandingPricing() {
               <span className='text-[0.875rem]'>{t('pricingV2.benefits.benefit3.description')}</span>
             </p>
           </div>
-        </div>
+        </div> */}
       </div>
     </section>
   );

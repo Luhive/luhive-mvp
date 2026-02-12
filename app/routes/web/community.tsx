@@ -413,6 +413,9 @@ export default function Community() {
   const displayLogo = community?.logo_url || '';
   const displayCover = community?.cover_url || '';
   const displayVerified = community?.verified || false;
+  const shouldShowDescriptionToggle = displayDescription.length > 160;
+  const formattedMemberCount = memberCount >= 1000 ? `${(memberCount / 1000).toFixed(1)}K` : `${memberCount}`;
+  const formattedEventCount = eventCount >= 1000 ? `${(eventCount / 1000).toFixed(1)}K` : `${eventCount}`;
 
   // Parse social links if available
   const socialLinks = community?.social_links as {
@@ -423,6 +426,7 @@ export default function Community() {
   } | null;
 
   const [showStickyButton, setShowStickyButton] = useState(!isMember && !isOwner);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   // State for event preview sidebar
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -582,7 +586,7 @@ export default function Community() {
       {/* Owner Dashboard Icon */}
 
       <main className={`lg:py-8 py-4 ${isMobile ? 'pb-18' : ''}`}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-auto md:auto-rows-[minmax(120px,auto)]">
             {/* Profile Card - Large */}
             <Card className="md:col-span-2 py-0 lg:col-span-2 lg:row-span-2 border hover:border-primary/30 transition-colors shadow-none overflow-hidden">
               <CardContent className="p-0 flex flex-col h-full">
@@ -618,9 +622,20 @@ export default function Community() {
                   <div className="space-y-2 px-4">
                     <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight">{displayName}</h1>
                     <p className="text-base sm:text-lg text-primary font-medium">{displayTagline}</p>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md">
+                  <p
+                    className={`text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md ${!isDescriptionExpanded ? "line-clamp-3" : ""}`}
+                  >
                     {displayDescription}
                   </p>
+                  {shouldShowDescriptionToggle && (
+                    <button
+                      type="button"
+                      onClick={() => setIsDescriptionExpanded((prev) => !prev)}
+                      className="text-xs sm:text-sm text-primary font-medium hover:text-primary/80 transition-colors"
+                    >
+                      {isDescriptionExpanded ? "Show less" : "Read more"}
+                    </button>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <Badge
@@ -729,36 +744,42 @@ export default function Community() {
               </CardContent>
             </Card>
 
+          <div className="col-span-1 grid grid-cols-2 gap-4 md:contents">
             {/* Stats Card 1 */}
-            <Card className="border hover:border-primary/30 transition-colors shadow-none">
-              <CardContent className="p-6 flex flex-col items-center justify-center h-full text-center space-y-2">
-                <Users className="h-10 w-10 text-primary" />
-                <p className="text-3xl font-bold text-foreground">{memberCount >= 1000 ? `${(memberCount / 1000).toFixed(1)}K+` : memberCount}</p>
-                <p className="text-sm text-muted-foreground">Members</p>
+            <Card className="h-20 md:h-auto border hover:border-primary/30 transition-colors shadow-none">
+              <CardContent className="p-3 md:p-6 flex flex-row md:flex-col items-center justify-center h-full text-center gap-2 md:gap-2">
+                <Users className="h-8 w-8 md:h-10 md:w-10 text-primary shrink-0" />
+                <div className="flex items-center gap-2 md:flex-col md:items-center md:gap-0">
+                  <p className="text-2xl md:text-3xl font-bold text-foreground leading-none">{formattedMemberCount}</p>
+                  <p className="text-sm md:text-sm text-muted-foreground">members</p>
+                </div>
               </CardContent>
             </Card>
 
             {/* Stats Card 2 */}
-            <Card className="border hover:border-primary/30 shadow-none">
-              <CardContent className="p-6 flex flex-col items-center justify-center h-full text-center space-y-2">
-                <Calendar className="h-10 w-10 text-primary" />
-                <p className="text-3xl font-bold text-foreground">{eventCount}</p>
-                <p className="text-sm text-muted-foreground">Events</p>
+            <Card className="h-20 md:h-auto border hover:border-primary/30 shadow-none">
+              <CardContent className="p-3 md:p-6 flex flex-row md:flex-col items-center justify-center h-full text-center gap-2 md:gap-2">
+                <Calendar className="h-8 w-8 md:h-10 md:w-10 text-primary shrink-0" />
+                <div className="flex items-center gap-2 md:flex-col md:items-center md:gap-0">
+                  <p className="text-2xl md:text-3xl font-bold text-foreground leading-none">{formattedEventCount}</p>
+                  <p className="text-sm md:text-sm text-muted-foreground">events</p>
+                </div>
               </CardContent>
             </Card>
+          </div>
 
             {/* Quick Actions Card */}
-            <Card className="lg:col-span-2 lg:row-span-1 border hover:border-primary/30 transition-colors shadow-none">
-              <CardHeader>
+            <Card className="hidden md:col-span-2 md:block lg:col-span-2 lg:row-span-1 border hover:border-primary/30 transition-colors shadow-none">
+              <CardHeader className="pb-2 lg:pb-4">
                 <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                   <Sparkles className="h-5 w-5" />
                   Quick Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col gap-3">
+              <CardContent className="flex flex-col gap-3 lg:gap-4">
                 {isOwner ? (
                   <Button
-                    className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background"
+                    className="w-full py-5.5 lg:py-6 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background"
                     asChild
                   >
                     <Link to={`/dashboard/${community?.slug}`}>
@@ -780,7 +801,7 @@ export default function Community() {
                     />
                 )}
 
-                <Button className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
+                <Button className="w-full py-5.5 lg:py-6 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background">
                   <span className="flex w-full items-center justify-between gap-3">
                     <span className="flex items-center gap-2">
                       <MessageCircle className="h-4 w-4 opacity-90 text-foreground" />
@@ -791,7 +812,7 @@ export default function Community() {
                 </Button>
 
                 <Button
-                  className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background"
+                  className="w-full py-5.5 lg:py-6 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-foreground/20 border-solid border bg-background"
                   onClick={() => {
                     const url = window.location.href;
                     navigator.clipboard.writeText(url);

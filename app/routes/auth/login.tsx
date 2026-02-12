@@ -177,7 +177,7 @@ const Login = () => {
           <input type="hidden" name="intent" value="password" />
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="Emall" required />
+            <Input id="email" name="email" type="email" placeholder="Email" required />
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">

@@ -64,8 +64,7 @@ export function LandingFAQ() {
         </div>
 
         {/* Bottom CTA */}
-        <div className="my-25 md:my-36 text-center">
-          {/* Mobile layout: stacked text + button below */}
+        {/* <div className="my-25 md:my-36 text-center">
           <div className="flex flex-col items-center gap-6 md:hidden">
             <h3 className="text-4xl font-semibold text-foreground sm:text-4xl">
               <span className="block">{t('faqV2.cta.titleLine1')}</span>
@@ -88,7 +87,7 @@ export function LandingFAQ() {
             </Button>
           </div>
 
-          {/* Desktop layout: inline button */}
+
           <h3 className="hidden md:flex flex-wrap items-center justify-center gap-3 text-5xl lg:text-6xl font-semibold text-foreground">
             <span className="block w-full">{t('faqV2.cta.titleLine1')}</span>
             <span className="inline-block">{t('faqV2.cta.titleFree')}</span>
@@ -109,7 +108,7 @@ export function LandingFAQ() {
             </Button>
             <span className="inline-block">{t('faqV2.cta.titleConsultation')}</span>
           </h3>
-        </div>
+        </div> */}
       </div>
     </section>
   );
