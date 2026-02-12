@@ -1,7 +1,6 @@
 import { Suspense, lazy } from "react"
 import { useCommunityMembers } from "~/hooks/use-community-members"
 import { useDashboardCommunity } from "~/hooks/use-dashboard-community"
-import { DashboardLayoutSkeleton } from "~/components/dashboard/dashboard-layout-skeleton"
 
 import { SectionCardsSkeleton } from "~/components/section-cards-skeleton"
 import { DataTableSkeleton } from "~/components/data-table-skeleton"
@@ -19,13 +18,10 @@ export function meta() {
 
 export default function DashboardOverview() {
   // Access parent layout data via CSR hook
-  const { data: dashboardData, loading: dashboardLoading } = useDashboardCommunity()
+  const { data: dashboardData } = useDashboardCommunity()
   const { members, loading, error } = useCommunityMembers(dashboardData?.community?.id)
 
-  if (dashboardLoading || !dashboardData) {
-    return <DashboardLayoutSkeleton />;
-  }
-
+  // Layout handles the skeleton, so we just show content loading states
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <Suspense fallback={<SectionCardsSkeleton />}>

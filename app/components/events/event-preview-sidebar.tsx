@@ -1,5 +1,5 @@
-import { useNavigate, Form, useNavigation } from "react-router";
-import { useState } from "react";
+import { useNavigate, Form, useNavigation, useFetcher } from "react-router";
+import { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -20,6 +20,8 @@ import { Badge } from "~/components/ui/badge";
 import AttendersAvatars from "./attenders-avatars";
 import { AnonymousRegistrationDialog } from "./anonymous-registration-dialog";
 import { AnonymousSubscriptionDialog } from "./anonymous-subscription-dialog";
+import { CustomQuestionsForm } from "./custom-questions-form";
+import { createClient } from "~/lib/supabase.client";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -53,10 +55,64 @@ export function EventPreviewSidebar({
 }: EventPreviewSidebarProps) {
   const navigate = useNavigate();
   const navigation = useNavigation();
+  const fetcher = useFetcher();
   const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
   const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
+  const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
+  const [localIsRegistered, setLocalIsRegistered] = useState(isUserRegistered);
   
-  const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
+  // Sync local state with prop when it changes
+  useEffect(() => {
+    setLocalIsRegistered(isUserRegistered);
+  }, [isUserRegistered]);
+  
+  // Check registration status client-side when sidebar opens or event/user changes
+  useEffect(() => {
+    // Only check if sidebar is open, user is available, and event is available
+    if (!open || !user || !event) {
+      return;
+    }
+
+    async function checkRegistrationStatus() {
+      try {
+        const supabase = createClient();
+        const { data: registration } = await supabase
+          .from("event_registrations")
+          .select("id")
+          .eq("event_id", event.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (registration) {
+          setLocalIsRegistered(true);
+        }
+      } catch (error) {
+        console.error("Error checking registration status:", error);
+        // Don't update state on error, keep current state
+      }
+    }
+
+    checkRegistrationStatus();
+  }, [open, user?.id, event?.id]);
+  
+  // Monitor fetcher data for successful registration
+  useEffect(() => {
+    if (fetcher.data) {
+      if (fetcher.data.success) {
+        setLocalIsRegistered(true);
+        setShowCustomQuestionsForm(false);
+        if (fetcher.data.message) {
+          toast.success(fetcher.data.message);
+        } else {
+          toast.success("Successfully registered for the event!");
+        }
+      } else if (fetcher.data.error) {
+        toast.error(fetcher.data.error);
+      }
+    }
+  }, [fetcher.data]);
+  
+  const isSubmitting = fetcher.state === "submitting" || fetcher.state === "loading";
 
   if (!event || !community) return null;
 
@@ -70,6 +126,17 @@ export function EventPreviewSidebar({
   const isExternalEvent = event.registration_type === "external";
   const platform = event.external_platform as ExternalPlatform | null;
   const PlatformIcon = platform ? getExternalPlatformIcon(platform) : null;
+
+  // Check if event has custom questions
+  const hasCustomQuestions = event.custom_questions && (
+    (event.custom_questions as any)?.phone?.enabled ||
+    ((event.custom_questions as any)?.custom && (event.custom_questions as any).custom.length > 0)
+  );
+
+  // Get user phone from profile metadata
+  const userPhone = userProfile?.metadata && typeof userProfile.metadata === 'object' && 'phone' in userProfile.metadata
+    ? (userProfile.metadata as any).phone
+    : null;
 
   const eventUrl = `${window.location.origin}/c/${community.slug}/events/${event.id}`;
 
@@ -118,12 +185,27 @@ export function EventPreviewSidebar({
 
     // For regular events
     if (user) {
-      // Logged-in user: submit registration form directly
-      // The form will be rendered below
+      // Logged-in user: check if custom questions are needed
+      if (hasCustomQuestions) {
+        setShowCustomQuestionsForm(true);
+      }
+      // If no custom questions, the form will be rendered below and submitted directly
     } else {
       // Not logged in: show anonymous registration dialog
       setShowAnonymousDialog(true);
     }
+  };
+
+  const handleCustomQuestionsSubmit = (answers: any) => {
+    // Use fetcher to submit without navigation (fetcher doesn't navigate by default)
+    const formData = new FormData();
+    formData.append('intent', 'register');
+    formData.append('custom_answers', JSON.stringify(answers));
+
+    fetcher.submit(formData, { 
+      method: 'POST',
+      action: `/c/${community.slug}/events/${event.id}`
+    });
   };
 
   return (
@@ -343,7 +425,7 @@ export function EventPreviewSidebar({
               </Button>
             ) : user ? (
               // Logged-in user: show registration form
-              isUserRegistered ? (
+              localIsRegistered ? (
                 <Button
                   onClick={handleNavigateToEvent}
                   className="w-[20rem]"
@@ -353,8 +435,18 @@ export function EventPreviewSidebar({
                   View Registration
                   <ExternalLink className="h-4 w-4 ml-2" />
                 </Button>
+              ) : hasCustomQuestions ? (
+                // Show button that opens custom questions form
+                <Button
+                  onClick={handleRegisterClick}
+                  className="w-[20rem]"
+                  size="lg"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Registering..." : "Register"}
+                </Button>
               ) : (
-                <Form method="post" action={`/c/${community.slug}/events/${event.id}`}>
+                <fetcher.Form method="post" action={`/c/${community.slug}/events/${event.id}`}>
                   <input type="hidden" name="intent" value="register" />
                   <Button
                     type="submit"
@@ -364,7 +456,7 @@ export function EventPreviewSidebar({
                   >
                     {isSubmitting ? "Registering..." : "Register"}
                   </Button>
-                </Form>
+                </fetcher.Form>
               )
             ) : (
               // Not logged in: show register button that opens dialog
@@ -394,6 +486,20 @@ export function EventPreviewSidebar({
         eventId={event.id}
         communitySlug={community.slug}
       />
+      {hasCustomQuestions && (
+        <CustomQuestionsForm
+          open={showCustomQuestionsForm}
+          onOpenChange={setShowCustomQuestionsForm}
+          eventId={event.id}
+          customQuestions={event.custom_questions as any}
+          userName={userProfile?.full_name || undefined}
+          userEmail={user?.email || undefined}
+          userAvatarUrl={userProfile?.avatar_url || undefined}
+          userPhone={userPhone}
+          onSubmit={handleCustomQuestionsSubmit}
+          isSubmitting={isSubmitting}
+        />
+      )}
     </Sheet>
   );
 }

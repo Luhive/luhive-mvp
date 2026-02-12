@@ -239,7 +239,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         }
       }
 
-      const formattedData: Attender[] = registrations.map((reg: any) => {
+      const formattedData: Attender[] = (registrations || []).map((reg: any) => {
         const isAnonymous = !reg.user_id;
         // Get phone from custom_answers if available, otherwise use anonymous_phone
         const phoneFromAnswers = (reg.custom_answers as CustomAnswerJson)?.phone;
