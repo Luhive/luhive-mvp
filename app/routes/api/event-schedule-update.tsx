@@ -1,5 +1,5 @@
 import { createClient, createServiceRoleClient } from "~/lib/supabase.server";
-import type { Route } from "./+types/api.event-schedule-update";
+import type { Route } from "./+types/event-schedule-update";
 import { sendEventScheduleUpdateEmail } from "~/lib/email.server";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -167,7 +167,7 @@ export async function action({ request }: Route.ActionArgs) {
 
     return Response.json({ success: true });
   } catch (error: any) {
-    console.error("Error in api.event-schedule-update:", error);
+    console.error("Error in api/event-schedule-update:", error);
     return Response.json(
       { success: false, error: error.message || "Internal server error" },
       { status: 500 }

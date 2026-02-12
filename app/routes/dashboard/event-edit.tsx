@@ -6,6 +6,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 
 import type { Database } from '~/models/database.types';
+import type { CustomQuestionJson } from '~/models/event.types';
 import type { DashboardLoaderData } from '~/routes/dashboard/layout';
 import { DashboardEventFormSkeleton } from '~/components/dashboard/dashboard-event-form-skeleton';
 import { EventForm } from '~/components/events/event-form';
@@ -33,6 +34,7 @@ export default function EditEventPage() {
 
   useEffect(() => {
     if (!dashboardData?.community || !eventId) return;
+    const id = eventId;
 
     let cancelled = false;
 
@@ -40,7 +42,7 @@ export default function EditEventPage() {
       try {
         setLoading(true);
 
-        const { event, error } = await getEventByIdClient(eventId, dashboardData.community.id);
+        const { event, error } = await getEventByIdClient(id, dashboardData.community.id);
 
         if (cancelled) return;
 
@@ -113,7 +115,7 @@ export default function EditEventPage() {
     coverUrl: event.cover_url ?? '',
     status: event.status,
     isApproveRequired: event.is_approve_required ?? false,
-    customQuestions: event.custom_questions,
+    customQuestions: (event.custom_questions ?? null) as CustomQuestionJson | null,
   };
 
   return (
@@ -130,4 +132,3 @@ export default function EditEventPage() {
     </div>
   );
 }
-
