@@ -143,53 +143,6 @@ const Login = () => {
       </div>
 
       <div className="mx-auto border rounded-md border-muted max-w-md px-6 py-12">
-        <Form method="post" className="flex flex-col gap-4">
-          <input type="hidden" name="intent" value="password" />
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" placeholder="you@example.com" required />
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Link className="text-xs text-muted-foreground hover:underline" to="/auth/forgot-password">
-                Forgot your password?
-              </Link>
-            </div>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Your password"
-                className="pr-10"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-          </div>
-          <Button disabled={isSubmittingPassword} type="submit">
-            {isSubmittingPassword ? <Spinner /> : 'Log in'}
-          </Button>
-        </Form>
-
-        <div className="my-6 flex items-center gap-4">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
         <Form method="post" className="flex" replace>
           <input type="hidden" name="intent" value="oauth" />
           <input type="hidden" name="provider" value="google" />
@@ -211,6 +164,53 @@ const Login = () => {
               <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z" />
             </svg>
             {isSubmittingOAuth ? <Spinner /> : 'Login with Google'}
+          </Button>
+        </Form>
+
+        <div className="my-6 flex items-center gap-4">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">or</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <Form method="post" className="flex flex-col gap-4">
+          <input type="hidden" name="intent" value="password" />
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" name="email" type="email" placeholder="Emall" required />
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link className="text-xs text-muted-foreground hover:underline" to="/auth/forgot-password">
+                Forgot your password?
+              </Link>
+            </div>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                className="pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </div>
+          <Button disabled={isSubmittingPassword} type="submit">
+            {isSubmittingPassword ? <Spinner /> : 'Log in'}
           </Button>
         </Form>
 

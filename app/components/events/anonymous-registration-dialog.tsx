@@ -17,13 +17,28 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Sparkles, ArrowRight } from "lucide-react";
-import { Form, useNavigation } from "react-router";
+import { useEffect, useRef } from "react";
+import { Form, useFetcher, useNavigation } from "react-router";
+import { toast } from "sonner";
+
+interface AnonymousRegistrationResponse {
+  success?: boolean;
+  error?: string;
+  verificationSent?: boolean;
+  needsCustomQuestions?: boolean;
+  anonymousName?: string;
+  anonymousEmail?: string;
+  email?: string;
+}
 
 interface AnonymousRegistrationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventId: string;
   communitySlug: string;
+  preventNavigation?: boolean;
+  onSuccess?: (data: { email: string }) => void;
+  onNeedsCustomQuestions?: (data: { anonymousName: string; anonymousEmail: string }) => void;
 }
 
 export function AnonymousRegistrationDialog({
@@ -31,10 +46,49 @@ export function AnonymousRegistrationDialog({
   onOpenChange,
   eventId,
   communitySlug,
+  preventNavigation = false,
+  onSuccess,
+  onNeedsCustomQuestions,
 }: AnonymousRegistrationDialogProps) {
   const isMobile = useIsMobile();
+  const fetcher = useFetcher<AnonymousRegistrationResponse>();
   const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
+  const lastHandledDataRef = useRef<AnonymousRegistrationResponse | undefined>(undefined);
+  const isSubmitting = preventNavigation
+    ? fetcher.state === "submitting" || fetcher.state === "loading"
+    : navigation.state === "submitting" || navigation.state === "loading";
+
+  useEffect(() => {
+    if (!preventNavigation) return;
+    if (!fetcher.data) return;
+    if (fetcher.data === lastHandledDataRef.current) return;
+
+    lastHandledDataRef.current = fetcher.data;
+
+    if (fetcher.data.error) {
+      toast.error(fetcher.data.error);
+      return;
+    }
+
+    if (fetcher.data.success && fetcher.data.needsCustomQuestions) {
+      const anonymousName = fetcher.data.anonymousName;
+      const anonymousEmail = fetcher.data.anonymousEmail;
+
+      if (anonymousName && anonymousEmail) {
+        onNeedsCustomQuestions?.({ anonymousName, anonymousEmail });
+        onOpenChange(false);
+      }
+      return;
+    }
+
+    if (fetcher.data.success && fetcher.data.verificationSent) {
+      const email = fetcher.data.email;
+      if (email) {
+        onSuccess?.({ email });
+      }
+      onOpenChange(false);
+    }
+  }, [fetcher.data, onNeedsCustomQuestions, onOpenChange, onSuccess, preventNavigation]);
 
   const content = (
     <div className="space-y-4">
@@ -64,49 +118,96 @@ export function AnonymousRegistrationDialog({
       </div>
 
       {/* Registration Form */}
-      <Form method="post" className="space-y-4">
-        <input type="hidden" name="intent" value="anonymous-register" />
+      {preventNavigation ? (
+        <fetcher.Form method="post" action={`/c/${communitySlug}/events/${eventId}`} className="space-y-4">
+          <input type="hidden" name="intent" value="anonymous-register" />
+          <input type="hidden" name="_source" value="sidebar" />
 
-        <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
-          <Input
-            id="name"
-            name="name"
-            type="text"
-            placeholder="John Doe"
-            required
-            disabled={isSubmitting}
-          />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="John Doe"
+              required
+              disabled={isSubmitting}
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="john@example.com"
-            required
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="john@example.com"
+              required
+              disabled={isSubmitting}
+            />
+            <p className="text-xs text-muted-foreground">
+              We'll send you a verification link to confirm your registration.
+            </p>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
             disabled={isSubmitting}
-          />
-          <p className="text-xs text-muted-foreground">
-            We'll send you a verification link to confirm your registration.
+          >
+            {isSubmitting ? "Submitting..." : "Register for Event"}
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            By registering, you agree to receive event-related emails.
           </p>
-        </div>
+        </fetcher.Form>
+      ) : (
+          <Form method="post" className="space-y-4">
+            <input type="hidden" name="intent" value="anonymous-register" />
 
-        <Button
-          type="submit"
-          className="w-full"
-          size="lg"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Submitting..." : "Register for Event"}
-        </Button>
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                required
+                disabled={isSubmitting}
+              />
+            </div>
 
-        <p className="text-xs text-center text-muted-foreground">
-          By registering, you agree to receive event-related emails.
-        </p>
-      </Form>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="john@example.com"
+                required
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-muted-foreground">
+                We'll send you a verification link to confirm your registration.
+              </p>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Submitting..." : "Register for Event"}
+            </Button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              By registering, you agree to receive event-related emails.
+            </p>
+          </Form>
+      )}
     </div>
   );
 

@@ -203,14 +203,9 @@ export function LandingNavbar() {
             className="hidden h-10 rounded-full bg-[#FF7A1A] px-5 text-sm font-semibold text-white shadow-sm hover:rounded-md hover:bg-[#FF7A1A] sm:inline-flex sm:h-11 sm:px-6"
             asChild
           >
-            <a
-              href="https://tally.so/r/NpDVoG"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => AnalyticsEvents.startCommunityClick('Header V2')}
-            >
-              {t('navV2.tryForFree')}
-            </a>
+            <Link to="/signup" onClick={() => AnalyticsEvents.startCommunityClick('Header V2')}>
+              Get Started
+            </Link>
           </Button>
           {/* Hamburger button for mobile */}
           <button
@@ -284,17 +279,15 @@ export function LandingNavbar() {
                 className="flex items-center w-auto min-w-max rounded-full bg-[#FF7A1A] px-6 py-6 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
                 asChild
               >
-                <a
-                  href="https://tally.so/r/NpDVoG"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/signup"
                   onClick={() => {
                     AnalyticsEvents.startCommunityClick('Mobile Menu V2');
                     setIsMobileMenuOpen(false);
                   }}
                 >
-                  {t('about.startYourCommunity')}
-                </a>
+                  Get Started
+                </Link>
               </Button>
               <LanguageSwitcher />
             </div>
