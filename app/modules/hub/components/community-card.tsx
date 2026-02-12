@@ -19,7 +19,6 @@ export function CommunityCard({ community }: CommunityCardProps) {
       to={`/c/${community.slug}`}
       prefetch="intent"
       viewTransition
-      state={{ community }}
       className="group"
     >
       <Card className="h-full cursor-pointer border hover:border-primary/30 transition-all duration-200 shadow-none hover:shadow-md group transform-gpu hover:scale-[1.02] hover:-rotate-1">
