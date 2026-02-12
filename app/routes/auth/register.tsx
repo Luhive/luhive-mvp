@@ -294,7 +294,7 @@ const Register = () => {
               id="email"
               name="email"
               type="email"
-              placeholder="Emall"
+              placeholder="Email"
               value={emailValue}
               onChange={(event) => {
                 setEmailValue(event.target.value)

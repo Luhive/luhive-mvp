@@ -64,6 +64,8 @@ export function JoinCommunityForm({
   const submit = useSubmit()
   const navigate = useNavigate()
   const navigation = useNavigation()
+  const [isEmailStepComplete, setIsEmailStepComplete] = React.useState(false)
+  const [emailStepError, setEmailStepError] = React.useState<string | null>(null)
 
   const guestForm = useForm<GuestJoinFormValues>({
     resolver: zodResolver(guestJoinSchema),
@@ -111,10 +113,11 @@ export function JoinCommunityForm({
 
   // For non-logged-in users: redirect to register with params
   const onGuestSubmit = (values: GuestJoinFormValues) => {
+    const normalizedEmail = values.email.trim()
     const params = new URLSearchParams({
       name: values.name,
       surname: values.surname,
-      email: values.email,
+      email: normalizedEmail,
       communityId: values.communityId,
       communityName: communityName,
     })
@@ -140,6 +143,19 @@ export function JoinCommunityForm({
     }
   }, [isLoggedIn, navigation.state, memberForm.formState.isSubmitSuccessful, memberForm])
 
+  React.useEffect(() => {
+    if (open) return
+
+    guestForm.reset({
+      name: "",
+      surname: "",
+      email: "",
+      communityId,
+    })
+    setIsEmailStepComplete(false)
+    setEmailStepError(null)
+  }, [communityId, guestForm, open])
+
   const defaultTrigger = isMember ? (
     <Button
       className="w-full py-5.5 rounded-sm hover:bg-muted text-sm hover:shadow-xs font-medium border-primary/30 border-solid border bg-primary/5"
@@ -163,7 +179,28 @@ export function JoinCommunityForm({
     </Button>
   )
 
-  const consentMessage = `By joining ${communityName}, you'll receive email notifications about announcements, posts, and events. You can manage your notification preferences anytime.`
+  const consentMessage = `By joining ${communityName}, you agree to email notifications. Unsubscribe anytime.`
+
+  const headerDescription = isMember
+    ? "You are currently a member of this community."
+    : isLoggedIn
+      ? "Review the details below and confirm to join our community."
+      : null
+
+  const handleContinueWithEmail = () => {
+    const rawEmail = guestForm.getValues("email")
+    const trimmedEmail = typeof rawEmail === "string" ? rawEmail.trim() : ""
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setEmailStepError("Please enter a valid email address.")
+      return
+    }
+
+    setEmailStepError(null)
+    guestForm.setValue("email", trimmedEmail, { shouldValidate: true })
+    setIsEmailStepComplete(true)
+  }
 
   // Leave confirmation content
   const LeaveConfirmationContent = () => (
@@ -234,10 +271,6 @@ export function JoinCommunityForm({
   const MemberFormContent = () => (
     <Form {...memberForm}>
       <form onSubmit={memberForm.handleSubmit(onMemberSubmit)} className="space-y-4">
-        <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
-          <p>{consentMessage}</p>
-        </div>
-
         {userEmail && (
           <div className="space-y-2">
             <FormLabel>Your Email</FormLabel>
@@ -292,6 +325,7 @@ export function JoinCommunityForm({
             </Button>
           </div>
         )}
+        <p className="text-center text-xs text-muted-foreground">{consentMessage}</p>
       </form>
     </Form>
   )
@@ -300,70 +334,6 @@ export function JoinCommunityForm({
   const GuestFormContent = () => (
     <Form {...guestForm}>
       <form onSubmit={guestForm.handleSubmit(onGuestSubmit)} className="space-y-4">
-        <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
-          <p>{consentMessage}</p>
-        </div>
-
-        <FormField
-          control={guestForm.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Elizabeth"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={guestForm.control}
-          name="surname"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Surname</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Queen"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={guestForm.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  placeholder="you@example.com"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <input type="hidden" {...guestForm.register("communityId")} />
-
-        <div className="my-4 flex items-center gap-4">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
         <Button
           type="button"
           onClick={handleGoogleOAuth}
@@ -383,35 +353,97 @@ export function JoinCommunityForm({
             <path fill="#4CAF50" d="M24 44c5.196 0 9.86-1.992 13.38-5.223l-6.173-5.234C29.093 34.484 26.682 35.5 24 35.5c-5.262 0-9.799-3.507-11.397-8.248l-6.52 5.017C8.704 39.043 15.83 44 24 44z" />
             <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z" />
           </svg>
-          {isSubmittingOAuth ? <Spinner /> : 'Continue with Google'}
+          {isSubmittingOAuth ? <Spinner /> : "Continue with Google"}
         </Button>
 
-        {isMobile ? (
-          <DrawerFooter className="px-0">
-            <Button type="submit" disabled={isSubmittingOAuth} className="w-full">
-              Continue to Sign Up
-            </Button>
-            <DrawerClose asChild>
-              <Button variant="outline" disabled={isSubmittingOAuth}>
-                Cancel
-              </Button>
-            </DrawerClose>
-          </DrawerFooter>
-        ) : (
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-                onClick={() => setOpen(false)}
-                disabled={isSubmittingOAuth}
-            >
-              Cancel
-            </Button>
-              <Button type="submit" disabled={isSubmittingOAuth}>
-                Continue to Sign Up
-            </Button>
-          </div>
+        <div className="my-4 flex items-center gap-4">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">or</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <FormField
+          control={guestForm.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  aria-label="Email"
+                  {...field}
+                  onChange={(event) => {
+                    field.onChange(event.target.value)
+                    if (emailStepError) {
+                      setEmailStepError(null)
+                    }
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {emailStepError && <p className="text-sm text-destructive">{emailStepError}</p>}
+
+        <input type="hidden" {...guestForm.register("communityId")} />
+
+        {!isEmailStepComplete && (
+          <Button type="button" onClick={handleContinueWithEmail} disabled={isSubmittingOAuth} className="w-full">
+            Continue with Email
+          </Button>
         )}
+
+        <div
+          className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out ${isEmailStepComplete
+              ? "max-h-[420px] opacity-100 translate-y-0"
+              : "max-h-0 opacity-0 translate-y-1 pointer-events-none"
+            }`}
+        >
+          <div>
+            <div className="space-y-4 pt-2">
+              <FormField
+                control={guestForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                  <FormControl>
+                      <Input placeholder="Name" aria-label="Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={guestForm.control}
+                name="surname"
+                render={({ field }) => (
+                  <FormItem>
+                  <FormControl>
+                      <Input placeholder="Surname" aria-label="Surname" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {isMobile ? (
+                <DrawerFooter className="px-0">
+                  <Button type="submit" disabled={isSubmittingOAuth} className="w-full">
+                    Continue to Sign Up
+                  </Button>
+                </DrawerFooter>
+              ) : (
+                  <Button type="submit" disabled={isSubmittingOAuth} className="w-full">
+                    Continue to Sign Up
+                  </Button>
+              )}
+            </div>
+          </div>
+        </div>
+        <p className="text-center text-xs text-muted-foreground">{consentMessage}</p>
       </form>
     </Form>
   )
@@ -420,18 +452,14 @@ export function JoinCommunityForm({
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{trigger || defaultTrigger}</DrawerTrigger>
-        <DrawerContent>
+        <DrawerContent className="pb-6">
           <DrawerHeader>
-            <DrawerTitle>
+            <DrawerTitle className={!isMember ? "text-center text-2xl font-extrabold tracking-tight" : undefined}>
               {isMember ? `Leave ${communityName}` : `Join ${communityName}`}
             </DrawerTitle>
-            <DrawerDescription>
-              {isMember
-                ? "You are currently a member of this community."
-                : isLoggedIn
-                  ? "Review the details below and confirm to join our community."
-                  : "Enter your details to get started with your account."}
-            </DrawerDescription>
+            {headerDescription && (
+              <DrawerDescription>{headerDescription}</DrawerDescription>
+            )}
           </DrawerHeader>
           <div className="px-4">
             {isMember ? (
@@ -452,16 +480,12 @@ export function JoinCommunityForm({
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className={!isMember ? "text-center text-2xl font-extrabold tracking-tight" : undefined}>
             {isMember ? `Leave ${communityName}` : `Join ${communityName}`}
           </DialogTitle>
-          <DialogDescription>
-            {isMember
-              ? "You are currently a member of this community."
-              : isLoggedIn
-                ? "Review the details below and confirm to join our community."
-                : "Enter your details to get started with your account."}
-          </DialogDescription>
+          {headerDescription && (
+            <DialogDescription>{headerDescription}</DialogDescription>
+          )}
         </DialogHeader>
         {isMember ? (
           <LeaveConfirmationContent />
