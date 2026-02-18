@@ -1,15 +1,8 @@
 import type { Database } from "~/shared/models/database.types";
 import { createClient } from "~/shared/lib/supabase/client";
+import { DashboardStatsData, Member } from "../model/dashboard-types";
 
 type Community = Database["public"]["Tables"]["communities"]["Row"];
-
-export type Member = {
-  id: string;
-  full_name: string;
-  avatar_url: string | null;
-  joined_at: string;
-  role: string;
-};
 
 export async function getCommunityBySlugClient(slug: string) {
   const supabase = createClient();
@@ -63,11 +56,7 @@ export async function getMembersForCommunityClient(communityId: string) {
   return { members, error: null };
 }
 
-export type DashboardStatsData = {
-  totalVisits: number;
-  uniqueVisitors: number;
-  joinedUsers: number;
-};
+
 
 export async function getStatsForCommunityClient(
   communityId: string
