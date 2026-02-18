@@ -1,47 +1,61 @@
-import { Suspense, lazy } from "react"
-import { useCommunityMembers } from "~/hooks/use-community-members"
-import { useDashboardCommunity } from "~/hooks/use-dashboard-community"
+export { meta } from "~/modules/dashboard/model/overview-meta";
 
-import { SectionCardsSkeleton } from "~/components/section-cards-skeleton"
-import { DataTableSkeleton } from "~/components/data-table-skeleton"
+import { useLoaderData } from "react-router";
+import { SectionCards } from "~/modules/dashboard/components/section-cards";
+import { DataTable } from "~/modules/dashboard/components/data-table";
+import {
+  getCommunityBySlugClient,
+  getMembersForCommunityClient,
+  getStatsForCommunityClient,
+  type Member,
+  type DashboardStatsData,
+} from "~/modules/dashboard/data/dashboard-repo.client";
 
-// Lazy load heavy components
-const SectionCards = lazy(() => import("~/components/section-cards").then(m => ({ default: m.SectionCards })))
-const DataTable = lazy(() => import("~/components/data-table").then(m => ({ default: m.DataTable })))
+type OverviewLoaderData = {
+  members: Member[];
+  stats: DashboardStatsData;
+};
 
-export function meta() {
-  return [
-    { title: "Dashboard Overview - Luhive" },
-    { name: "description", content: "Manage your community dashboard" },
-  ];
+async function clientLoader({
+  params,
+}: {
+  params: { slug?: string };
+}): Promise<OverviewLoaderData> {
+  const slug = params.slug;
+  if (!slug) {
+    return { members: [], stats: { totalVisits: 0, uniqueVisitors: 0, joinedUsers: 0 } };
+  }
+
+  const { community, error: communityError } =
+    await getCommunityBySlugClient(slug);
+
+  if (communityError || !community) {
+    return { members: [], stats: { totalVisits: 0, uniqueVisitors: 0, joinedUsers: 0 } };
+  }
+
+  const [membersResult, stats] = await Promise.all([
+    getMembersForCommunityClient(community.id),
+    getStatsForCommunityClient(community.id),
+  ]);
+
+  return {
+    members: membersResult.error ? [] : membersResult.members,
+    stats,
+  };
 }
 
-export default function DashboardOverview() {
-  // Access parent layout data via CSR hook
-  const { data: dashboardData } = useDashboardCommunity()
-  const { members, loading, error } = useCommunityMembers(dashboardData?.community?.id)
+export { clientLoader };
 
-  // Layout handles the skeleton, so we just show content loading states
+export default function DashboardOverviewPage() {
+  const { members, stats } = useLoaderData<OverviewLoaderData>();
+
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      <Suspense fallback={<SectionCardsSkeleton />}>
-        <SectionCards />
-      </Suspense>
+      <SectionCards stats={stats} />
+      <div className="px-4 lg:px-6">{/* Charts will be loaded later */}</div>
       <div className="px-4 lg:px-6">
-        {/* Charts will be loaded later */}
+        <DataTable data={members} />
       </div>
-      {loading ? (
-        <DataTableSkeleton />
-      ) : error ? (
-        <div className="px-4 lg:px-6">
-          <p className="text-sm text-muted-foreground">Failed to load members: {error}</p>
-        </div>
-      ) : (
-        <Suspense fallback={<DataTableSkeleton />}>
-          <DataTable data={members} />
-        </Suspense>
-      )}
     </div>
-  )
+  );
 }
-

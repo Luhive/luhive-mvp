@@ -1,18 +1,67 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router';
-import { lazy, Suspense } from 'react';
-import { useDashboardCommunity } from '~/hooks/use-dashboard-community';
-import { getEventByIdClient } from '~/services/events.service';
-import { AttendersTableSkeleton } from '~/components/events/attenders-table-skeleton';
-import type { Database } from '~/models/database.types';
-import { Skeleton } from '~/components/ui/skeleton';
+import { lazy, Suspense } from "react";
+import { useLoaderData } from "react-router";
+import { AttendersTableSkeleton } from "~/modules/events/components/attenders-table-skeleton";
+import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
+import { getEventByIdClient } from "~/modules/events/data/events-repo.client";
+import type { Database } from "~/shared/models/database.types";
 
-// Lazy load the heavy table component
-const AttendersTable = lazy(() => 
-  import('~/components/events/attenders-table').then(m => ({ default: m.AttendersTable }))
+type Event = Database["public"]["Tables"]["events"]["Row"];
+
+type AttendersLoaderData = {
+  event: Event | null;
+  eventId: string | null;
+  error: string | null;
+};
+
+const AttendersTable = lazy(() =>
+  import("~/modules/events/components/attenders-table").then((m) => ({
+    default: m.AttendersTable,
+  }))
 );
 
-type Event = Database['public']['Tables']['events']['Row'];
+async function clientLoader({
+  params,
+  request,
+}: {
+  params: { slug?: string };
+  request: Request;
+}): Promise<AttendersLoaderData> {
+  const slug = params.slug;
+  const url = new URL(request.url);
+  const eventId = url.searchParams.get("eventId");
+
+  if (!slug) {
+    return { event: null, eventId: null, error: null };
+  }
+
+  const { community, error: communityError } =
+    await getCommunityBySlugClient(slug);
+
+  if (communityError || !community) {
+    return { event: null, eventId: null, error: "Community not found" };
+  }
+
+  if (!eventId) {
+    return { event: null, eventId: null, error: null };
+  }
+
+  const { event, error: eventError } = await getEventByIdClient(
+    eventId,
+    community.id
+  );
+
+  if (eventError) {
+    return {
+      event: null,
+      eventId,
+      error: eventError.message || "Event not found",
+    };
+  }
+
+  return { event: event ?? null, eventId, error: null };
+}
+
+export { clientLoader };
 
 export function meta() {
   return [
@@ -22,91 +71,7 @@ export function meta() {
 }
 
 export default function AttendersPage() {
-  const { data: dashboardData, loading: dashboardLoading } = useDashboardCommunity();
-  const [searchParams] = useSearchParams();
-  const eventId = searchParams.get('eventId');
-  
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!dashboardData?.community || !eventId) {
-      setLoading(false);
-      return;
-    }
-
-    async function fetchEvent() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const { event: eventData, error: eventError } = await getEventByIdClient(
-          eventId,
-          dashboardData.community.id
-        );
-
-        if (eventError || !eventData) {
-          setError(eventError?.message || 'Event not found');
-          setEvent(null);
-        } else {
-          setEvent(eventData);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch event');
-        setEvent(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchEvent();
-  }, [dashboardData?.community, eventId]);
-
-  if (dashboardLoading) {
-    return (
-      <div className="py-4 px-4 md:px-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-6 w-64" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-          <AttendersTableSkeleton />
-        </div>
-      </div>
-    );
-  }
-
-  if (!dashboardData) {
-    return (
-      <div className="py-4 px-4 md:px-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-6 w-64" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-          <AttendersTableSkeleton />
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="py-4 px-4 md:px-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-6 w-64" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-          <AttendersTableSkeleton />
-        </div>
-      </div>
-    );
-  }
+  const { event, eventId, error } = useLoaderData<AttendersLoaderData>();
 
   if (!eventId || !event) {
     return (
@@ -116,7 +81,7 @@ export default function AttendersPage() {
             <div className="text-center">
               <h2 className="text-lg font-semibold mb-2">Event Not Found</h2>
               <p className="text-muted-foreground">
-                {error || 'Please select an event to view attenders.'}
+                {error || "Please select an event to view attenders."}
               </p>
             </div>
           </div>
@@ -128,27 +93,29 @@ export default function AttendersPage() {
   return (
     <div className="py-4 px-4 md:px-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header - Renders immediately */}
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">
-            {event.registration_type === 'external' ? 'Event Subscribers' : 'Event Attenders'}
+            {event.registration_type === "external"
+              ? "Event Subscribers"
+              : "Event Attenders"}
           </h1>
           <div className="space-y-1">
             <h2 className="text-lg font-medium">{event.title}</h2>
             <p className="text-sm text-muted-foreground">
-              {event.registration_type === 'external'
-                ? 'Manage and view all subscribers for this event'
-                : 'Manage and view all registered attenders for this event'}
+              {event.registration_type === "external"
+                ? "Manage and view all subscribers for this event"
+                : "Manage and view all registered attenders for this event"}
             </p>
           </div>
         </div>
 
-        {/* Attenders Table - Lazy loaded and fetches data client-side */}
         <Suspense fallback={<AttendersTableSkeleton />}>
-          <AttendersTable eventId={eventId} isExternalEvent={event.registration_type === 'external'} />
+          <AttendersTable
+            eventId={eventId}
+            isExternalEvent={event.registration_type === "external"}
+          />
         </Suspense>
       </div>
     </div>
   );
 }
-

@@ -8,7 +8,7 @@
     "start": "react-router-serve ./build/server/server.js",
     "typecheck": "react-router typegen && tsc",
     "prepare": "react-router typegen",
-    "supabase-types": "npx supabase gen types typescript --project-id ncgqtxfchavfugucdnnh --schema public > app/models/database.types.ts",
+    "supabase-types": "npx supabase gen types typescript --project-id ncgqtxfchavfugucdnnh --schema public > app/shared/models/database.types.ts",
     "email:dev": "email dev --dir app/templates"
   },
   "dependencies": {

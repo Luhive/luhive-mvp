@@ -1,4 +1,4 @@
-import { createClient } from "~/lib/supabase.server";
+import { createClient } from "~/shared/lib/supabase/server";
 import type { HubData } from "~/modules/hub/model/hub-types";
 import {
   getVisibleCommunities,

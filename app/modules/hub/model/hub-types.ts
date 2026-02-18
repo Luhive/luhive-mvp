@@ -1,4 +1,4 @@
-import type { Database } from "~/models/database.types";
+import type { Database } from "~/shared/models/database.types";
 
 export type Community = Database["public"]["Tables"]["communities"]["Row"] & {
   memberCount: number;

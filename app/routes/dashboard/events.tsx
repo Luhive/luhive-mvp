@@ -1,12 +1,51 @@
-import { useState, useEffect } from 'react';
-import { EventList } from '~/components/events/event-list-admin';
-import { toast } from 'sonner';
-import type { Database } from '~/models/database.types';
-import { deleteEventClient, getEventsWithRegistrationCountsClient, updateEventStatusClient } from '~/services/events.service';
-import { useDashboardCommunity } from '~/hooks/use-dashboard-community';
-import { DashboardEventsListSkeleton } from '~/components/dashboard/dashboard-events-list-skeleton';
+import { EventList } from "~/modules/events/components/event-list-admin";
+import { toast } from "sonner";
+import { useLoaderData, useRevalidator } from "react-router";
+import {
+  deleteEventClient,
+  getEventsWithRegistrationCountsClient,
+  updateEventStatusClient,
+} from "~/modules/events/data/events-repo.client";
+import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
+import type { Database } from "~/shared/models/database.types";
 
-type Event = Database['public']['Tables']['events']['Row'];
+type Community = Database["public"]["Tables"]["communities"]["Row"];
+type EventRow = Database["public"]["Tables"]["events"]["Row"];
+type EventWithCount = EventRow & { registration_count?: number };
+
+type EventsLoaderData = {
+  events: EventWithCount[];
+  community: Community;
+};
+
+async function clientLoader({
+  params,
+}: {
+  params: { slug?: string };
+}): Promise<EventsLoaderData> {
+  const slug = params.slug;
+  if (!slug) {
+    throw new Error("Missing slug");
+  }
+
+  const { community, error: communityError } =
+    await getCommunityBySlugClient(slug);
+
+  if (communityError || !community) {
+    throw new Error("Community not found");
+  }
+
+  const { events, error: eventsError } =
+    await getEventsWithRegistrationCountsClient(community.id);
+
+  if (eventsError) {
+    throw new Error(eventsError.message);
+  }
+
+  return { events, community };
+}
+
+export { clientLoader };
 
 export function meta() {
   return [
@@ -16,95 +55,57 @@ export function meta() {
 }
 
 export default function EventsPage() {
-  const { data, loading: dashboardLoading } = useDashboardCommunity();
-  const [events, setEvents] = useState<(Event & { registration_count?: number })[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!data?.community) return;
-
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-
-        const { events, error } = await getEventsWithRegistrationCountsClient(data.community.id);
-
-        if (error) {
-          console.error('Error fetching events:', error);
-          toast.error('Failed to load events');
-          setEvents([]);
-          return;
-        }
-
-        setEvents(events);
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('Failed to load events');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, [data?.community]);
-
-  if (dashboardLoading || !data) {
-    return <DashboardEventsListSkeleton />;
-  }
-
-  const { community } = data;
+  const { events, community } = useLoaderData<EventsLoaderData>();
+  const revalidator = useRevalidator();
 
   const handleDelete = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this event? This action cannot be undone."
+      )
+    )
       return;
-    }
-
     try {
       const { error } = await deleteEventClient(eventId, community.id);
-
       if (error) {
-        console.error('Error deleting event:', error);
-        toast.error('Failed to delete event');
+        console.error("Error deleting event:", error);
+        toast.error("Failed to delete event");
         return;
       }
-
-      // Remove event from state
-      setEvents((prev) => prev.filter((e) => e.id !== eventId));
-      toast.success('Event deleted successfully');
+      revalidator.revalidate();
+      toast.success("Event deleted successfully");
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to delete event');
+      console.error("Error:", error);
+      toast.error("Failed to delete event");
     }
   };
 
-  const handleStatusChange = async (eventId: string, newStatus: 'draft' | 'published') => {
+  const handleStatusChange = async (
+    eventId: string,
+    newStatus: "draft" | "published"
+  ) => {
     try {
-      const { error } = await updateEventStatusClient(eventId, community.id, newStatus);
-
+      const { error } = await updateEventStatusClient(
+        eventId,
+        community.id,
+        newStatus
+      );
       if (error) {
-        console.error('Error updating event status:', error);
-        toast.error('Failed to update event status');
+        console.error("Error updating event status:", error);
+        toast.error("Failed to update event status");
         return;
       }
-
-      setEvents((prev) =>
-        prev.map((e) => (e.id === eventId ? { ...e, status: newStatus } : e))
-      );
-
+      revalidator.revalidate();
       toast.success(
-        newStatus === 'published'
-          ? 'Event published successfully'
-          : 'Event moved to drafts successfully'
+        newStatus === "published"
+          ? "Event published successfully"
+          : "Event moved to drafts successfully"
       );
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to update event status');
+      console.error("Error:", error);
+      toast.error("Failed to update event status");
     }
   };
-
-  if (loading) {
-    return <DashboardEventsListSkeleton />;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50/50">
