@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "~/models/database.types";
+import type { Database } from "~/shared/models/database.types";
 import type { Community, UserData } from "~/modules/hub/model/hub-types";
 
 export async function getVisibleCommunities(supabase: SupabaseClient<Database>) {

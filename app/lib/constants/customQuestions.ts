@@ -1,5 +1,0 @@
-export const MAX_CUSTOM_QUESTIONS = 10;
-export const MAX_ANSWER_LENGTH = 500;
-export const MIN_QUESTION_LABEL_LENGTH = 5;
-export const MAX_QUESTION_LABEL_LENGTH = 200;
-

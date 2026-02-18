@@ -10,7 +10,7 @@ import {
 import { useEffect } from "react";
 
 import * as Sentry from "@sentry/react-router";
-import { initGA, trackPageView } from "~/lib/analytics";
+import { initGA, trackPageView } from "~/shared/lib/analytics";
 
 import type { Route } from "./+types/root";
 import "./app.css";

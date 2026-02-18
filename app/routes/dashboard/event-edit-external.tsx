@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useOutletContext, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 
-import type { Database } from '~/models/database.types';
-import type { DashboardLoaderData } from '~/routes/dashboard/layout';
-import { DashboardEventFormSkeleton } from '~/components/dashboard/dashboard-event-form-skeleton';
-import { ExternalEventForm } from '~/components/events/external-event-form';
-import { getEventByIdClient } from '~/services/events.service';
-import type { ExternalPlatform } from '~/models/event.types';
+import type { Database } from '~/shared/models/database.types';
+import { useDashboardContext } from '~/modules/dashboard/hooks/use-dashboard-context';
+import { DashboardEventFormSkeleton } from '~/modules/dashboard/components/dashboard-event-form-skeleton';
+import { ExternalEventForm } from '~/modules/events/components/external-event-form';
+import { getEventByIdClient } from '~/modules/events/data/events-repo.client';
+import type { ExternalPlatform } from '~/modules/events/model/event.types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -27,7 +27,7 @@ export function meta() {
 export default function EditExternalEventPage() {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { dashboardData } = useOutletContext<{ dashboardData: DashboardLoaderData }>();
+  const dashboardData = useDashboardContext();
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);

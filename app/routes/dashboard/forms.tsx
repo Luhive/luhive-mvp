@@ -1,110 +1,25 @@
 import { useState, useEffect } from "react"
 import { useLoaderData, useSearchParams, useNavigate, useNavigation } from "react-router"
-import { createClient } from "~/lib/supabase.server"
-import { 
-  createOAuth2Client, 
-  setCredentials, 
-  listForms,
-  type GoogleFormsToken 
-} from "~/lib/google-forms.server"
-import type { Route } from "./+types/forms";
-import { useDashboardCommunity } from "~/hooks/use-dashboard-community"
-import { DashboardFormsSkeleton } from "~/components/dashboard/dashboard-forms-skeleton"
+import { useDashboardContext } from "~/modules/dashboard/hooks/use-dashboard-context"
+import { loader as googleFormsLoader } from "~/modules/integrations/providers/google-forms/server/google-forms-loader.server"
+import { DashboardFormsSkeleton } from "~/modules/dashboard/components/dashboard-forms-skeleton"
 
-import { Button } from "~/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
-import { Skeleton } from "~/components/ui/skeleton"
-import { GoogleSignInModal } from "~/components/forms/google-sign-in-modal"
-import { FormsList, type FormItem } from "~/components/forms/forms-list"
+import { Button } from "~/shared/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/shared/components/ui/card"
+import { Skeleton } from "~/shared/components/ui/skeleton"
+import { GoogleSignInModal } from "~/modules/integrations/providers/google-forms/components/google-sign-in-modal"
+import { FormsList, type FormItem } from "~/modules/integrations/providers/google-forms/components/forms-list"
 import { RefreshCw, Unlink, FileText, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 
-interface LoaderData {
-  connected: boolean
-  forms: FormItem[]
-  error?: string
-  communitySlug: string
-}
+type LoaderData = Awaited<ReturnType<typeof googleFormsLoader>>
 
-export async function loader({ request, params }: Route.LoaderArgs): Promise<LoaderData> {
-  const { supabase } = createClient(request)
-  const { slug } = params
-
-  // Check if user is authenticated
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  
-  if (authError || !user) {
-    return {
-      connected: false,
-      forms: [],
-      error: 'Not authenticated',
-      communitySlug: slug || ''
-    }
-  }
-
-  try {
-    // Get user's Google Forms tokens
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('google_forms_tokens')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
-
-    if (tokenError || !tokenData) {
-      return {
-        connected: false,
-        forms: [],
-        communitySlug: slug || ''
-      }
-    }
-
-    // Create OAuth client with user's tokens
-    const oauth2Client = createOAuth2Client()
-    setCredentials(oauth2Client, {
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
-      expiry_date: tokenData.expiry_date ? new Date(tokenData.expiry_date).getTime() : null
-    })
-
-    // Fetch forms from Google
-    const forms = await listForms(oauth2Client)
-
-    return {
-      connected: true,
-      forms: forms.map(form => ({
-        id: form.id!,
-        name: form.name!,
-        createdTime: form.createdTime!,
-        modifiedTime: form.modifiedTime!,
-        webViewLink: form.webViewLink || undefined
-      })),
-      communitySlug: slug || ''
-    }
-  } catch (error: any) {
-    console.error('Error loading forms:', error)
-    
-    // Check if token is expired/invalid
-    if (error.code === 401 || error.message?.includes('invalid_grant')) {
-      return {
-        connected: false,
-        forms: [],
-        error: 'token_expired',
-        communitySlug: slug || ''
-      }
-    }
-
-    return {
-      connected: true,
-      forms: [],
-      error: error.message || 'Failed to load forms',
-      communitySlug: slug || ''
-    }
-  }
-}
+export { loader } from "~/modules/integrations/providers/google-forms/server/google-forms-loader.server"
 
 export default function FormsPage() {
-  const { data: dashboardData, loading: dashboardLoading } = useDashboardCommunity()
-  const { connected, forms, error, communitySlug } = useLoaderData<LoaderData>()
+  const { community } = useDashboardContext()
+  const communitySlug = community.slug
+  const { connected, forms, error } = useLoaderData<LoaderData>()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const navigation = useNavigation()
@@ -113,7 +28,7 @@ export default function FormsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
   
-  const isLoading = navigation.state === "loading" || dashboardLoading
+  const isLoading = navigation.state === "loading"
 
   // Handle URL params for success/error messages
   useEffect(() => {
@@ -156,7 +71,7 @@ export default function FormsPage() {
   const handleDisconnect = async () => {
     setIsDisconnecting(true)
     try {
-      const response = await fetch('/api/google-forms/disconnect', {
+      const response = await fetch('/api/integrations/google-forms/disconnect', {
         method: 'POST'
       })
       
@@ -171,11 +86,6 @@ export default function FormsPage() {
     } finally {
       setIsDisconnecting(false)
     }
-  }
-
-  // Show skeleton while dashboard data is loading
-  if (dashboardLoading || !dashboardData) {
-    return <DashboardFormsSkeleton />;
   }
 
   // Show skeleton while forms are loading
