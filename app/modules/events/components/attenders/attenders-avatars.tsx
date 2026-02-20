@@ -80,44 +80,53 @@ const AttendersAvatars = ({ eventId, maxVisible = 3, isExternalEvent = false }: 
           type="button"
           onClick={() => setIsModalOpen(true)}
           className={cn(
-            'bg-background flex items-center w-fit',
-            'hover:border-primary/50 transition-transform cursor-pointer',
-            'focus:outline-none focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:rounded-full',
+            "bg-background flex items-center w-fit",
+            "hover:border-primary/50 transition-transform cursor-pointer",
+            "focus:outline-none focus:ring-2 focus:ring-muted focus:ring-offset-2 focus:rounded-full",
           )}
-          aria-label={isExternalEvent ? "View all subscribers" : "View all attendees"}
+          aria-label={
+            isExternalEvent ? "View all subscribers" : "View all attendees"
+          }
         >
-          <div className='flex -space-x-2'>
+          <div className="flex -space-x-2">
             {visibleAttendees.map((attendee) => (
-              <Avatar key={attendee.id} className='ring-background hover:shadow-md hover:scale-110 hover:-translate-y-1 transition-transform ease-in-out ring-2 h-8 w-8'>
-                <AvatarImage src={attendee.avatar_url || undefined} alt={attendee.name} />
-                <AvatarFallback className='text-xs bg-primary/10 text-primary'>
+              <Avatar
+                key={attendee.id}
+                className="ring-background hover:shadow-md hover:scale-110 hover:-translate-y-1 transition-transform ease-in-out ring-2 h-8 w-8"
+              >
+                <AvatarImage
+                  src={attendee.avatar_url || undefined}
+                  alt={attendee.name}
+                />
+                <AvatarFallback className="text-xs bg-primary/10 text-primary">
                   {getInitials(attendee.name)}
                 </AvatarFallback>
               </Avatar>
             ))}
           </div>
           {remainingCount > 0 && (
-            <span className='text-muted-foreground hover:text-foreground flex items-center justify-center rounded-full bg-transparent px-2 text-xs shadow-none hover:bg-transparent'>
+            <span className="text-muted-foreground hover:text-foreground flex items-center justify-center rounded-full bg-transparent px-2 text-xs shadow-none hover:bg-transparent">
               +{remainingCount}
             </span>
           )}
         </button>
-        
+
         {/* Names below avatars */}
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap">
           {visibleAttendees.map((attendee, index) => (
             <span key={attendee.id} className="text-sm text-muted-foreground">
-              {attendee.name.split(' ')[0]}{index < visibleAttendees.length - 1 ? ', ' : ''}
+              {attendee.name.split(" ")[0]}
+              {index < visibleAttendees.length - 1 ? ", " : ""}
             </span>
           ))}
           {remainingCount > 0 && (
             <span className="text-sm text-muted-foreground">
-              and {remainingCount} {remainingCount === 1 ? 'other' : 'others'}
+              and {remainingCount} {remainingCount === 1 ? "other" : "others"}
             </span>
           )}
         </div>
       </div>
-      
+
       <AttendersListModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
@@ -125,7 +134,7 @@ const AttendersAvatars = ({ eventId, maxVisible = 3, isExternalEvent = false }: 
         isExternalEvent={isExternalEvent}
       />
     </>
-  )
+  );
 }
 
 export default AttendersAvatars
