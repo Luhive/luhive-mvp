@@ -27,11 +27,11 @@ import {
   Link as LinkIcon,
   X,
 } from 'lucide-react';
-import { EventCoverUpload } from './event-cover-upload';
-import { EventBasicInfo } from './event-form-fields/event-basic-info';
-import { EventDateTime } from './event-form-fields/event-datetime';
-import { EventLocation } from './event-form-fields/event-location';
-import { EventDiscussion } from './event-form-fields/event-discussion';
+import { EventCoverUpload } from '~/modules/events/components/event-form/event-cover-upload';
+import { EventBasicInfo } from '~/modules/events/components/event-form/fields/event-basic-info';
+import { EventDateTime } from '~/modules/events/components/event-form/fields/event-datetime';
+import { EventLocation } from '~/modules/events/components/event-form/fields/event-location';
+import { EventDiscussion } from '~/modules/events/components/event-form/fields/event-discussion';
 import { createClient } from '~/shared/lib/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '~/shared/models/database.types';

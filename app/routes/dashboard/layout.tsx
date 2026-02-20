@@ -19,7 +19,6 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "~/shared/components/ui/sidebar";
-import Footer from "~/shared/components/footer";
 import { DashboardLayoutSkeleton } from "~/modules/dashboard/components/dashboard-layout-skeleton";
 import { DashboardContentSkeleton } from "~/modules/dashboard/components/dashboard-content-skeleton";
 import { DashboardOverviewSkeleton } from "~/modules/dashboard/components/dashboard-overview-skeleton";
@@ -231,7 +230,6 @@ export default function DashboardLayoutPage() {
             </div>
           )}
         </div>
-        <Footer />
       </SidebarInset>
     </SidebarProvider>
   );

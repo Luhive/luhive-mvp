@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "~/shared/models/database.types";
+import type { Community as BaseCommunity } from "~/shared/models/entity.types";
 import type { Community, UserData } from "~/modules/hub/model/hub-types";
 
 export async function getVisibleCommunities(supabase: SupabaseClient<Database>) {
@@ -63,9 +64,9 @@ export async function getUserProfile(
 }
 
 export function withCounts(
-  communities: Database["public"]["Tables"]["communities"]["Row"][],
+  communities: BaseCommunity[],
   memberCounts: Map<string, number>,
-  eventCounts: Map<string, number>
+  eventCounts: Map<string, number>,
 ): Community[] {
   return communities.map((community) => ({
     ...community,

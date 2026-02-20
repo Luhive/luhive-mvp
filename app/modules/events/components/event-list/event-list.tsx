@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import type { Database } from '~/shared/models/database.types';
+import type { Event } from '~/shared/models/entity.types';
 import type { ExternalPlatform } from '~/modules/events/model/event.types';
 import { Badge } from '~/shared/components/ui/badge';
 import { Calendar, MapPin, Users, CalendarX, ExternalLink } from 'lucide-react';
@@ -15,10 +15,8 @@ import { getEventsByCommunityClient } from '~/modules/events/data/events-repo.cl
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-type Event = Database['public']['Tables']['events']['Row'];
-
-// Export Event type for external use
-export type { Event };
+// Re-export Event for external use
+export type { Event } from '~/shared/models/entity.types';
 
 interface EventListProps {
 	communityId: string;

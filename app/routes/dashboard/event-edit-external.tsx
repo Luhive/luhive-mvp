@@ -8,14 +8,13 @@ import timezone from 'dayjs/plugin/timezone';
 import type { Database } from '~/shared/models/database.types';
 import { useDashboardContext } from '~/modules/dashboard/hooks/use-dashboard-context';
 import { DashboardEventFormSkeleton } from '~/modules/dashboard/components/dashboard-event-form-skeleton';
-import { ExternalEventForm } from '~/modules/events/components/external-event-form';
+import { ExternalEventForm } from '~/modules/events/components/event-form/external-event-form';
 import { getEventByIdClient } from '~/modules/events/data/events-repo.client';
 import type { ExternalPlatform } from '~/modules/events/model/event.types';
+import type { Event } from '~/shared/models/entity.types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-type Event = Database['public']['Tables']['events']['Row'];
 
 export function meta() {
   return [

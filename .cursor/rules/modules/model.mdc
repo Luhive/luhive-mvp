@@ -12,6 +12,8 @@ alwaysApply: false
 - `types`: domain TypeScript contracts.
 - `models`: domain structured types/constants when needed.
 - `meta`: route metadata builders.
+- for database entities strictly use from shared file @entity.types.ts in components and if
+you need extra modification in repo or server make expansion in module scope models
 
 Keep model files dependency-light and side-effect free.
 Reject adding data fetching, redirects, or UI orchestration in model layer.

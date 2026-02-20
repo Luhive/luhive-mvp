@@ -1,4 +1,4 @@
-import { EventList } from "~/modules/events/components/event-list-admin";
+import { EventList } from "~/modules/events/components/event-list/event-list-admin";
 import { toast } from "sonner";
 import { useLoaderData, useRevalidator } from "react-router";
 import {

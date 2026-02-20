@@ -1,4 +1,4 @@
-import { EventForm } from '~/modules/events/components/event-form';
+import { EventForm } from '~/modules/events/components/event-form/event-form';
 import { useDashboardContext } from '~/modules/dashboard/hooks/use-dashboard-context';
 
 export function meta() {

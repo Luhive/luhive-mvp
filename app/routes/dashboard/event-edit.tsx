@@ -8,7 +8,7 @@ import type { Database } from '~/shared/models/database.types';
 import type { CustomQuestionJson } from '~/modules/events/model/event.types';
 import { useDashboardContext } from '~/modules/dashboard/hooks/use-dashboard-context';
 import { DashboardEventFormSkeleton } from '~/modules/dashboard/components/dashboard-event-form-skeleton';
-import { EventForm } from '~/modules/events/components/event-form';
+import { EventForm } from '~/modules/events/components/event-form/event-form';
 import { getEventByIdClient } from '~/modules/events/data/events-repo.client';
 
 dayjs.extend(utc);

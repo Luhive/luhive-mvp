@@ -1,18 +1,20 @@
-import type { Database } from "~/shared/models/database.types";
+import type {
+  Event,
+  EventRegistration,
+  EventStatus,
+} from "~/shared/models/entity.types";
 import { createClient as createBrowserClient } from "~/shared/lib/supabase/client";
 
-type Event = Database["public"]["Tables"]["events"]["Row"];
-type EventRegistration =
-  Database["public"]["Tables"]["event_registrations"]["Row"];
-type EventStatus = Database["public"]["Enums"]["event_status"];
-
-export async function getEventsByCommunityClient(communityId: string, options?: {
-  status?: string;
-  startTimeGte?: string;
-  startTimeLt?: string;
-  order?: { column: "start_time"; ascending: boolean };
-  limit?: number;
-}) {
+export async function getEventsByCommunityClient(
+  communityId: string,
+  options?: {
+    status?: string;
+    startTimeGte?: string;
+    startTimeLt?: string;
+    order?: { column: "start_time"; ascending: boolean };
+    limit?: number;
+  },
+) {
   const supabase = createBrowserClient();
 
   let query = supabase
@@ -21,7 +23,7 @@ export async function getEventsByCommunityClient(communityId: string, options?: 
     .eq("community_id", communityId);
 
   if (options?.status) {
-    query = query.eq("status", options.status);
+    query = query.eq("status", options.status as EventStatus);
   }
   if (options?.startTimeGte) {
     query = query.gte("start_time", options.startTimeGte);
@@ -42,13 +44,13 @@ export async function getEventsByCommunityClient(communityId: string, options?: 
   return { events: (data || []) as Event[], error };
 }
 
-export async function getEventByIdClient(eventId: string, communityId?: string) {
+export async function getEventByIdClient(
+  eventId: string,
+  communityId?: string,
+) {
   const supabase = createBrowserClient();
 
-  let query = supabase
-    .from("events")
-    .select("*")
-    .eq("id", eventId);
+  let query = supabase.from("events").select("*").eq("id", eventId);
 
   if (communityId) {
     query = query.eq("community_id", communityId);
@@ -73,7 +75,7 @@ export async function getEventCustomQuestionsClient(eventId: string) {
 
 export async function getEventRegistrationCountClient(
   eventId: string,
-  options?: { approvedOnly?: boolean }
+  options?: { approvedOnly?: boolean },
 ) {
   const supabase = createBrowserClient();
 
@@ -113,7 +115,7 @@ export async function getEventRegistrationsClient(eventId: string) {
         full_name,
         avatar_url
       )
-    `
+    `,
     )
     .eq("event_id", eventId)
     .order("registered_at", { ascending: false });
@@ -132,7 +134,9 @@ export async function getEventRegistrationsClient(eventId: string) {
  * - if event.is_approve_required => count only approved registrations
  * - else => count all registrations
  */
-export async function getEventsWithRegistrationCountsClient(communityId: string) {
+export async function getEventsWithRegistrationCountsClient(
+  communityId: string,
+) {
   const supabase = createBrowserClient();
 
   const { data: eventsData, error } = await supabase
@@ -165,7 +169,7 @@ export async function getEventsWithRegistrationCountsClient(communityId: string)
     {} as Record<
       string,
       { event_id: string; approval_status: string | null }[]
-    >
+    >,
   );
 
   const eventsWithCounts = events.map((event) => {
@@ -194,7 +198,7 @@ export async function deleteEventClient(eventId: string, communityId: string) {
 export async function updateEventStatusClient(
   eventId: string,
   communityId: string,
-  status: Extract<EventStatus, "draft" | "published">
+  status: Extract<EventStatus, "draft" | "published">,
 ) {
   const supabase = createBrowserClient();
 

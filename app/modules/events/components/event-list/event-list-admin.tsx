@@ -36,7 +36,7 @@ import {
   Eye,
   FileText,
 } from 'lucide-react';
-import type { Database } from '~/shared/models/database.types';
+import type { Event, EventStatus, EventType } from '~/shared/models/entity.types';
 import type { ExternalPlatform } from '~/modules/events/model/event.types';
 import dayjs from 'dayjs';
 import { cn } from '~/shared/lib/utils';
@@ -45,9 +45,6 @@ import {
   getExternalPlatformIcon,
 } from '~/modules/events/utils/external-platform';
 
-type Event = Database['public']['Tables']['events']['Row'];
-type EventStatus = Database['public']['Enums']['event_status'];
-type EventType = Database['public']['Enums']['event_type'];
 type RegistrationTypeFilter = 'all' | 'luhive' | 'external';
 
 interface EventListProps {

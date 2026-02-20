@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
-import type { Database } from '~/shared/models/database.types';
+import type { Community, Event } from '~/shared/models/entity.types';
 import { Card, CardContent } from '~/shared/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
 import { Skeleton } from '~/shared/components/ui/skeleton';
@@ -13,9 +13,6 @@ import { getEventsByCommunityClient } from '~/modules/events/data/events-repo.cl
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-type Event = Database['public']['Tables']['events']['Row'];
-type Community = Database['public']['Tables']['communities']['Row'];
 
 interface EventsContentProps {
 	community: Community | null;
