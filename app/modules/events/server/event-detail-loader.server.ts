@@ -1,6 +1,9 @@
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
-import { createClient } from "~/shared/lib/supabase/server";
+import {
+  createClient,
+  createServiceRoleClient,
+} from "~/shared/lib/supabase/server";
 import type { LoaderFunctionArgs } from "react-router";
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import { Community, Event, Profile } from "~/shared/models/entity.types";
@@ -80,7 +83,8 @@ export async function loader({
   const url = new URL(request.url);
   const origin = url.origin;
 
-  const { count: regCount } = await supabase
+  const serviceClient = createServiceRoleClient();
+  const { count: regCount } = await serviceClient
     .from("event_registrations")
     .select("*", { count: "exact", head: true })
     .eq("event_id", event.id)
