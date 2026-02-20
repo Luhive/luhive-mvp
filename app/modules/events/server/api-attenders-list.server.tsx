@@ -28,7 +28,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			.eq("rsvp_status", "going")
 			.eq("approval_status", "approved")
 			.order("registered_at", { ascending: false });
-
 		if (error) {
 			console.error("Error fetching attendees:", error);
 			return Response.json({ error: "Failed to fetch attendees" }, { status: 500 });

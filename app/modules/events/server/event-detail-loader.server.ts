@@ -88,6 +88,7 @@ export async function loader({
     .from("event_registrations")
     .select("*", { count: "exact", head: true })
     .eq("event_id", event.id)
+    .eq("is_verified", true)
     .eq("rsvp_status", "going")
     .eq("approval_status", "approved");
 
