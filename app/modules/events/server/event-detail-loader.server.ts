@@ -84,6 +84,7 @@ export async function loader({
     .from("event_registrations")
     .select("*", { count: "exact", head: true })
     .eq("event_id", event.id)
+    .eq("rsvp_status", "going")
     .eq("approval_status", "approved");
 
   const {

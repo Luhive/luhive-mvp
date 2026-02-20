@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			.eq("event_id", eventId)
 			.eq("is_verified", true)
 			.eq("rsvp_status", "going")
-			.or("approval_status.is.null,approval_status.eq.approved")
+			.eq("approval_status", "approved")
 			.order("registered_at", { ascending: false });
 
 		if (error) {

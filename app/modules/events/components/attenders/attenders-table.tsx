@@ -76,8 +76,8 @@ import {
 import { createClient } from "~/shared/lib/supabase/client";
 import type { EventApprovalStatus, EventRegistration, RSVPStatus } from "~/shared/models/entity.types";
 import { useEffect, useState } from "react";
-import { AttendersTableSkeleton } from "./attenders-table-skeleton";
-import { RegistrationAnswersDisplay } from "./registration-answers-display";
+import { AttendersTableSkeleton } from "~/modules/events/components/attenders/attenders-table-skeleton";
+import { RegistrationAnswersDisplay } from "~/modules/events/components/registration/registration-answers-display";
 import { utils, writeFile } from "xlsx";
 import { useIsMobile } from "~/shared/hooks/use-mobile";
 import { cn } from "~/shared/lib/utils";

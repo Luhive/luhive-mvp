@@ -82,7 +82,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			.eq("event_id", eventId)
 			.eq("is_verified", true)
 			.eq("rsvp_status", "going")
-			.or("approval_status.is.null,approval_status.eq.approved");
+			.eq("approval_status", "approved");
 
 		if (regError) {
 			return Response.json({ success: false, error: "Failed to fetch registrations" }, { status: 500 });
