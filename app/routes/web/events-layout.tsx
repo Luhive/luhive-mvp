@@ -9,10 +9,8 @@ import { Skeleton } from "~/shared/components/ui/skeleton";
 import { ArrowLeft, X } from "lucide-react";
 import { EventPageSkeleton } from "~/modules/events/components/event-list/event-page-skeleton";
 import { EventPreviewSidebar } from "~/modules/events/components/event-list/event-preview-sidebar";
+import type { Community, Event, Profile } from "~/shared/models/entity.types";
 
-type Community = Database["public"]["Tables"]["communities"]["Row"];
-type Event = Database["public"]["Tables"]["events"]["Row"];
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface LoaderData {
   slug: string;
@@ -123,7 +121,7 @@ export default function EventsLayout() {
         const { count } = await supabase
           .from("event_registrations")
           .select("*", { count: "exact", head: true })
-          .eq("event_id", selectedEvent.id)
+          .eq("event_id", selectedEvent?.id ?? "")
           .eq("approval_status", "approved");
         setEventRegistrationCount(count || 0);
       } catch (error) {
