@@ -462,13 +462,13 @@ export function EventPreviewSidebar({
                 </div>
 
                 {/* Attenders */}
-                <div className="rounded-lg bg-card p-3">
+                <div className="rounded-lg bg-card p-3 ">
                   <span className="text-xs text-muted-foreground font-medium block mb-2">
                     Attending
                   </span>
                   <AttendersAvatars
                     eventId={event.id}
-                    maxVisible={4}
+                    maxVisible={3}
                     isExternalEvent={isExternalEvent}
                   />
                 </div>
