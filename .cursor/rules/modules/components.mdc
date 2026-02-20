@@ -1,0 +1,16 @@
+---
+description: Module component boundary and responsibilities
+globs: app/modules/**/components/**/*.tsx
+alwaysApply: false
+---
+
+# Module Components Rules (Hard-Fail)
+
+- Components are UI building blocks for a feature.
+- Components should not directly own route redirects/orchestration.
+- Avoid direct Supabase/data SDK calls in components
+- Avoid direct model types in components, use them in model folders of modules or shared
+- Keep components focused on rendering and local interaction concerns.
+- Make sure components are not bloated and execute only one thing. Clear seperation is important
+
+If data/orchestration is misplaced in components, require extraction to route/repo/hook.

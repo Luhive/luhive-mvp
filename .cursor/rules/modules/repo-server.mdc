@@ -1,0 +1,15 @@
+---
+description: Module data/server boundary for repos and server handlers
+globs: app/modules/**/data/**/*.ts*, app/modules/**/server/**/*.ts*
+alwaysApply: false
+---
+
+# Repos/Server Layer Rules (Hard-Fail)
+
+- `data/` repos handle queries/mutations only.
+- `server/` contains server-only handlers and route-side server logic support.
+- Repos must not own route redirects, UI state, or component concerns.
+- Repos should be concise functions which do finite things not everything together
+- Use file naming intent: `*.server.ts(x)`, `*.client.ts(x)`, `*-repo.server.ts`, `*-repo.client.ts`.
+
+If business/data logic is placed in wrong layer, block and provide compliant placement.

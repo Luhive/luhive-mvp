@@ -1,0 +1,13 @@
+---
+description: Shared layer must stay cross-domain and generic
+globs: app/shared/**/*.ts*
+alwaysApply: false
+---
+
+# Shared Layer Rules (Hard-Fail)
+
+- `app/shared/**` is only for cross-domain reusable code.
+- Domain-specific logic (events/community/dashboard) must stay in module folders.
+- Shared utilities/components/hooks/models must remain generic and dependency-safe across domains.
+
+If code is feature-specific, move it from shared to the owning module.

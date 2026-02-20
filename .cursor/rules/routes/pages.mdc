@@ -1,0 +1,15 @@
+---
+description: Rules for web/dashboard page routes
+globs: app/routes/web/**/*.tsx, app/routes/auth/**/*.tsx, app/routes/dashboard/**/*.tsx
+alwaysApply: false
+---
+# Page Route Rules
+
+- Route files own page composition and route behavior.
+- Allowed exports include `loader`, `action`, `meta`, `clientLoader`, `default`.
+- Route should call module repos/hooks/components/models, not inline domain data layer logic.
+- Do not move page UI ownership into module `page.tsx` patterns.
+- Route page should be directive and single source of truth
+- Route page should be neat and not bloated. It should be broke down components and be a bridge between loader, action data and components.
+
+Reject proposals that shift route orchestration into modules or repos.

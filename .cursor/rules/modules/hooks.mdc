@@ -1,0 +1,14 @@
+---
+description: Module hooks responsibilities and limits
+globs: app/modules/**/hooks/**/*.ts*
+alwaysApply: false
+---
+
+# Module Hooks Rules (Hard-Fail)
+
+- Hooks orchestrate client-side feature behavior/state.
+- Hooks may call repos for client-driven flows, but should not perform route-level redirects.
+- Keep hooks feature-scoped; move cross-domain logic to `app/shared/hooks/**`.
+- Keep hook APIs concise and domain-oriented.
+
+If hook logic crosses route or shared boundaries, propose compliant refactor path.
