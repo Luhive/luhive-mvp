@@ -1,0 +1,17 @@
+---
+description: Module model folder purity and contracts
+globs: app/modules/**/model/**/*.ts*
+alwaysApply: false
+---
+
+# Model Purity Rules (Hard-Fail)
+
+`model/` is domain definition, not runtime orchestration.
+
+- `schema`: validation contracts (e.g. Zod).
+- `types`: domain TypeScript contracts.
+- `models`: domain structured types/constants when needed.
+- `meta`: route metadata builders.
+
+Keep model files dependency-light and side-effect free.
+Reject adding data fetching, redirects, or UI orchestration in model layer.

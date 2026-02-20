@@ -1,0 +1,19 @@
+---
+description: Core architecture guardrails for all work
+alwaysApply: true
+---
+
+# Core Architecture (Hard-Fail)
+
+- Pages and route composition belong in `app/routes/**`.
+- Modules provide domain logic/components; modules do not define route tree.
+- Repos are data-focused; routes orchestrate redirects/errors/page data shape.
+- Shared code must be cross-domain and generic only.
+- Code pieces shouldn't be bloated. They should be arranged and splitted under corresponding module's - components, server, repo, models
+- Every chunk of code or file should do one and only thing
+
+If a proposed change violates these boundaries, stop and provide a compliant rewrite first.
+Keep responses concise and avoid repeating architecture text unless needed.
+
+
+- Never let slow data block fast content from rendering

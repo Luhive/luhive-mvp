@@ -1,0 +1,14 @@
+---
+description: Rules for API/resource routes
+globs: app/routes/api/**/*.tsx
+alwaysApply: false
+---
+
+# API Resource Route Rules (Hard-Fail)
+
+- API endpoints live in `app/routes/api/**` as resource routes.
+- Keep route handlers focused on request/response orchestration.
+- Delegate reusable domain/data logic to module server/data layers.
+- Do not embed UI concerns in API/resource route files.
+
+If structure conflicts with these boundaries, rewrite to compliant layering.

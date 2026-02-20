@@ -1,0 +1,14 @@
+---
+description: SSR vs CSR decision rules for route files
+globs: app/routes/**/*.tsx
+alwaysApply: false
+---
+
+# SSR vs CSR Decisions
+
+- Prefer `loader/action` for auth-sensitive reads/writes, redirects, and cookie-aware flows.
+- Prefer `clientLoader + module hooks` for intentionally client-driven interactive pages.
+- Use `useFetcher()` for non-navigation form/API interactions.
+- Route handles orchestration; repo handles data access; component handles UI.
+
+If SSR/CSR responsibilities are mixed incorrectly, propose corrected split before coding.
