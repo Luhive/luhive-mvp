@@ -15,12 +15,9 @@ import {
 } from "~/shared/components/ui/sidebar"
 import { Home, Calendar, Settings, HelpCircle, Heart, LucideLayoutDashboard, Info, SquarePen, FileText } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar"
-import type { Database } from "~/shared/models/database.types"
+import type { Community, Profile } from "~/shared/models/entity.types"
 
 import { Link } from "react-router"
-
-type Community = Database['public']['Tables']['communities']['Row']
-type Profile = Database['public']['Tables']['profiles']['Row']
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   community?: Community

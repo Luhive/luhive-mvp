@@ -1,6 +1,6 @@
 import { useOutletContext, useLocation } from "react-router";
 import { useEffect, useRef } from "react";
-import { EventsContent } from "~/modules/events/components/events-content";
+import { EventsContent } from "~/modules/events/components/event-list/events-content";
 import type { Database } from "~/shared/models/database.types";
 
 type Community = Database["public"]["Tables"]["communities"]["Row"];

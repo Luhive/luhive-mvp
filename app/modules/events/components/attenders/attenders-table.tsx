@@ -74,7 +74,7 @@ import {
   DrawerTitle,
 } from "~/shared/components/ui/drawer";
 import { createClient } from "~/shared/lib/supabase/client";
-import type { Database } from "~/shared/models/database.types";
+import type { EventApprovalStatus, EventRegistration, RSVPStatus } from "~/shared/models/entity.types";
 import { useEffect, useState } from "react";
 import { AttendersTableSkeleton } from "./attenders-table-skeleton";
 import { RegistrationAnswersDisplay } from "./registration-answers-display";
@@ -86,11 +86,6 @@ import type { CustomQuestionJson, CustomAnswerJson } from "~/modules/events/mode
 import { getCSVHeaders, flattenCustomAnswers } from "~/modules/events/utils/custom-questions";
 
 import ExcelIcon from "~/assets/images/ExcelLogo.png";
-
-type EventRegistration = Database["public"]["Tables"]["event_registrations"]["Row"];
-
-type RSVPStatus = Database["public"]["Enums"]["rsvp_status"];
-type ApprovalStatus = Database["public"]["Enums"]["event_approval_statuses"];
 
 // Schema for attenders
 export const attenderSchema = z.object({
@@ -122,7 +117,7 @@ const rsvpStatusConfig: Record<
 };
 
 const approvalStatusConfig: Record<
-  ApprovalStatus,
+  EventApprovalStatus,
   {
     label: string;
     variant: "default" | "secondary" | "destructive" | "outline" | "warning"; // Added warning conceptually
@@ -371,7 +366,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         Email: row.email || "-",
         Phone: row.phone || "-",
         "RSVP Status": rsvpStatusConfig[row.rsvp_status]?.label || row.rsvp_status,
-        "Approval Status": row.approval_status ? approvalStatusConfig[row.approval_status as ApprovalStatus]?.label : "Approved",
+        "Approval Status": row.approval_status ? approvalStatusConfig[row.approval_status as EventApprovalStatus]?.label : "Approved",
         Verified: row.is_verified ? "Yes" : "No",
         "Registered At": row.registered_at
           ? new Date(row.registered_at).toLocaleString()
@@ -470,7 +465,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         accessorKey: "approval_status",
         header: "Approved",
         cell: ({ row }) => {
-          const status = (row.original.approval_status || "approved") as ApprovalStatus;
+          const status = (row.original.approval_status || "approved") as EventApprovalStatus;
           const config = approvalStatusConfig[status];
           return (
             <Badge
@@ -901,11 +896,11 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                         variant="outline"
                         className={cn(
                           "border-transparent font-medium",
-                          approvalStatusConfig[selectedAttender.approval_status as ApprovalStatus]?.className,
+                          approvalStatusConfig[selectedAttender.approval_status as EventApprovalStatus]?.className,
                           selectedAttender.approval_status === 'approved' && "bg-green-100 text-green-700 hover:bg-green-200 border-green-200"
                         )}
                       >
-                        {approvalStatusConfig[selectedAttender.approval_status as ApprovalStatus]?.label || "Approved"}
+                        {approvalStatusConfig[selectedAttender.approval_status as EventApprovalStatus]?.label || "Approved"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
@@ -992,11 +987,11 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                         variant="outline"
                         className={cn(
                           "border-transparent font-medium",
-                          approvalStatusConfig[selectedAttender.approval_status as ApprovalStatus]?.className,
+                          approvalStatusConfig[selectedAttender.approval_status as EventApprovalStatus]?.className,
                           selectedAttender.approval_status === 'approved' && "bg-green-100 text-green-700 hover:bg-green-200 border-green-200"
                         )}
                       >
-                        {approvalStatusConfig[selectedAttender.approval_status as ApprovalStatus]?.label || "Approved"}
+                          {approvalStatusConfig[selectedAttender.approval_status as EventApprovalStatus]?.label || "Approved"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">

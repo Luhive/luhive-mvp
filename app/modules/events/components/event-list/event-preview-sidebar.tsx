@@ -13,22 +13,19 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/shared/components/ui/sheet";
-import type { Database } from "~/shared/models/database.types";
+import type { Community, Event, Profile } from "~/shared/models/entity.types";
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import { getExternalPlatformName, getExternalPlatformIcon } from "~/modules/events/utils/external-platform";
 import { Badge } from "~/shared/components/ui/badge";
-import AttendersAvatars from "./attenders-avatars";
-import { AnonymousRegistrationDialog } from "./anonymous-registration-dialog";
-import { AnonymousSubscriptionDialog } from "./anonymous-subscription-dialog";
-import { CustomQuestionsForm } from "./custom-questions-form";
+import AttendersAvatars from "~/modules/events/components/attenders/attenders-avatars";
+import { AnonymousRegistrationDialog } from "../registration/anonymous-registration-dialog";
+import { AnonymousSubscriptionDialog } from "../registration/anonymous-subscription-dialog";
+import { CustomQuestionsForm } from "../registration/custom-questions-form";
 import { createClient } from "~/shared/lib/supabase/client";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-type Event = Database["public"]["Tables"]["events"]["Row"];
-type Community = Database["public"]["Tables"]["communities"]["Row"];
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type SubmissionIntent = "register" | "unregister";
 
 interface EventPreviewSidebarProps {

@@ -1,4 +1,5 @@
 export type RegistrationType = "native" | "external" | "both";
+
 export type ExternalPlatform =
   | "google_forms"
   | "microsoft_forms"

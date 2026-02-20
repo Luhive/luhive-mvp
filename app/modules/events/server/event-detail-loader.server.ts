@@ -1,12 +1,21 @@
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
 import { createClient } from "~/shared/lib/supabase/server";
-import type { Database } from "~/shared/models/database.types";
 import type { LoaderFunctionArgs } from "react-router";
+import type { ExternalPlatform } from "~/modules/events/model/event.types";
+import { Community, Event, Profile } from "~/shared/models/entity.types";
 
-type Event = Database["public"]["Tables"]["events"]["Row"];
-type Community = Database["public"]["Tables"]["communities"]["Row"];
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+dayjs.extend(timezone);
 
-export interface DeferredUserData {
+const EXTERNAL_PLATFORM_NAMES: Record<ExternalPlatform, string> = {
+  google_forms: "Google Forms",
+  microsoft_forms: "Microsoft Forms",
+  luma: "Luma",
+  eventbrite: "Eventbrite",
+  other: "External Form",
+};
+
+export interface UserData {
   registrationCount: number;
   isUserRegistered: boolean;
   userRegistrationStatus: string | null;
@@ -20,7 +29,14 @@ export interface EventDetailLoaderData {
   event: Event;
   community: Community;
   origin: string;
-  userData: Promise<DeferredUserData>;
+  userData: UserData;
+  isPastEvent: boolean;
+  capacityPercentage: number;
+  hasCustomQuestions: boolean;
+  userPhone: string | null;
+  isExternalEvent: boolean;
+  externalPlatformName: string;
+  registrationDeadlineFormatted: string;
 }
 
 export async function loader({
@@ -61,90 +77,120 @@ export async function loader({
     throw new Response("Event not available", { status: 404 });
   }
 
-  const { count: registrationCount } = await supabase
+  const url = new URL(request.url);
+  const origin = url.origin;
+
+  const { count: regCount } = await supabase
     .from("event_registrations")
     .select("*", { count: "exact", head: true })
     .eq("event_id", event.id)
     .eq("approval_status", "approved");
 
   const {
-    data: { user },
+    data: { user: u },
   } = await supabase.auth.getUser();
+  let isUserRegistered = false;
+  let userRegistrationStatus: string | null = null;
+  let isOwnerOrAdmin = false;
+  let userProfile: Profile | null = null;
 
-  const url = new URL(request.url);
-  const origin = url.origin;
-
-  const userDataPromise = (async (): Promise<DeferredUserData> => {
-    const { count: regCount } = await supabase
+  if (u) {
+    const { data: registration } = await supabase
       .from("event_registrations")
-      .select("*", { count: "exact", head: true })
+      .select("id, approval_status")
       .eq("event_id", event.id)
-      .eq("approval_status", "approved");
+      .eq("user_id", u.id)
+      .single();
 
-    const {
-      data: { user: u },
-    } = await supabase.auth.getUser();
-    let isUserRegistered = false;
-    let userRegistrationStatus: string | null = null;
-    let isOwnerOrAdmin = false;
-    let userProfile: Profile | null = null;
+    isUserRegistered = !!registration;
+    userRegistrationStatus = registration?.approval_status || null;
 
-    if (u) {
-      const { data: registration } = await supabase
-        .from("event_registrations")
-        .select("id, approval_status")
-        .eq("event_id", event.id)
-        .eq("user_id", u.id)
-        .single();
+    const { data: membership } = await supabase
+      .from("community_members")
+      .select("role")
+      .eq("community_id", community.id)
+      .eq("user_id", u.id)
+      .single();
 
-      isUserRegistered = !!registration;
-      userRegistrationStatus = registration?.approval_status || null;
+    isOwnerOrAdmin =
+      membership?.role === "owner" || membership?.role === "admin";
 
-      const { data: membership } = await supabase
-        .from("community_members")
-        .select("role")
-        .eq("community_id", community.id)
-        .eq("user_id", u.id)
-        .single();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", u.id)
+      .single();
 
-      isOwnerOrAdmin =
-        membership?.role === "owner" || membership?.role === "admin";
+    userProfile = profile || null;
+  }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", u.id)
-        .single();
+  const now = new Date();
+  const eventStartTime = new Date(event.start_time);
+  const registrationDeadline = event.registration_deadline
+    ? new Date(event.registration_deadline)
+    : eventStartTime;
 
-      userProfile = profile || null;
-    }
+  const canRegister =
+    event.status === "published" &&
+    now < registrationDeadline &&
+    (!event.capacity || (regCount || 0) < event.capacity);
 
-    const now = new Date();
-    const eventStartTime = new Date(event.start_time);
-    const registrationDeadline = event.registration_deadline
-      ? new Date(event.registration_deadline)
-      : eventStartTime;
+  const userData: UserData = {
+    registrationCount: regCount || 0,
+    isUserRegistered,
+    userRegistrationStatus,
+    canRegister,
+    user: u || null,
+    userProfile,
+    isOwnerOrAdmin,
+  };
 
-    const canRegister =
-      event.status === "published" &&
-      now < registrationDeadline &&
-      (!event.capacity || (regCount || 0) < event.capacity);
+  const regCountNum = regCount || 0;
+  const isPastEvent = eventStartTime < now;
+  const capacityPercentage = event.capacity
+    ? Math.round((regCountNum / event.capacity) * 100)
+    : 0;
 
-    return {
-      registrationCount: regCount || 0,
-      isUserRegistered,
-      userRegistrationStatus,
-      canRegister,
-      user: u || null,
-      userProfile,
-      isOwnerOrAdmin,
-    };
-  })();
+  const cq = event.custom_questions as {
+    phone?: { enabled?: boolean };
+    custom?: unknown[];
+  } | null;
+  const hasCustomQuestions = Boolean(
+    cq && (cq.phone?.enabled || (cq.custom?.length ?? 0) > 0),
+  );
+
+  const userPhone =
+    userProfile?.metadata &&
+    typeof userProfile.metadata === "object" &&
+    "phone" in userProfile.metadata
+      ? ((userProfile.metadata as { phone?: string }).phone ?? null)
+      : null;
+
+  const isExternalEvent = event.registration_type === "external";
+  const externalPlatformName =
+    isExternalEvent && event.external_platform
+      ? (EXTERNAL_PLATFORM_NAMES[event.external_platform as ExternalPlatform] ??
+        "External Form")
+      : "External Form";
+
+  const tz = event.timezone ?? "UTC";
+  const registrationDeadlineFormatted = (
+    event.registration_deadline
+      ? dayjs(event.registration_deadline).tz(tz)
+      : dayjs(event.start_time).tz(tz)
+  ).format("h:mm A z");
 
   return {
     event,
     community,
     origin,
-    userData: userDataPromise,
+    userData,
+    isPastEvent,
+    capacityPercentage,
+    hasCustomQuestions,
+    userPhone,
+    isExternalEvent,
+    externalPlatformName,
+    registrationDeadlineFormatted,
   };
 }

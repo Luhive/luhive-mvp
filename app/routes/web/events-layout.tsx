@@ -7,8 +7,8 @@ import { Button } from "~/shared/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Skeleton } from "~/shared/components/ui/skeleton";
 import { ArrowLeft, X } from "lucide-react";
-import { EventPageSkeleton } from "~/modules/events/components/event-page-skeleton";
-import { EventPreviewSidebar } from "~/modules/events/components/event-preview-sidebar";
+import { EventPageSkeleton } from "~/modules/events/components/event-list/event-page-skeleton";
+import { EventPreviewSidebar } from "~/modules/events/components/event-list/event-preview-sidebar";
 
 type Community = Database["public"]["Tables"]["communities"]["Row"];
 type Event = Database["public"]["Tables"]["events"]["Row"];

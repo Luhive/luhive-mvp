@@ -9,13 +9,10 @@ import { TopNavigation } from '~/shared/components/navigation';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import type { Database } from '~/shared/models/database.types';
+import type { Community, Event } from '~/shared/models/entity.types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-type Event = Database['public']['Tables']['events']['Row'];
-type Community = Database['public']['Tables']['communities']['Row'];
 
 interface EventsListPageSkeletonProps {
 	events: Event[];

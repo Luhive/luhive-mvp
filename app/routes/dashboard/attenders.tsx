@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { useLoaderData } from "react-router";
-import { AttendersTableSkeleton } from "~/modules/events/components/attenders-table-skeleton";
+import { AttendersTableSkeleton } from "~/modules/events/components/attenders/attenders-table-skeleton";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
 import { getEventByIdClient } from "~/modules/events/data/events-repo.client";
 import type { Database } from "~/shared/models/database.types";
@@ -14,7 +14,7 @@ type AttendersLoaderData = {
 };
 
 const AttendersTable = lazy(() =>
-  import("~/modules/events/components/attenders-table").then((m) => ({
+  import("~/modules/events/components/attenders/attenders-table").then((m) => ({
     default: m.AttendersTable,
   }))
 );

@@ -1,5 +1,5 @@
 import { Skeleton } from "~/shared/components/ui/skeleton";
-import { AttendersTableSkeleton } from "~/modules/events/components/attenders-table-skeleton";
+import { AttendersTableSkeleton } from "~/modules/events/components/attenders/attenders-table-skeleton";
 
 /**
  * Attenders tab skeleton: header + attenders table.

@@ -1,7 +1,6 @@
-import type { Database } from "~/shared/models/database.types";
+import type { Community, Profile } from "~/shared/models/entity.types";
 
-export type Community = Database["public"]["Tables"]["communities"]["Row"];
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type { Community, Profile };
 
 export type DashboardCommunityData = {
   community: Community;

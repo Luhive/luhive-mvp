@@ -1,8 +1,6 @@
-import type { Database } from "~/shared/models/database.types";
+import type { Community } from "~/shared/models/entity.types";
 import { createClient } from "~/shared/lib/supabase/client";
 import { DashboardStatsData, Member } from "../model/dashboard-types";
-
-type Community = Database["public"]["Tables"]["communities"]["Row"];
 
 export async function getCommunityBySlugClient(slug: string) {
   const supabase = createClient();
@@ -32,7 +30,7 @@ export async function getMembersForCommunityClient(communityId: string) {
         full_name,
         avatar_url
       )
-    `
+    `,
     )
     .eq("community_id", communityId)
     .order("joined_at", { ascending: false });
@@ -42,24 +40,32 @@ export async function getMembersForCommunityClient(communityId: string) {
   }
 
   const members: Member[] =
-    membersData?.map((member: { id: string; role?: string | null; joined_at: string | null; profiles?: { full_name?: string | null; avatar_url?: string | null } | null }) => {
-      const profile = member.profiles;
-      return {
-        id: member.id,
-        full_name: profile?.full_name || "Unknown User",
-        avatar_url: profile?.avatar_url ?? null,
-        joined_at: member.joined_at ?? "",
-        role: member.role || "member",
-      };
-    }) || [];
+    membersData?.map(
+      (member: {
+        id: string;
+        role?: string | null;
+        joined_at: string | null;
+        profiles?: {
+          full_name?: string | null;
+          avatar_url?: string | null;
+        } | null;
+      }) => {
+        const profile = member.profiles;
+        return {
+          id: member.id,
+          full_name: profile?.full_name || "Unknown User",
+          avatar_url: profile?.avatar_url ?? null,
+          joined_at: member.joined_at ?? "",
+          role: member.role || "member",
+        };
+      },
+    ) || [];
 
   return { members, error: null };
 }
 
-
-
 export async function getStatsForCommunityClient(
-  communityId: string
+  communityId: string,
 ): Promise<DashboardStatsData> {
   const supabase = createClient();
 
@@ -80,9 +86,8 @@ export async function getStatsForCommunityClient(
 
   return {
     totalVisits: visitsCount.count ?? 0,
-    uniqueVisitors: new Set(
-      visitsData.data?.map((v) => v.session_id) ?? []
-    ).size,
+    uniqueVisitors: new Set(visitsData.data?.map((v) => v.session_id) ?? [])
+      .size,
     joinedUsers: membersCount.count ?? 0,
   };
 }

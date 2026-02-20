@@ -49,10 +49,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/shared/components/ui/dialog";
-import { EventListSkeleton } from "~/modules/events/components/event-list";
-import { EventPageSkeleton } from "~/modules/events/components/event-page-skeleton";
-import { EventsListPageSkeleton } from "~/modules/events/components/events-list-page-skeleton";
-import { EventPreviewSidebar } from "~/modules/events/components/event-preview-sidebar";
+import { EventListSkeleton } from "~/modules/events/components/event-list/event-list";
+import { EventPageSkeleton } from "~/modules/events/components/event-list/event-page-skeleton";
+import { EventsListPageSkeleton } from "~/modules/events/components/event-list/events-list-page-skeleton";
+import { EventPreviewSidebar } from "~/modules/events/components/event-list/event-preview-sidebar";
 import { useIsMobile } from "~/shared/hooks/use-mobile";
 import { toast } from "sonner";
 import type { CommunityLoaderData } from "~/modules/community/server/community-loader.server";
@@ -61,7 +61,7 @@ import type { Community } from "~/modules/community/model/community-types";
 type Event = Database["public"]["Tables"]["events"]["Row"];
 
 const EventList = lazy(() =>
-  import("~/modules/events/components/event-list").then((module) => ({
+  import("~/modules/events/components/event-list/event-list").then((module) => ({
     default: module.EventList,
   }))
 );

@@ -9,14 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avat
 import { Separator } from "~/shared/components/ui/separator";
 import { Card, CardContent } from "~/shared/components/ui/card";
 import { Skeleton } from "~/shared/components/ui/skeleton";
-import { AttendersAvatarsSkeleton } from "./attenders-avatars";
-import type { Database } from "~/shared/models/database.types";
+import { AttendersAvatarsSkeleton } from "~/modules/events/components/attenders/attender-avatars-skeleton";
+import type { Community, Event } from "~/shared/models/entity.types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-type Event = Database["public"]["Tables"]["events"]["Row"];
-type Community = Database["public"]["Tables"]["communities"]["Row"];
 
 interface EventPageSkeletonProps {
 	event: Event;

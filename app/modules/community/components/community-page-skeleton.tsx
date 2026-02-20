@@ -1,11 +1,9 @@
-import type { Database } from "~/shared/models/database.types";
+import type { Community } from "~/shared/models/entity.types";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Card, CardContent, CardHeader } from "~/shared/components/ui/card";
 import { Skeleton } from "~/shared/components/ui/skeleton";
 import { Badge } from "~/shared/components/ui/badge";
 import { BadgeCheck, Heart, Users, Calendar } from "lucide-react";
-
-type Community = Database['public']['Tables']['communities']['Row'];
 
 type CommunityPageSkeletonProps = {
   community: Community & { 
