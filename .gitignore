@@ -10,3 +10,4 @@ dbMigration.sh
 # React Router
 /.react-router/
 /build/
+package-lock.json
