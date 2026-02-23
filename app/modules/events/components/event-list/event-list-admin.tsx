@@ -48,7 +48,7 @@ import {
 type RegistrationTypeFilter = 'all' | 'luhive' | 'external';
 
 interface EventListProps {
-  events: (Event & { registration_count?: number })[];
+  events: (Event & { registration_count?: number; communityRole?: "host" | "co-host" })[];
   communitySlug: string;
   onDelete?: (eventId: string) => void;
   onStatusChange?: (eventId: string, newStatus: Extract<EventStatus, 'draft' | 'published'>) => void;
@@ -631,7 +631,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                           <ExternalLink className="w-4 h-4" />
                                         </Link>
                                       </Button>
-                                      {!isExternal && (
+                                      {!isExternal && event.communityRole !== "co-host" && (
                                         <>
                                           <div className="w-px h-4 bg-gray-200"></div>
                                           <Button
@@ -650,88 +650,116 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                         </>
                                       )}
                                       <div className="w-px h-4 bg-gray-200"></div>
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
+                                      {event.communityRole === "co-host" ? (
+                                        <>
                                           <Button
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
+                                            title="View Event"
+                                            asChild
                                           >
-                                            <MoreHorizontal className="w-4 h-4" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
-                                          {onStatusChange && (
-                                            <DropdownMenuItem
-                                              onClick={() =>
-                                                onStatusChange(
-                                                  event.id,
-                                                  event.status === 'published' ? 'draft' : 'published'
-                                                )
-                                              }
-                                            >
-                                              {event.status === 'published' ? (
-                                                <>
-                                                  <FileText className="w-4 h-4 mr-2" />
-                                                  Move to Drafts
-                                                </>
-                                              ) : (
-                                                <>
-                                                  <Eye className="w-4 h-4 mr-2" />
-                                                  Publish Event
-                                                </>
-                                              )}
-                                            </DropdownMenuItem>
-                                          )}
-                                          {onStatusChange && <DropdownMenuSeparator />}
-                                          <DropdownMenuItem asChild>
-                                            <Link
-                                              to={
-                                                isExternal
-                                                  ? `/dashboard/${communitySlug}/events/${event.id}/edit-external`
-                                                  : `/dashboard/${communitySlug}/events/${event.id}/edit`
-                                              }
-                                            >
-                                              <Edit className="w-4 h-4 mr-2" />
-                                              Edit Details
+                                            <Link to={`/c/${communitySlug}/events/${event.id}`}>
+                                              <Eye className="w-4 h-4" />
                                             </Link>
-                                          </DropdownMenuItem>
-                                          {!isExternal && (
+                                          </Button>
+                                          <div className="w-px h-4 bg-gray-200"></div>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
+                                            title="View Participants"
+                                            asChild
+                                          >
+                                            <Link to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}>
+                                              <Users className="w-4 h-4" />
+                                            </Link>
+                                          </Button>
+                                        </>
+                                      ) : (
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
+                                            >
+                                              <MoreHorizontal className="w-4 h-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end" className="w-48">
+                                            {onStatusChange && (
+                                              <DropdownMenuItem
+                                                onClick={() =>
+                                                  onStatusChange(
+                                                    event.id,
+                                                    event.status === 'published' ? 'draft' : 'published'
+                                                  )
+                                                }
+                                              >
+                                                {event.status === 'published' ? (
+                                                  <>
+                                                    <FileText className="w-4 h-4 mr-2" />
+                                                    Move to Drafts
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <Eye className="w-4 h-4 mr-2" />
+                                                    Publish Event
+                                                  </>
+                                                )}
+                                              </DropdownMenuItem>
+                                            )}
+                                            {onStatusChange && <DropdownMenuSeparator />}
                                             <DropdownMenuItem asChild>
                                               <Link
-                                                to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}
+                                                to={
+                                                  isExternal
+                                                    ? `/dashboard/${communitySlug}/events/${event.id}/edit-external`
+                                                    : `/dashboard/${communitySlug}/events/${event.id}/edit`
+                                                }
                                               >
-                                                <Users className="w-4 h-4 mr-2" />
-                                                Manage Guests
+                                                <Edit className="w-4 h-4 mr-2" />
+                                                Edit Details
                                               </Link>
                                             </DropdownMenuItem>
-                                          )}
-                                          {isExternal && event.external_registration_url && (
-                                            <DropdownMenuItem asChild>
-                                              <a
-                                                href={event.external_registration_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                              >
-                                                <ExternalLink className="w-4 h-4 mr-2" />
-                                                Open Registration Form
-                                              </a>
+                                            {!isExternal && (
+                                              <DropdownMenuItem asChild>
+                                                <Link
+                                                  to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}
+                                                >
+                                                  <Users className="w-4 h-4 mr-2" />
+                                                  Manage Guests
+                                                </Link>
+                                              </DropdownMenuItem>
+                                            )}
+                                            {isExternal && event.external_registration_url && (
+                                              <DropdownMenuItem asChild>
+                                                <a
+                                                  href={event.external_registration_url}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                >
+                                                  <ExternalLink className="w-4 h-4 mr-2" />
+                                                  Open Registration Form
+                                                </a>
+                                              </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuItem disabled>
+                                              <BarChart3 className="w-4 h-4 mr-2" />
+                                              View Analytics
                                             </DropdownMenuItem>
-                                          )}
-                                          <DropdownMenuItem disabled>
-                                            <BarChart3 className="w-4 h-4 mr-2" />
-                                            View Analytics
-                                          </DropdownMenuItem>
-                                          <DropdownMenuSeparator />
-                                          <DropdownMenuItem
-                                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                                            onClick={() => onDelete?.(event.id)}
-                                          >
-                                            <Trash2 className="w-4 h-4 mr-2" />
-                                            Delete Event
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                              onClick={() => onDelete?.(event.id)}
+                                            >
+                                              <Trash2 className="w-4 h-4 mr-2" />
+                                              Delete Event
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

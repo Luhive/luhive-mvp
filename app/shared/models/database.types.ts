@@ -195,6 +195,67 @@ export type Database = {
         }
         Relationships: []
       }
+      event_collaborations: {
+        Row: {
+          id: string
+          event_id: string
+          community_id: string
+          role: string
+          status: string
+          invited_by: string
+          invited_at: string
+          accepted_at: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          community_id: string
+          role: string
+          status?: string
+          invited_by: string
+          invited_at?: string
+          accepted_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          community_id?: string
+          role?: string
+          status?: string
+          invited_by?: string
+          invited_at?: string
+          accepted_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_collaborations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_collaborations_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_collaborations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_registrations: {
         Row: {
           anonymous_email: string | null
@@ -208,6 +269,7 @@ export type Database = {
           id: string
           is_verified: boolean
           registered_at: string | null
+          registration_source_community_id: string | null
           rsvp_status: Database["public"]["Enums"]["rsvp_status"]
           token_expires_at: string | null
           updated_at: string | null
@@ -226,6 +288,7 @@ export type Database = {
           id?: string
           is_verified?: boolean
           registered_at?: string | null
+          registration_source_community_id?: string | null
           rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
           token_expires_at?: string | null
           updated_at?: string | null
@@ -244,6 +307,7 @@ export type Database = {
           id?: string
           is_verified?: boolean
           registered_at?: string | null
+          registration_source_community_id?: string | null
           rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
           token_expires_at?: string | null
           updated_at?: string | null
@@ -263,6 +327,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_registration_source_community_id_fkey"
+            columns: ["registration_source_community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
             referencedColumns: ["id"]
           },
         ]

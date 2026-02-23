@@ -283,18 +283,22 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
     if (!attenderToDelete) return;
 
     setIsDeleting(true);
-    const supabase = createClient();
 
     try {
-      const { error } = await supabase
-        .from("event_registrations")
-        .delete()
-        .eq("id", attenderToDelete.id)
-        .eq("event_id", eventId);
+      const formData = new FormData();
+      formData.append("registrationId", attenderToDelete.id);
+      formData.append("eventId", eventId);
 
-      if (error) {
-        console.error("Error deleting registration:", error);
-        toast.error("Failed to remove attender");
+      const response = await fetch("/api/events/delete-registration", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        console.error("Error deleting registration:", result.error);
+        toast.error(result.error || "Failed to remove attender");
         setIsDeleting(false);
         return;
       }

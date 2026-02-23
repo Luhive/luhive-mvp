@@ -42,6 +42,21 @@ export async function action({ request }: ActionFunctionArgs) {
 			return Response.json({ success: false, error: "Event not found" }, { status: 404 });
 		}
 
+		// Check if user's community is the host (only host can update)
+		const { data: collaboration } = await serviceClient
+			.from("event_collaborations")
+			.select("role")
+			.eq("event_id", eventId)
+			.eq("community_id", event.community_id)
+			.eq("role", "host")
+			.eq("status", "accepted")
+			.single();
+
+		if (!collaboration) {
+			return Response.json({ success: false, error: "Only host community can update event details" }, { status: 403 });
+		}
+
+		// Verify user is owner/admin of host community
 		const { data: membership, error: membershipError } = await serviceClient
 			.from("community_members")
 			.select("role")
@@ -49,7 +64,15 @@ export async function action({ request }: ActionFunctionArgs) {
 			.eq("user_id", user.id)
 			.single();
 		if (membershipError || !membership || !["owner", "admin"].includes((membership as any).role || "")) {
-			return Response.json({ success: false, error: "You do not have permission to manage this event" }, { status: 403 });
+			// Also check if user is the community creator
+			const { data: community } = await serviceClient
+				.from("communities")
+				.select("created_by")
+				.eq("id", event.community_id)
+				.single();
+			if (!community || community.created_by !== user.id) {
+				return Response.json({ success: false, error: "You do not have permission to manage this event" }, { status: 403 });
+			}
 		}
 
 		const { data: community, error: communityError } = await serviceClient

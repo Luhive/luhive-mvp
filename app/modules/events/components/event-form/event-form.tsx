@@ -1,11 +1,11 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '~/shared/components/ui/card';
 import { Button } from '~/shared/components/ui/button';
 import { Separator } from '~/shared/components/ui/separator';
 import { Spinner } from '~/shared/components/ui/spinner';
 import { Badge } from '~/shared/components/ui/badge';
-import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle } from 'lucide-react';
+import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle, Users2 } from 'lucide-react';
 import { EventCoverUpload } from '~/modules/events/components/event-form/event-cover-upload';
 import { EventBasicInfo } from '~/modules/events/components/event-form/fields/event-basic-info';
 import { EventDateTime } from '~/modules/events/components/event-form/fields/event-datetime';
@@ -13,6 +13,9 @@ import { EventLocation } from '~/modules/events/components/event-form/fields/eve
 import { EventCapacity } from '~/modules/events/components/event-form/fields/event-capacity';
 import { EventDiscussion } from '~/modules/events/components/event-form/fields/event-discussion';
 import { CustomQuestionsBuilder } from '~/modules/events/components/registration/custom-questions-builder';
+import { CollaborationInviteDialog } from '~/modules/events/components/collaboration/collaboration-invite-dialog';
+import { CollaborationList } from '~/modules/events/components/collaboration/collaboration-list';
+import type { CollaborationWithCommunity } from '~/modules/events/components/collaboration/collaboration-list';
 import { createClient } from '~/shared/lib/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '~/shared/models/database.types';
@@ -87,6 +90,12 @@ export function EventForm({
     initialData?.customQuestions || null
   );
 
+  // Collaboration state
+  const [collaborations, setCollaborations] = useState<CollaborationWithCommunity[]>([]);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [isHost, setIsHost] = useState(false);
+  const [loadingCollaborations, setLoadingCollaborations] = useState(false);
+
   // Validation
   const isValid = () => {
     if (!title.trim()) return false;
@@ -109,6 +118,64 @@ export function EventForm({
 
     return true;
   };
+
+  // Load collaborations when in edit mode
+  useEffect(() => {
+    if (mode === 'edit' && eventId) {
+      async function loadCollaborations() {
+        setLoadingCollaborations(true);
+        const supabase = createClient();
+        
+        try {
+          // Check if this community is host
+          const { data: hostCollab } = await supabase
+            .from('event_collaborations')
+            .select('role')
+            .eq('event_id', eventId)
+            .eq('community_id', communityId)
+            .eq('role', 'host')
+            .eq('status', 'accepted')
+            .single();
+          
+          setIsHost(!!hostCollab);
+          
+          // Load all collaborations
+          const { data: collabs, error } = await supabase
+            .from('event_collaborations')
+            .select(`
+              *,
+              community:communities!event_collaborations_community_id_fkey (
+                id,
+                name,
+                slug,
+                logo_url
+              )
+            `)
+            .eq('event_id', eventId)
+            .order('created_at', { ascending: true });
+          
+          if (error) {
+            console.error('Error loading collaborations:', error);
+          } else if (collabs) {
+            const formatted = collabs.map((c: any) => ({
+              id: c.id,
+              role: c.role as 'host' | 'co-host',
+              status: c.status as 'pending' | 'accepted' | 'rejected',
+              invited_at: c.invited_at,
+              accepted_at: c.accepted_at,
+              community: Array.isArray(c.community) ? c.community[0] : c.community,
+            })) as CollaborationWithCommunity[];
+            setCollaborations(formatted);
+          }
+        } catch (error) {
+          console.error('Error loading collaborations:', error);
+        } finally {
+          setLoadingCollaborations(false);
+        }
+      }
+      loadCollaborations();
+    }
+  }, [mode, eventId, communityId]);
 
   const hasOnlyScheduleOrLocationChanges = () => {
     if (!initialRef.current || mode !== 'edit') {
@@ -216,19 +283,54 @@ export function EventForm({
 
       if (mode === 'create') {
         // Insert new event
-        const { error } = await supabase
+        const { data: newEvent, error } = await supabase
           .from('events')
-          .insert(eventData);
+          .insert(eventData)
+          .select('id')
+          .single();
 
-        if (error) {
+        if (error || !newEvent) {
           console.error('Error creating event:', error);
-          toast.error(error.message || 'Failed to create event');
+          toast.error(error?.message || 'Failed to create event');
           return;
+        }
+
+        // Create host collaboration record
+        const { error: collabError } = await supabase
+          .from('event_collaborations')
+          .insert({
+            event_id: newEvent.id,
+            community_id: communityId,
+            role: 'host',
+            status: 'accepted',
+            invited_by: user.id,
+            invited_at: new Date().toISOString(),
+            accepted_at: new Date().toISOString(),
+          });
+
+        if (collabError) {
+          console.error('Error creating host collaboration:', collabError);
+          // Don't fail the event creation, just log the error
         }
 
         toast.success(`Event ${isDraft ? 'saved as draft' : 'published'} successfully!`);
         navigate(`/dashboard/${communitySlug}/events`);
       } else if (mode === 'edit' && eventId) {
+        // Check if community is host (only host can update)
+        const { data: collaboration } = await supabase
+          .from('event_collaborations')
+          .select('role')
+          .eq('event_id', eventId)
+          .eq('community_id', communityId)
+          .eq('role', 'host')
+          .eq('status', 'accepted')
+          .single();
+
+        if (!collaboration) {
+          toast.error('Only host community can update event details');
+          return;
+        }
+
         // Update existing event
         const { error } = await supabase
           .from('events')
@@ -500,6 +602,133 @@ export function EventForm({
               />
             </CardContent>
           </Card>
+
+          {/* Collaboration - Only show in edit mode */}
+          {mode === 'edit' && eventId && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users2 className="h-4 w-4" />
+                  Collaboration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Invite other communities to co-host this event
+                  </p>
+                  {isHost && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowInviteDialog(true)}
+                    >
+                      <Users2 className="h-4 w-4 mr-2" />
+                      Invite Community
+                    </Button>
+                  )}
+                </div>
+                
+                {loadingCollaborations ? (
+                  <div className="flex justify-center py-4">
+                    <Spinner />
+                  </div>
+                ) : (
+                  <CollaborationList
+                    collaborations={collaborations}
+                    isHost={isHost}
+                    onRemove={async (collaborationId) => {
+                      try {
+                        const formData = new FormData();
+                        formData.append('intent', 'remove-collaboration');
+                        formData.append('collaborationId', collaborationId);
+                        
+                        const response = await fetch(`/c/${communitySlug}/events/${eventId}/collaboration`, {
+                          method: 'POST',
+                          body: formData,
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                          toast.success('Collaboration removed');
+                          // Reload collaborations
+                          const supabase = createClient();
+                          const { data: collabs } = await supabase
+                            .from('event_collaborations')
+                            .select(`
+                              *,
+                              community:communities!event_collaborations_community_id_fkey (
+                                id,
+                                name,
+                                slug,
+                                logo_url
+                              )
+                            `)
+                            .eq('event_id', eventId)
+                            .order('created_at', { ascending: true });
+                          
+                          if (collabs) {
+                            const formatted = collabs.map((c: any) => ({
+                              id: c.id,
+                              role: c.role as 'host' | 'co-host',
+                              status: c.status as 'pending' | 'accepted' | 'rejected',
+                              invited_at: c.invited_at,
+                              accepted_at: c.accepted_at,
+                              community: Array.isArray(c.community) ? c.community[0] : c.community,
+                            })) as CollaborationWithCommunity[];
+                            setCollaborations(formatted);
+                          }
+                        } else {
+                          toast.error(result.error || 'Failed to remove collaboration');
+                        }
+                      } catch (error) {
+                        console.error('Error removing collaboration:', error);
+                        toast.error('Failed to remove collaboration');
+                      }
+                    }}
+                  />
+                )}
+                
+                <CollaborationInviteDialog
+                  open={showInviteDialog}
+                  onOpenChange={setShowInviteDialog}
+                  eventId={eventId}
+                  hostCommunityId={communityId}
+                  communitySlug={communitySlug}
+                  onSuccess={async () => {
+                    // Reload collaborations
+                    const supabase = createClient();
+                    const { data: collabs } = await supabase
+                      .from('event_collaborations')
+                      .select(`
+                        *,
+                        community:communities!event_collaborations_community_id_fkey (
+                          id,
+                          name,
+                          slug,
+                          logo_url
+                        )
+                      `)
+                      .eq('event_id', eventId)
+                      .order('created_at', { ascending: true });
+                    
+                    if (collabs) {
+                      const formatted = collabs.map((c: any) => ({
+                        id: c.id,
+                        role: c.role as 'host' | 'co-host',
+                        status: c.status as 'pending' | 'accepted' | 'rejected',
+                        invited_at: c.invited_at,
+                        accepted_at: c.accepted_at,
+                        community: Array.isArray(c.community) ? c.community[0] : c.community,
+                      })) as CollaborationWithCommunity[];
+                      setCollaborations(formatted);
+                    }
+                  }}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

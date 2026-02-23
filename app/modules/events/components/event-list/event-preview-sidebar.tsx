@@ -32,6 +32,7 @@ import {
 } from "~/modules/events/utils/external-platform";
 import { Badge } from "~/shared/components/ui/badge";
 import AttendersAvatars from "~/modules/events/components/attenders/attenders-avatars";
+import HostedBy from "~/modules/events/components/shared/hosted-by";
 import { AnonymousRegistrationDialog } from "../registration/anonymous-registration-dialog";
 import { AnonymousSubscriptionDialog } from "../registration/anonymous-subscription-dialog";
 import { CustomQuestionsForm } from "../registration/custom-questions-form";
@@ -74,6 +75,14 @@ export function EventPreviewSidebar({
   const [anonymousName, setAnonymousName] = useState<string | null>(null);
   const [anonymousEmail, setAnonymousEmail] = useState<string | null>(null);
   const [localIsRegistered, setLocalIsRegistered] = useState(isUserRegistered);
+  const [hostingCommunities, setHostingCommunities] = useState<Array<{
+    id: string;
+    name: string;
+    slug: string;
+    logo_url: string | null;
+    role: "host" | "co-host";
+  }>>([]);
+  const [isOwnerOrAdmin, setIsOwnerOrAdmin] = useState(false);
   const lastSubmittedIntentRef = useRef<SubmissionIntent | null>(null);
   const prevEventIdRef = useRef<string | null>(null);
 
@@ -101,6 +110,118 @@ export function EventPreviewSidebar({
 
     prevEventIdRef.current = currentEventId;
   }, [event?.id]);
+
+  // Fetch hosting communities when sidebar opens
+  useEffect(() => {
+    if (!open || !event || !community) {
+      return;
+    }
+
+    async function fetchHostingCommunities() {
+      try {
+        const supabase = createClient();
+        
+        // First get the actual host community from the event
+        const { data: hostCommunityData, error: hostError } = await supabase
+          .from("communities")
+          .select("id, name, slug, logo_url")
+          .eq("id", event.community_id)
+          .single();
+
+        if (hostError || !hostCommunityData) {
+          console.error("Error fetching host community:", hostError);
+          // Fall back to just the community
+          setHostingCommunities([{
+            id: community.id,
+            name: community.name,
+            slug: community.slug,
+            logo_url: community.logo_url,
+            role: "host",
+          }]);
+          return;
+        }
+
+        // Then get all collaborations
+        const { data: collaborations, error } = await supabase
+          .from("event_collaborations")
+          .select(`
+            *,
+            community:communities!event_collaborations_community_id_fkey (
+              id,
+              name,
+              slug,
+              logo_url
+            )
+          `)
+          .eq("event_id", event.id)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          console.error("Error fetching collaborations:", error);
+          // Fall back to just the host community
+          setHostingCommunities([{
+            id: hostCommunityData.id,
+            name: hostCommunityData.name,
+            slug: hostCommunityData.slug,
+            logo_url: hostCommunityData.logo_url,
+            role: "host",
+          }]);
+          return;
+        }
+
+        const hosts: Array<{
+          id: string;
+          name: string;
+          slug: string;
+          logo_url: string | null;
+          role: "host" | "co-host";
+        }> = [];
+
+        // Add host community first (always show host)
+        hosts.push({
+          id: hostCommunityData.id,
+          name: hostCommunityData.name,
+          slug: hostCommunityData.slug,
+          logo_url: hostCommunityData.logo_url,
+          role: "host",
+        });
+
+        // Add all accepted co-hosts (including current community if it's a co-host)
+        if (collaborations) {
+          for (const collab of collaborations) {
+            if (collab.role === "co-host" && collab.status === "accepted") {
+              const coHostCommunity = Array.isArray(collab.community)
+                ? collab.community[0]
+                : collab.community;
+              if (coHostCommunity && coHostCommunity.id !== hostCommunityData.id) {
+                hosts.push({
+                  id: coHostCommunity.id,
+                  name: coHostCommunity.name,
+                  slug: coHostCommunity.slug,
+                  logo_url: coHostCommunity.logo_url,
+                  role: "co-host",
+                });
+              }
+            }
+          }
+        }
+
+        setHostingCommunities(hosts);
+      } catch (error) {
+        console.error("Error fetching hosting communities:", error);
+        // Fall back to just the community
+        setHostingCommunities([{
+          id: community.id,
+          name: community.name,
+          slug: community.slug,
+          logo_url: community.logo_url,
+          role: "host",
+        }]);
+      }
+    }
+
+    fetchHostingCommunities();
+  }, [open, event?.id, event?.community_id, community?.id]);
 
   // Check registration status client-side when sidebar opens or event/user changes
   useEffect(() => {
@@ -130,6 +251,35 @@ export function EventPreviewSidebar({
 
     checkRegistrationStatus();
   }, [open, user?.id, event?.id]);
+
+  // Check if current user is owner/admin of the community (for Manage CTA)
+  useEffect(() => {
+    if (!open || !user || !community) return;
+
+    let mounted = true;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: membership } = await supabase
+          .from("community_members")
+          .select("role")
+          .eq("community_id", community.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!mounted) return;
+        setIsOwnerOrAdmin(
+          !!membership && (membership.role === "owner" || membership.role === "admin")
+        );
+      } catch (err) {
+        console.error("Error checking community membership:", err);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [open, user?.id, community?.id]);
 
   // Monitor fetcher data for successful registration
   useEffect(() => {
@@ -440,25 +590,7 @@ export function EventPreviewSidebar({
               <div className="grid grid-cols-2 gap-3">
                 {/* Hosted by */}
                 <div className="rounded-lg bg-card p-3">
-                  <span className="text-xs text-muted-foreground font-medium block mb-2">
-                    Hosted by
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage
-                        src={community.logo_url || ""}
-                        alt={community.name}
-                      />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                        {community.name?.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">
-                        {community.name}
-                      </p>
-                    </div>
-                  </div>
+                  <HostedBy hosts={hostingCommunities} fallbackCommunity={community} />
                 </div>
 
                 {/* Attenders */}
@@ -494,7 +626,17 @@ export function EventPreviewSidebar({
               <div className="shrink-0">
                 <p className="text-lg font-bold">Free</p>
               </div>
-              {isPastEvent ? (
+              {isOwnerOrAdmin ? (
+                <Button
+                  asChild
+                  className="w-[20rem]"
+                  size="lg"
+                >
+                  <a href={`/dashboard/${community.slug}/events`}>
+                    Manage Event
+                  </a>
+                </Button>
+              ) : isPastEvent ? (
                 <Button
                   onClick={handleNavigateToEvent}
                   className="w-[20rem]"

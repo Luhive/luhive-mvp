@@ -4,6 +4,7 @@ import { Calendar, Send } from "lucide-react";
 import { Button } from "~/shared/components/ui/button";
 import { Badge } from "~/shared/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
+import HostedBy from "~/modules/events/components/shared/hosted-by";
 import {
 	detectDiscussionPlatform,
 	getPlatformName,
@@ -26,6 +27,13 @@ interface EventSidebarPanelProps {
 	capacityPercentage: number;
 	isExternalEvent: boolean;
 	onShare: (event: Event) => void;
+	hostingCommunities?: Array<{
+		id: string;
+		name: string;
+		slug: string;
+		logo_url: string | null;
+		role: "host" | "co-host";
+	}>;
 }
 
 export function EventSidebarPanel({
@@ -36,8 +44,14 @@ export function EventSidebarPanel({
 	capacityPercentage,
 	isExternalEvent,
 	onShare,
+	hostingCommunities,
 }: EventSidebarPanelProps) {
 	const { registrationCount, canRegister } = userData;
+	
+	// Use hostingCommunities if provided, otherwise fall back to just the community
+	const hosts = hostingCommunities && hostingCommunities.length > 0
+		? hostingCommunities
+		: [{ id: community.id, name: community.name, slug: community.slug, logo_url: community.logo_url, role: "host" as const }];
 
 	return (
     <div className="contents lg:block lg:space-y-6">
@@ -72,34 +86,8 @@ export function EventSidebarPanel({
       {/* Host Info, Capacity & Share - Mobile Order 3 */}
       <div className="order-3 space-y-6">
         <div className="space-y-3">
-          <div className="flex items-center justify-between border-b pb-2">
-            <h3 className="text-sm font-semibold text-muted-foreground">
-              Hosted By
-            </h3>
-            <Link
-              to={`/c/${community.slug}`}
-              state={{
-                community,
-                description: community.description ?? undefined,
-                verified: community.verified ?? false,
-              }}
-              className="flex items-center gap-2 bg-card transition-colors"
-            >
-              <Avatar className="h-8 w-8">
-                <AvatarImage
-                  src={community.logo_url || ""}
-                  alt={community.name}
-                />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                  {community.name?.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate hover:text-primary transition-colors">
-                  {community.name}
-                </p>
-              </div>
-            </Link>
+          <div className="border-b pb-2">
+            <HostedBy hosts={hosts} fallbackCommunity={community} />
           </div>
 
           <AttendersAvatars

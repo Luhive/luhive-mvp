@@ -220,17 +220,54 @@ export function ExternalEventForm({
 
       if (mode === 'create') {
         // Insert new event
-        const { error } = await supabase.from('events').insert(eventData);
+        const { data: newEvent, error } = await supabase
+          .from('events')
+          .insert(eventData)
+          .select('id')
+          .single();
 
-        if (error) {
+        if (error || !newEvent) {
           console.error('Error creating event:', error);
-          toast.error(error.message || 'Failed to create event');
+          toast.error(error?.message || 'Failed to create event');
           return;
+        }
+
+        // Create host collaboration record
+        const { error: collabError } = await supabase
+          .from('event_collaborations')
+          .insert({
+            event_id: newEvent.id,
+            community_id: communityId,
+            role: 'host',
+            status: 'accepted',
+            invited_by: user.id,
+            invited_at: new Date().toISOString(),
+            accepted_at: new Date().toISOString(),
+          });
+
+        if (collabError) {
+          console.error('Error creating host collaboration:', collabError);
+          // Don't fail the event creation, just log the error
         }
 
         toast.success(`External event ${isDraft ? 'saved as draft' : 'published'} successfully!`);
         navigate(`/dashboard/${communitySlug}/events`);
       } else if (mode === 'edit' && eventId) {
+        // Check if community is host (only host can update)
+        const { data: collaboration } = await supabase
+          .from('event_collaborations')
+          .select('role')
+          .eq('event_id', eventId)
+          .eq('community_id', communityId)
+          .eq('role', 'host')
+          .eq('status', 'accepted')
+          .single();
+
+        if (!collaboration) {
+          toast.error('Only host community can update event details');
+          return;
+        }
+
         // Update existing event
         const { error } = await supabase.from('events').update(eventData).eq('id', eventId);
 
