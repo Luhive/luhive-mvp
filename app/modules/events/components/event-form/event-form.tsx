@@ -306,7 +306,7 @@ export function EventForm({
         status: submitStatus,
         is_approve_required: isApproveRequired,
         custom_questions: customQuestions,
-        notification_send_before: notificationTiming || null,
+        notification_send_before: notificationTimings.length > 0 ? notificationTimings : null,
         notification_message: useDefaultNotificationMessage ? defaultNotificationMessage : (notificationMessage || null),
       };
 

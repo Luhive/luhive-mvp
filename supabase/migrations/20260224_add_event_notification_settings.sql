@@ -30,7 +30,7 @@ RETURNS VOID LANGUAGE plpgsql AS $$
 DECLARE
   ev RECORD;
   timing TEXT;
-  offset INTERVAL;
+  interval_offset INTERVAL;
   send_ts TIMESTAMPTZ;
 BEGIN
   FOR ev IN
@@ -40,15 +40,15 @@ BEGIN
   LOOP
     FOREACH timing IN ARRAY ev.notification_send_before LOOP
       IF timing = '1_hour' THEN
-        offset := INTERVAL '1 hour';
+        interval_offset := INTERVAL '1 hour';
       ELSIF timing = '3_hours' THEN
-        offset := INTERVAL '3 hours';
+        interval_offset := INTERVAL '3 hours';
       ELSIF timing = '1_day' THEN
-        offset := INTERVAL '1 day';
+        interval_offset := INTERVAL '1 day';
       ELSE
-        offset := INTERVAL '0';
+        interval_offset := INTERVAL '0';
       END IF;
-      send_ts := ev.start_time - offset;
+      send_ts := ev.start_time - interval_offset;
 
       -- insert reminder only if not already exists for same event and send_at
       INSERT INTO public.event_reminders(event_id, send_at, send_offset, message)
