@@ -95,6 +95,13 @@ export function EventForm({
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [loadingCollaborations, setLoadingCollaborations] = useState(false);
+  // Pending invites when creating an event (collected before event exists)
+  const [pendingInvites, setPendingInvites] = useState<{
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string | null;
+  }[]>([]);
 
   // Validation
   const isValid = () => {
@@ -311,6 +318,43 @@ export function EventForm({
         if (collabError) {
           console.error('Error creating host collaboration:', collabError);
           // Don't fail the event creation, just log the error
+        }
+
+        // If there are pending invites collected during create flow, submit them to the collaboration action
+        // so the server can create the collaboration rows and send invitation emails.
+        if (pendingInvites.length > 0) {
+          try {
+            for (const p of pendingInvites) {
+              try {
+                const form = new FormData();
+                form.append('intent', 'invite-collaboration');
+                form.append('coHostCommunityId', p.id);
+
+                const res = await fetch(`/c/${communitySlug}/events/${newEvent.id}/collaboration`, {
+                  method: 'POST',
+                  body: form,
+                  credentials: 'same-origin',
+                });
+
+                if (!res.ok) {
+                  const body = await res.text();
+                  console.error('Failed to send pending invite via action:', res.status, body);
+                } else {
+                  const json = await res.json().catch(() => null);
+                  if (!json || !json.success) {
+                    console.error('Invite action returned error for', p.id, json);
+                  }
+                }
+              } catch (err) {
+                console.error('Error sending invite for pending community', p.id, err);
+              }
+            }
+            toast.success(`Sent ${pendingInvites.length} collaboration invite(s)`);
+          } catch (inviteErr) {
+            console.error('Error sending pending invites:', inviteErr);
+          } finally {
+            setPendingInvites([]);
+          }
         }
 
         toast.success(`Event ${isDraft ? 'saved as draft' : 'published'} successfully!`);
@@ -603,8 +647,8 @@ export function EventForm({
             </CardContent>
           </Card>
 
-          {/* Collaboration - Only show in edit mode */}
-          {mode === 'edit' && eventId && (
+          {/* Collaboration - show in edit mode or create mode (collect pending invites) */}
+          {(mode === 'edit' && eventId) || mode === 'create' ? (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
@@ -617,7 +661,7 @@ export function EventForm({
                   <p className="text-sm text-muted-foreground">
                     Invite other communities to co-host this event
                   </p>
-                  {isHost && (
+                  {(mode === 'create' || isHost) && (
                     <Button
                       type="button"
                       variant="outline"
@@ -638,6 +682,8 @@ export function EventForm({
                   <CollaborationList
                     collaborations={collaborations}
                     isHost={isHost}
+                    pendingInvites={pendingInvites}
+                    onRemovePending={(communityId) => setPendingInvites((prev) => prev.filter((x) => x.id !== communityId))}
                     onRemove={async (collaborationId) => {
                       try {
                         const formData = new FormData();
@@ -688,47 +734,51 @@ export function EventForm({
                       }
                     }}
                   />
-                )}
-                
-                <CollaborationInviteDialog
-                  open={showInviteDialog}
-                  onOpenChange={setShowInviteDialog}
-                  eventId={eventId}
-                  hostCommunityId={communityId}
-                  communitySlug={communitySlug}
-                  onSuccess={async () => {
-                    // Reload collaborations
-                    const supabase = createClient();
-                    const { data: collabs } = await supabase
-                      .from('event_collaborations')
-                      .select(`
-                        *,
-                        community:communities!event_collaborations_community_id_fkey (
-                          id,
-                          name,
-                          slug,
-                          logo_url
-                        )
-                      `)
-                      .eq('event_id', eventId)
-                      .order('created_at', { ascending: true });
+                  )}
+
+                  <CollaborationInviteDialog
+                    open={showInviteDialog}
+                    onOpenChange={setShowInviteDialog}
+                    eventId={mode === 'edit' ? eventId : undefined}
+                    hostCommunityId={communityId}
+                    communitySlug={communitySlug}
+                    collectOnly={mode === 'create'}
+                    onCollect={(community) => {
+                      setPendingInvites((prev) => (prev.some((p) => p.id === community.id) ? prev : [...prev, community]));
+                    }}
+                    onSuccess={async () => {
+                      // Reload collaborations
+                      const supabase = createClient();
+                      const { data: collabs } = await supabase
+                        .from('event_collaborations')
+                        .select(`
+                          *,
+                          community:communities!event_collaborations_community_id_fkey (
+                            id,
+                            name,
+                            slug,
+                            logo_url
+                          )
+                        `)
+                        .eq('event_id', eventId)
+                        .order('created_at', { ascending: true });
                     
-                    if (collabs) {
-                      const formatted = collabs.map((c: any) => ({
-                        id: c.id,
-                        role: c.role as 'host' | 'co-host',
-                        status: c.status as 'pending' | 'accepted' | 'rejected',
-                        invited_at: c.invited_at,
-                        accepted_at: c.accepted_at,
-                        community: Array.isArray(c.community) ? c.community[0] : c.community,
-                      })) as CollaborationWithCommunity[];
-                      setCollaborations(formatted);
-                    }
-                  }}
-                />
+                      if (collabs) {
+                        const formatted = collabs.map((c: any) => ({
+                          id: c.id,
+                          role: c.role as 'host' | 'co-host',
+                          status: c.status as 'pending' | 'accepted' | 'rejected',
+                          invited_at: c.invited_at,
+                          accepted_at: c.accepted_at,
+                          community: Array.isArray(c.community) ? c.community[0] : c.community,
+                        })) as CollaborationWithCommunity[];
+                        setCollaborations(formatted);
+                      }
+                    }}
+                  />
               </CardContent>
             </Card>
-          )}
+            ) : null}
         </div>
       </div>
 

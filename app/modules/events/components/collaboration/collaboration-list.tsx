@@ -23,15 +23,27 @@ export type CollaborationWithCommunity = {
 interface CollaborationListProps {
   collaborations: CollaborationWithCommunity[];
   isHost: boolean;
+  // pending invites collected during create flow
+  pendingInvites?: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url?: string | null;
+  }[];
+  onRemovePending?: (communityId: string) => void;
   onRemove?: (collaborationId: string) => void;
 }
 
 export function CollaborationList({
   collaborations,
   isHost,
+  pendingInvites,
+  onRemovePending,
   onRemove,
 }: CollaborationListProps) {
-  if (collaborations.length === 0) {
+  const hasAny = (collaborations.length > 0) || (pendingInvites && pendingInvites.length > 0);
+
+  if (!hasAny) {
     return (
       <div className="text-sm text-muted-foreground">
         No collaborations yet. Invite communities to collaborate on this event.
@@ -41,6 +53,35 @@ export function CollaborationList({
 
   return (
     <div className="space-y-3">
+      {/* Pending invites (only in create flow) */}
+      {pendingInvites && pendingInvites.map((p) => (
+        <Card key={`pending-${p.id}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={p.logo_url || undefined} alt={p.name} />
+                  <AvatarFallback>{p.name.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{p.name}</span>
+                    <CollaborationBadge role={'co-host'} />
+                    <Badge variant="outline" className="text-xs">Waiting event creation</Badge>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Invitation will be created after event is saved</span>
+                </div>
+              </div>
+              {onRemovePending && (
+                <Button variant="ghost" size="sm" onClick={() => onRemovePending(p.id)}>
+                  Remove
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
       {collaborations.map((collab) => (
         <Card key={collab.id}>
           <CardContent className="p-4">

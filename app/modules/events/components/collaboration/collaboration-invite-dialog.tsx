@@ -19,9 +19,13 @@ import type { Community } from "~/shared/models/entity.types";
 interface CollaborationInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  eventId: string;
+  // when used in create mode the eventId may not be available
+  eventId?: string;
   hostCommunityId: string;
   communitySlug: string;
+  // when true, the dialog will only return the selected community via `onCollect`
+  collectOnly?: boolean;
+  onCollect?: (community: { id: string; name: string; slug: string; logo_url?: string | null }) => void;
   onSuccess?: () => void;
 }
 
@@ -31,6 +35,8 @@ export function CollaborationInviteDialog({
   eventId,
   hostCommunityId,
   communitySlug,
+  collectOnly,
+  onCollect,
   onSuccess,
 }: CollaborationInviteDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,6 +77,31 @@ export function CollaborationInviteDialog({
   const handleInvite = () => {
     if (!selectedCommunityId) {
       toast.error("Please select a community");
+      return;
+    }
+
+    const selectedCommunity = communities.find((c) => c.id === selectedCommunityId);
+    if (!selectedCommunity) {
+      toast.error("Selected community not found");
+      return;
+    }
+
+    // If collectOnly, return selected community to caller and don't submit
+    if (collectOnly && onCollect) {
+      onCollect({
+        id: selectedCommunity.id,
+        name: selectedCommunity.name,
+        slug: selectedCommunity.slug,
+        logo_url: selectedCommunity.logo_url,
+      });
+      toast.success('Community added to pending invites');
+      // reset and close
+      setTimeout(() => {
+        onOpenChange(false);
+        setSearchQuery("");
+        setSelectedCommunityId("");
+        setCommunities([]);
+      }, 100);
       return;
     }
 
@@ -201,9 +232,11 @@ export function CollaborationInviteDialog({
             </Button>
             <Button
               onClick={handleInvite}
-              disabled={!selectedCommunityId || fetcher.state === "submitting"}
+              disabled={!selectedCommunityId || (!collectOnly && fetcher.state === "submitting")}
             >
-              {fetcher.state === "submitting" ? (
+              {collectOnly ? (
+                'OK'
+              ) : fetcher.state === "submitting" ? (
                 <>
                   <Spinner className="mr-2" />
                   Sending...
