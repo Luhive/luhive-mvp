@@ -442,12 +442,12 @@ export function EventForm({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">
-            {mode === 'create' ? 'Create Event' : 'Edit Event'}
+            {mode === "create" ? "Create Event" : "Edit Event"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {mode === 'create'
-              ? 'Fill in the details to create a new event'
-              : 'Update event information'}
+            {mode === "create"
+              ? "Fill in the details to create a new event"
+              : "Update event information"}
           </p>
         </div>
         <div className="flex gap-2">
@@ -506,13 +506,13 @@ export function EventForm({
                 eventId={eventId}
                 currentCoverUrl={coverUrl}
                 onCoverUpdate={setCoverUrl}
-                isCreating={mode === 'create'}
+                isCreating={mode === "create"}
               />
             </CardContent>
           </Card>
 
           {/* Notifications for Attendees */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" />
@@ -554,7 +554,7 @@ export function EventForm({
               </div>
               <p className="text-xs text-muted-foreground mt-2">You can customize the reminder message or use a default one that includes event title and time.</p>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Quick Preview */}
           <Card className="bg-muted/30">
@@ -565,14 +565,18 @@ export function EventForm({
               <div className="flex items-start gap-2">
                 <FileText className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{title || 'Event Title'}</p>
+                  <p className="font-medium truncate">
+                    {title || "Event Title"}
+                  </p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-muted-foreground">
-                    {startDate ? dayjs(startDate).format('MMM D, YYYY') : 'No date set'}
+                    {startDate
+                      ? dayjs(startDate).format("MMM D, YYYY")
+                      : "No date set"}
                     {startTime && ` at ${startTime}`}
                   </p>
                 </div>
@@ -581,9 +585,9 @@ export function EventForm({
                 <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1">
                   <Badge variant="secondary" className="text-xs">
-                    {eventType === 'in-person' && 'In-person'}
-                    {eventType === 'online' && 'Online'}
-                    {eventType === 'hybrid' && 'Hybrid'}
+                    {eventType === "in-person" && "In-person"}
+                    {eventType === "online" && "Online"}
+                    {eventType === "hybrid" && "Hybrid"}
                   </Badge>
                 </div>
               </div>
@@ -591,7 +595,9 @@ export function EventForm({
                 <div className="flex items-start gap-2">
                   <Users className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="text-muted-foreground">Max {capacity} attendees</p>
+                    <p className="text-muted-foreground">
+                      Max {capacity} attendees
+                    </p>
                   </div>
                 </div>
               )}
@@ -715,7 +721,7 @@ export function EventForm({
           </Card>
 
           {/* Collaboration - show in edit mode or create mode (collect pending invites) */}
-          {(mode === 'edit' && eventId) || mode === 'create' ? (
+          {(mode === "edit" && eventId) || mode === "create" ? (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
@@ -728,7 +734,7 @@ export function EventForm({
                   <p className="text-sm text-muted-foreground">
                     Invite other communities to co-host this event
                   </p>
-                  {(mode === 'create' || isHost) && (
+                  {(mode === "create" || isHost) && (
                     <Button
                       type="button"
                       variant="outline"
@@ -740,7 +746,7 @@ export function EventForm({
                     </Button>
                   )}
                 </div>
-                
+
                 {loadingCollaborations ? (
                   <div className="flex justify-center py-4">
                     <Spinner />
@@ -750,26 +756,34 @@ export function EventForm({
                     collaborations={collaborations}
                     isHost={isHost}
                     pendingInvites={pendingInvites}
-                    onRemovePending={(communityId) => setPendingInvites((prev) => prev.filter((x) => x.id !== communityId))}
+                    onRemovePending={(communityId) =>
+                      setPendingInvites((prev) =>
+                        prev.filter((x) => x.id !== communityId),
+                      )
+                    }
                     onRemove={async (collaborationId) => {
                       try {
                         const formData = new FormData();
-                        formData.append('intent', 'remove-collaboration');
-                        formData.append('collaborationId', collaborationId);
-                        
-                        const response = await fetch(`/c/${communitySlug}/events/${eventId}/collaboration`, {
-                          method: 'POST',
-                          body: formData,
-                        });
-                        
+                        formData.append("intent", "remove-collaboration");
+                        formData.append("collaborationId", collaborationId);
+
+                        const response = await fetch(
+                          `/c/${communitySlug}/events/${eventId}/collaboration`,
+                          {
+                            method: "POST",
+                            body: formData,
+                          },
+                        );
+
                         const result = await response.json();
                         if (result.success) {
-                          toast.success('Collaboration removed');
+                          toast.success("Collaboration removed");
                           // Reload collaborations
                           const supabase = createClient();
                           const { data: collabs } = await supabase
-                            .from('event_collaborations')
-                            .select(`
+                            .from("event_collaborations")
+                            .select(
+                              `
                               *,
                               community:communities!event_collaborations_community_id_fkey (
                                 id,
@@ -777,48 +791,61 @@ export function EventForm({
                                 slug,
                                 logo_url
                               )
-                            `)
-                            .eq('event_id', eventId)
-                            .order('created_at', { ascending: true });
-                          
+                            `,
+                            )
+                            .eq("event_id", eventId)
+                            .order("created_at", { ascending: true });
+
                           if (collabs) {
                             const formatted = collabs.map((c: any) => ({
                               id: c.id,
-                              role: c.role as 'host' | 'co-host',
-                              status: c.status as 'pending' | 'accepted' | 'rejected',
+                              role: c.role as "host" | "co-host",
+                              status: c.status as
+                                | "pending"
+                                | "accepted"
+                                | "rejected",
                               invited_at: c.invited_at,
                               accepted_at: c.accepted_at,
-                              community: Array.isArray(c.community) ? c.community[0] : c.community,
+                              community: Array.isArray(c.community)
+                                ? c.community[0]
+                                : c.community,
                             })) as CollaborationWithCommunity[];
                             setCollaborations(formatted);
                           }
                         } else {
-                          toast.error(result.error || 'Failed to remove collaboration');
+                          toast.error(
+                            result.error || "Failed to remove collaboration",
+                          );
                         }
                       } catch (error) {
-                        console.error('Error removing collaboration:', error);
-                        toast.error('Failed to remove collaboration');
+                        console.error("Error removing collaboration:", error);
+                        toast.error("Failed to remove collaboration");
                       }
                     }}
                   />
-                  )}
+                )}
 
-                  <CollaborationInviteDialog
-                    open={showInviteDialog}
-                    onOpenChange={setShowInviteDialog}
-                    eventId={mode === 'edit' ? eventId : undefined}
-                    hostCommunityId={communityId}
-                    communitySlug={communitySlug}
-                    collectOnly={mode === 'create'}
-                    onCollect={(community) => {
-                      setPendingInvites((prev) => (prev.some((p) => p.id === community.id) ? prev : [...prev, community]));
-                    }}
-                    onSuccess={async () => {
-                      // Reload collaborations
-                      const supabase = createClient();
-                      const { data: collabs } = await supabase
-                        .from('event_collaborations')
-                        .select(`
+                <CollaborationInviteDialog
+                  open={showInviteDialog}
+                  onOpenChange={setShowInviteDialog}
+                  eventId={mode === "edit" ? eventId : undefined}
+                  hostCommunityId={communityId}
+                  communitySlug={communitySlug}
+                  collectOnly={mode === "create"}
+                  onCollect={(community) => {
+                    setPendingInvites((prev) =>
+                      prev.some((p) => p.id === community.id)
+                        ? prev
+                        : [...prev, community],
+                    );
+                  }}
+                  onSuccess={async () => {
+                    // Reload collaborations
+                    const supabase = createClient();
+                    const { data: collabs } = await supabase
+                      .from("event_collaborations")
+                      .select(
+                        `
                           *,
                           community:communities!event_collaborations_community_id_fkey (
                             id,
@@ -826,26 +853,29 @@ export function EventForm({
                             slug,
                             logo_url
                           )
-                        `)
-                        .eq('event_id', eventId)
-                        .order('created_at', { ascending: true });
-                    
-                      if (collabs) {
-                        const formatted = collabs.map((c: any) => ({
-                          id: c.id,
-                          role: c.role as 'host' | 'co-host',
-                          status: c.status as 'pending' | 'accepted' | 'rejected',
-                          invited_at: c.invited_at,
-                          accepted_at: c.accepted_at,
-                          community: Array.isArray(c.community) ? c.community[0] : c.community,
-                        })) as CollaborationWithCommunity[];
-                        setCollaborations(formatted);
-                      }
-                    }}
-                  />
+                        `,
+                      )
+                      .eq("event_id", eventId)
+                      .order("created_at", { ascending: true });
+
+                    if (collabs) {
+                      const formatted = collabs.map((c: any) => ({
+                        id: c.id,
+                        role: c.role as "host" | "co-host",
+                        status: c.status as "pending" | "accepted" | "rejected",
+                        invited_at: c.invited_at,
+                        accepted_at: c.accepted_at,
+                        community: Array.isArray(c.community)
+                          ? c.community[0]
+                          : c.community,
+                      })) as CollaborationWithCommunity[];
+                      setCollaborations(formatted);
+                    }
+                  }}
+                />
               </CardContent>
             </Card>
-            ) : null}
+          ) : null}
         </div>
       </div>
 
