@@ -41,6 +41,29 @@ export async function getCommunityCounts(
     eventCounts.set(event.community_id, count + 1);
   });
 
+  // Also count events where the community is an accepted co-host
+  try {
+    const { data: coHostRows } = await supabase
+      .from('event_collaborations')
+      .select(`community_id, role, event:events!event_collaborations_event_id_fkey (id, status, community_id)`)
+      .in('community_id', communityIds)
+      .eq('status', 'accepted');
+
+    (coHostRows || []).forEach((row: any) => {
+      const communityId = row.community_id;
+      // only count co-host rows (exclude host rows to avoid double-counting)
+      if (row.role !== 'co-host') return;
+      const event = row.event && (Array.isArray(row.event) ? row.event[0] : row.event);
+      // skip if event is not published or if this community is the host of the event
+      if (!event || event.status !== 'published' || event.community_id === communityId) return;
+
+      const count = eventCounts.get(communityId) || 0;
+      eventCounts.set(communityId, count + 1);
+    });
+  } catch (err) {
+    console.error('Failed to load co-host event counts for hub:', err);
+  }
+
   return { memberCounts, eventCounts };
 }
 

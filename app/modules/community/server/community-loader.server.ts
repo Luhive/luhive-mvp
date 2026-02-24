@@ -80,6 +80,25 @@ export async function loader({
         .eq("status", "published"),
     ]);
 
+  // Count accepted co-host events (exclude events where this community is the host)
+  let coHostCount = 0;
+  try {
+    const { data: coHostRows } = await supabase
+      .from('event_collaborations')
+      .select('event:events!event_collaborations_event_id_fkey (id, status, community_id)')
+      .eq('community_id', community.id)
+      .eq('status', 'accepted');
+
+    (coHostRows || []).forEach((row: any) => {
+      const event = row.event && (Array.isArray(row.event) ? row.event[0] : row.event);
+      if (event && event.status === 'published' && event.community_id !== community.id) {
+        coHostCount += 1;
+      }
+    });
+  } catch (err) {
+    console.error('Failed to load co-host events for community page:', err);
+  }
+
   const isMember = !!membershipResult.data;
   const isOwner =
     isCreator ||
@@ -94,6 +113,6 @@ export async function loader({
     user: user || null,
     analytics,
     memberCount: memberCountResult.count || 0,
-    eventCount: eventCountResult.count || 0,
+    eventCount: (eventCountResult.count || 0) + coHostCount,
   };
 }
