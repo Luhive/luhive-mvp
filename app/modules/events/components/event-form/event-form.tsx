@@ -50,7 +50,7 @@ interface EventFormData {
   status: EventStatus;
   isApproveRequired: boolean;
   customQuestions?: CustomQuestionJson | null;
-  notification_send_before?: Array<'1_hour' | '3_hours' | '1_day'> | null;
+  notification_send_before?: string | null;
   notification_message?: string | null;
 }
 
@@ -95,11 +95,9 @@ export function EventForm({
     initialData?.customQuestions || null
   );
 
-  // Notification settings for attendees (multiple timings allowed)
-  const [notificationTimings, setNotificationTimings] = useState<Array<'1_hour' | '3_hours' | '1_day'>>(
-    Array.isArray((initialData as any)?.notification_send_before)
-      ? (initialData as any).notification_send_before
-      : ( (initialData as any)?.notification_send_before ? [(initialData as any).notification_send_before] : [] )
+  // Notification settings for attendees
+  const [notificationTiming, setNotificationTiming] = useState<'1_hour' | '1_day' | undefined>(
+    (initialData as any)?.notification_send_before || undefined
   );
   const [notificationMessage, setNotificationMessage] = useState<string | undefined>(
     (initialData as any)?.notification_message || ''
@@ -308,7 +306,7 @@ export function EventForm({
         status: submitStatus,
         is_approve_required: isApproveRequired,
         custom_questions: customQuestions,
-        notification_send_before: notificationTimings.length > 0 ? notificationTimings : null,
+        notification_send_before: notificationTiming || null,
         notification_message: useDefaultNotificationMessage ? defaultNotificationMessage : (notificationMessage || null),
       };
 
