@@ -12,6 +12,9 @@ import { EventDateTime } from '~/modules/events/components/event-form/fields/eve
 import { EventLocation } from '~/modules/events/components/event-form/fields/event-location';
 import { EventCapacity } from '~/modules/events/components/event-form/fields/event-capacity';
 import { EventDiscussion } from '~/modules/events/components/event-form/fields/event-discussion';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '~/shared/components/ui/select';
+import { Textarea } from '~/shared/components/ui/textarea';
+import { Checkbox } from '~/shared/components/ui/checkbox';
 import { CustomQuestionsBuilder } from '~/modules/events/components/registration/custom-questions-builder';
 import { CollaborationInviteDialog } from '~/modules/events/components/collaboration/collaboration-invite-dialog';
 import { CollaborationList } from '~/modules/events/components/collaboration/collaboration-list';
@@ -47,6 +50,8 @@ interface EventFormData {
   status: EventStatus;
   isApproveRequired: boolean;
   customQuestions?: CustomQuestionJson | null;
+  notification_send_before?: string | null;
+  notification_message?: string | null;
 }
 
 interface EventFormProps {
@@ -88,6 +93,17 @@ export function EventForm({
   const [isApproveRequired, setIsApproveRequired] = useState(initialData?.isApproveRequired || false);
   const [customQuestions, setCustomQuestions] = useState<CustomQuestionJson | null>(
     initialData?.customQuestions || null
+  );
+
+  // Notification settings for attendees
+  const [notificationTiming, setNotificationTiming] = useState<'1_hour' | '1_day' | undefined>(
+    (initialData as any)?.notification_send_before || undefined
+  );
+  const [notificationMessage, setNotificationMessage] = useState<string | undefined>(
+    (initialData as any)?.notification_message || ''
+  );
+  const [useDefaultNotificationMessage, setUseDefaultNotificationMessage] = useState<boolean>(
+    (initialData as any)?.notification_message ? false : true
   );
 
   // Collaboration state
@@ -268,6 +284,10 @@ export function EventForm({
         : null;
 
       // Prepare event data
+      const defaultNotificationMessage = startDate
+        ? `Reminder: "${title || 'Event'}" starts on ${dayjs(startDate).tz(timezone).format('MMM D, YYYY [at] HH:mm')}`
+        : `Reminder: "${title || 'Event'}" is coming up soon.`;
+
       const eventData = {
         community_id: communityId,
         created_by: user.id,
@@ -286,6 +306,8 @@ export function EventForm({
         status: submitStatus,
         is_approve_required: isApproveRequired,
         custom_questions: customQuestions,
+        notification_send_before: notificationTiming || null,
+        notification_message: useDefaultNotificationMessage ? defaultNotificationMessage : (notificationMessage || null),
       };
 
       if (mode === 'create') {
@@ -486,6 +508,51 @@ export function EventForm({
                 onCoverUpdate={setCoverUrl}
                 isCreating={mode === 'create'}
               />
+            </CardContent>
+          </Card>
+
+          {/* Notifications for Attendees */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Notifications
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">Send reminder</label>
+                  <Select value={notificationTiming} onValueChange={(v) => setNotificationTiming(v as any)}>
+                    <SelectTrigger className="w-full sm:w-[220px]">
+                      <SelectValue placeholder="Select reminder timing" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1_hour">1 hour before</SelectItem>
+                      <SelectItem value="1_day">1 day before</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={useDefaultNotificationMessage}
+                      onCheckedChange={(v) => setUseDefaultNotificationMessage(!!v)}
+                    />
+                    <span className="text-sm">Use default message</span>
+                  </div>
+                  <Textarea
+                    placeholder="Write custom notification message"
+                    value={notificationMessage}
+                    onChange={(e) => setNotificationMessage(e.target.value)}
+                    disabled={useDefaultNotificationMessage}
+                    className="w-full"
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">You can customize the reminder message or use a default one that includes event title and time.</p>
             </CardContent>
           </Card>
 

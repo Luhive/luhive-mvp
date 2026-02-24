@@ -584,6 +584,85 @@ export async function sendEventScheduleUpdateEmail(
   }
 }
 
+export async function sendEventReminderEmail(data: {
+  eventTitle: string;
+  communityName: string;
+  eventDate: string;
+  eventTime: string;
+  eventLink: string;
+  recipientName: string;
+  recipientEmail: string;
+  message: string;
+}) {
+  const {
+    eventTitle,
+    communityName,
+    eventDate,
+    eventTime,
+    eventLink,
+    recipientName,
+    recipientEmail,
+    message,
+  } = data;
+
+  if (!resend) {
+    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  console.log(`📧 Attempting to send event reminder email:`);
+  console.log(`   To: ${recipientEmail}`);
+  console.log(`   From: ${FROM_EMAIL}`);
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [recipientEmail],
+      subject: `Reminder: ${eventTitle}`,
+      html: `
+        <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424;">
+          <p>Hi ${recipientName},</p>
+          <p>${message}</p>
+          <p><strong>${eventTitle}</strong><br/>${eventDate} at ${eventTime}</p>
+          <p><a href="${eventLink}" style="color:#ff8040">View event details</a></p>
+          <p style="color:#6B6B6B;font-size:12px;">${communityName}</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      const errorDetails: Record<string, unknown> = { message: error.message };
+      if ("name" in error && typeof error.name === "string") {
+        errorDetails.name = error.name;
+      }
+      console.error("❌ Resend API error (reminder):", errorDetails);
+      throw new Error(`Failed to send reminder email: ${error.message}`);
+    }
+
+    console.log(`✅ Event reminder email sent successfully:`, {
+      id: emailData?.id,
+      from: FROM_EMAIL,
+      to: recipientEmail,
+    });
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("❌ Error sending event reminder email:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      recipientEmail,
+    });
+    throw error;
+  }
+}
+
 export async function sendRegistrationConfirmationEmail(
   data: ConfirmationEmailData
 ) {
