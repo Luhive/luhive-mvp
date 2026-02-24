@@ -7,6 +7,8 @@ import { EventRegistrationRequestEmail } from "~/templates/event-registration-re
 import { EventSubscriptionEmail } from "~/templates/event-subscription-email";
 import { CommunityWaitlistNotification } from "~/templates/community-waitlist-notification";
 import { CommunityJoinNotification } from "~/templates/community-join-notification";
+import { CollaborationInviteEmail } from "~/templates/collaboration-invite-email";
+import { CollaborationAcceptedEmail } from "~/templates/collaboration-accepted-email";
 import { generateICS } from "~/modules/events/utils/ics-manager";
 
 // Utility function to mask sensitive values for logging
@@ -221,6 +223,24 @@ interface SubscriptionEmailData {
   onlineMeetingLink?: string;
   startTimeISO: string;
   endTimeISO: string;
+}
+
+interface CollaborationInviteEmailData {
+  eventTitle: string;
+  hostCommunityName: string;
+  coHostCommunityName: string;
+  recipientEmail: string;
+  inviteLink: string;
+  eventLink: string;
+  invitedByName: string;
+}
+
+interface CollaborationAcceptedEmailData {
+  eventTitle: string;
+  hostCommunityName: string;
+  coHostCommunityName: string;
+  recipientEmail: string;
+  eventLink: string;
 }
 
 export async function sendRegistrationRequestEmail(
@@ -933,6 +953,156 @@ export async function sendSubscriptionConfirmationEmail(
     return { success: true, data: emailData };
   } catch (error) {
     console.error("❌ Error sending subscription confirmation email:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      recipientEmail,
+      fromEmail: FROM_EMAIL,
+    });
+    throw error;
+  }
+}
+
+export async function sendCollaborationInviteEmail(
+  data: CollaborationInviteEmailData
+) {
+  const {
+    eventTitle,
+    hostCommunityName,
+    coHostCommunityName,
+    recipientEmail,
+    inviteLink,
+    eventLink,
+    invitedByName,
+  } = data;
+
+  // Runtime validation
+  if (!resend) {
+    const errorMsg =
+      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  console.log(`📧 Attempting to send collaboration invite email:`);
+  console.log(`   To: ${recipientEmail}`);
+  console.log(`   From: ${FROM_EMAIL}`);
+  console.log(`   Subject: Collaboration Invitation: ${eventTitle}`);
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [recipientEmail],
+      subject: `Collaboration Invitation: ${eventTitle}`,
+      react: CollaborationInviteEmail({
+        eventTitle,
+        hostCommunityName,
+        coHostCommunityName,
+        recipientEmail,
+        inviteLink,
+        eventLink,
+        invitedByName,
+      }),
+    });
+
+    if (error) {
+      const errorDetails: Record<string, unknown> = {
+        message: error.message,
+      };
+      if ("name" in error && typeof error.name === "string") {
+        errorDetails.name = error.name;
+      }
+      console.error("❌ Resend API error:", errorDetails);
+      throw new Error(`Failed to send collaboration invite email: ${error.message}`);
+    }
+
+    console.log(`✅ Collaboration invite email sent successfully:`, {
+      id: emailData?.id,
+      from: FROM_EMAIL,
+      to: recipientEmail,
+    });
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("❌ Error sending collaboration invite email:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      recipientEmail,
+      fromEmail: FROM_EMAIL,
+    });
+    throw error;
+  }
+}
+
+export async function sendCollaborationAcceptedEmail(
+  data: CollaborationAcceptedEmailData
+) {
+  const {
+    eventTitle,
+    hostCommunityName,
+    coHostCommunityName,
+    recipientEmail,
+    eventLink,
+  } = data;
+
+  // Runtime validation
+  if (!resend) {
+    const errorMsg =
+      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  console.log(`📧 Attempting to send collaboration accepted email:`);
+  console.log(`   To: ${recipientEmail}`);
+  console.log(`   From: ${FROM_EMAIL}`);
+  console.log(`   Subject: Collaboration Accepted: ${eventTitle}`);
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [recipientEmail],
+      subject: `Collaboration Accepted: ${eventTitle}`,
+      react: CollaborationAcceptedEmail({
+        eventTitle,
+        hostCommunityName,
+        coHostCommunityName,
+        recipientEmail,
+        eventLink,
+      }),
+    });
+
+    if (error) {
+      const errorDetails: Record<string, unknown> = {
+        message: error.message,
+      };
+      if ("name" in error && typeof error.name === "string") {
+        errorDetails.name = error.name;
+      }
+      console.error("❌ Resend API error:", errorDetails);
+      throw new Error(`Failed to send collaboration accepted email: ${error.message}`);
+    }
+
+    console.log(`✅ Collaboration accepted email sent successfully:`, {
+      id: emailData?.id,
+      from: FROM_EMAIL,
+      to: recipientEmail,
+    });
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("❌ Error sending collaboration accepted email:", {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       recipientEmail,

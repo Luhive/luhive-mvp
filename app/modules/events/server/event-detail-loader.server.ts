@@ -7,6 +7,7 @@ import {
 import type { LoaderFunctionArgs } from "react-router";
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import { Community, Event, Profile } from "~/shared/models/entity.types";
+import { getEventCollaborations } from "~/modules/events/data/collaborations-repo.server";
 
 dayjs.extend(timezone);
 
@@ -40,6 +41,13 @@ export interface EventDetailLoaderData {
   isExternalEvent: boolean;
   externalPlatformName: string;
   registrationDeadlineFormatted: string;
+  hostingCommunities: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    logo_url: string | null;
+    role: "host" | "co-host";
+  }>;
 }
 
 export async function loader({
@@ -65,15 +73,42 @@ export async function loader({
     throw new Response("Community not found", { status: 404 });
   }
 
-  const { data: event, error: eventError } = await supabase
+  // First try to find event in this community
+  let { data: event, error: eventError } = await supabase
     .from("events")
     .select("*")
     .eq("id", eventId)
     .eq("community_id", community.id)
     .single();
 
+  // If not found, check if this community is a co-host
   if (eventError || !event) {
-    throw new Response("Event not found", { status: 404 });
+    const { data: collaboration } = await supabase
+      .from("event_collaborations")
+      .select("event_id")
+      .eq("event_id", eventId)
+      .eq("community_id", community.id)
+      .eq("role", "co-host")
+      .eq("status", "accepted")
+      .single();
+
+    if (collaboration) {
+      // Fetch the event (it belongs to host community)
+      const { data: eventData, error: eventDataError } = await supabase
+        .from("events")
+        .select("*")
+        .eq("id", eventId)
+        .single();
+
+      if (eventDataError || !eventData) {
+        throw new Response("Event not found", { status: 404 });
+      }
+
+      event = eventData;
+      eventError = null;
+    } else {
+      throw new Response("Event not found", { status: 404 });
+    }
   }
 
   if (event.status !== "published") {
@@ -186,6 +221,56 @@ export async function loader({
       : dayjs(event.start_time).tz(tz)
   ).format("h:mm A z");
 
+  // Fetch all collaborations (host + co-hosts)
+  const { collaborations } = await getEventCollaborations(supabase, eventId);
+  
+  // Get the actual host community from the event (not from URL slug)
+  const { data: hostCommunity, error: hostCommunityError } = await supabase
+    .from("communities")
+    .select("id, name, slug, logo_url")
+    .eq("id", event.community_id)
+    .single();
+
+  if (hostCommunityError || !hostCommunity) {
+    throw new Response("Host community not found", { status: 404 });
+  }
+
+  // Get all hosting communities (host + accepted co-hosts)
+  const hostingCommunities: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    logo_url: string | null;
+    role: "host" | "co-host";
+  }> = [];
+
+  // Add host community first (always show host)
+  hostingCommunities.push({
+    id: hostCommunity.id,
+    name: hostCommunity.name,
+    slug: hostCommunity.slug,
+    logo_url: hostCommunity.logo_url,
+    role: "host",
+  });
+
+  // Add all accepted co-hosts (including the current community if it's a co-host)
+  for (const collab of collaborations) {
+    if (collab.role === "co-host" && collab.status === "accepted") {
+      const coHostCommunity = Array.isArray(collab.community)
+        ? collab.community[0]
+        : collab.community;
+      if (coHostCommunity && coHostCommunity.id !== hostCommunity.id) {
+        hostingCommunities.push({
+          id: coHostCommunity.id,
+          name: coHostCommunity.name,
+          slug: coHostCommunity.slug,
+          logo_url: coHostCommunity.logo_url,
+          role: "co-host",
+        });
+      }
+    }
+  }
+
   return {
     event,
     community,
@@ -198,5 +283,6 @@ export async function loader({
     isExternalEvent,
     externalPlatformName,
     registrationDeadlineFormatted,
+    hostingCommunities,
   };
 }

@@ -22,6 +22,7 @@ export function EventDetail({
 	isExternalEvent,
 	externalPlatformName,
 	registrationDeadlineFormatted,
+	hostingCommunities,
 }: EventDetailLoaderData) {
 	const submit = useSubmit();
 	const navigation = useNavigation();
@@ -101,6 +102,7 @@ export function EventDetail({
 						capacityPercentage={capacityPercentage}
 						isExternalEvent={isExternalEvent}
 						onShare={() => handleShare(event)}
+						hostingCommunities={hostingCommunities}
 					/>
 					<EventInfoSection
 						event={event}

@@ -104,6 +104,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const approvalStatus = event.is_approve_required ? "pending" : "approved";
 
+    // Get community ID from slug to track registration source
+    let registrationSourceCommunityId = community.id;
+    if (slug && slug !== community.slug) {
+      // User is registering from a co-host community page
+      const { data: sourceCommunity } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("slug", slug)
+        .single();
+      if (sourceCommunity) {
+        registrationSourceCommunityId = sourceCommunity.id;
+      }
+    }
+
     const { error: registerError } = await supabase
       .from("event_registrations")
       .insert({
@@ -116,6 +130,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         token_expires_at: tokenExpiresAt.toISOString(),
         approval_status: approvalStatus,
         custom_answers: customAnswers,
+        registration_source_community_id: registrationSourceCommunityId,
       });
 
     if (registerError) {
@@ -216,6 +231,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     const approvalStatus = event.is_approve_required ? "pending" : "approved";
 
+    // Get community ID from slug to track registration source
+    let registrationSourceCommunityId = community.id;
+    if (slug && slug !== community.slug) {
+      // User is registering from a co-host community page
+      const { data: sourceCommunity } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("slug", slug)
+        .single();
+      if (sourceCommunity) {
+        registrationSourceCommunityId = sourceCommunity.id;
+      }
+    }
+
     const { error: registerError } = await supabase
       .from("event_registrations")
       .insert({
@@ -227,6 +256,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         verification_token: verificationToken,
         token_expires_at: tokenExpiresAt.toISOString(),
         approval_status: approvalStatus,
+        registration_source_community_id: registrationSourceCommunityId,
       });
 
     if (registerError) {
@@ -311,6 +341,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       };
     }
 
+    // Get community ID from slug to track registration source
+    let registrationSourceCommunityId = community.id;
+    if (slug && slug !== community.slug) {
+      // User is subscribing from a co-host community page
+      const { data: sourceCommunity } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("slug", slug)
+        .single();
+      if (sourceCommunity) {
+        registrationSourceCommunityId = sourceCommunity.id;
+      }
+    }
+
     const { error: subscribeError } = await supabase
       .from("event_registrations")
       .insert({
@@ -320,6 +364,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         rsvp_status: "going",
         is_verified: true,
         approval_status: "approved",
+        registration_source_community_id: registrationSourceCommunityId,
       });
 
     if (subscribeError) {
@@ -444,6 +489,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     const approvalStatus = event.is_approve_required ? "pending" : "approved";
 
+    // Get community ID from slug to track registration source
+    let registrationSourceCommunityId = community.id;
+    if (slug && slug !== community.slug) {
+      // User is registering from a co-host community page
+      const { data: sourceCommunity } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("slug", slug)
+        .single();
+      if (sourceCommunity) {
+        registrationSourceCommunityId = sourceCommunity.id;
+      }
+    }
+
     const { error: registerError } = await supabase
       .from("event_registrations")
       .insert({
@@ -453,6 +512,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         is_verified: true,
         approval_status: approvalStatus,
         custom_answers: customAnswers,
+        registration_source_community_id: registrationSourceCommunityId,
       });
 
     if (registerError) {
@@ -563,6 +623,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
+    // Get community ID from slug to track registration source
+    let registrationSourceCommunityId = community.id;
+    if (slug && slug !== community.slug) {
+      // User is subscribing from a co-host community page
+      const { data: sourceCommunity } = await supabase
+        .from("communities")
+        .select("id")
+        .eq("slug", slug)
+        .single();
+      if (sourceCommunity) {
+        registrationSourceCommunityId = sourceCommunity.id;
+      }
+    }
+
     const { error: subscribeError } = await supabase
       .from("event_registrations")
       .insert({
@@ -571,6 +645,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         rsvp_status: "going",
         is_verified: true,
         approval_status: "approved",
+        registration_source_community_id: registrationSourceCommunityId,
       });
 
     if (subscribeError) {

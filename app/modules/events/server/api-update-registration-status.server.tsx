@@ -41,6 +41,21 @@ export async function action({ request }: ActionFunctionArgs) {
 			return { success: false, error: "Event not found" };
 		}
 
+		// Check if user's community is host or co-host
+		const { data: collaboration } = await supabase
+			.from("event_collaborations")
+			.select("role")
+			.eq("event_id", eventId)
+			.eq("community_id", event.community_id)
+			.in("role", ["host", "co-host"])
+			.eq("status", "accepted")
+			.single();
+
+		if (!collaboration) {
+			return { success: false, error: "You do not have permission to manage this event" };
+		}
+
+		// Verify user is owner/admin of the community
 		const { data: membership, error: membershipError } = await supabase
 			.from("community_members")
 			.select("role")
@@ -48,7 +63,15 @@ export async function action({ request }: ActionFunctionArgs) {
 			.eq("user_id", user.id)
 			.single();
 		if (membershipError || !membership || !["owner", "admin"].includes(membership.role || "")) {
-			return { success: false, error: "You do not have permission to manage this event" };
+			// Also check if user is the community creator
+			const { data: community } = await supabase
+				.from("communities")
+				.select("created_by")
+				.eq("id", event.community_id)
+				.single();
+			if (!community || community.created_by !== user.id) {
+				return { success: false, error: "You do not have permission to manage this event" };
+			}
 		}
 
 		const { error: updateError } = await supabase
