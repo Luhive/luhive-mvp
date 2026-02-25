@@ -72,6 +72,8 @@ interface EventRegistration {
 	id: string;
 	user_id: string | null;
 	anonymous_name: string | null;
+	anonymous_email: string | null;
+	is_verified: boolean;
 }
 
 async function sendRemindersHandler(body: SendRemindersRequest) {
@@ -173,7 +175,7 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
 			// Fetch registered participants
 			const { data: registrations, error: registrationsError } = await supabase
 				.from("event_registrations")
-				.select("id, user_id, anonymous_name")
+				.select("id, user_id, anonymous_name, anonymous_email, is_verified")
 				.eq("event_id", event.id)
 				.eq("approval_status", "approved")
 				.eq("rsvp_status", "going") as { data: EventRegistration[] | null; error: any };
@@ -200,22 +202,32 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
 			// Send reminders to each participant
 			for (const registration of registrations) {
 				try {
-					// Skip anonymous registrations (no email to send to)
-					if (!registration.user_id) {
-						console.log(`  ⏭️  Skipping anonymous registration ${registration.id}`);
-						continue;
-					}
+					let participantEmail: string;
+					let participantName: string;
 
-					// Fetch user email from auth
-					const { data: userData, error: authError } = await supabase.auth.admin.getUserById(registration.user_id);
-					if (authError || !userData?.user?.email) {
-						console.warn(`  ⚠️  Could not fetch email for user ${registration.user_id}`);
-						failedReminders.push(`Registration ${registration.id}: Could not fetch user email`);
-						continue;
-					}
+					if (registration.user_id) {
+						// Regular user - fetch email from auth
+						const { data: userData, error: authError } = await supabase.auth.admin.getUserById(registration.user_id);
+						if (authError || !userData?.user?.email) {
+							console.warn(`  ⚠️  Could not fetch email for user ${registration.user_id}`);
+							failedReminders.push(`Registration ${registration.id}: Could not fetch user email`);
+							continue;
+						}
 
-					const participantEmail = userData.user.email;
-					const participantName = userData.user.user_metadata?.full_name || userData.user.email.split('@')[0];
+						participantEmail = userData.user.email;
+						participantName = userData.user.user_metadata?.full_name || userData.user.email.split('@')[0];
+					} else {
+						// Anonymous registration - use anonymous_email
+						if (!registration.anonymous_email) {
+							console.warn(`  ⚠️  Anonymous registration ${registration.id} has no email`);
+							failedReminders.push(`Registration ${registration.id}: Anonymous but no email provided`);
+							continue;
+						}
+
+						participantEmail = registration.anonymous_email;
+						participantName = registration.anonymous_name || "Guest";
+						console.log(`  👤 Anonymous participant: ${participantName} (${participantEmail})`);
+					}
 
 					// Check if reminder has already been sent
 					const { data: sentReminder, error: sentError } = await supabase
