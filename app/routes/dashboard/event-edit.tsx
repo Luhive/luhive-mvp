@@ -96,6 +96,11 @@ export default function EditEventPage() {
   const eventEnd = event.end_time ? dayjs(event.end_time).tz(event.timezone) : null;
   const endTime = eventEnd ? eventEnd.format('HH:mm') : undefined;
 
+  // Get reminder data from event_reminders relation
+  const eventReminders = (event as any).event_reminders;
+  const reminderTimes = eventReminders?.reminder_times ?? [];
+  const reminderMessage = eventReminders?.custom_message ?? null;
+
   const initialData = {
     title: event.title ?? '',
     description: event.description ?? '',
@@ -115,6 +120,8 @@ export default function EditEventPage() {
     status: event.status,
     isApproveRequired: event.is_approve_required ?? false,
     customQuestions: (event.custom_questions ?? null) as CustomQuestionJson | null,
+    reminderTimes,
+    reminderMessage,
   };
 
   return (

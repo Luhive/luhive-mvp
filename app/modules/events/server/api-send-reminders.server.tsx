@@ -96,6 +96,11 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
 
 		// Calculate time range
 		const timeRange = getRemindersToSend(reminderTime);
+		const now = dayjs.utc();
+
+		console.log(`⏰ Current UTC time: ${now.format('YYYY-MM-DD HH:mm:ss Z')}`);
+		console.log(`⏰ Reminder window: ${timeRange.start.format('YYYY-MM-DD HH:mm:ss Z')} to ${timeRange.end.format('YYYY-MM-DD HH:mm:ss Z')}`);
+		console.log(`⏰ Finding events with start_time between: ${timeRange.start.toISOString()} and ${timeRange.end.toISOString()}`);
 
 		// Query events with reminders that should be triggered now
 		const { data: eventsWithReminders, error: eventsError } = await supabase
@@ -131,13 +136,18 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
 			return Response.json({ success: true, reminders_sent: 0, message: "No events to remind" });
 		}
 
-		console.log(`📋 Found ${eventsWithReminders.length} events. Sample:`, JSON.stringify(eventsWithReminders[0], null, 2));
+		console.log(`📋 Found ${eventsWithReminders.length} events. Checking each one:`);
 
 		let totalReminders = 0;
 		const failedReminders: string[] = [];
 
 		// Process each event
 		for (const event of eventsWithReminders) {
+			const eventStartUTC = dayjs(event.start_time).utc();
+			const eventStartLocal = dayjs(event.start_time).tz(event.timezone);
+			console.log(`  📅 Event: "${event.title}"`);
+			console.log(`     UTC time: ${eventStartUTC.format('YYYY-MM-DD HH:mm:ss Z')}`);
+			console.log(`     Local (${event.timezone}): ${eventStartLocal.format('YYYY-MM-DD HH:mm:ss Z')}`);
 			// Check if this event has reminders enabled
 			if (!event.event_reminders) {
 				console.log(`  ⏭️  No reminders configured for event ${event.id}`);

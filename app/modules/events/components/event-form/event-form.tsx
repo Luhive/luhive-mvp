@@ -412,11 +412,14 @@ export function EventForm({
         if (reminderTimes.length > 0) {
           const { error: reminderError } = await supabase
             .from('event_reminders')
-            .upsert({
-              event_id: eventId,
-              reminder_times: reminderTimes,
-              custom_message: reminderMessage,
-            });
+            .upsert(
+              {
+                event_id: eventId,
+                reminder_times: reminderTimes,
+                custom_message: reminderMessage,
+              },
+              { onConflict: 'event_id' }
+            );
 
           if (reminderError) {
             console.error('Error updating event reminders:', reminderError);
