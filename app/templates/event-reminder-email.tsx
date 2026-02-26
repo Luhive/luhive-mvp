@@ -81,10 +81,10 @@ export const EventReminderEmail = ({
                             <Img
                               src={communityLogoUrl}
                               alt={communityName}
-                              width="40"
-                              height="40"
+                              width="36"
+                              height="36"
                               style={{
-                                borderRadius: "8px",
+                                borderRadius: "50%",
                                 objectFit: "cover",
                               }}
                             />
