@@ -294,7 +294,7 @@ export const EventReminderEmail = ({
                     </Text>
                   </td>
 
-                  <td align="right" style={{ verticalAlign: "middle" }}>
+                  <td className="flex" align="right" style={{ verticalAlign: "middle" }}>
                     <Link href="mailto:support@luhive.com">
                       <Img
                         src={`${ICON_BASE}/mail.png`}
