@@ -42,7 +42,7 @@ const getReminderText = (reminderTime: string): string => {
 
 export const EventReminderEmail = ({
   communityName = "Luhive",
-  communityLogoUrl = null,
+  communityLogoUrl = "https://ncgqtxfchavfugucdnnh.supabase.co/storage/v1/object/public/community-profile-pictures/logos/xsolla-baku/1770539637948-gttnogwkh38.png", // Default logo URL
   eventDate = "Thursday, February 26, 2026",
   eventTime = "3:27 PM",
   eventLink = "#",
@@ -81,10 +81,10 @@ export const EventReminderEmail = ({
                             <Img
                               src={communityLogoUrl}
                               alt={communityName}
-                              width="40"
-                              height="40"
+                              width="36"
+                              height="36"
                               style={{
-                                borderRadius: "8px",
+                                borderRadius: "50%",
                                 objectFit: "cover",
                               }}
                             />
@@ -144,12 +144,12 @@ export const EventReminderEmail = ({
               <table width="100%" cellPadding="0" cellSpacing="0">
 
                 {/* Date */}
-                <tr>
+                <tr className="flex w-[100%] gap-6 items-center">
                   <td width="32" style={{ verticalAlign: "top" }}>
                     <Img
                       src={`${ICON_BASE}/calendar.png`}
-                      width="20"
-                      height="20"
+                      width="40"
+                      height="40"
                       alt="calendar"
                     />
                   </td>
@@ -180,12 +180,12 @@ export const EventReminderEmail = ({
                 <tr><td height="16" colSpan={2}></td></tr>
 
                 {/* Location */}
-                <tr>
+                <tr className="flex w-max gap-6 items-center">
                   <td width="32" style={{ verticalAlign: "top" }}>
                     <Img
                       src={`${ICON_BASE}/location.png`}
-                      width="20"
-                      height="20"
+                      width="40"
+                      height="40"
                       alt="location"
                     />
                   </td>
@@ -215,12 +215,12 @@ export const EventReminderEmail = ({
                 <tr><td height="16" colSpan={2}></td></tr>
 
                 {/* Organizer */}
-                <tr>
+                <tr className="flex w-max gap-6 items-center">
                   <td width="32" style={{ verticalAlign: "top" }}>
                     <Img
                       src={`${ICON_BASE}/people.png`}
-                      width="20"
-                      height="20"
+                      width="40"
+                      height="40"
                       alt="organizer"
                     />
                   </td>

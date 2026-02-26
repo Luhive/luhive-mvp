@@ -82,7 +82,7 @@
   "devDependencies": {
     "@locator/babel-jsx": "^0.5.1",
     "@locator/runtime": "^0.5.1",
-    "@react-email/preview-server": "5.0.4",
+    "@react-email/preview-server": "^5.2.5",
     "@react-router/dev": "^7.9.2",
     "@tailwindcss/vite": "^4.1.13",
     "@types/node": "^22",
