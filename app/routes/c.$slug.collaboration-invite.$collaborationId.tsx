@@ -7,7 +7,7 @@ import { Button } from "~/shared/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { useLoaderData, useActionData, Form, useNavigation } from "react-router";
 import { Spinner } from "~/shared/components/ui/spinner";
-import { CheckCircle2, XCircle, Calendar, MapPin } from "lucide-react";
+import { CheckCircle2, XCircle, Calendar } from "lucide-react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
