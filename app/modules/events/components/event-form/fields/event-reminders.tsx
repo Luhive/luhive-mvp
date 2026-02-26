@@ -37,14 +37,15 @@ const REMINDER_OPTIONS: { value: ReminderTime; label: string; description: strin
   },
 ];
 
-const DEFAULT_REMINDER_MESSAGE = `Hello {participantName},
+const DEFAULT_REMINDER_MESSAGE = `Hi {participantName},
 
-This is a friendly reminder that {eventTitle} is starting soon!
+Just a quick reminder that {eventTitle} is starting {reminderTime}.
 
-📅 Date & Time: {eventDateTime}
-📍 Location: {eventLocation}
+Event Details:
+Date & Time: {eventDateTime}
+Location: {eventLocation}
 
-We're looking forward to seeing you there!
+We’re excited to have you join us and can’t wait to see you there!
 
 Best regards,
 {communityName}`;
