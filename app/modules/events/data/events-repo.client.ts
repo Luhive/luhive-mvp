@@ -105,7 +105,10 @@ export async function getEventByIdClient(
 ) {
   const supabase = createBrowserClient();
 
-  let query = supabase.from("events").select("*").eq("id", eventId);
+  let query = supabase
+    .from("events")
+    .select("*, event_reminders(reminder_times, custom_message)")
+    .eq("id", eventId);
 
   if (communityId) {
     query = query.eq("community_id", communityId);

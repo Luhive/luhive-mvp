@@ -72,6 +72,7 @@
     "recharts": "2.15.4",
     "resend": "^6.4.2",
     "sonner": "^2.0.7",
+    "supabase": "^2.76.14",
     "tailwind-merge": "^3.3.1",
     "ua-parser-js": "^2.0.6",
     "vaul": "^1.1.2",

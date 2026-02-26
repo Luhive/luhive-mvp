@@ -5,13 +5,14 @@ import { Button } from '~/shared/components/ui/button';
 import { Separator } from '~/shared/components/ui/separator';
 import { Spinner } from '~/shared/components/ui/spinner';
 import { Badge } from '~/shared/components/ui/badge';
-import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle, Users2 } from 'lucide-react';
+import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle, Users2, Bell } from 'lucide-react';
 import { EventCoverUpload } from '~/modules/events/components/event-form/event-cover-upload';
 import { EventBasicInfo } from '~/modules/events/components/event-form/fields/event-basic-info';
 import { EventDateTime } from '~/modules/events/components/event-form/fields/event-datetime';
 import { EventLocation } from '~/modules/events/components/event-form/fields/event-location';
 import { EventCapacity } from '~/modules/events/components/event-form/fields/event-capacity';
 import { EventDiscussion } from '~/modules/events/components/event-form/fields/event-discussion';
+import { EventReminders, type ReminderTime, type EventRemindersConfig } from '~/modules/events/components/event-form/fields/event-reminders';
 import { CustomQuestionsBuilder } from '~/modules/events/components/registration/custom-questions-builder';
 import { CollaborationInviteDialog } from '~/modules/events/components/collaboration/collaboration-invite-dialog';
 import { CollaborationList } from '~/modules/events/components/collaboration/collaboration-list';
@@ -47,6 +48,8 @@ interface EventFormData {
   status: EventStatus;
   isApproveRequired: boolean;
   customQuestions?: CustomQuestionJson | null;
+  reminderTimes?: ReminderTime[];
+  reminderMessage?: string | null;
 }
 
 interface EventFormProps {
@@ -89,6 +92,8 @@ export function EventForm({
   const [customQuestions, setCustomQuestions] = useState<CustomQuestionJson | null>(
     initialData?.customQuestions || null
   );
+  const [reminderTimes, setReminderTimes] = useState<ReminderTime[]>(initialData?.reminderTimes || []);
+  const [reminderMessage, setReminderMessage] = useState<string | null>(initialData?.reminderMessage || null);
 
   // Collaboration state
   const [collaborations, setCollaborations] = useState<CollaborationWithCommunity[]>([]);
@@ -320,6 +325,22 @@ export function EventForm({
           // Don't fail the event creation, just log the error
         }
 
+        // Create reminders if any are selected
+        if (reminderTimes.length > 0) {
+          const { error: reminderError } = await supabase
+            .from('event_reminders')
+            .insert({
+              event_id: newEvent.id,
+              reminder_times: reminderTimes,
+              custom_message: reminderMessage,
+            });
+
+          if (reminderError) {
+            console.error('Error creating event reminders:', reminderError);
+            // Don't fail the event creation, just log the error
+          }
+        }
+
         // If there are pending invites collected during create flow, submit them to the collaboration action
         // so the server can create the collaboration rows and send invitation emails.
         if (pendingInvites.length > 0) {
@@ -385,6 +406,36 @@ export function EventForm({
           console.error('Error updating event:', error);
           toast.error(error.message || 'Failed to update event');
           return;
+        }
+
+        // Update or create reminders
+        if (reminderTimes.length > 0) {
+          const { error: reminderError } = await supabase
+            .from('event_reminders')
+            .upsert(
+              {
+                event_id: eventId,
+                reminder_times: reminderTimes,
+                custom_message: reminderMessage,
+              },
+              { onConflict: 'event_id' }
+            );
+
+          if (reminderError) {
+            console.error('Error updating event reminders:', reminderError);
+            // Don't fail the event update, just log the error
+          }
+        } else {
+          // If no reminders selected, delete the reminder record if it exists
+          const { error: deleteError } = await supabase
+            .from('event_reminders')
+            .delete()
+            .eq('event_id', eventId);
+
+          if (deleteError) {
+            console.error('Error deleting event reminders:', deleteError);
+            // Don't fail the event update, just log the error
+          }
         }
 
         // If only schedule/location changed for a published event, notify attendees
@@ -643,6 +694,24 @@ export function EventForm({
               <CustomQuestionsBuilder
                 value={customQuestions}
                 onChange={setCustomQuestions}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Event Reminders */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Event Reminders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EventReminders
+                reminderTimes={reminderTimes}
+                customMessage={reminderMessage}
+                onReminderTimesChange={setReminderTimes}
+                onCustomMessageChange={setReminderMessage}
               />
             </CardContent>
           </Card>
