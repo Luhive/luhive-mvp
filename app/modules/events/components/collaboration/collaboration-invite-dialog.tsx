@@ -23,6 +23,8 @@ interface CollaborationInviteDialogProps {
   eventId?: string;
   hostCommunityId: string;
   communitySlug: string;
+  // communities that should be excluded from search results (already selected/pending)
+  excludedIds?: string[];
   // when true, the dialog will only return the selected community via `onCollect`
   collectOnly?: boolean;
   onCollect?: (community: { id: string; name: string; slug: string; logo_url?: string | null }) => void;
@@ -35,6 +37,7 @@ export function CollaborationInviteDialog({
   eventId,
   hostCommunityId,
   communitySlug,
+  excludedIds,
   collectOnly,
   onCollect,
   onSuccess,
@@ -42,6 +45,7 @@ export function CollaborationInviteDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const [communities, setCommunities] = useState<Community[]>([]);
   const [selectedCommunityId, setSelectedCommunityId] = useState<string>("");
+  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(false);
   const fetcher = useFetcher();
   const hasProcessedSuccessRef = useRef(false);
@@ -63,7 +67,18 @@ export function CollaborationInviteDialog({
           console.error("Error searching communities:", error);
           toast.error("Failed to search communities");
         } else {
-          setCommunities(data || []);
+          let results: Community[] = data || [];
+          // hide any communities we've been asked to exclude
+          if (excludedIds && excludedIds.length > 0) {
+            results = results.filter((c) => !excludedIds.includes(c.id));
+          }
+          // if user already selected one, don't remove it from results yet (it should
+          // still be clickable/highlighted) but we also don't want duplicates, so
+          // optionally filter it out too
+          if (selectedCommunityId) {
+            results = results.filter((c) => c.id !== selectedCommunityId);
+          }
+          setCommunities(results);
         }
         setLoading(false);
       }, 300);
@@ -72,7 +87,7 @@ export function CollaborationInviteDialog({
     } else if (open && searchQuery.length === 0) {
       setCommunities([]);
     }
-  }, [searchQuery, open, hostCommunityId]);
+  }, [searchQuery, open, hostCommunityId, excludedIds]);
 
   const handleInvite = () => {
     if (!selectedCommunityId) {
@@ -80,8 +95,9 @@ export function CollaborationInviteDialog({
       return;
     }
 
-    const selectedCommunity = communities.find((c) => c.id === selectedCommunityId);
-    if (!selectedCommunity) {
+    // prefer the cached object; if somehow missing, fall back to lookup
+    const communityObj = selectedCommunity || communities.find((c) => c.id === selectedCommunityId);
+    if (!communityObj) {
       toast.error("Selected community not found");
       return;
     }
@@ -132,6 +148,7 @@ export function CollaborationInviteDialog({
           onSuccess?.();
           setSearchQuery("");
           setSelectedCommunityId("");
+          setSelectedCommunity(null);
           setCommunities([]);
         }, 100);
       } else if (!fetcher.data.success && !hasProcessedSuccessRef.current) {
@@ -144,10 +161,13 @@ export function CollaborationInviteDialog({
     // Reset processed flag when dialog closes
     if (!open) {
       hasProcessedSuccessRef.current = false;
+      // clear any transient selection/search state so the dialog is fresh next time
+      setSearchQuery("");
+      setSelectedCommunityId("");
+      setSelectedCommunity(null);
+      setCommunities([]);
     }
   }, [open, fetcher.state, fetcher.data, onOpenChange, onSuccess]);
-
-  const selectedCommunity = communities.find((c) => c.id === selectedCommunityId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -182,7 +202,10 @@ export function CollaborationInviteDialog({
                 <button
                   key={community.id}
                   type="button"
-                  onClick={() => setSelectedCommunityId(community.id)}
+                  onClick={() => {
+                    setSelectedCommunityId(community.id);
+                    setSelectedCommunity(community);
+                  }}
                   className={`w-full flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors ${
                     selectedCommunityId === community.id ? "bg-muted" : ""
                   }`}

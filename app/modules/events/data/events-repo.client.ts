@@ -296,6 +296,34 @@ export async function deleteEventClient(eventId: string, communityId: string) {
   return { error };
 }
 
+export async function getCommunityCollaborationInvitesClient(
+  communityId: string,
+) {
+  const supabase = createBrowserClient();
+
+  const { data, error } = await supabase
+    .from("event_collaborations")
+    .select(
+      `
+      id,
+      status,
+      role,
+      invited_at,
+      event:events!event_collaborations_event_id_fkey (
+        id,
+        title,
+        start_time,
+        community_id,
+        community:communities!events_community_id_fkey (id, name, slug)
+      )
+    `
+    )
+    .eq("community_id", communityId)
+    .eq("status", "pending");
+
+  return { invites: (data || []) as any[], error };
+}
+
 export async function updateEventStatusClient(
   eventId: string,
   communityId: string,
