@@ -44,8 +44,8 @@ export function CollaborationInviteDialog({
 }: CollaborationInviteDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [communities, setCommunities] = useState<Community[]>([]);
-  const [selectedCommunityId, setSelectedCommunityId] = useState<string>("");
-  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedCommunities, setSelectedCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(false);
   const fetcher = useFetcher();
   const hasProcessedSuccessRef = useRef(false);
@@ -72,12 +72,7 @@ export function CollaborationInviteDialog({
           if (excludedIds && excludedIds.length > 0) {
             results = results.filter((c) => !excludedIds.includes(c.id));
           }
-          // if user already selected one, don't remove it from results yet (it should
-          // still be clickable/highlighted) but we also don't want duplicates, so
-          // optionally filter it out too
-          if (selectedCommunityId) {
-            results = results.filter((c) => c.id !== selectedCommunityId);
-          }
+          // don't remove selected ones from list; they should remain visible and clickable to toggle off
           setCommunities(results);
         }
         setLoading(false);
@@ -87,37 +82,47 @@ export function CollaborationInviteDialog({
     } else if (open && searchQuery.length === 0) {
       setCommunities([]);
     }
-  }, [searchQuery, open, hostCommunityId, excludedIds]);
+  }, [searchQuery, open, hostCommunityId, excludedIds, selectedIds]);
 
   const handleInvite = () => {
-    if (!selectedCommunityId) {
-      toast.error("Please select a community");
+    if (selectedIds.size === 0) {
+      toast.error("Please select at least one community");
       return;
     }
 
-    // prefer the cached object; if somehow missing, fall back to lookup
-    const communityObj = selectedCommunity || communities.find((c) => c.id === selectedCommunityId);
-    if (!communityObj) {
-      toast.error("Selected community not found");
-      return;
-    }
-
-    // If collectOnly, return selected community to caller and don't submit
+    // If collectOnly, return all selected communities to caller
     if (collectOnly && onCollect) {
-      onCollect({
-        id: selectedCommunity.id,
-        name: selectedCommunity.name,
-        slug: selectedCommunity.slug,
-        logo_url: selectedCommunity.logo_url,
+      selectedCommunities.forEach((community) => {
+        onCollect({
+          id: community.id,
+          name: community.name,
+          slug: community.slug,
+          logo_url: community.logo_url,
+        });
       });
-      toast.success('Community added to pending invites');
+      toast.success(`Added ${selectedCommunities.length} community(ies) to pending invites`);
       // reset and close
       setTimeout(() => {
         onOpenChange(false);
         setSearchQuery("");
-        setSelectedCommunityId("");
+        setSelectedIds(new Set());
+        setSelectedCommunities([]);
         setCommunities([]);
       }, 100);
+      return;
+    }
+
+    // For edit mode with single selection (one at a time)
+    // TODO: support batch invitations in edit mode
+    if (selectedIds.size > 1) {
+      toast.error("Please select only one community for sending invitations");
+      return;
+    }
+
+    const selectedId = Array.from(selectedIds)[0];
+    const communityObj = selectedCommunities[0];
+    if (!communityObj) {
+      toast.error("Selected community not found");
       return;
     }
 
@@ -126,7 +131,7 @@ export function CollaborationInviteDialog({
 
     const formData = new FormData();
     formData.append("intent", "invite-collaboration");
-    formData.append("coHostCommunityId", selectedCommunityId);
+    formData.append("coHostCommunityId", selectedId);
 
     fetcher.submit(formData, {
       method: "POST",
@@ -147,8 +152,8 @@ export function CollaborationInviteDialog({
         setTimeout(() => {
           onSuccess?.();
           setSearchQuery("");
-          setSelectedCommunityId("");
-          setSelectedCommunity(null);
+          setSelectedIds(new Set());
+          setSelectedCommunities([]);
           setCommunities([]);
         }, 100);
       } else if (!fetcher.data.success && !hasProcessedSuccessRef.current) {
@@ -163,8 +168,8 @@ export function CollaborationInviteDialog({
       hasProcessedSuccessRef.current = false;
       // clear any transient selection/search state so the dialog is fresh next time
       setSearchQuery("");
-      setSelectedCommunityId("");
-      setSelectedCommunity(null);
+      setSelectedIds(new Set());
+      setSelectedCommunities([]);
       setCommunities([]);
     }
   }, [open, fetcher.state, fetcher.data, onOpenChange, onSuccess]);
@@ -198,32 +203,34 @@ export function CollaborationInviteDialog({
 
           {!loading && searchQuery.length >= 2 && communities.length > 0 && (
             <div className="max-h-60 overflow-y-auto space-y-2 border rounded-md p-2">
-              {communities.map((community) => (
-                <button
-                  key={community.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCommunityId(community.id);
-                    setSelectedCommunity(community);
-                  }}
-                  className={`w-full flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors ${
-                    selectedCommunityId === community.id ? "bg-muted" : ""
-                  }`}
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={community.logo_url || undefined}
-                      alt={community.name}
-                    />
-                    <AvatarFallback>
-                      {community.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium">{community.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
+              {communities.map((community) => {
+                const isSelected = selectedIds.has(community.id);
+                return (
+                  <button
+                    key={community.id}
+                    type="button"
+                    onClick={() => {
+                      // toggle selection
+                      const newIds = new Set(selectedIds);
+                      const newCommunities = [...selectedCommunities];
+                      if (isSelected) {
+                        newIds.delete(community.id);
+                        const idx = newCommunities.findIndex(
+                          (c) => c.id === community.id
+                        );
+                        if (idx >= 0) {
+                          newCommunities.splice(idx, 1);
+                        }
+                      } else {
+                        newIds.add(community.id);
+                        if (!newCommunities.find((c) => c.id === community.id)) {
+                          newCommunities.push(community);
+                        }
+                      }
+                      setSelectedIds(newIds);
+                      setSelectedCommunities(newCommunities);
+                    }}
+                    className={`w-full flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors ${\n                      isSelected ? "bg-muted border border-blue-500" : ""\n                    }`}\n                  >\n                    <Avatar className="h-8 w-8">\n                      <AvatarImage\n                        src={community.logo_url || undefined}\n                        alt={community.name}\n                      />\n                      <AvatarFallback>\n                        {community.name.charAt(0).toUpperCase()}\n                      </AvatarFallback>\n                    </Avatar>\n                    <span className="font-medium">{community.name}</span>\n                  </button>\n                );\n              })}\n            </div>\n          )}
 
           {!loading && searchQuery.length >= 2 && communities.length === 0 && (
             <div className="text-sm text-muted-foreground text-center py-4">
@@ -231,20 +238,44 @@ export function CollaborationInviteDialog({
             </div>
           )}
 
-          {selectedCommunity && (
-            <div className="p-3 bg-muted rounded-md">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Selected:</span>
-                <Avatar className="h-6 w-6">
-                  <AvatarImage
-                    src={selectedCommunity.logo_url || undefined}
-                    alt={selectedCommunity.name}
-                  />
-                  <AvatarFallback>
-                    {selectedCommunity.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm">{selectedCommunity.name}</span>
+          {selectedCommunities.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-sm font-medium">Selected ({selectedCommunities.length}):</span>
+              <div className="space-y-1">
+                {selectedCommunities.map((community) => (
+                  <div
+                    key={community.id}
+                    className="p-2 bg-muted rounded-md flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage
+                          src={community.logo_url || undefined}
+                          alt={community.name}
+                        />
+                        <AvatarFallback>
+                          {community.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{community.name}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newIds = new Set(selectedIds);
+                        newIds.delete(community.id);
+                        const newCommunities = selectedCommunities.filter(
+                          (c) => c.id !== community.id
+                        );
+                        setSelectedIds(newIds);
+                        setSelectedCommunities(newCommunities);
+                      }}
+                      className="text-xs text-red-500 hover:text-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -255,7 +286,7 @@ export function CollaborationInviteDialog({
             </Button>
             <Button
               onClick={handleInvite}
-              disabled={!selectedCommunityId || (!collectOnly && fetcher.state === "submitting")}
+              disabled={selectedIds.size === 0 || (!collectOnly && fetcher.state === "submitting")}
             >
               {collectOnly ? (
                 'OK'
