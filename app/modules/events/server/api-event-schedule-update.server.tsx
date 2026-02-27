@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs } from "react-router";
 import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
 import { sendEventScheduleUpdateEmail } from "~/shared/lib/email.server";
+import { getCoHostCommunities } from "~/modules/events/data/collaborations-repo.server";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -137,9 +138,67 @@ export async function action({ request }: ActionFunctionArgs) {
 			});
 		}
 
-		return Response.json({ success: true });
-	} catch (error: any) {
-		console.error("Error in api/events/schedule-update:", error);
-		return Response.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
-	}
+        // notify co-host community owners/admins as well
+        const { communities: coHosts, error: coHostsError } = await getCoHostCommunities(serviceClient, eventId);
+        if (!coHostsError && coHosts.length > 0) {
+          // gather unique user emails of owners/admins for each co-host community
+          const notifiedEmails = new Set<string>();
+
+          for (const collab of coHosts) {
+            const communityId = collab.community.id;
+            // fetch community owner/admin members
+            const { data: members } = await serviceClient
+              .from("community_members")
+              .select("user_id, profiles(full_name)")
+              .eq("community_id", communityId)
+              .in("role", ["owner", "admin"]);
+
+            // also include community creator if not already in list
+            const { data: communityInfo } = await serviceClient
+              .from("communities")
+              .select("created_by")
+              .eq("id", communityId)
+              .single();
+
+            const userIds = new Set<string>();
+            if (members) {
+              for (const m of members as any[]) {
+                if (m.user_id) userIds.add(m.user_id);
+              }
+            }
+            if (communityInfo?.created_by) {
+              userIds.add(communityInfo.created_by);
+            }
+
+            for (const userId of userIds) {
+              const { data: userResult, error: userError } = await serviceClient.auth.admin.getUserById(userId);
+              if (userError || !userResult?.user?.email) continue;
+              const email = userResult.user.email;
+              if (notifiedEmails.has(email)) continue;
+              notifiedEmails.add(email);
+
+              const recipientName =
+                members?.find((m: any) => m.user_id === userId)?.profiles?.full_name ||
+                "there";
+
+              await sendEventScheduleUpdateEmail({
+                eventTitle: event.title,
+                communityName: community.name,
+                eventDate: eventDateFormatted,
+                eventTime: eventTimeFormatted,
+                eventLink,
+                recipientName,
+                recipientEmail: email,
+                locationAddress: event.location_address || undefined,
+                onlineMeetingLink: event.online_meeting_link || undefined,
+              });
+            }
+          }
+        }
+
+        return Response.json({ success: true });
+    } catch (error: any) {
+        console.error("Error in api/events/schedule-update:", error);
+        return Response.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
+    }
 }

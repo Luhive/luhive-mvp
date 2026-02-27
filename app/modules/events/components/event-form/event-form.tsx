@@ -805,12 +805,14 @@ export function EventForm({
                   />
                   )}
 
+                  {/* determine communities that should be hidden from search (already pending or already invited) */}
                   <CollaborationInviteDialog
                     open={showInviteDialog}
                     onOpenChange={setShowInviteDialog}
                     eventId={mode === 'edit' ? eventId : undefined}
                     hostCommunityId={communityId}
                     communitySlug={communitySlug}
+                    excludedIds={[...pendingInvites.map((p) => p.id), ...collaborations.map((c) => c.community.id)]}
                     collectOnly={mode === 'create'}
                     onCollect={(community) => {
                       setPendingInvites((prev) => (prev.some((p) => p.id === community.id) ? prev : [...prev, community]));
