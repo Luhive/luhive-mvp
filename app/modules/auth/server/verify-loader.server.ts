@@ -15,6 +15,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const pendingCommunityId = pendingCommunityIdMatch
       ? pendingCommunityIdMatch[1]
       : null;
+    const pendingReturnToMatch = cookieHeader.match(
+      /pending_return_to=([^;]+)/,
+    );
+    const pendingReturnTo = pendingReturnToMatch
+      ? decodeURIComponent(pendingReturnToMatch[1])
+      : null;
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
@@ -27,6 +33,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
         headers.append(
           "Set-Cookie",
           `pending_community_id=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
+        );
+      }
+      if (pendingReturnTo) {
+        headers.append(
+          "Set-Cookie",
+          `pending_return_to=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
         );
       }
 
@@ -53,25 +65,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
         });
 
         if (pendingCommunityId) {
-          const { error: memberError } = await supabase
-            .from("community_members")
-            .insert({
-              user_id: data.user.id,
-              community_id: pendingCommunityId,
-              role: "member",
-            });
+          await supabase.from("community_members").insert({
+            user_id: data.user.id,
+            community_id: pendingCommunityId,
+            role: "member",
+          });
 
-          if (!memberError) {
-            const { data: community } = await supabase
-              .from("communities")
-              .select("slug")
-              .eq("id", pendingCommunityId)
-              .single();
-
-            if (community) {
-              return redirect(`/c/${community.slug}?joined=true`, { headers });
-            }
-          }
+          return redirect(`${pendingReturnTo ?? "/hub"}?joined=true`, {
+            headers,
+          });
         }
       } else if (pendingCommunityId) {
         const { data: existingMember } = await supabase
@@ -91,15 +93,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
             });
 
           if (!memberError) {
-            const { data: community } = await supabase
-              .from("communities")
-              .select("slug")
-              .eq("id", pendingCommunityId)
-              .single();
-
-            if (community) {
-              return redirect(`/c/${community.slug}?joined=true`, { headers });
-            }
+            return redirect(`${pendingReturnTo ?? "/hub"}?joined=true`, {
+              headers,
+            });
           }
         }
       }
@@ -130,6 +126,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (!error && data.user) {
       const referralCommunityId =
         data.user.user_metadata?.pending_community_id;
+      const returnTo = data.user.user_metadata?.pending_return_to as
+        | string
+        | undefined;
 
       if (referralCommunityId) {
         await supabase.from("community_members").insert({
@@ -138,15 +137,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           role: "member",
         });
 
-        const { data: community } = await supabase
-          .from("communities")
-          .select("slug")
-          .eq("id", referralCommunityId)
-          .single();
-
-        if (community) {
-          return redirect(`/c/${community.slug}?joined=true`, { headers });
-        }
+        return redirect(`${returnTo ?? "/hub"}?joined=true`, { headers });
       }
 
       return redirect("/hub", { headers });

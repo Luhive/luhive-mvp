@@ -83,6 +83,7 @@ export default [
   "api/events/send-reminders",
   "routes/api/events/send-reminders.tsx"
   ),
+  route("api/join-community", "routes/api/join-community.tsx"),
 
   // Integrations API routes (Google Forms)
   route(

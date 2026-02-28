@@ -50,6 +50,7 @@ interface JoinCommunityFormProps {
   isLoggedIn: boolean
   isMember: boolean
   trigger?: React.ReactNode
+  returnTo?: string
 }
 
 export function JoinCommunityForm({
@@ -59,6 +60,7 @@ export function JoinCommunityForm({
   isLoggedIn,
   isMember,
   trigger,
+  returnTo,
 }: JoinCommunityFormProps) {
   const [open, setOpen] = React.useState(false)
   const isMobile = useIsMobile()
@@ -69,6 +71,7 @@ export function JoinCommunityForm({
   const navigate = useNavigate()
   const [isEmailStepComplete, setIsEmailStepComplete] = React.useState(false)
   const [emailStepError, setEmailStepError] = React.useState<string | null>(null)
+  const lastProcessedFetcherDataRef = React.useRef<unknown>(null)
 
   const guestForm = useForm<GuestJoinFormValues>({
     resolver: zodResolver(guestJoinSchema),
@@ -123,6 +126,7 @@ export function JoinCommunityForm({
       communityId: values.communityId,
       communityName: communityName,
     })
+    if (returnTo) params.set("returnTo", returnTo)
     navigate(`/signup?${params.toString()}`)
   }
 
@@ -132,23 +136,25 @@ export function JoinCommunityForm({
     formData.append("intent", "oauth")
     formData.append("provider", "google")
     formData.append("communityId", communityId)
+    if (returnTo) formData.append("returnTo", returnTo)
 
     // Submit to register route
     submit(formData, { method: "post", action: "/signup" })
   }
 
-  // Close dialog/drawer on successful join/leave, show toast, and revalidate page data
+  // Close dialog/drawer on successful join/leave, show toast, and revalidate page data (once per response)
   React.useEffect(() => {
     const data = joinFetcher.data as { success?: boolean; message?: string; error?: string } | undefined
-    if (isLoggedIn && joinFetcher.state === "idle" && data) {
-      if (data.success) {
-        toast.success(data.message || "Success!")
-        setOpen(false)
-        memberForm.reset()
-        revalidator.revalidate()
-      } else if (data.error) {
-        toast.error(data.error)
-      }
+    if (!isLoggedIn || joinFetcher.state !== "idle" || !data) return
+    if (lastProcessedFetcherDataRef.current === joinFetcher.data) return
+    lastProcessedFetcherDataRef.current = joinFetcher.data
+    if (data.success) {
+      toast.success(data.message || "Success!")
+      setOpen(false)
+      memberForm.reset()
+      revalidator.revalidate()
+    } else if (data.error) {
+      toast.error(data.error)
     }
   }, [isLoggedIn, joinFetcher.state, joinFetcher.data, memberForm, revalidator])
 

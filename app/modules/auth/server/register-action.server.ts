@@ -11,11 +11,18 @@ export async function action({ request }: ActionFunctionArgs) {
   if (intent === "oauth") {
     const provider = formData.get("provider") as "google";
     const communityId = formData.get("communityId") as string | null;
+    const returnTo = formData.get("returnTo") as string | null;
 
     if (communityId) {
       headers.append(
         "Set-Cookie",
         `pending_community_id=${communityId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
+      );
+    }
+    if (returnTo) {
+      headers.append(
+        "Set-Cookie",
+        `pending_return_to=${encodeURIComponent(returnTo)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
       );
     }
 
@@ -45,6 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const name = formData.get("name") as string;
   const surname = formData.get("surname") as string;
   const communityId = formData.get("communityId") as string | null;
+  const returnTo = formData.get("returnTo") as string | null;
 
   const validation = registerSchema.safeParse({ name, surname, email, password });
 
@@ -64,6 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
     options: {
       data: {
         pending_community_id: communityId || null,
+        pending_return_to: returnTo || null,
         full_name: fullName,
       },
     },
