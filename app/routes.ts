@@ -38,6 +38,9 @@ export default [
   route("login", "routes/auth/login.tsx"),
   route("signup", "routes/auth/register.tsx"),
 
+  route("privacy-policy", "routes/web/privacy-policy.tsx"),
+  route("terms-of-service", "routes/web/terms-conditions.tsx"),
+
   // Dashboard: parent route owns :slug, children are relative
   route("dashboard/:slug", "routes/dashboard/layout.tsx", [
     index("routes/dashboard/overview.tsx"),

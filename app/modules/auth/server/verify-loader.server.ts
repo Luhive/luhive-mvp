@@ -16,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? pendingCommunityIdMatch[1]
       : null;
     const pendingReturnToMatch = cookieHeader.match(
-      /pending_return_to=([^;]+)/,
+      /pending_return_to=([^;]+)/
     );
     const pendingReturnTo = pendingReturnToMatch
       ? decodeURIComponent(pendingReturnToMatch[1])
@@ -38,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       if (pendingReturnTo) {
         headers.append(
           "Set-Cookie",
-          `pending_return_to=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+          `pending_return_to=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
         );
       }
 
@@ -65,15 +65,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
         });
 
         if (pendingCommunityId) {
-          await supabase.from("community_members").insert({
-            user_id: data.user.id,
-            community_id: pendingCommunityId,
-            role: "member",
-          });
+          const { error: memberError } = await supabase
+            .from("community_members")
+            .insert({
+              user_id: data.user.id,
+              community_id: pendingCommunityId,
+              role: "member",
+            });
 
-          return redirect(`${pendingReturnTo ?? "/hub"}?joined=true`, {
-            headers,
-          });
+          if (!memberError) {
+            const { data: community } = await supabase
+              .from("communities")
+              .select("slug")
+              .eq("id", pendingCommunityId)
+              .single();
+
+            if (community) {
+              const destination = pendingReturnTo ?? `/c/${community.slug}`;
+              return redirect(`${destination}?joined=true`, { headers });
+            }
+          }
         }
       } else if (pendingCommunityId) {
         const { data: existingMember } = await supabase
@@ -93,9 +104,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
             });
 
           if (!memberError) {
-            return redirect(`${pendingReturnTo ?? "/hub"}?joined=true`, {
-              headers,
-            });
+            const { data: community } = await supabase
+              .from("communities")
+              .select("slug")
+              .eq("id", pendingCommunityId)
+              .single();
+
+            if (community) {
+              const destination = pendingReturnTo ?? `/c/${community.slug}`;
+              return redirect(`${destination}?joined=true`, { headers });
+            }
           }
         }
       }
@@ -137,7 +155,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
           role: "member",
         });
 
-        return redirect(`${returnTo ?? "/hub"}?joined=true`, { headers });
+        const { data: community } = await supabase
+          .from("communities")
+          .select("slug")
+          .eq("id", referralCommunityId)
+          .single();
+
+        if (community) {
+          const destination = returnTo ?? `/c/${community.slug}`;
+          return redirect(`${destination}?joined=true`, { headers });
+        }
       }
 
       return redirect("/hub", { headers });
