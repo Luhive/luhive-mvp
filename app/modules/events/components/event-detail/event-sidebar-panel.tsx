@@ -33,6 +33,7 @@ interface EventSidebarPanelProps {
 		slug: string;
 		logo_url: string | null;
 		role: "host" | "co-host";
+		isMember?: boolean;
 	}>;
 }
 
@@ -49,9 +50,19 @@ export function EventSidebarPanel({
 	const { registrationCount, canRegister } = userData;
 	
 	// Use hostingCommunities if provided, otherwise fall back to just the community
-	const hosts = hostingCommunities && hostingCommunities.length > 0
-		? hostingCommunities
-		: [{ id: community.id, name: community.name, slug: community.slug, logo_url: community.logo_url, role: "host" as const }];
+	const hosts =
+		hostingCommunities && hostingCommunities.length > 0
+			? hostingCommunities
+			: [
+					{
+						id: community.id,
+						name: community.name,
+						slug: community.slug,
+						logo_url: community.logo_url,
+						role: "host" as const,
+						isMember: false,
+					},
+				];
 
 	return (
     <div className="contents lg:block lg:space-y-6">
@@ -87,7 +98,12 @@ export function EventSidebarPanel({
       <div className="order-3 space-y-6">
         <div className="space-y-3">
           <div className="border-b pb-2">
-            <HostedBy hosts={hosts} fallbackCommunity={community} />
+            <HostedBy
+              hosts={hosts}
+              fallbackCommunity={community}
+              isLoggedIn={!!userData.user}
+              userEmail={userData.user?.email ?? null}
+            />
           </div>
 
           <AttendersAvatars

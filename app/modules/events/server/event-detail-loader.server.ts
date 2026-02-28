@@ -47,6 +47,7 @@ export interface EventDetailLoaderData {
     slug: string;
     logo_url: string | null;
     role: "host" | "co-host";
+    isMember: boolean;
   }>;
 }
 
@@ -236,12 +237,13 @@ export async function loader({
   }
 
   // Get all hosting communities (host + accepted co-hosts)
-  const hostingCommunities: Array<{
+  let hostingCommunities: Array<{
     id: string;
     name: string;
     slug: string;
     logo_url: string | null;
     role: "host" | "co-host";
+    isMember: boolean;
   }> = [];
 
   // Add host community first (always show host)
@@ -251,6 +253,7 @@ export async function loader({
     slug: hostCommunity.slug,
     logo_url: hostCommunity.logo_url,
     role: "host",
+    isMember: false,
   });
 
   // Add all accepted co-hosts (including the current community if it's a co-host)
@@ -266,9 +269,24 @@ export async function loader({
           slug: coHostCommunity.slug,
           logo_url: coHostCommunity.logo_url,
           role: "co-host",
+          isMember: false,
         });
       }
     }
+  }
+
+  if (u && hostingCommunities.length > 0) {
+    const { data: memberships } = await supabase
+      .from("community_members")
+      .select("community_id")
+      .eq("user_id", u.id)
+      .in("community_id", hostingCommunities.map((h) => h.id));
+
+    const memberIds = new Set(memberships?.map((m) => m.community_id) ?? []);
+    hostingCommunities = hostingCommunities.map((h) => ({
+      ...h,
+      isMember: memberIds.has(h.id),
+    }));
   }
 
   return {

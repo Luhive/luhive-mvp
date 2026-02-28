@@ -44,6 +44,7 @@ export default function RegisterPage() {
   const emailParam = searchParams.get("email") || "";
   const communityIdParam = searchParams.get("communityId") || "";
   const communityNameParam = searchParams.get("communityName") || "";
+  const returnToParam = searchParams.get("returnTo") || "";
 
   const fieldErrors = actionData?.fieldErrors;
   const hasDetailsErrors = Boolean(
@@ -117,6 +118,9 @@ export default function RegisterPage() {
           {communityIdParam && (
             <input type="hidden" name="communityId" value={communityIdParam} />
           )}
+          {returnToParam && (
+            <input type="hidden" name="returnTo" value={returnToParam} />
+          )}
           <Button
             disabled={isSubmittingOAuth}
             variant="outline"
@@ -155,6 +159,9 @@ export default function RegisterPage() {
           <input type="hidden" name="intent" value="password" />
           {communityIdParam && (
             <input type="hidden" name="communityId" value={communityIdParam} />
+          )}
+          {returnToParam && (
+            <input type="hidden" name="returnTo" value={returnToParam} />
           )}
           <div className="flex flex-col gap-2">
             <Input

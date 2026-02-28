@@ -243,6 +243,45 @@ interface CollaborationAcceptedEmailData {
   eventLink: string;
 }
 
+interface NewEventNotificationEmailData {
+  eventTitle: string;
+  communityName: string;
+  eventDate: string;
+  eventTime: string;
+  eventLink: string;
+  recipientEmail: string;
+  recipientName: string;
+  locationAddress?: string;
+  onlineMeetingLink?: string;
+}
+
+interface NewCollaborationEventEmailData {
+  eventTitle: string;
+  hostCommunityName: string;
+  coHostCommunityName: string;
+  eventDate: string;
+  eventTime: string;
+  eventLink: string;
+  recipientEmail: string;
+  recipientName: string;
+  isNewEvent: boolean;
+  locationAddress?: string;
+  onlineMeetingLink?: string;
+}
+
+interface EventRegistrationNotificationEmailData {
+  eventTitle: string;
+  registrantName: string;
+  registrantEmail: string;
+  hostCommunityName: string;
+  coHostCommunityNames: string[];
+  eventDate: string;
+  eventTime: string;
+  eventLink: string;
+  recipientEmail: string;
+  recipientName: string;
+}
+
 export async function sendRegistrationRequestEmail(
   data: RegistrationRequestEmailData
 ) {
@@ -1186,6 +1225,254 @@ export async function sendCollaborationAcceptedEmail(
       stack: error instanceof Error ? error.stack : undefined,
       recipientEmail,
       fromEmail: FROM_EMAIL,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Send notification to community members about a new event created by their community
+ */
+export async function sendNewEventNotificationEmail(
+  data: NewEventNotificationEmailData
+) {
+  const {
+    eventTitle,
+    communityName,
+    eventDate,
+    eventTime,
+    eventLink,
+    recipientEmail,
+    recipientName,
+    locationAddress,
+    onlineMeetingLink,
+  } = data;
+
+  if (!resend) {
+    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  console.log(`📧 Attempting to send new event notification email:`);
+  console.log(`   To: ${recipientEmail}`);
+  console.log(`   From: ${FROM_EMAIL}`);
+  console.log(`   Subject: New Event: ${eventTitle}`);
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [recipientEmail],
+      subject: `New Event: ${eventTitle}`,
+      html: `
+        <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #ff8040;">New Event Created!</h2>
+          <p>Hi ${recipientName},</p>
+          <p>A new event has been created in <strong>${communityName}</strong>:</p>
+          <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0;">${eventTitle}</h3>
+            <p style="margin: 5px 0;"><strong>📅 Date:</strong> ${eventDate}</p>
+            <p style="margin: 5px 0;"><strong>⏰ Time:</strong> ${eventTime}</p>
+            ${locationAddress ? `<p style="margin: 5px 0;"><strong>📍 Location:</strong> ${locationAddress}</p>` : ''}
+            ${onlineMeetingLink ? `<p style="margin: 5px 0;"><strong>🔗 Online:</strong> <a href="${onlineMeetingLink}" style="color: #ff8040;">Join Meeting</a></p>` : ''}
+          </div>
+          <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event Details</a></p>
+          <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">${communityName}</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error("❌ Resend API error:", error);
+      throw new Error(`Failed to send new event notification: ${error.message}`);
+    }
+
+    console.log(`✅ New event notification email sent successfully:`, {
+      id: emailData?.id,
+      from: FROM_EMAIL,
+      to: recipientEmail,
+    });
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("❌ Error sending new event notification email:", {
+      error: error instanceof Error ? error.message : String(error),
+      recipientEmail,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Send notification to community members when a co-host accepts collaboration on a new event
+ */
+export async function sendNewCollaborationEventEmail(
+  data: NewCollaborationEventEmailData
+) {
+  const {
+    eventTitle,
+    hostCommunityName,
+    coHostCommunityName,
+    eventDate,
+    eventTime,
+    eventLink,
+    recipientEmail,
+    recipientName,
+    isNewEvent,
+    locationAddress,
+    onlineMeetingLink,
+  } = data;
+
+  if (!resend) {
+    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  const eventType = isNewEvent ? "New Event" : "Event Update";
+  console.log(`📧 Attempting to send new collaboration event email:`);
+  console.log(`   To: ${recipientEmail}`);
+  console.log(`   From: ${FROM_EMAIL}`);
+  console.log(`   Subject: ${eventType} - ${eventTitle} (${coHostCommunityName} joined)`);
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [recipientEmail],
+      subject: `${eventType}: ${eventTitle} (${coHostCommunityName} joined)`,
+      html: `
+        <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #ff8040;">${isNewEvent ? 'New Collaborative Event!' : 'Event Collaboration Update!'}</h2>
+          <p>Hi ${recipientName},</p>
+          <p><strong>${hostCommunityName}</strong> and <strong>${coHostCommunityName}</strong> are now co-hosting an event:</p>
+          <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0;">${eventTitle}</h3>
+            <p style="margin: 5px 0;"><strong>📅 Date:</strong> ${eventDate}</p>
+            <p style="margin: 5px 0;"><strong>⏰ Time:</strong> ${eventTime}</p>
+            <p style="margin: 5px 0;"><strong>🏠 Host:</strong> ${hostCommunityName}</p>
+            <p style="margin: 5px 0;"><strong>🤝 Co-host:</strong> ${coHostCommunityName}</p>
+            ${locationAddress ? `<p style="margin: 5px 0;"><strong>📍 Location:</strong> ${locationAddress}</p>` : ''}
+            ${onlineMeetingLink ? `<p style="margin: 5px 0;"><strong>🔗 Online:</strong> <a href="${onlineMeetingLink}" style="color: #ff8040;">Join Meeting</a></p>` : ''}
+          </div>
+          <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event Details</a></p>
+          <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">Luhive Events</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error("❌ Resend API error:", error);
+      throw new Error(`Failed to send collaboration event notification: ${error.message}`);
+    }
+
+    console.log(`✅ Collaboration event email sent successfully:`, {
+      id: emailData?.id,
+      from: FROM_EMAIL,
+      to: recipientEmail,
+    });
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("❌ Error sending collaboration event email:", {
+      error: error instanceof Error ? error.message : String(error),
+      recipientEmail,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Send notification to host and co-host owners/admins when someone registers for their event
+ */
+export async function sendEventRegistrationNotificationEmail(
+  data: EventRegistrationNotificationEmailData
+) {
+  const {
+    eventTitle,
+    registrantName,
+    registrantEmail,
+    hostCommunityName,
+    coHostCommunityNames,
+    eventDate,
+    eventTime,
+    eventLink,
+    recipientEmail,
+    recipientName,
+  } = data;
+
+  if (!resend) {
+    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  const coHostsText = coHostCommunityNames.length > 0 
+    ? coHostCommunityNames.join(", ") 
+    : "none";
+
+  console.log(`📧 Attempting to send event registration notification email:`);
+  console.log(`   To: ${recipientEmail}`);
+  console.log(`   From: ${FROM_EMAIL}`);
+  console.log(`   Subject: New Registration: ${eventTitle}`);
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [recipientEmail],
+      subject: `New Registration: ${eventTitle}`,
+      html: `
+        <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #ff8040;">New Event Registration!</h2>
+          <p>Hi ${recipientName},</p>
+          <p>Someone has registered for <strong>${eventTitle}</strong>:</p>
+          <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>👤 Name:</strong> ${registrantName}</p>
+            <p style="margin: 5px 0;"><strong>📧 Email:</strong> ${registrantEmail}</p>
+            <p style="margin: 5px 0;"><strong>📅 Event Date:</strong> ${eventDate}</p>
+            <p style="margin: 5px 0;"><strong>⏰ Event Time:</strong> ${eventTime}</p>
+            <p style="margin: 5px 0;"><strong>🏠 Host:</strong> ${hostCommunityName}</p>
+            <p style="margin: 5px 0;"><strong>🤝 Co-hosts:</strong> ${coHostsText}</p>
+          </div>
+          <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event & Registrants</a></p>
+          <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">Luhive Events</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error("❌ Resend API error:", error);
+      throw new Error(`Failed to send registration notification: ${error.message}`);
+    }
+
+    console.log(`✅ Registration notification email sent successfully:`, {
+      id: emailData?.id,
+      from: FROM_EMAIL,
+      to: recipientEmail,
+    });
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("❌ Error sending registration notification email:", {
+      error: error instanceof Error ? error.message : String(error),
+      recipientEmail,
     });
     throw error;
   }
