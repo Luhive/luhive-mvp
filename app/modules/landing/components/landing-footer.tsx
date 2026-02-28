@@ -1,4 +1,5 @@
 import { Globe } from 'lucide-react';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 import { AnalyticsEvents } from '~/shared/lib/analytics';
@@ -108,6 +109,12 @@ export function LandingFooter() {
           <a href="#faqs" className="hover:text-foreground">
             {t('footerV2.nav.faqs')}
           </a>
+          <Link to="/privacy-policy" className="hover:text-foreground">
+            Privacy Policy
+          </Link>
+          <Link to="/terms-of-service" className="hover:text-foreground">
+            Terms of Service
+          </Link>
         </nav>
       </div>
     </footer>
