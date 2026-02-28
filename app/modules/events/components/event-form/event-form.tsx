@@ -378,6 +378,36 @@ export function EventForm({
           }
         }
 
+        // Send notification to community members about new event (only when published)
+        if (!isDraft) {
+          try {
+            const eventStartDateTime = dayjs.tz(
+              `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
+              timezone
+            );
+            
+            await fetch('/api/events/new-event-notification', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                eventId: newEvent.id,
+                communityId: communityId,
+                eventTitle: title,
+                eventDate: eventStartDateTime.format('dddd, MMMM D, YYYY'),
+                eventTime: eventStartDateTime.format('h:mm A z'),
+                eventLink: `${window.location.origin}/c/${communitySlug}/events/${newEvent.id}`,
+                locationAddress: locationAddress || undefined,
+                onlineMeetingLink: onlineMeetingLink || undefined,
+              }),
+            });
+          } catch (notifyError) {
+            console.error('Failed to trigger new event notification emails:', notifyError);
+            // Don't fail the event creation if email fails
+          }
+        }
+
         toast.success(`Event ${isDraft ? 'saved as draft' : 'published'} successfully!`);
         navigate(`/dashboard/${communitySlug}/events`);
       } else if (mode === 'edit' && eventId) {

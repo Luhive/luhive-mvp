@@ -579,6 +579,47 @@ export async function action({ request, params }: ActionFunctionArgs) {
       console.error("Failed to send confirmation email:", error);
     }
 
+    // Notify host and co-host community admins about new registration
+    try {
+      // Get host community name
+      const hostCommunityName = community.name;
+
+      // Get co-host community names
+      const { data: collaborations } = await supabase
+        .from("event_collaborations")
+        .select("community_id, community:communities(name)")
+        .eq("event_id", eventId)
+        .eq("status", "accepted")
+        .neq("role", "host");
+
+      const coHostCommunityNames = collaborations
+        ?.map((c: any) => c.community?.name)
+        .filter(Boolean) as string[] || [];
+
+      await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "registration-notification",
+          eventId,
+          hostCommunityId: event.community_id,
+          hostCommunityName,
+          coHostCommunityNames,
+          eventTitle: event.title,
+          registrantName: profile?.full_name || user.email?.split("@")[0] || "Someone",
+          registrantEmail: user.email || "",
+          eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+          eventTime: eventDate.format("h:mm A z"),
+          eventLink,
+        }),
+      });
+    } catch (notifyError) {
+      console.error("Failed to trigger registration notification:", notifyError);
+      // Don't fail the registration if notification fails
+    }
+
     return {
       success: true,
       message: "Successfully registered for the event!",

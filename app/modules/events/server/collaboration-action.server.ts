@@ -71,7 +71,7 @@ export async function collaborationAction({
   // Get event and verify it exists
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("id, title, community_id, created_by")
+    .select("id, title, community_id, created_by, start_time, timezone, location_address, online_meeting_link, created_at")
     .eq("id", eventId)
     .single();
 
@@ -253,6 +253,55 @@ export async function collaborationAction({
     } catch (emailError) {
       console.error("Failed to send collaboration accepted email:", emailError);
       // Don't fail the request if email fails
+    }
+
+    // Notify community members based on whether this is a new or existing event
+    // Check if this is a new event by comparing event start_time with collaboration created_at
+    const collaborationCreatedAt = new Date(collaboration.created_at);
+    const eventStartTime = event.start_time ? new Date(event.start_time) : null;
+    
+    // If event starts in the future relative to when collaboration was created, it's likely a new event
+    const isNewEvent = eventStartTime && eventStartTime > collaborationCreatedAt;
+
+    // Get the co-host community info
+    const communityData = collaboration.community as { id: string; name: string };
+    
+    // Format event date/time
+    const eventDateTime = event.start_time 
+      ? new Date(event.start_time) 
+      : null;
+    const eventDate = eventDateTime 
+      ? eventDateTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      : 'TBD';
+    const eventTime = eventDateTime 
+      ? eventDateTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })
+      : 'TBD';
+
+    const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
+
+    // Trigger community member notifications
+    try {
+      await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: isNewEvent ? 'collaboration-accepted-new-event' : 'collaboration-accepted-existing-event',
+          eventId,
+          hostCommunityId: event.community_id,
+          coHostCommunityId: collaboration.community_id,
+          eventTitle: event.title,
+          eventDate,
+          eventTime,
+          eventLink,
+          locationAddress: event.location_address || undefined,
+          onlineMeetingLink: event.online_meeting_link || undefined,
+        }),
+      });
+    } catch (notifyError) {
+      console.error("Failed to trigger community notifications:", notifyError);
+      // Don't fail the request if notification fails
     }
 
     return { success: true, collaboration: acceptedCollab };
