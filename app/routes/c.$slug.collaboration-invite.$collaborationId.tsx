@@ -1,4 +1,4 @@
-import { createClient } from "~/shared/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
 import { getCollaborationById, acceptCollaboration, rejectCollaboration } from "~/modules/events/data/collaborations-repo.server";
 import { redirect } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
@@ -29,7 +29,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    // Redirect to login with return URL
     const returnUrl = new URL(request.url).pathname;
     throw redirect(`/login?redirect=${encodeURIComponent(returnUrl)}`);
   }
@@ -40,7 +39,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Collaboration not found", { status: 404 });
   }
 
-  // Verify the collaboration belongs to the community in the URL
   const communityData = Array.isArray(collaboration.community)
     ? collaboration.community[0]
     : collaboration.community;
@@ -49,7 +47,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Invalid collaboration", { status: 404 });
   }
 
-  // Verify user is owner/admin of the co-host community
   const { data: community } = await supabase
     .from("communities")
     .select("id, name, slug, created_by")
@@ -82,7 +79,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Event not found", { status: 404 });
   }
 
-  // Get host community details
   const { data: hostCommunity } = await supabase
     .from("communities")
     .select("id, name, slug, logo_url")
@@ -123,7 +119,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: false, error: "Collaboration not found" };
   }
 
-  // Verify the collaboration belongs to the community in the URL
   const communityData = Array.isArray(collaboration.community)
     ? collaboration.community[0]
     : collaboration.community;
@@ -145,7 +140,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       };
     }
 
-    // Redirect to event page
+    // Get event data
     const eventData = Array.isArray(collaboration.event)
       ? collaboration.event[0]
       : collaboration.event;
@@ -153,13 +148,78 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (!eventData) {
       return { success: false, error: "Event not found" };
     }
-    
+
+    // Get co-host community info (this is the community the user represents)
+    const coHostCommunityData = Array.isArray(collaboration.community)
+      ? collaboration.community[0]
+      : collaboration.community;
+
+    // Get host community details
     const { data: hostCommunity } = await supabase
       .from("communities")
-      .select("slug")
+      .select("id, name, slug, created_by")
       .eq("id", eventData.community_id)
       .single();
 
+    if (!hostCommunity) {
+      return { success: false, error: "Host community not found" };
+    }
+
+    // Check if this is a new event or existing event
+    const collaborationCreatedAt = new Date(collaboration.created_at);
+    const eventCreatedAt = eventData.created_at ? new Date(eventData.created_at) : null;
+    
+    let isNewEvent = false;
+    if (eventCreatedAt && collaborationCreatedAt) {
+      const timeDiff = Math.abs(collaborationCreatedAt.getTime() - eventCreatedAt.getTime());
+      isNewEvent = timeDiff < 5 * 60 * 1000; // 5 minutes
+    }
+
+    // Format event date/time
+    const eventDateTime = eventData.start_time ? new Date(eventData.start_time) : null;
+    const eventDate = eventDateTime ? eventDateTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'TBD';
+    const eventTime = eventDateTime ? eventDateTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }) : 'TBD';
+
+    const eventLink = `${new URL(request.url).origin}/c/${hostCommunity.slug}/events/${eventData.id}`;
+
+    console.log("=== Collaboration Notification Debug ===");
+    console.log("isNewEvent:", isNewEvent);
+    console.log("event.created_at:", eventData.created_at);
+    console.log("collaboration.created_at:", collaboration.created_at);
+    console.log("hostCommunity.id:", hostCommunity.id);
+    console.log("hostCommunity.name:", hostCommunity.name);
+    console.log("coHostCommunityId:", coHostCommunityData?.id);
+    
+    const notificationType = isNewEvent ? 'collaboration-accepted-new-event' : 'collaboration-accepted-existing-event';
+    console.log("notificationType:", notificationType);
+    
+    try {
+      const response = await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: notificationType,
+          eventId: eventData.id,
+          hostCommunityId: hostCommunity.id,
+          hostCommunityName: hostCommunity.name,
+          coHostCommunityId: coHostCommunityData?.id,
+          eventTitle: eventData.title,
+          eventDate,
+          eventTime,
+          eventLink,
+          locationAddress: eventData.location_address || undefined,
+          onlineMeetingLink: eventData.online_meeting_link || undefined,
+        }),
+      });
+      
+      const responseText = await response.text();
+      console.log("Notification API response status:", response.status);
+      console.log("Notification API response:", responseText);
+    } catch (notifyError) {
+      console.error("Failed to trigger community notifications:", notifyError);
+    }
+
+    // Redirect to event page
     if (hostCommunity) {
       return redirect(`/c/${hostCommunity.slug}/events/${eventData.id}`);
     }
@@ -180,7 +240,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       };
     }
 
-    // Redirect to community page
     return redirect(`/c/${slug}`);
   }
 
