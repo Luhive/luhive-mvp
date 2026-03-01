@@ -180,9 +180,8 @@ export function CustomQuestionsForm({
     (customQuestions.custom && customQuestions.custom.length > 0)
   );
 
-  const content = (
-    <Form onSubmit={handleSubmit} className="space-y-6">
-
+  const formBody = (
+    <div className="space-y-6">
       {/* User Info Section (Read-only) */}
       <div className="space-y-4">
         <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
@@ -190,7 +189,7 @@ export function CustomQuestionsForm({
             <Avatar className="h-12 w-12">
               <AvatarImage src={displayAvatar} alt={displayName} />
               <AvatarFallback className="bg-primary/10 text-primary">
-                {displayName?.substring(0, 2).toUpperCase() || 'U'}
+                {displayName?.substring(0, 2).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
           ) : (
@@ -213,9 +212,9 @@ export function CustomQuestionsForm({
       {hasQuestions && (
         <>
           <Separator />
-          
+
           {/* Custom Questions Section */}
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+          <div className="space-y-4 pb-5">
             {/* Phone Number Field */}
             {customQuestions.phone.enabled && (
               <div className="space-y-2">
@@ -237,7 +236,9 @@ export function CustomQuestionsForm({
                     placeholder="+994501234567"
                     required={customQuestions.phone.required}
                     disabled={isSubmitting}
-                    className={errors.phone ? 'border-destructive pl-10' : 'pl-10'}
+                    className={
+                      errors.phone ? "border-destructive pl-10" : "pl-10"
+                    }
                   />
                 </div>
                 {errors.phone && (
@@ -267,7 +268,7 @@ export function CustomQuestionsForm({
                     <Textarea
                       id={`question-${question.id}`}
                       name={`question-${question.id}`}
-                      value={customAnswers[question.id] || ''}
+                      value={customAnswers[question.id] || ""}
                       onChange={(e) =>
                         handleCustomAnswerChange(question.id, e.target.value)
                       }
@@ -275,8 +276,10 @@ export function CustomQuestionsForm({
                       required={question.required}
                       disabled={isSubmitting}
                       maxLength={MAX_ANSWER_LENGTH}
-                      rows={3}
-                      className={errors[question.id] ? 'border-destructive' : ''}
+                      rows={2}
+                      className={
+                        errors[question.id] ? "border-destructive" : ""
+                      }
                     />
                     {errors[question.id] && (
                       <p className="text-xs text-destructive">
@@ -285,49 +288,52 @@ export function CustomQuestionsForm({
                     )}
                     {customAnswers[question.id] && (
                       <p className="text-xs text-muted-foreground">
-                        {customAnswers[question.id].length}/{MAX_ANSWER_LENGTH} characters
+                        {customAnswers[question.id].length}/{MAX_ANSWER_LENGTH}{" "}
+                        characters
                       </p>
                     )}
                   </div>
                 ))}
           </div>
-
-          <Separator />
         </>
       )}
+    </div>
+  );
 
-      {/* Submit Button */}
-      <Button
-        type="submit"
-        className="w-full"
-        size="lg"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? (
-          <>
-            <Spinner className="h-4 w-4 mr-2" />
-            Submitting...
-          </>
-        ) : (
-          'Complete Registration'
-        )}
-      </Button>
-    </Form>
+  const submitButton = (
+    <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+      {isSubmitting ? (
+        <>
+          <Spinner className="h-4 w-4 mr-2" />
+          Submitting...
+        </>
+      ) : (
+        "Complete Registration"
+      )}
+    </Button>
   );
 
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh]">
-          <DrawerHeader>
+        <DrawerContent className="max-h-[90vh] flex flex-col">
+          <DrawerHeader className="shrink-0">
             <DrawerTitle>Complete Your Registration</DrawerTitle>
             <DrawerDescription>
               {hasQuestions
-                ? 'Please answer the following questions to complete your registration.'
-                : 'Review your information and complete your registration.'}
+                ? "Please answer the following questions to complete your registration."
+                : "Review your information and complete your registration."}
             </DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 pb-4 overflow-y-auto">{content}</div>
+          <Form
+            onSubmit={handleSubmit}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto px-4">{formBody}</div>
+            <div className="px-4 pb-6 pt-3 border-t shrink-0">
+              {submitButton}
+            </div>
+          </Form>
         </DrawerContent>
       </Drawer>
     );
@@ -335,16 +341,22 @@ export function CustomQuestionsForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 pr-10 shrink-0">
           <DialogTitle>Complete Your Registration</DialogTitle>
           <DialogDescription>
             {hasQuestions
-              ? 'Please answer the following questions to complete your registration.'
-              : 'Review your information and complete your registration.'}
+              ? "Please answer the following questions to complete your registration."
+              : "Review your information and complete your registration."}
           </DialogDescription>
         </DialogHeader>
-        <div className="overflow-y-auto flex-1">{content}</div>
+        <Form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
+          <div className="flex-1 overflow-y-auto px-6">{formBody}</div>
+          <div className="px-6 py-4 border-t shrink-0">{submitButton}</div>
+        </Form>
       </DialogContent>
     </Dialog>
   );

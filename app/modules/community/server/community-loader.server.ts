@@ -7,12 +7,14 @@ import {
 } from "~/modules/community/utils/visit-tracker";
 import type { LoaderFunctionArgs } from "react-router";
 import type { Community } from "~/modules/community/model/community-types";
+import type { Profile } from "~/shared/models/entity.types";
 
 export type CommunityLoaderData = {
   community: Community | null;
   isOwner: boolean;
   isMember: boolean;
   user: { id: string; email?: string | null } | null;
+  profile: Profile | null;
   analytics: VisitAnalytics;
   memberCount: number;
   eventCount: number;
@@ -35,11 +37,15 @@ export async function loader({
   const slug = (params as { slug?: string }).slug;
 
   if (!slug) {
+    const { data: profile } = user
+      ? await supabase.from("profiles").select("*").eq("id", user.id).single()
+      : { data: null };
     return {
       community: null,
       isOwner: false,
       isMember: false,
       user: user || null,
+      profile: profile ?? null,
       analytics,
       memberCount: 0,
       eventCount: 0,
@@ -58,7 +64,7 @@ export async function loader({
 
   const isCreator = user ? community.created_by === user.id : false;
 
-  const [membershipResult, memberCountResult, eventCountResult] =
+  const [membershipResult, memberCountResult, eventCountResult, profileResult] =
     await Promise.all([
       user
         ? supabase
@@ -78,6 +84,9 @@ export async function loader({
         .select("*", { count: "exact", head: true })
         .eq("community_id", community.id)
         .eq("status", "published"),
+      user
+        ? supabase.from("profiles").select("*").eq("id", user.id).single()
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
   // Count accepted co-host events (exclude events where this community is the host)
@@ -111,6 +120,7 @@ export async function loader({
     isOwner,
     isMember,
     user: user || null,
+    profile: profileResult.data ?? null,
     analytics,
     memberCount: memberCountResult.count || 0,
     eventCount: (eventCountResult.count || 0) + coHostCount,

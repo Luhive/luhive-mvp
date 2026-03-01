@@ -105,6 +105,7 @@ export default function CommunityPage() {
     isOwner,
     isMember,
     user,
+    profile,
     analytics,
     memberCount,
     eventCount,
@@ -745,7 +746,7 @@ export default function CommunityPage() {
         }}
         registrationCount={eventRegistrationCount}
         user={user ? { id: user.id, email: user.email } : null}
-        userProfile={user ? null : null}
+        userProfile={user ? profile : null}
         isUserRegistered={false}
       />
 

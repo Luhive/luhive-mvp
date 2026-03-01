@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, Outlet, useNavigate, useMatches, useLocation, useNavigation } from "react-router";
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "~/shared/lib/supabase/client";
+import { createClient as createServerClient } from "~/shared/lib/supabase/server";
 import type { Database } from "~/shared/models/database.types";
 import { Button } from "~/shared/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
@@ -14,26 +15,43 @@ import type { Community, Event, Profile } from "~/shared/models/entity.types";
 
 interface LoaderData {
   slug: string;
+  user: { id: string; email?: string | null } | null;
+  profile: Profile | null;
 }
 
 interface CommunityLoaderData {
   community: Community | null;
   isOwner: boolean;
-  user: { id: string } | null;
+  user: { id: string; email?: string | null } | null;
+  profile: Profile | null;
   memberCount: number;
   eventCount: number;
 }
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
   const slug = params.slug;
   if (!slug) {
     throw new Response("Not Found", { status: 404 });
   }
-  return { slug };
+
+  const { supabase } = createServerClient(request);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("*").eq("id", user.id).single()
+    : { data: null };
+
+  return {
+    slug,
+    user: user || null,
+    profile: profile ?? null,
+  };
 }
 
 export default function EventsLayout() {
-  const { slug } = useLoaderData<LoaderData>();
+  const { slug, user: loaderUser, profile: loaderProfile } = useLoaderData<LoaderData>();
   const navigate = useNavigate();
   const matches = useMatches();
   const location = useLocation();
@@ -211,8 +229,14 @@ export default function EventsLayout() {
           if (selectedEvent) setPendingEvent(selectedEvent);
         }}
         registrationCount={eventRegistrationCount}
-        user={parentNavigationUser ? { id: parentNavigationUser.id, email: null } : null}
-        userProfile={parentNavigationUser}
+        user={
+          loaderUser
+            ? { id: loaderUser.id, email: loaderUser.email }
+            : (parentCommunityData?.user ?? null)
+        }
+        userProfile={
+          loaderProfile ?? parentCommunityData?.profile ?? parentNavigationUser
+        }
         isUserRegistered={false}
       />
     </>
