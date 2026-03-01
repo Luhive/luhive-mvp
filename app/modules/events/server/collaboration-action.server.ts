@@ -256,12 +256,17 @@ export async function collaborationAction({
     }
 
     // Notify community members based on whether this is a new or existing event
-    // Check if this is a new event by comparing event start_time with collaboration created_at
+    // Check if this is a new event by comparing event created_at with collaboration invited_at
     const collaborationCreatedAt = new Date(collaboration.created_at);
-    const eventStartTime = event.start_time ? new Date(event.start_time) : null;
+    const eventCreatedAt = event.created_at ? new Date(event.created_at) : null;
     
-    // If event starts in the future relative to when collaboration was created, it's likely a new event
-    const isNewEvent = eventStartTime && eventStartTime > collaborationCreatedAt;
+    // If event was created around the same time as collaboration (within 5 minutes), it's a new event
+    // Otherwise, it's an existing event
+    let isNewEvent = false;
+    if (eventCreatedAt && collaborationCreatedAt) {
+      const timeDiff = Math.abs(collaborationCreatedAt.getTime() - eventCreatedAt.getTime());
+      isNewEvent = timeDiff < 5 * 60 * 1000; // 5 minutes in milliseconds
+    }
 
     // Get the co-host community info
     const communityData = collaboration.community as { id: string; name: string };
@@ -280,16 +285,28 @@ export async function collaborationAction({
     const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
 
     // Trigger community member notifications
+    console.log("=== Collaboration Notification Debug ===");
+    console.log("isNewEvent:", isNewEvent);
+    console.log("event.created_at:", event.created_at);
+    console.log("collaboration.created_at:", collaboration.created_at);
+    console.log("event.community_id:", event.community_id);
+    console.log("hostCommunity.name:", hostCommunity.name);
+    console.log("coHostCommunityId:", collaboration.community_id);
+    
+    const notificationType = isNewEvent ? 'collaboration-accepted-new-event' : 'collaboration-accepted-existing-event';
+    console.log("notificationType:", notificationType);
+    
     try {
-      await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
+      const response = await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type: isNewEvent ? 'collaboration-accepted-new-event' : 'collaboration-accepted-existing-event',
+          type: notificationType,
           eventId,
           hostCommunityId: event.community_id,
+          hostCommunityName: hostCommunity.name,
           coHostCommunityId: collaboration.community_id,
           eventTitle: event.title,
           eventDate,
@@ -299,6 +316,10 @@ export async function collaborationAction({
           onlineMeetingLink: event.online_meeting_link || undefined,
         }),
       });
+      
+      const responseText = await response.text();
+      console.log("Notification API response status:", response.status);
+      console.log("Notification API response:", responseText);
     } catch (notifyError) {
       console.error("Failed to trigger community notifications:", notifyError);
       // Don't fail the request if notification fails

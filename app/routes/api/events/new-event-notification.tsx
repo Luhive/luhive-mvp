@@ -65,9 +65,13 @@ export async function action({ request }: ActionFunctionArgs) {
           onlineMeetingLink,
         });
         successCount++;
+        // Add delay to avoid rate limiting (Resend allows 2 requests per second)
+        await new Promise(resolve => setTimeout(resolve, 600));
       } catch (error) {
         console.error("Failed to send new event notification to:", email, error);
         errorCount++;
+        // Still add delay even on error to respect rate limit
+        await new Promise(resolve => setTimeout(resolve, 600));
       }
     }
 

@@ -10,6 +10,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     const body = await request.json();
+    console.log("=== collaboration-notification.tsx received ===");
+    console.log("body:", JSON.stringify(body, null, 2));
+    
     const {
       type,
       eventId,
@@ -30,11 +33,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const serviceClient = createServiceRoleClient();
 
+    console.log("type:", type);
+    console.log("coHostCommunityId:", coHostCommunityId);
+
     if (type === "collaboration-accepted-new-event") {
       // Notify both host and co-host community members when collaboration is accepted on NEW event
       // Send to all co-host community members
       if (coHostCommunityId) {
+        console.log("Fetching co-host community member emails for:", coHostCommunityId);
         const coHostEmails = await getCommunityMemberEmails(coHostCommunityId, serviceClient);
+        console.log("coHostEmails:", coHostEmails);
         
         const { data: coHostCommunity } = await serviceClient
           .from("communities")
@@ -50,6 +58,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
         const coHostName = coHostCommunity?.name || "Co-host Community";
         const hostName = hostCommunity?.name || "Host Community";
+        
+        console.log("Sending emails to co-host members:", coHostEmails.length);
 
         for (const email of coHostEmails) {
           try {
@@ -67,15 +77,22 @@ export async function action({ request }: ActionFunctionArgs) {
               locationAddress,
               onlineMeetingLink,
             });
+            console.log("Email sent to co-host:", email);
+            // Add delay to avoid rate limiting (Resend allows 2 requests per second)
+            await new Promise(resolve => setTimeout(resolve, 600));
           } catch (error) {
             console.error("Failed to send collaboration notification to co-host member:", email, error);
+            // Still add delay even on error to respect rate limit
+            await new Promise(resolve => setTimeout(resolve, 600));
           }
         }
       }
 
       // Send to all host community members
       if (hostCommunityId) {
+        console.log("Fetching host community member emails for:", hostCommunityId);
         const hostEmails = await getCommunityMemberEmails(hostCommunityId, serviceClient);
+        console.log("hostEmails:", hostEmails);
         
         const { data: coHostCommunity } = await serviceClient
           .from("communities")
@@ -91,6 +108,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
         const coHostName = coHostCommunity?.name || "Co-host Community";
         const hostName = hostCommunity?.name || "Host Community";
+        
+        console.log("Sending emails to host members:", hostEmails.length);
 
         for (const email of hostEmails) {
           try {
@@ -108,8 +127,13 @@ export async function action({ request }: ActionFunctionArgs) {
               locationAddress,
               onlineMeetingLink,
             });
+            console.log("Email sent to host member:", email);
+            // Add delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 600));
           } catch (error) {
             console.error("Failed to send collaboration notification to host member:", email, error);
+            // Still add delay even on error
+            await new Promise(resolve => setTimeout(resolve, 600));
           }
         }
       }
@@ -119,8 +143,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (type === "collaboration-accepted-existing-event") {
       // Notify only co-host community members when collaboration is accepted on EXISTING event
+      console.log("Processing collaboration-accepted-existing-event");
+      console.log("coHostCommunityId:", coHostCommunityId);
+      
       if (coHostCommunityId) {
+        console.log("Fetching co-host community member emails for existing event:", coHostCommunityId);
         const coHostEmails = await getCommunityMemberEmails(coHostCommunityId, serviceClient);
+        console.log("coHostEmails for existing event:", coHostEmails);
         
         const { data: coHostCommunity } = await serviceClient
           .from("communities")
@@ -136,6 +165,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
         const coHostName = coHostCommunity?.name || "Co-host Community";
         const hostName = hostCommunity?.name || "Host Community";
+
+        console.log("Sending emails to co-host members for existing event:", coHostEmails.length);
 
         for (const email of coHostEmails) {
           try {
@@ -153,8 +184,13 @@ export async function action({ request }: ActionFunctionArgs) {
               locationAddress,
               onlineMeetingLink,
             });
+            console.log("Email sent to co-host for existing event:", email);
+            // Add delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 600));
           } catch (error) {
-            console.error("Failed to send collaboration notification to co-host member:", email, error);
+            console.error("Failed to send collaboration notification to co-host member for existing event:", email, error);
+            // Still add delay even on error
+            await new Promise(resolve => setTimeout(resolve, 600));
           }
         }
       }
@@ -228,9 +264,13 @@ export async function action({ request }: ActionFunctionArgs) {
               recipientEmail: ownerData.user.email,
               recipientName: profile?.full_name || ownerData.user.email.split("@")[0],
             });
+            // Add delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 600));
           }
         } catch (error) {
           console.error("Failed to send registration notification to admin:", adminId, error);
+          // Still add delay even on error
+          await new Promise(resolve => setTimeout(resolve, 600));
         }
       }
 
