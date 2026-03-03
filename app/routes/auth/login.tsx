@@ -23,6 +23,7 @@ export default function LoginPage() {
   const isSubmittingOAuth = isSubmitting && submittingIntent === "oauth";
 
   const [showPassword, setShowPassword] = useState(false);
+  const [returnTo, setReturnTo] = useState("");
 
   useEffect(() => {
     if (actionData && "error" in actionData && actionData.error) {
@@ -38,6 +39,11 @@ export default function LoginPage() {
       window.history.replaceState({}, "", "/login");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const storedReturnTo = window.localStorage.getItem("post_login_return_to") || "";
+    setReturnTo(storedReturnTo);
+  }, []);
 
   return (
     <div className="mt-16">
@@ -62,6 +68,7 @@ export default function LoginPage() {
         <Form method="post" className="flex" replace>
           <input type="hidden" name="intent" value="oauth" />
           <input type="hidden" name="provider" value="google" />
+          {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
           <Button
             disabled={isSubmittingOAuth}
             variant="outline"
@@ -98,6 +105,7 @@ export default function LoginPage() {
 
         <Form method="post" className="flex flex-col gap-4">
           <input type="hidden" name="intent" value="password" />
+          {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <Input

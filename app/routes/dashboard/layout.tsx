@@ -46,6 +46,12 @@ async function clientLoader({
   } = await supabase.auth.getUser();
 
   if (authError || !authUser) {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        "post_login_return_to",
+        window.location.pathname + window.location.search
+      );
+    }
     throw redirect("/login");
   }
 

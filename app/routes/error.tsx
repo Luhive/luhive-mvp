@@ -82,7 +82,15 @@ export default function ErrorComponent({ message, details, stack }: ErrorProps) 
               </Button>
               
               <Button variant="outline" asChild className="w-full">
-                <Link to="/login">
+                <Link
+                  to="/login"
+                  onClick={() => {
+                    window.localStorage.setItem(
+                      "post_login_return_to",
+                      window.location.pathname + window.location.search
+                    );
+                  }}
+                >
                   <svg 
                     className="w-4 h-4 mr-2" 
                     fill="none" 

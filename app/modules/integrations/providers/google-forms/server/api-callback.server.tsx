@@ -32,7 +32,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	const { data: { user }, error: authError } = await supabase.auth.getUser();
 	if (authError || !user) {
-		return redirect("/login?error=session_expired", { headers });
+		const returnUrl = new URL(request.url).pathname + new URL(request.url).search;
+		headers.append(
+			"Set-Cookie",
+			`pending_return_to=${encodeURIComponent(returnUrl)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
+		);
+		return redirect("/login", { headers });
 	}
 	if (!userId) userId = user.id;
 	if (userId !== user.id) {

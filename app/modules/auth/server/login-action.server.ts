@@ -6,9 +6,23 @@ export async function action({ request }: ActionFunctionArgs) {
   const { supabase, headers } = createClient(request);
   const formData = await request.formData();
   const intent = (formData.get("intent") as string) || "password";
+  const cookieHeader = request.headers.get("Cookie") || "";
+  const pendingReturnToMatch = cookieHeader.match(/pending_return_to=([^;]+)/);
+  const pendingReturnTo = pendingReturnToMatch
+    ? decodeURIComponent(pendingReturnToMatch[1])
+    : null;
+  const returnTo = (formData.get("returnTo") as string | null) || pendingReturnTo;
 
   if (intent === "oauth") {
     const provider = formData.get("provider") as "google";
+    
+    if (returnTo) {
+      headers.append(
+        "Set-Cookie",
+        `pending_return_to=${encodeURIComponent(returnTo)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
+      );
+    }
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -44,13 +58,25 @@ export async function action({ request }: ActionFunctionArgs) {
   } = await supabase.auth.getUser();
 
   if (user) {
-    const { data: community } = await supabase
+    if (pendingReturnTo) {
+      headers.append(
+        "Set-Cookie",
+        `pending_return_to=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
+      );
+    }
+
+    if (returnTo) {
+      return redirect(returnTo, { headers });
+    }
+
+    // Only check for user's created community if no redirect URL
+    const { data: community, error: communityError } = await supabase
       .from("communities")
       .select("slug")
       .eq("created_by", user.id)
       .single();
 
-    if (community) {
+    if (community && !communityError) {
       return redirect(`/c/${community.slug}`, { headers });
     }
   }

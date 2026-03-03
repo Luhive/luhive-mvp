@@ -42,6 +42,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
         );
       }
 
+      // If there's a redirect/returnTo but NO community join, redirect immediately
+      if (pendingReturnTo && !pendingCommunityId) {
+        return redirect(pendingReturnTo, { headers });
+      }
+
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("id")
@@ -123,6 +128,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .select("slug")
         .eq("created_by", data.user.id)
         .single();
+
+      // Prioritize explicit redirect/returnTo over default community redirect
+      if (pendingReturnTo) {
+        return redirect(pendingReturnTo, { headers });
+      }
 
       if (community) {
         return redirect(`/c/${community.slug}`, { headers });

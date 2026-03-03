@@ -5,6 +5,8 @@ import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { supabase, headers } = createClient(request);
+  const formData = await request.formData();
+  const returnTo = formData.get("returnTo") as string | null;
 
   const { error } = await supabase.auth.signOut();
 
@@ -14,5 +16,5 @@ export async function action({ request }: ActionFunctionArgs) {
 
   clearUser();
 
-  return redirect("/hub", { headers });
+  return redirect(returnTo || "/hub", { headers });
 }

@@ -128,7 +128,13 @@ export function NativeCanRegisterView({
 					<p className="text-xs text-center text-muted-foreground">
 						Already have an account?{" "}
 						<Link
-							to={`/login?redirect=/c/${community.slug}/events/${event.id}`}
+							to="/login"
+							onClick={() => {
+								window.localStorage.setItem(
+									"post_login_return_to",
+									`/c/${community.slug}/events/${event.id}`
+								);
+							}}
 							className="underline hover:text-foreground font-medium"
 						>
 							Login
