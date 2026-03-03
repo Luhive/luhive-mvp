@@ -3,6 +3,8 @@ import { createClient } from "~/shared/lib/supabase/server";
 import { registerSchema } from "~/modules/auth/model/auth-schema";
 import type { ActionFunctionArgs } from "react-router";
 
+const EXISTING_EMAIL_MESSAGE = "An account with this email already exists";
+
 export async function action({ request }: ActionFunctionArgs) {
   const { supabase, headers } = createClient(request);
   const formData = await request.formData();
@@ -79,7 +81,27 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (error) {
+    const message = (error.message || "").toLowerCase();
+    if (
+      message.includes("already registered") ||
+      message.includes("already exists") ||
+      message.includes("user exists")
+    ) {
+      return Response.json(
+        { success: false, error: EXISTING_EMAIL_MESSAGE },
+        { headers }
+      );
+    }
+
     return Response.json({ success: false, error: error.message }, { headers });
+  }
+
+  const userIdentities = data.user?.identities;
+  if (data.user && Array.isArray(userIdentities) && userIdentities.length === 0) {
+    return Response.json(
+      { success: false, error: EXISTING_EMAIL_MESSAGE },
+      { headers }
+    );
   }
 
   if (!data.user) {
