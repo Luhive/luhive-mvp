@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import type { Community, Event } from '~/shared/models/entity.types';
 import { Card, CardContent } from '~/shared/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
 import { Skeleton } from '~/shared/components/ui/skeleton';
 import { Calendar, MapPin, Users, CalendarX, Infinity, ArrowLeft } from 'lucide-react';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -18,11 +17,12 @@ interface EventsContentProps {
 	community: Community | null;
 	loading: boolean;
 	slug: string;
+	activeTab: 'upcoming' | 'past';
 	initialEvents?: Event[];
 	onEventClick?: (event: Event) => void;
 }
 
-export function EventsContent({ community, loading, slug, initialEvents = [], onEventClick }: EventsContentProps) {
+export function EventsContent({ community, loading, slug, activeTab, initialEvents = [], onEventClick }: EventsContentProps) {
 	// Use initial events if provided (instant display from navigation state)
 	const hasInitialEvents = initialEvents.length > 0;
 	const [upcomingEvents, setUpcomingEvents] = useState<Event[]>(initialEvents);
@@ -30,7 +30,6 @@ export function EventsContent({ community, loading, slug, initialEvents = [], on
 	// Skip loading state if we have initial events
 	const [loadingUpcoming, setLoadingUpcoming] = useState(!hasInitialEvents);
 	const [loadingPast, setLoadingPast] = useState(true);
-	const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
 	useEffect(() => {
 		if (!community?.id) return;
@@ -105,78 +104,52 @@ export function EventsContent({ community, loading, slug, initialEvents = [], on
 	// This allows instant rendering without blocking on data
 	if (loading || !community) {
 		return (
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				<Tabs defaultValue="upcoming" className="w-full">
-					<TabsList className="grid w-full max-w-md grid-cols-2">
-						<TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-						<TabsTrigger value="past">Past</TabsTrigger>
-					</TabsList>
-					<TabsContent value="upcoming" className="mt-6">
-						<EventsGridSkeleton />
-					</TabsContent>
-					<TabsContent value="past" className="mt-6">
-						<EventsGridSkeleton />
-					</TabsContent>
-				</Tabs>
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pt-8">
+				<EventsGridSkeleton />
 			</div>
 		);
 	}
 
 	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-			<Tabs
-				defaultValue="upcoming"
-				className="w-full"
-				onValueChange={(value) => setActiveTab(value as 'upcoming' | 'past')}
-			>
-				<TabsList className="grid w-full max-w-md grid-cols-2">
-					<TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-					<TabsTrigger value="past">Past</TabsTrigger>
-				</TabsList>
-
-				<TabsContent value="upcoming" className="mt-6">
-					{loadingUpcoming ? (
-						<EventsGridSkeleton />
-					) : upcomingEvents.length === 0 ? (
-						<EmptyState
-							icon={CalendarX}
-							title="No Upcoming Events"
-							description="There are no upcoming events scheduled at the moment. Check back later!"
+		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pt-8">
+			{activeTab === 'upcoming' ? (
+				loadingUpcoming ? (
+					<EventsGridSkeleton />
+				) : upcomingEvents.length === 0 ? (
+					<EmptyState
+						icon={CalendarX}
+						title="No Upcoming Events"
+						description="There are no upcoming events scheduled at the moment. Check back later!"
+					/>
+				) : (
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{upcomingEvents.map((event) => (
+							<EventGridCard
+								key={event.id}
+								event={event}
+								communitySlug={slug}
+								onEventClick={onEventClick}
+							/>
+						))}
+					</div>
+				)
+			) : loadingPast ? (
+				<EventsGridSkeleton />
+			) : pastEvents.length === 0 ? (
+				<EmptyState icon={CalendarX} title="No Past Events" description="No past events to display yet." />
+			) : (
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					{pastEvents.map((event) => (
+						<EventGridCard
+							key={event.id}
+							event={event}
+							communitySlug={slug}
+							isPast
+							onEventClick={onEventClick}
 						/>
-					) : (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							{upcomingEvents.map((event) => (
-								<EventGridCard 
-									key={event.id} 
-									event={event} 
-									communitySlug={slug}
-									onEventClick={onEventClick}
-								/>
-							))}
-						</div>
-					)}
-				</TabsContent>
-
-				<TabsContent value="past" className="mt-6">
-					{loadingPast ? (
-						<EventsGridSkeleton />
-					) : pastEvents.length === 0 ? (
-						<EmptyState icon={CalendarX} title="No Past Events" description="No past events to display yet." />
-					) : (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							{pastEvents.map((event) => (
-								<EventGridCard 
-									key={event.id} 
-									event={event} 
-									communitySlug={slug} 
-									isPast
-									onEventClick={onEventClick}
-								/>
-							))}
-						</div>
-					)}
-				</TabsContent>
-			</Tabs>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }

@@ -7,7 +7,7 @@ import type { Database } from "~/shared/models/database.types";
 import { Button } from "~/shared/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Skeleton } from "~/shared/components/ui/skeleton";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { EventPageSkeleton } from "~/modules/events/components/event-list/event-page-skeleton";
 import { EventPreviewSidebar } from "~/modules/events/components/event-list/event-preview-sidebar";
 import type { Community, Event, Profile } from "~/shared/models/entity.types";
@@ -61,6 +61,7 @@ export default function EventsLayout() {
   const [isEventSidebarOpen, setIsEventSidebarOpen] = useState(false);
   const [eventRegistrationCount, setEventRegistrationCount] = useState<number | undefined>(undefined);
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
+  const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
 
   const navigationStateCommunity = (location.state as any)?.community as Community | null;
 
@@ -121,6 +122,8 @@ export default function EventsLayout() {
   const handleBack = () => {
     navigate(`/c/${slug}`, { replace: true });
   };
+
+  const isEventsListPage = location.pathname === `/c/${slug}/events`;
 
   useEffect(() => {
     if (navigation.state === "idle") {
@@ -196,10 +199,59 @@ export default function EventsLayout() {
               )}
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleBack} className="h-9 w-9">
-            <X className="h-5 w-5" />
-          </Button>
+          {isEventsListPage ? (
+            <div className="hidden sm:inline-flex bg-muted text-muted-foreground h-9 w-[12rem] items-center justify-center rounded-lg p-[3px]">
+              <button
+                type="button"
+                onClick={() => setActiveTab("upcoming")}
+                className={`inline-flex h-[calc(100%-1px)] w-[50%] items-center justify-center rounded-md px-2 py-1 text-sm font-medium transition-[color,box-shadow] ${
+                  activeTab === "upcoming"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-foreground"
+                }`}
+              >
+                Upcoming
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("past")}
+                className={`inline-flex h-[calc(100%-1px)] w-[50%] items-center justify-center rounded-md px-2 py-1 text-sm font-medium transition-[color,box-shadow] ${
+                  activeTab === "past"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-foreground"
+                }`}
+              >
+                Past
+              </button>
+            </div>
+          ) : null}
         </div>
+        {isEventsListPage ? (
+          <div className="mt-4 sm:hidden bg-muted text-muted-foreground inline-flex h-9 w-full items-center justify-center rounded-lg p-[3px]">
+            <button
+              type="button"
+              onClick={() => setActiveTab("upcoming")}
+              className={`inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md px-2 py-1 text-sm font-medium transition-[color,box-shadow] ${
+                activeTab === "upcoming"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-foreground"
+              }`}
+            >
+              Upcoming
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("past")}
+              className={`inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md px-2 py-1 text-sm font-medium transition-[color,box-shadow] ${
+                activeTab === "past"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-foreground"
+              }`}
+            >
+              Past
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <Outlet
@@ -207,6 +259,7 @@ export default function EventsLayout() {
           community,
           loading,
           slug,
+          activeTab,
           onEventClick: (event: Event) => {
             setSelectedEvent(event);
             setIsEventSidebarOpen(true);
