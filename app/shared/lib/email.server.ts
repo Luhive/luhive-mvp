@@ -7,6 +7,7 @@ import { EventRegistrationRequestEmail } from "~/templates/event-registration-re
 import { EventSubscriptionEmail } from "~/templates/event-subscription-email";
 import { CommunityWaitlistNotification } from "~/templates/community-waitlist-notification";
 import { CommunityJoinNotification } from "~/templates/community-join-notification";
+import { CommunityAnnouncementEmail } from "~/templates/community-announcement-email";
 import { CollaborationInviteEmail } from "~/templates/collaboration-invite-email";
 import { CollaborationAcceptedEmail } from "~/templates/collaboration-accepted-email";
 import { generateICS } from "~/modules/events/utils/ics-manager";
@@ -280,6 +281,16 @@ interface EventRegistrationNotificationEmailData {
   eventLink: string;
   recipientEmail: string;
   recipientName: string;
+}
+
+interface AnnouncementNotificationEmailData {
+  title: string;
+  description: string;
+  communityName: string;
+  announcementLink: string;
+  recipientEmail: string;
+  recipientName: string;
+  imageUrls?: string[];
 }
 
 export async function sendRegistrationRequestEmail(
@@ -1302,6 +1313,61 @@ export async function sendNewEventNotificationEmail(
     return { success: true, data: emailData };
   } catch (error) {
     console.error("❌ Error sending new event notification email:", {
+      error: error instanceof Error ? error.message : String(error),
+      recipientEmail,
+    });
+    throw error;
+  }
+}
+
+export async function sendAnnouncementNotificationEmail(
+  data: AnnouncementNotificationEmailData
+) {
+  const {
+    title,
+    description,
+    communityName,
+    announcementLink,
+    recipientEmail,
+    recipientName,
+    imageUrls,
+  } = data;
+
+  if (!resend) {
+    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  try {
+    const { data: emailData, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [recipientEmail],
+      subject: `Announcement: ${title}`,
+      react: CommunityAnnouncementEmail({
+        title,
+        description,
+        communityName,
+        announcementLink,
+        recipientName,
+        imageUrls: imageUrls || [],
+      }),
+    });
+
+    if (error) {
+      console.error("❌ Resend API error for announcement email:", error);
+      throw new Error(`Failed to send announcement email: ${error.message}`);
+    }
+
+    return { success: true, data: emailData };
+  } catch (error) {
+    console.error("❌ Error sending announcement email:", {
       error: error instanceof Error ? error.message : String(error),
       recipientEmail,
     });

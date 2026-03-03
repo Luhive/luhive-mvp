@@ -46,6 +46,9 @@ export default [
     index("routes/dashboard/overview.tsx"),
     route("profile", "routes/dashboard/edit-profile.tsx"),
     route("events", "routes/dashboard/events.tsx"),
+    route("announcements", "routes/dashboard/announcements.tsx"),
+    route("announcements/create", "routes/dashboard/announcements-create.tsx"),
+    route("announcements/:announcementId/edit", "routes/dashboard/announcements-edit.tsx"),
     route("events/:eventId/edit", "routes/dashboard/event-edit.tsx"),
     route("events/create", "routes/dashboard/events-create.tsx"),
     route(
@@ -89,6 +92,7 @@ export default [
   route("api/join-community", "routes/api/join-community.tsx"),
   route("api/events/new-event-notification", "routes/api/events/new-event-notification.tsx"),
   route("api/events/collaboration-notification", "routes/api/events/collaboration-notification.tsx"),
+  route("api/announcements/new-announcement-notification", "routes/api/announcements/new-announcement-notification.tsx"),
 
 
   // Integrations API routes (Google Forms)

@@ -143,6 +143,7 @@ export function shouldRevalidate({
 function getHeaderTitle(pathname: string): string {
   if (pathname.includes("/profile")) return "Edit Community Profile";
   if (pathname.includes("/events")) return "Events Management";
+  if (pathname.includes("/announcements")) return "Announcements";
   if (pathname.includes("/forms")) return "Google Forms";
   if (pathname.includes("/settings")) return "Settings";
   return "Dashboard Overview";
@@ -161,6 +162,9 @@ function getTabSkeleton(pathname: string): React.ReactNode {
     return <DashboardEditSkeleton />;
   }
   if (pathname.includes("/events")) {
+    return <DashboardEventsListSkeleton />;
+  }
+  if (pathname.includes("/announcements")) {
     return <DashboardEventsListSkeleton />;
   }
   if (pathname.includes("/forms/") && pathname.split("/forms/")[1]?.length > 0) {

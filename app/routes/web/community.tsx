@@ -29,7 +29,6 @@ import {
   Globe,
   Link2,
   Megaphone,
-  Hourglass,
 } from "lucide-react";
 import { Activity } from "react";
 import {
@@ -109,6 +108,7 @@ export default function CommunityPage() {
     analytics,
     memberCount,
     eventCount,
+    announcements,
   } = loaderData;
 
   useEffect(() => {
@@ -654,75 +654,40 @@ export default function CommunityPage() {
                 Announcements
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center h-full min-h-[300px]">
-              <div className="text-center space-y-4">
-                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center">
-                  <Hourglass className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-foreground">
-                    Coming Soon
-                  </h3>
-                  <p className="text-sm text-muted-foreground max-w-xs">
-                    Community announcements and updates will be available in a
-                    future release.
+            <CardContent className="space-y-4 min-h-[300px]">
+              {announcements.length === 0 ? (
+                <div className="h-full min-h-[250px] flex items-center justify-center">
+                  <p className="text-sm text-muted-foreground text-center">
+                    No announcements yet.
                   </p>
                 </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-xs">
-                      Learn More
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
-                        <Megaphone className="h-5 w-5" />
-                        Announcements Feature
-                      </DialogTitle>
-                      <DialogDescription>
-                        Learn about the upcoming announcements feature for your
-                        community.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-3">
-                        <div className="flex items-start gap-3">
-                          <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                          <div>
-                            <h4 className="font-medium text-sm">
-                              Community Updates
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              Share important news and updates with your
-                              community members.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                          <div>
-                            <h4 className="font-medium text-sm">
-                              Priority Messaging
-                            </h4>
-                            <p className="text-sm text-muted-foreground">
-                              Send urgent announcements that appear prominently
-                              in the community.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="bg-muted/50 rounded-lg p-4">
-                        <p className="text-sm text-muted-foreground">
-                          This feature is currently in development and will be
-                          available in a future update. Stay tuned for more
-                          community management tools!
-                        </p>
-                      </div>
+              ) : (
+                announcements.map((announcement) => (
+                  <div key={announcement.id} className="rounded-md border p-3 space-y-3">
+                    <div>
+                      <h3 className="font-semibold text-sm text-foreground">{announcement.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(announcement.created_at).toLocaleString()}
+                      </p>
                     </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {announcement.description}
+                    </p>
+                    {announcement.images.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {announcement.images.map((image) => (
+                          <img
+                            key={image.id}
+                            src={image.image_url}
+                            alt={announcement.title}
+                            className="h-24 w-full object-cover rounded-md border"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>

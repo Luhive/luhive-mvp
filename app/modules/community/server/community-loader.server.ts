@@ -18,6 +18,13 @@ export type CommunityLoaderData = {
   analytics: VisitAnalytics;
   memberCount: number;
   eventCount: number;
+  announcements: {
+    id: string;
+    title: string;
+    description: string;
+    created_at: string;
+    images: { id: string; image_url: string; sort_order: number }[];
+  }[];
 };
 
 export async function loader({
@@ -49,6 +56,7 @@ export async function loader({
       analytics,
       memberCount: 0,
       eventCount: 0,
+      announcements: [],
     };
   }
 
@@ -115,6 +123,37 @@ export async function loader({
       (membershipResult.data.role === "owner" ||
         membershipResult.data.role === "admin"));
 
+  const db = supabase as any;
+  const { data: announcementsData } = await db
+    .from("community_announcements")
+    .select("id, title, description, created_at")
+    .eq("community_id", community.id)
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+
+  const announcementIds = (announcementsData || []).map((item: any) => item.id);
+  let imagesData: any[] = [];
+  if (announcementIds.length > 0) {
+    const { data } = await db
+      .from("community_announcement_images")
+      .select("id, announcement_id, image_url, sort_order")
+      .in("announcement_id", announcementIds)
+      .order("sort_order", { ascending: true });
+    imagesData = data || [];
+  }
+
+  const imagesByAnnouncement = new Map<string, any[]>();
+  for (const image of imagesData) {
+    const existing = imagesByAnnouncement.get(image.announcement_id) || [];
+    existing.push(image);
+    imagesByAnnouncement.set(image.announcement_id, existing);
+  }
+
+  const announcements = (announcementsData || []).map((announcement: any) => ({
+    ...announcement,
+    images: imagesByAnnouncement.get(announcement.id) || [],
+  }));
+
   return {
     community,
     isOwner,
@@ -124,5 +163,6 @@ export async function loader({
     analytics,
     memberCount: memberCountResult.count || 0,
     eventCount: (eventCountResult.count || 0) + coHostCount,
+    announcements,
   };
 }

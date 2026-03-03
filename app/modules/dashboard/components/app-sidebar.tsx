@@ -13,7 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "~/shared/components/ui/sidebar"
-import { Home, Calendar, Settings, HelpCircle, Heart, LucideLayoutDashboard, Info, SquarePen, FileText } from "lucide-react"
+import { Home, Calendar, Settings, HelpCircle, Heart, LucideLayoutDashboard, Info, SquarePen, FileText, Megaphone } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar"
 import type { Community, Profile } from "~/shared/models/entity.types"
 
@@ -53,6 +53,11 @@ export function AppSidebar({ community, user, userEmail, role, ...props }: AppSi
       title: "Forms",
       url: `/dashboard/${communitySlug}/forms`,
       icon: FileText,
+    },
+    {
+      title: "Announcements",
+      url: `/dashboard/${communitySlug}/announcements`,
+      icon: Megaphone,
     },
     {
       title: "Community Profile",
