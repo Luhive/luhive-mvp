@@ -130,12 +130,12 @@ export function AttenderDetailsPanel({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent className="flex flex-col overflow-hidden">
           <DrawerHeader>
             <DrawerTitle>{attender.name}</DrawerTitle>
             <DrawerDescription>Complete registration details</DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 pb-4 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <AttenderInfo attender={attender} customQuestions={customQuestions} />
           </div>
         </DrawerContent>

@@ -117,7 +117,7 @@ export function AttendersListModal({
                 : `${attendees.length} ${attendees.length === 1 ? 'person' : 'people'} ${isExternalEvent ? 'subscribed' : 'attending'}`}
             </DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 pb-4">
+          <div className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {loading ? (
               <AttendersListSkeleton />
             ) : attendees.length === 0 ? (
@@ -125,7 +125,7 @@ export function AttendersListModal({
                 {isExternalEvent ? 'No subscribers yet' : 'No attendees yet'}
               </div>
             ) : (
-              <div className="max-h-[60vh] overflow-y-auto">
+              <div className="max-h-[60dvh] overflow-y-auto">
                 <div className="space-y-1">
                   {attendees.map((attendee) => (
                     <AttenderItem key={attendee.id} attendee={attendee} />
