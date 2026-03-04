@@ -110,6 +110,7 @@ export function EventSidebarPanel({
             eventId={event.id}
             maxVisible={5}
             isExternalEvent={isExternalEvent}
+            refreshKey={registrationCount}
           />
         </div>
 

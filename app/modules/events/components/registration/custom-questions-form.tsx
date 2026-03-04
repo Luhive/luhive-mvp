@@ -36,6 +36,10 @@ interface CustomQuestionsFormProps {
   onOpenChange: (open: boolean) => void;
   eventId: string;
   customQuestions: CustomQuestionJson | null;
+  /** When true, renders only the form content without Dialog/Drawer wrapper (for embedding in another modal) */
+  inline?: boolean;
+  /** Rendered after the last question, before the submit button (e.g. Join Community checkbox) */
+  afterQuestionsContent?: React.ReactNode;
   // For authenticated users
   userName?: string;
   userEmail?: string;
@@ -61,6 +65,8 @@ export function CustomQuestionsForm({
   anonymousEmail,
   onSubmit,
   isSubmitting = false,
+  inline = false,
+  afterQuestionsContent,
 }: CustomQuestionsFormProps) {
   const isMobile = useIsMobile();
   const isAuthenticated = Boolean(userEmail || userName);
@@ -214,7 +220,7 @@ export function CustomQuestionsForm({
           <Separator />
 
           {/* Custom Questions Section */}
-          <div className="space-y-4 pb-5">
+          <div className="space-y-4 pb-0">
             {/* Phone Number Field */}
             {customQuestions.phone.enabled && (
               <div className="space-y-2">
@@ -312,6 +318,18 @@ export function CustomQuestionsForm({
       )}
     </Button>
   );
+
+  if (inline) {
+    return (
+      <Form onSubmit={handleSubmit} className="contents">
+        <div className="flex-1 overflow-y-auto px-6 space-y-2 pb-4">
+          {formBody}
+          {afterQuestionsContent}
+        </div>
+        <div className="px-6 py-4 border-t shrink-0">{submitButton}</div>
+      </Form>
+    );
+  }
 
   if (isMobile) {
     return (

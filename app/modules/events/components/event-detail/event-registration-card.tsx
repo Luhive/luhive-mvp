@@ -29,7 +29,7 @@ interface EventRegistrationCardProps {
 	isUnregistering: boolean;
 	isSubmitting: boolean;
 	onShowCustomQuestionsForm: () => void;
-	onShowAnonymousDialog: () => void;
+	onShowRsvpModal: () => void;
 	onShowSubscribeDialog: () => void;
 }
 
@@ -48,7 +48,7 @@ export function EventRegistrationCard({
 	isUnregistering,
 	isSubmitting,
 	onShowCustomQuestionsForm,
-	onShowAnonymousDialog,
+	onShowRsvpModal,
 	onShowSubscribeDialog,
 }: EventRegistrationCardProps) {
 	const {
@@ -131,7 +131,7 @@ export function EventRegistrationCard({
 							isRegistering={isRegistering}
 							isSubmitting={isSubmitting}
 							onShowCustomQuestionsForm={onShowCustomQuestionsForm}
-							onShowAnonymousDialog={onShowAnonymousDialog}
+							onShowRsvpModal={onShowRsvpModal}
 						/>
 					</Activity>
 

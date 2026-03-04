@@ -48,11 +48,11 @@ export async function joinCommunityAction({ request }: ActionFunctionArgs) {
     try {
       const { data: community } = await supabase
         .from("communities")
-        .select("name, slug, created_by")
+        .select("name, slug")
         .eq("id", communityId)
         .single();
 
-      if (community?.created_by) {
+      if (community) {
         const { data: memberProfile } = await supabase
           .from("profiles")
           .select("full_name")
@@ -60,26 +60,42 @@ export async function joinCommunityAction({ request }: ActionFunctionArgs) {
           .single();
 
         const serviceClient = createServiceRoleClient();
-        const { data: ownerData } =
-          await serviceClient.auth.admin.getUserById(community.created_by);
+        const { data: admins } = await serviceClient
+          .from("community_members")
+          .select("user_id")
+          .eq("community_id", communityId)
+          .in("role", ["owner", "admin"]);
 
-        if (ownerData?.user?.email) {
-          sendCommunityJoinNotification({
-            communityName: community.name,
-            communitySlug: community.slug,
-            memberName:
-              memberProfile?.full_name ||
-              user.email?.split("@")[0] ||
-              "A new member",
-            memberEmail: user.email || "unknown",
-            ownerEmail: ownerData.user.email,
-            joinedAt: new Date().toLocaleString(),
-          }).catch((emailError) => {
+        const adminIds = admins
+          ?.map((a) => a.user_id)
+          .filter((id): id is string => !!id) ?? [];
+
+        for (const adminId of adminIds) {
+          try {
+            const { data: adminData } =
+              await serviceClient.auth.admin.getUserById(adminId);
+            if (adminData?.user?.email) {
+              await sendCommunityJoinNotification({
+                communityName: community.name,
+                communitySlug: community.slug,
+                memberName:
+                  memberProfile?.full_name ||
+                  user.email?.split("@")[0] ||
+                  "A new member",
+                memberEmail: user.email || "unknown",
+                ownerEmail: adminData.user.email,
+                joinedAt: new Date().toLocaleString(),
+              });
+              await new Promise((resolve) => setTimeout(resolve, 600));
+            }
+          } catch (emailError) {
             console.error(
-              "Failed to send community join notification email:",
+              "Failed to send community join notification to admin:",
+              adminId,
               emailError
             );
-          });
+            await new Promise((resolve) => setTimeout(resolve, 600));
+          }
         }
       }
     } catch (emailError) {

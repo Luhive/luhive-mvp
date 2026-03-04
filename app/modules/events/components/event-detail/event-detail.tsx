@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSubmit, useNavigation } from "react-router";
-import { AnonymousRegistrationDialog } from "~/modules/events/components/registration/anonymous-registration-dialog";
+import { EventRsvpModal } from "~/modules/events/components/registration/event-rsvp-modal";
 import { AnonymousSubscriptionDialog } from "~/modules/events/components/registration/anonymous-subscription-dialog";
 import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
 import { useRegistrationTimer } from "~/modules/events/hooks/use-registration-timer";
@@ -26,37 +26,26 @@ export function EventDetail({
 }: EventDetailLoaderData) {
 	const submit = useSubmit();
 	const navigation = useNavigation();
-	const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
+	const [showRsvpModal, setShowRsvpModal] = useState(false);
 	const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
+	const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
 
 	const timeRemaining = useRegistrationTimer(event.registration_deadline, event.timezone);
-	const {
-		anonymousName,
-		anonymousEmail,
-		showCustomQuestionsForm,
-		setShowCustomQuestionsForm,
-	} = useEventDetailToasts({
+	useEventDetailToasts({
 		onSubscribeSuccess: () => setShowSubscribeDialog(false),
 	});
 
 	const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
 	const submittingIntent = navigation.formData?.get("intent") as string | null;
-	const isRegistering =
-		isSubmitting &&
-		(submittingIntent === "register" || submittingIntent === "anonymous-custom-questions");
+	const isRegistering = isSubmitting && submittingIntent === "register";
 	const isUnregistering = isSubmitting && submittingIntent === "unregister";
 
 	const externalPlatform = event.external_platform as ExternalPlatform | null;
 
-
 	const handleCustomQuestionsSubmit = (answers: Record<string, unknown>) => {
 		const formData = new FormData();
-		formData.append("intent", anonymousName ? "anonymous-custom-questions" : "register");
+		formData.append("intent", "register");
 		formData.append("custom_answers", JSON.stringify(answers));
-		if (anonymousName && anonymousEmail) {
-			formData.append("name", anonymousName);
-			formData.append("email", anonymousEmail);
-		}
 		submit(formData, { method: "POST" });
 	};
 
@@ -64,11 +53,16 @@ export function EventDetail({
 
 	return (
 		<>
-			<AnonymousRegistrationDialog
-				open={showAnonymousDialog}
-				onOpenChange={setShowAnonymousDialog}
+			<EventRsvpModal
+				open={showRsvpModal}
+				onOpenChange={setShowRsvpModal}
 				eventId={event.id}
 				communitySlug={community.slug}
+				communityId={community.id}
+				communityName={community.name}
+				hasCustomQuestions={hasCustomQuestions}
+				customQuestions={event.custom_questions as unknown as CustomQuestionJson}
+				userPhone={userPhone ?? undefined}
 			/>
 			<AnonymousSubscriptionDialog
 				open={showSubscribeDialog}
@@ -86,8 +80,6 @@ export function EventDetail({
 					userEmail={user?.email || undefined}
 					userAvatarUrl={userProfile?.avatar_url || undefined}
 					userPhone={userPhone ?? undefined}
-					anonymousName={anonymousName || undefined}
-					anonymousEmail={anonymousEmail || undefined}
 					onSubmit={handleCustomQuestionsSubmit}
 					isSubmitting={isSubmitting}
 				/>
@@ -119,7 +111,7 @@ export function EventDetail({
 						isUnregistering={isUnregistering}
 						isSubmitting={isSubmitting}
 						onShowCustomQuestionsForm={() => setShowCustomQuestionsForm(true)}
-						onShowAnonymousDialog={() => setShowAnonymousDialog(true)}
+						onShowRsvpModal={() => setShowRsvpModal(true)}
 						onShowSubscribeDialog={() => setShowSubscribeDialog(true)}
 					/>
 				</div>
