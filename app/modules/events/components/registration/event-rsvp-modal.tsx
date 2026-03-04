@@ -22,6 +22,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "~/shared/components/ui/drawer";
+import { cn } from "~/shared/lib/utils/cn";
 import { useFetcher, useNavigate, useSubmit } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -447,12 +448,23 @@ export function EventRsvpModal({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90dvh] flex flex-col overflow-hidden">
+        <DrawerContent
+          className={cn(
+            "flex flex-col overflow-hidden",
+            step === "questions" ? "min-h-[75dvh]" : "max-h-[90dvh]",
+          )}
+        >
           <DrawerHeader className="shrink-0">
-            <DrawerTitle className={step === "otp" ? "text-center md:text-center" : undefined}>
+            <DrawerTitle
+              className={
+                step === "otp" ? "text-center md:text-center" : undefined
+              }
+            >
               {title}
             </DrawerTitle>
-            {description && <DrawerDescription>{description}</DrawerDescription>}
+            {description && (
+              <DrawerDescription>{description}</DrawerDescription>
+            )}
           </DrawerHeader>
           {step === "questions" ? (
             questionsStepContent
