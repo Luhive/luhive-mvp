@@ -447,7 +447,7 @@ export function EventRsvpModal({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh] flex flex-col">
+        <DrawerContent className="max-h-[90dvh] flex flex-col overflow-hidden">
           <DrawerHeader className="shrink-0">
             <DrawerTitle className={step === "otp" ? "text-center md:text-center" : undefined}>
               {title}
@@ -457,7 +457,7 @@ export function EventRsvpModal({
           {step === "questions" ? (
             questionsStepContent
           ) : (
-            <div className="flex-1 overflow-y-auto px-4 pb-6">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-6">
               <div className="space-y-4">{stepContent}</div>
             </div>
           )}

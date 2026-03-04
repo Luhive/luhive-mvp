@@ -322,7 +322,7 @@ export function CustomQuestionsForm({
   if (inline) {
     return (
       <Form onSubmit={handleSubmit} className="contents">
-        <div className="flex-1 overflow-y-auto px-6 space-y-2 pb-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 space-y-2 pb-4">
           {formBody}
           {afterQuestionsContent}
         </div>
@@ -334,7 +334,7 @@ export function CustomQuestionsForm({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh] flex flex-col">
+        <DrawerContent className="max-h-[90dvh] flex flex-col overflow-hidden">
           <DrawerHeader className="shrink-0">
             <DrawerTitle>Complete Your Registration</DrawerTitle>
             <DrawerDescription>
@@ -347,7 +347,7 @@ export function CustomQuestionsForm({
             onSubmit={handleSubmit}
             className="flex flex-col flex-1 min-h-0 overflow-hidden"
           >
-            <div className="flex-1 overflow-y-auto px-4">{formBody}</div>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4">{formBody}</div>
             <div className="px-4 pb-6 pt-3 border-t shrink-0">
               {submitButton}
             </div>

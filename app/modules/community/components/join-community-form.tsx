@@ -640,7 +640,7 @@ export function JoinCommunityForm({
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{trigger || defaultTrigger}</DrawerTrigger>
-        <DrawerContent className="pb-6">
+        <DrawerContent className="max-h-[90dvh] flex flex-col overflow-hidden">
           <DrawerHeader>
             <DrawerTitle
               className={
@@ -661,7 +661,7 @@ export function JoinCommunityForm({
               </DrawerDescription>
             )}
           </DrawerHeader>
-          <div className="px-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             {isMember ? (
               <LeaveConfirmationContent />
             ) : isLoggedIn ? (
