@@ -17,7 +17,7 @@ interface NativeCanRegisterViewProps {
 	isRegistering: boolean;
 	isSubmitting: boolean;
 	onShowCustomQuestionsForm: () => void;
-	onShowAnonymousDialog: () => void;
+	onShowRsvpModal: () => void;
 }
 
 export function NativeCanRegisterView({
@@ -30,7 +30,7 @@ export function NativeCanRegisterView({
 	isRegistering,
 	isSubmitting,
 	onShowCustomQuestionsForm,
-	onShowAnonymousDialog,
+	onShowRsvpModal,
 }: NativeCanRegisterViewProps) {
 	const { user, userProfile } = userData;
 
@@ -118,7 +118,7 @@ export function NativeCanRegisterView({
 			<Activity mode={!user ? "visible" : "hidden"}>
 				<div className="space-y-3">
 					<Button
-						onClick={onShowAnonymousDialog}
+						onClick={onShowRsvpModal}
 						className="w-full"
 						size="lg"
 						disabled={isSubmitting}

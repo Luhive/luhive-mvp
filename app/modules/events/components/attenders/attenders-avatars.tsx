@@ -15,9 +15,15 @@ interface AttendersAvatarsProps {
   eventId: string
   maxVisible?: number
   isExternalEvent?: boolean
+  refreshKey?: number
 }
 
-const AttendersAvatars = ({ eventId, maxVisible = 3, isExternalEvent = false }: AttendersAvatarsProps) => {
+const AttendersAvatars = ({
+  eventId,
+  maxVisible = 3,
+  isExternalEvent = false,
+  refreshKey,
+}: AttendersAvatarsProps) => {
   const [attendees, setAttendees] = useState<AttenderAvatar[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -33,7 +39,10 @@ const AttendersAvatars = ({ eventId, maxVisible = 3, isExternalEvent = false }: 
         setLoading(true)
 
         // Fetch attendees from API endpoint (uses service role to bypass RLS)
-        const response = await fetch(`/api/events/attenders-list?eventId=${encodeURIComponent(eventId)}`)
+        const response = await fetch(
+          `/api/events/attenders-list?eventId=${encodeURIComponent(eventId)}`,
+          { cache: 'no-store' },
+        )
 
         if (!response.ok) {
           throw new Error('Failed to fetch attendees')
@@ -50,7 +59,7 @@ const AttendersAvatars = ({ eventId, maxVisible = 3, isExternalEvent = false }: 
     }
 
     fetchAttendees()
-  }, [eventId])
+  }, [eventId, refreshKey])
 
   if (loading) {
     return <AttendersAvatarsSkeleton />

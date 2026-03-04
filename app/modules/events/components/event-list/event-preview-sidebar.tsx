@@ -25,7 +25,10 @@ import {
   SheetTitle,
 } from "~/shared/components/ui/sheet";
 import type { Community, Event, Profile } from "~/shared/models/entity.types";
-import type { ExternalPlatform } from "~/modules/events/model/event.types";
+import type {
+  CustomQuestionJson,
+  ExternalPlatform,
+} from "~/modules/events/model/event.types";
 import {
   getExternalPlatformName,
   getExternalPlatformIcon,
@@ -33,7 +36,7 @@ import {
 import { Badge } from "~/shared/components/ui/badge";
 import AttendersAvatars from "~/modules/events/components/attenders/attenders-avatars";
 import HostedBy from "~/modules/events/components/shared/hosted-by";
-import { AnonymousRegistrationDialog } from "../registration/anonymous-registration-dialog";
+import { EventRsvpModal } from "../registration/event-rsvp-modal";
 import { AnonymousSubscriptionDialog } from "../registration/anonymous-subscription-dialog";
 import { CustomQuestionsForm } from "../registration/custom-questions-form";
 import { createClient } from "~/shared/lib/supabase/client";
@@ -69,11 +72,9 @@ export function EventPreviewSidebar({
   const navigate = useNavigate();
   const navigation = useNavigation();
   const fetcher = useFetcher();
-  const [showAnonymousDialog, setShowAnonymousDialog] = useState(false);
+  const [showRsvpModal, setShowRsvpModal] = useState(false);
   const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
   const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
-  const [anonymousName, setAnonymousName] = useState<string | null>(null);
-  const [anonymousEmail, setAnonymousEmail] = useState<string | null>(null);
   const [localIsRegistered, setLocalIsRegistered] = useState(isUserRegistered);
   const [hostingCommunities, setHostingCommunities] = useState<Array<{
     id: string;
@@ -102,9 +103,7 @@ export function EventPreviewSidebar({
     ) {
       setLocalIsRegistered(false);
       lastSubmittedIntentRef.current = null;
-      setAnonymousName(null);
-      setAnonymousEmail(null);
-      setShowAnonymousDialog(false);
+      setShowRsvpModal(false);
       setShowCustomQuestionsForm(false);
     }
 
@@ -402,28 +401,17 @@ export function EventPreviewSidebar({
       }
       // If no custom questions, the form will be rendered below and submitted directly
     } else {
-      // Not logged in: show anonymous registration dialog
-      setShowAnonymousDialog(true);
+      // Not logged in: show RSVP modal (OTP flow)
+      setShowRsvpModal(true);
     }
   };
 
-  const handleCustomQuestionsSubmit = (answers: any) => {
-    const isAnonymousFlow = !user && !!anonymousName && !!anonymousEmail;
+  const handleCustomQuestionsSubmit = (answers: Record<string, unknown>) => {
     lastSubmittedIntentRef.current = "register";
 
-    // Use fetcher to submit without navigation (fetcher doesn't navigate by default)
     const formData = new FormData();
-    formData.append(
-      "intent",
-      isAnonymousFlow ? "anonymous-custom-questions" : "register",
-    );
+    formData.append("intent", "register");
     formData.append("custom_answers", JSON.stringify(answers));
-
-    if (isAnonymousFlow) {
-      formData.append("name", anonymousName);
-      formData.append("email", anonymousEmail);
-      formData.append("_source", "sidebar");
-    }
 
     fetcher.submit(formData, {
       method: "POST",
@@ -722,27 +710,16 @@ export function EventPreviewSidebar({
       </Sheet>
 
       {/* Registration Dialogs */}
-      <AnonymousRegistrationDialog
-        open={showAnonymousDialog}
-        onOpenChange={setShowAnonymousDialog}
+      <EventRsvpModal
+        open={showRsvpModal}
+        onOpenChange={setShowRsvpModal}
         eventId={event.id}
         communitySlug={community.slug}
-        preventNavigation
-        onSuccess={() => {
-          toast.success("Check your email to verify your registration!");
-          setAnonymousName(null);
-          setAnonymousEmail(null);
-          setShowAnonymousDialog(false);
-        }}
-        onNeedsCustomQuestions={({
-          anonymousName: nextAnonymousName,
-          anonymousEmail: nextAnonymousEmail,
-        }) => {
-          setAnonymousName(nextAnonymousName);
-          setAnonymousEmail(nextAnonymousEmail);
-          setShowAnonymousDialog(false);
-          setShowCustomQuestionsForm(true);
-        }}
+        communityId={community.id}
+        communityName={community.name}
+        hasCustomQuestions={!!hasCustomQuestions}
+        customQuestions={(event.custom_questions as CustomQuestionJson) ?? null}
+        userPhone={userPhone ?? undefined}
       />
       <AnonymousSubscriptionDialog
         open={showSubscribeDialog}
@@ -760,8 +737,6 @@ export function EventPreviewSidebar({
           userEmail={user?.email || undefined}
           userAvatarUrl={userProfile?.avatar_url || undefined}
           userPhone={userPhone}
-          anonymousName={anonymousName || undefined}
-          anonymousEmail={anonymousEmail || undefined}
           onSubmit={handleCustomQuestionsSubmit}
           isSubmitting={isSubmitting}
         />

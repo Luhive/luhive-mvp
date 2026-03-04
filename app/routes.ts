@@ -28,11 +28,6 @@ export default [
     route("c/:slug/events/:eventId", "routes/web/event-detail.tsx"),
     route("c/:slug/events/:eventId/collaboration", "routes/c.$slug.events.$eventId.collaboration.tsx"),
     route("c/:slug/collaboration-invite/:collaborationId", "routes/c.$slug.collaboration-invite.$collaborationId.tsx"),
-    route("c/:slug/events/:eventId/verify", "routes/web/event-verify.tsx"),
-    route(
-      "c/:slug/events/:eventId/verification-sent",
-      "routes/web/event-verification-sent.tsx",
-    ),
   ]),
 
   route("login", "routes/auth/login.tsx"),
@@ -70,6 +65,7 @@ export default [
   route("auth/email-sent/reset", "routes/auth/reset-password-email-sent.tsx"),
 
   route("auth/verify", "routes/auth/verify.tsx"),
+  route("auth/verify-otp", "routes/auth/verify-otp.tsx"),
   route("auth/forgot-password", "routes/auth/forgot-password.tsx"),
   route("auth/verify/reset-password", "routes/auth/verify-reset-password.tsx"),
 
