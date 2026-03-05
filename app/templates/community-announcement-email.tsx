@@ -14,6 +14,7 @@ import {
   Text,
   Row,
   Column,
+  Track,
 } from "@react-email/components";
 import * as React from "react";
 
@@ -196,6 +197,7 @@ What do you want to announce? What do you want to announce? What do you want to 
             </Section>
 
           </Container>
+          <Track url={announcementLink} />
         </Body>
       </Tailwind>
     </Html>

@@ -18,6 +18,7 @@ export type Announcement = {
   created_at: string;
   updated_at: string;
   images?: AnnouncementImage[];
+  viewCount?: number;
 };
 
 export type AnnouncementUpsertInput = {

@@ -234,6 +234,31 @@ export default function CommunityPage() {
     fetchRegistrationCount();
   }, [selectedEvent?.id]);
 
+  // Track announcement views
+  useEffect(() => {
+    if (!selectedAnnouncement?.id || !user?.id) {
+      return;
+    }
+
+    async function trackView() {
+      try {
+        const response = await fetch("/api/announcements/track-view", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ announcementId: selectedAnnouncement.id }),
+        });
+
+        if (!response.ok) {
+          console.error("Failed to track announcement view");
+        }
+      } catch (error) {
+        console.error("Error tracking announcement view:", error);
+      }
+    }
+
+    trackView();
+  }, [selectedAnnouncement?.id, user?.id]);
+
   return (
     <>
       {pendingEvent && community && (
@@ -735,7 +760,7 @@ export default function CommunityPage() {
                         </span>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Eye className="h-3.5 w-3.5" />
-                          <span>16</span>
+                          <span>{announcement.viewCount || 0}</span>
                         </div>
                       </div>
                     </div>

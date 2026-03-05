@@ -48,6 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
           recipientEmail: email,
           recipientName,
           imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
+          announcementId,
         });
 
         successCount++;
