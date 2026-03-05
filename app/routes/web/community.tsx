@@ -722,7 +722,7 @@ export default function CommunityPage() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-4 min-h-[300px]">
+            <CardContent className="min-h-[300px]">
               {announcements.length === 0 ? (
                 <div className="h-full min-h-[250px] flex flex-col items-center justify-center space-y-4">
                   <div className="flex flex-col items-center space-y-2">
@@ -746,43 +746,41 @@ export default function CommunityPage() {
                   )}
                 </div>
               ) : (
-                announcements.map((announcement, index) => {
-                  if (index < 3) {
-                    return (
-                      <button
-                        key={announcement.id}
-                        type="button"
-                        onClick={() => setSelectedAnnouncement(announcement)}
-                        className="w-full text-left rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/30 transition-colors block"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <h3 className="font-semibold text-sm text-foreground">
-                              {announcement.title}
-                            </h3>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {announcement.description}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end justify-between self-stretch shrink-0">
-                            <span className="text-xs font-medium text-primary whitespace-nowrap">
-                              {new Date(
-                                announcement.created_at,
-                              ).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </span>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Eye className="h-3.5 w-3.5" />
-                              <span>{announcement.viewCount || 0}</span>
-                            </div>
+                <div className="overflow-y-auto max-h-[320px] space-y-4 pr-1">
+                  {announcements.map((announcement) => (
+                    <button
+                      key={announcement.id}
+                      type="button"
+                      onClick={() => setSelectedAnnouncement(announcement)}
+                      className="w-full text-left rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/30 transition-colors block"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <h3 className="font-semibold text-sm text-foreground">
+                            {announcement.title}
+                          </h3>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {announcement.description}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end justify-between self-stretch shrink-0">
+                          <span className="text-xs font-medium text-primary whitespace-nowrap">
+                            {new Date(
+                              announcement.created_at,
+                            ).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Eye className="h-3.5 w-3.5" />
+                            <span>{announcement.viewCount || 0}</span>
                           </div>
                         </div>
-                      </button>
-                    );
-                  }
-                })
+                      </div>
+                    </button>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
