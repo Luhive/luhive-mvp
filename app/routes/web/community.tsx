@@ -710,8 +710,10 @@ export default function CommunityPage() {
                   )}
                 </div>
               ) : (
-                announcements.map((announcement) => (
-                  <button
+                announcements.map((announcement,index) => {
+                  if(index<3){
+                    return(
+                      <button
                     key={announcement.id}
                     type="button"
                     onClick={() => setSelectedAnnouncement(announcement)}
@@ -738,7 +740,9 @@ export default function CommunityPage() {
                       </div>
                     </div>
                   </button>
-                ))
+                    )
+                  }
+                })
               )}
             </CardContent>
           </Card>

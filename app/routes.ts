@@ -29,11 +29,11 @@ export default [
     route("c/:slug/events/:eventId/collaboration", "routes/c.$slug.events.$eventId.collaboration.tsx"),
     route("c/:slug/collaboration-invite/:collaborationId", "routes/c.$slug.collaboration-invite.$collaborationId.tsx"),
 
-    route("c/:slug/events/:eventId/verify", "routes/web/event-verify.tsx"),
-    route(
-      "c/:slug/events/:eventId/verification-sent",
-      "routes/web/event-verification-sent.tsx",
-    ),
+    // route("c/:slug/events/:eventId/verify", "routes/web/event-verify.tsx"),
+    // route(
+    //   "c/:slug/events/:eventId/verification-sent",
+    //   "routes/web/event-verification-sent.tsx",
+    // ),
     route("c/:slug/announcements/:announcementId", "routes/web/c.$slug.announcements.$announcementId.tsx"),
   ]),
 

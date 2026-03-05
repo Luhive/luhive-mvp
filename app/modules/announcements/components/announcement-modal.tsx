@@ -188,7 +188,7 @@ export function AnnouncementModal({
       />
       </div>
 
-      <div className="mt-6 flex w-full items-center justify-between border-t pt-5">
+      <div className="mt-6 flex w-full items-center justify-between pt-5">
         {!coverImageUrl && (
           <label className="cursor-pointer flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <input
