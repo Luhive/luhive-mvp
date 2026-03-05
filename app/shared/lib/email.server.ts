@@ -1361,6 +1361,9 @@ export async function sendAnnouncementNotificationEmail(
         imageUrls: imageUrls || [],
       }),
       ...(announcementId && { metadata: { announcementId } }),
+      ...(announcementId && {
+        tags: [{ name: "announcement_id", value: announcementId }],
+      }),
     });
 
     if (error) {

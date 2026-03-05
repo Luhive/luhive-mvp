@@ -2,6 +2,7 @@
 
 const SESSION_KEY = 'community_session_id';
 const VISIT_TRACKING_KEY = 'community_last_visit';
+const ANNOUNCEMENT_TRACKING_KEY = 'announcement_last_view';
 const TRACKING_WINDOW = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 /**
@@ -66,6 +67,32 @@ export function isFirstVisit(): boolean {
 
   if (!hasVisited) {
     localStorage.setItem(FIRST_VISIT_KEY, 'true');
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if we should track an announcement view
+ * Returns true if >5 minutes since last view for this announcement
+ */
+export function shouldTrackAnnouncementView(announcementId: string): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const trackingKey = `${ANNOUNCEMENT_TRACKING_KEY}_${announcementId}`;
+  const lastViewStr = localStorage.getItem(trackingKey);
+
+  if (!lastViewStr) {
+    localStorage.setItem(trackingKey, Date.now().toString());
+    return true;
+  }
+
+  const lastView = parseInt(lastViewStr, 10);
+  const timeSinceLastView = Date.now() - lastView;
+
+  if (timeSinceLastView >= TRACKING_WINDOW) {
+    localStorage.setItem(trackingKey, Date.now().toString());
     return true;
   }
 

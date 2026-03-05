@@ -1,16 +1,63 @@
 import { createServiceRoleClient } from "~/shared/lib/supabase/server";
 import type { ActionFunctionArgs } from "react-router";
 
-interface ResendWebhookPayload {
-  type: string;
-  created_at: string;
-  data: {
-    email: string;
-    message_id: string;
+type ResendTag = { name?: string; value?: string };
+
+type ResendWebhookPayload = {
+  type?: string;
+  created_at?: string;
+  data?: {
+    email?: string;
+    to?: string | string[];
+    recipient?: string;
+    message_id?: string;
+    email_id?: string;
     metadata?: {
       announcementId?: string;
+      announcement_id?: string;
     };
+    tags?: ResendTag[];
   };
+};
+
+function getRecipientEmail(payload: ResendWebhookPayload): string | null {
+  const data = payload.data;
+  if (!data) return null;
+
+  if (typeof data.email === "string" && data.email.length > 0) return data.email;
+  if (typeof data.recipient === "string" && data.recipient.length > 0) return data.recipient;
+  if (Array.isArray(data.to) && data.to.length > 0) return data.to[0] || null;
+  if (typeof data.to === "string" && data.to.length > 0) return data.to;
+  return null;
+}
+
+function getAnnouncementId(payload: ResendWebhookPayload): string | null {
+  const metadataId = payload.data?.metadata?.announcementId || payload.data?.metadata?.announcement_id;
+  if (metadataId) return metadataId;
+
+  const tags = payload.data?.tags || [];
+  const tagMatch = tags.find((tag) => tag?.name === "announcement_id");
+  return tagMatch?.value || null;
+}
+
+async function findUserIdByEmail(serviceClient: any, email: string): Promise<string | null> {
+  const perPage = 200;
+
+  for (let page = 1; page <= 10; page++) {
+    const { data, error } = await serviceClient.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      console.error("Error fetching users page:", page, error);
+      return null;
+    }
+
+    const users = data?.users || [];
+    const matched = users.find((user: any) => (user?.email || "").toLowerCase() === email.toLowerCase());
+    if (matched?.id) return matched.id;
+
+    if (users.length < perPage) break;
+  }
+
+  return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -29,10 +76,11 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const { email, message_id, metadata } = body.data;
-    const announcementId = metadata?.announcementId;
+    const email = getRecipientEmail(body);
+    const messageId = body.data?.message_id || body.data?.email_id;
+    const announcementId = getAnnouncementId(body);
 
-    if (!email || !message_id) {
+    if (!email || !messageId) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -49,22 +97,25 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const serviceClient = createServiceRoleClient();
 
-    // Get user by email
-    const { data: userData, error: userError } = await (serviceClient.auth.admin as any).listUsers();
-
-    if (userError || !userData) {
-      console.error("Error fetching users:", userError);
-      return new Response(JSON.stringify({ error: "Failed to find user" }), {
-        status: 500,
+    const userId = await findUserIdByEmail(serviceClient, email);
+    if (!userId) {
+      console.warn(`User not found for email: ${email}`);
+      return new Response(JSON.stringify({ received: true }), {
+        status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    const user = userData.users.find((u: any) => u.email === email);
+    const { data: existingView } = await serviceClient
+      .from("announcement_views")
+      .select("id")
+      .eq("announcement_id", announcementId)
+      .eq("user_id", userId)
+      .eq("view_source", "email")
+      .limit(1);
 
-    if (!user) {
-      console.warn(`User not found for email: ${email}`);
-      return new Response(JSON.stringify({ received: true }), {
+    if (existingView && existingView.length > 0) {
+      return new Response(JSON.stringify({ received: true, recorded: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
@@ -75,7 +126,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("announcement_views")
       .insert({
         announcement_id: announcementId,
-        user_id: user.id,
+        user_id: userId,
         view_source: "email",
       });
 
@@ -88,7 +139,7 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    console.log(`Email open tracked for announcement: ${announcementId}, user: ${user.id}`);
+    console.log(`Email open tracked for announcement: ${announcementId}, user: ${userId}`);
 
     return new Response(JSON.stringify({ received: true, recorded: true }), {
       status: 200,

@@ -40,7 +40,12 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "~/shared/components/ui/tooltip";
-import { getSessionId, shouldTrackVisit, isFirstVisit } from "~/modules/community/utils/session-tracker";
+import {
+  getSessionId,
+  shouldTrackVisit,
+  isFirstVisit,
+  shouldTrackAnnouncementView,
+} from "~/modules/community/utils/session-tracker";
 import { JoinCommunityForm } from "~/modules/community/components/join-community-form";
 import { CoverPictureUpload } from "~/modules/community/components/cover-picture-upload";
 import {
@@ -236,16 +241,24 @@ export default function CommunityPage() {
 
   // Track announcement views
   useEffect(() => {
-    if (!selectedAnnouncement?.id || !user?.id) {
+    if (!selectedAnnouncement?.id) {
+      return;
+    }
+
+    if (!shouldTrackAnnouncementView(selectedAnnouncement.id)) {
       return;
     }
 
     async function trackView() {
       try {
+        const sessionId = getSessionId();
         const response = await fetch("/api/announcements/track-view", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ announcementId: selectedAnnouncement.id }),
+          body: JSON.stringify({
+            announcementId: selectedAnnouncement.id,
+            sessionId,
+          }),
         });
 
         if (!response.ok) {
@@ -257,7 +270,7 @@ export default function CommunityPage() {
     }
 
     trackView();
-  }, [selectedAnnouncement?.id, user?.id]);
+  }, [selectedAnnouncement?.id]);
 
   return (
     <>

@@ -1,4 +1,4 @@
-import { createClient } from "~/shared/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
 import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -8,7 +8,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     const body = await request.json();
-    const { announcementId } = body;
+    const { announcementId, sessionId } = body;
 
     if (!announcementId) {
       return new Response(JSON.stringify({ error: "Missing announcementId" }), {
@@ -18,40 +18,63 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const { supabase, headers } = createClient(request);
+    const serviceClient = createServiceRoleClient() as any;
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user?.id) {
+    if (!user?.id && !sessionId) {
       headers.set("Content-Type", "application/json");
-      return new Response(JSON.stringify({ error: "Not authenticated" }), {
-        status: 401,
+      return new Response(JSON.stringify({ error: "Missing sessionId for anonymous view" }), {
+        status: 400,
         headers,
       });
     }
 
-    // Insert view record
-    const { error: insertError } = await supabase
+    const existingQuery = serviceClient
       .from("announcement_views")
-      .insert({
-        announcement_id: announcementId,
-        user_id: user.id,
-        view_source: "web",
-      });
+      .select("id")
+      .eq("announcement_id", announcementId)
+      .eq("view_source", "web")
+      .limit(1);
 
-    if (insertError) {
-      console.error("Error recording announcement view:", insertError);
+    const { data: existingView, error: existingError } = user?.id
+      ? await existingQuery.eq("user_id", user.id)
+      : await existingQuery.is("user_id", null).eq("session_id", sessionId);
+
+    if (existingError) {
+      console.error("Error checking existing announcement view:", existingError);
       headers.set("Content-Type", "application/json");
-      return new Response(JSON.stringify({ error: "Failed to record view" }), {
+      return new Response(JSON.stringify({ error: "Failed to check existing view" }), {
         status: 500,
         headers,
       });
     }
 
+    if (!existingView || existingView.length === 0) {
+      const { error: insertError } = await serviceClient
+        .from("announcement_views")
+        .insert({
+          announcement_id: announcementId,
+          user_id: user?.id ?? null,
+          session_id: user?.id ? null : sessionId,
+          view_source: "web",
+        });
+
+      if (insertError) {
+        console.error("Error recording announcement view:", insertError);
+        headers.set("Content-Type", "application/json");
+        return new Response(JSON.stringify({ error: "Failed to record view" }), {
+          status: 500,
+          headers,
+        });
+      }
+    }
+
     // Get updated view count
-    const { data: viewData, error: countError } = await supabase
+    const { count: viewCount, error: countError } = await serviceClient
       .from("announcement_views")
-      .select("id")
+      .select("id", { count: "exact", head: true })
       .eq("announcement_id", announcementId);
 
     if (countError) {
@@ -63,10 +86,8 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const viewCount = viewData?.length || 0;
-
     headers.set("Content-Type", "application/json");
-    return new Response(JSON.stringify({ success: true, viewCount }), {
+    return new Response(JSON.stringify({ success: true, viewCount: viewCount || 0 }), {
       status: 200,
       headers,
     });
