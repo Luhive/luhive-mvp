@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { useIsMobile } from '~/shared/hooks/use-mobile';
 import {
   Dialog,
@@ -7,13 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '~/shared/components/ui/dialog';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from '~/shared/components/ui/drawer';
+import { FullscreenModal } from '~/shared/components/ui/fullscreen-modal';
 import { Button } from '~/shared/components/ui/button';
 import { Input } from '~/shared/components/ui/input';
 import { Label } from '~/shared/components/ui/label';
@@ -68,6 +62,7 @@ export function CustomQuestionsForm({
   inline = false,
   afterQuestionsContent,
 }: CustomQuestionsFormProps) {
+  const formId = useId();
   const isMobile = useIsMobile();
   const isAuthenticated = Boolean(userEmail || userName);
   const authenticatedFallbackName = userEmail?.split('@')[0]?.trim() || 'User';
@@ -307,7 +302,13 @@ export function CustomQuestionsForm({
   );
 
   const submitButton = (
-    <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+    <Button
+      type="submit"
+      form={formId}
+      className="w-full"
+      size="lg"
+      disabled={isSubmitting}
+    >
       {isSubmitting ? (
         <>
           <Spinner className="h-4 w-4 mr-2" />
@@ -321,39 +322,32 @@ export function CustomQuestionsForm({
 
   if (inline) {
     return (
-      <Form onSubmit={handleSubmit} className="contents">
+      <Form id={formId} onSubmit={handleSubmit} className="contents">
         <div className="flex-1 min-h-0 overflow-y-auto px-4 space-y-2 pb-4">
           {formBody}
           {afterQuestionsContent}
         </div>
-        <div className="px-6 py-4 border-t shrink-0">{submitButton}</div>
+        <div className="px-4 py-4 shrink-0">{submitButton}</div>
       </Form>
     );
   }
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90dvh] flex flex-col overflow-hidden">
-          <DrawerHeader className="shrink-0">
-            <DrawerTitle>Complete Your Registration</DrawerTitle>
-            <DrawerDescription>
-              {hasQuestions
-                ? "Please answer the following questions to complete your registration."
-                : "Review your information and complete your registration."}
-            </DrawerDescription>
-          </DrawerHeader>
-          <Form
-            onSubmit={handleSubmit}
-            className="flex flex-col flex-1 min-h-0 overflow-hidden"
-          >
-            <div className="flex-1 min-h-0 overflow-y-auto px-4">{formBody}</div>
-            <div className="px-4 pb-6 pt-3 border-t shrink-0">
-              {submitButton}
-            </div>
-          </Form>
-        </DrawerContent>
-      </Drawer>
+      <FullscreenModal
+        open={open}
+        onOpenChange={onOpenChange}
+        title="Complete Your Registration"
+        footer={submitButton}
+      >
+        <Form
+          id={formId}
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 min-h-0"
+        >
+          {formBody}
+        </Form>
+      </FullscreenModal>
     );
   }
 
@@ -369,11 +363,12 @@ export function CustomQuestionsForm({
           </DialogDescription>
         </DialogHeader>
         <Form
+          id={formId}
           onSubmit={handleSubmit}
           className="flex flex-col flex-1 min-h-0 overflow-hidden"
         >
           <div className="flex-1 overflow-y-auto px-6">{formBody}</div>
-          <div className="px-6 py-4 border-t shrink-0">{submitButton}</div>
+          <div className="px-6 py-4 shrink-0">{submitButton}</div>
         </Form>
       </DialogContent>
     </Dialog>

@@ -48,40 +48,10 @@ function DrawerContent({
   children,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
-  const contentRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    const el = contentRef.current;
-    const vv = typeof window !== "undefined" ? window.visualViewport : null;
-    if (!el || !vv) return;
-
-    const handleResize = () => {
-      const viewport = window.visualViewport;
-      if (!viewport) return;
-      const isBottom = el.getAttribute("data-vaul-drawer-direction") === "bottom";
-      if (isBottom) {
-        const keyboardOffset = Math.max(
-          0,
-          window.innerHeight - viewport.height - viewport.offsetTop
-        );
-        el.style.bottom = `${keyboardOffset}px`;
-        el.style.maxHeight = `${viewport.height}px`;
-      } else {
-        el.style.bottom = "";
-        el.style.maxHeight = "";
-      }
-    };
-
-    vv.addEventListener("resize", handleResize);
-    handleResize();
-    return () => vv.removeEventListener("resize", handleResize);
-  }, []);
-
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
       <DrawerPrimitive.Content
-        ref={contentRef}
         data-slot="drawer-content"
         className={cn(
           "group/drawer-content bg-background fixed z-50 flex h-auto flex-col",

@@ -277,10 +277,7 @@ export default function CommunityPage() {
       {pendingEvent && community && (
         <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
           <div className="min-h-screen container mx-auto px-4 sm:px-8">
-            <EventPageSkeleton
-              event={pendingEvent}
-              community={community}
-            />
+            <EventPageSkeleton event={pendingEvent} community={community} />
           </div>
         </div>
       )}
@@ -400,9 +397,7 @@ export default function CommunityPage() {
                   {shouldShowDescriptionToggle && (
                     <button
                       type="button"
-                      onClick={() =>
-                        setIsDescriptionExpanded((prev) => !prev)
-                      }
+                      onClick={() => setIsDescriptionExpanded((prev) => !prev)}
                       className="text-xs sm:text-sm text-primary font-medium hover:text-primary/80 transition-colors"
                     >
                       {isDescriptionExpanded ? "Show less" : "Read more"}
@@ -441,7 +436,7 @@ export default function CommunityPage() {
                               window.open(
                                 socialLinks?.website,
                                 "_blank",
-                                "noopener,noreferrer"
+                                "noopener,noreferrer",
                               )
                             }
                           >
@@ -457,7 +452,9 @@ export default function CommunityPage() {
                       </Tooltip>
                     </TooltipProvider>
                   </Activity>
-                  <Activity mode={socialLinks?.instagram ? "visible" : "hidden"}>
+                  <Activity
+                    mode={socialLinks?.instagram ? "visible" : "hidden"}
+                  >
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -470,7 +467,7 @@ export default function CommunityPage() {
                               window.open(
                                 socialLinks?.instagram,
                                 "_blank",
-                                "noopener,noreferrer"
+                                "noopener,noreferrer",
                               )
                             }
                           >
@@ -499,7 +496,7 @@ export default function CommunityPage() {
                               window.open(
                                 socialLinks?.linkedin,
                                 "_blank",
-                                "noopener,noreferrer"
+                                "noopener,noreferrer",
                               )
                             }
                           >
@@ -528,7 +525,7 @@ export default function CommunityPage() {
                               window.open(
                                 socialLinks?.whatsapp,
                                 "_blank",
-                                "noopener,noreferrer"
+                                "noopener,noreferrer",
                               )
                             }
                           >
@@ -734,7 +731,8 @@ export default function CommunityPage() {
                       No announcements yet
                     </p>
                     <p className="text-xs text-muted-foreground/70 text-center max-w-xs">
-                      Keep your community informed with updates and announcements
+                      Keep your community informed with updates and
+                      announcements
                     </p>
                   </div>
                   {isOwner && (
@@ -748,37 +746,41 @@ export default function CommunityPage() {
                   )}
                 </div>
               ) : (
-                announcements.map((announcement,index) => {
-                  if(index<3){
-                    return(
+                announcements.map((announcement, index) => {
+                  if (index < 3) {
+                    return (
                       <button
-                    key={announcement.id}
-                    type="button"
-                    onClick={() => setSelectedAnnouncement(announcement)}
-                    className="w-full text-left rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/30 transition-colors block"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <h3 className="font-semibold text-sm text-foreground">{announcement.title}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {announcement.description}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end justify-between self-stretch shrink-0">
-                        <span className="text-xs font-medium text-primary whitespace-nowrap">
-                          {new Date(announcement.created_at).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Eye className="h-3.5 w-3.5" />
-                          <span>{announcement.viewCount || 0}</span>
+                        key={announcement.id}
+                        type="button"
+                        onClick={() => setSelectedAnnouncement(announcement)}
+                        className="w-full text-left rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/30 transition-colors block"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <h3 className="font-semibold text-sm text-foreground">
+                              {announcement.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {announcement.description}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end justify-between self-stretch shrink-0">
+                            <span className="text-xs font-medium text-primary whitespace-nowrap">
+                              {new Date(
+                                announcement.created_at,
+                              ).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Eye className="h-3.5 w-3.5" />
+                              <span>{announcement.viewCount || 0}</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </button>
-                    )
+                      </button>
+                    );
                   }
                 })
               )}
@@ -856,10 +858,17 @@ export default function CommunityPage() {
                       ) : (
                         <div className="h-4 w-4 rounded-full bg-primary" />
                       )}
-                      <span className="font-semibold text-sm">{displayName}</span>
+                      <span className="font-semibold text-sm">
+                        {displayName}
+                      </span>
                     </div>
-                    <time className="font-medium text-xs" dateTime={selectedAnnouncement.created_at}>
-                      {new Date(selectedAnnouncement.created_at).toLocaleDateString("en-US", {
+                    <time
+                      className="font-medium text-xs"
+                      dateTime={selectedAnnouncement.created_at}
+                    >
+                      {new Date(
+                        selectedAnnouncement.created_at,
+                      ).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -886,7 +895,7 @@ export default function CommunityPage() {
         >
           <DialogContent
             showCloseButton={false}
-            className="w-[380px] rounded-[24px] p-0 gap-0 overflow-hidden border border-border"
+            className="w-full max-w-[650px] sm:max-w-[650px] h-[95vh] overflow-y-auto rounded-[24px] p-0 gap-0 border border-border"
           >
             {selectedAnnouncement && (
               <div className="px-[1.5rem] md:px-[3.75rem] py-[1.5rem] md:py-[2.2rem] space-y-4">
@@ -913,10 +922,17 @@ export default function CommunityPage() {
                     ) : (
                       <div className="h-4 w-4 rounded-full bg-primary" />
                     )}
-                    <span className="font-semibold text-[15px] leading-[1.5] tracking-normal align-middle">{displayName}</span>
+                    <span className="font-semibold text-[15px] leading-[1.5] tracking-normal align-middle">
+                      {displayName}
+                    </span>
                   </div>
-                  <time className="font-medium text-[12px] leading-[1.5] tracking-normal align-middle" dateTime={selectedAnnouncement.created_at}>
-                    {new Date(selectedAnnouncement.created_at).toLocaleDateString("en-US", {
+                  <time
+                    className="font-medium text-[12px] leading-[1.5] tracking-normal align-middle"
+                    dateTime={selectedAnnouncement.created_at}
+                  >
+                    {new Date(
+                      selectedAnnouncement.created_at,
+                    ).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
                       year: "numeric",

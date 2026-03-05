@@ -15,14 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/shared/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "~/shared/components/ui/drawer";
-import { cn } from "~/shared/lib/utils/cn";
+import { FullscreenModal } from "~/shared/components/ui/fullscreen-modal";
 import { useFetcher, useNavigate, useSubmit } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -447,34 +440,13 @@ export function EventRsvpModal({
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent
-          className={cn(
-            "flex flex-col overflow-hidden",
-            step === "questions" ? "min-h-[75dvh]" : "max-h-[90dvh]",
-          )}
-        >
-          <DrawerHeader className="shrink-0">
-            <DrawerTitle
-              className={
-                step === "otp" ? "text-center md:text-center" : undefined
-              }
-            >
-              {title}
-            </DrawerTitle>
-            {description && (
-              <DrawerDescription>{description}</DrawerDescription>
-            )}
-          </DrawerHeader>
-          {step === "questions" ? (
-            questionsStepContent
-          ) : (
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-6">
-              <div className="space-y-4">{stepContent}</div>
-            </div>
-          )}
-        </DrawerContent>
-      </Drawer>
+      <FullscreenModal open={open} onOpenChange={onOpenChange} title={title}>
+        {step === "questions" ? (
+          questionsStepContent
+        ) : (
+          <div className="space-y-4">{stepContent}</div>
+        )}
+      </FullscreenModal>
     );
   }
 
