@@ -96,6 +96,8 @@ export default [
   route("api/events/new-event-notification", "routes/api/events/new-event-notification.tsx"),
   route("api/events/collaboration-notification", "routes/api/events/collaboration-notification.tsx"),
   route("api/announcements/new-announcement-notification", "routes/api/announcements/new-announcement-notification.tsx"),
+  // track view
+  route("api/announcements/track-view", "routes/api/announcements/track-view.tsx"),
 
 
   // Integrations API routes (Google Forms)
