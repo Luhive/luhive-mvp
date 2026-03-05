@@ -1349,7 +1349,7 @@ export async function sendAnnouncementNotificationEmail(
     const { data: emailData, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [recipientEmail],
-      subject: `Announcement: ${title}`,
+      subject: `${title}`,
       react: CommunityAnnouncementEmail({
         title,
         description,

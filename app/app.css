@@ -376,4 +376,21 @@ select:-webkit-autofill:active {
   scrollbar-width: none;
   scrollbar-color: #ff8040 white;
 }
-/* 
+div[role="dialog"]{
+  width: 650px !important;
+  height: 95%;
+  max-width: 650px !important;
+}
+
+@media screen and (max-width: 768px) {
+  div[role="dialog"]{
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+.scroll-none{
+  overflow: auto;
+  scrollbar-width: none;      
+  -ms-overflow-style: none;
+}

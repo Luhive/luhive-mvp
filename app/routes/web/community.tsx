@@ -29,6 +29,9 @@ import {
   Globe,
   Link2,
   Megaphone,
+  Plus,
+  X,
+  Eye,
 } from "lucide-react";
 import { Activity } from "react";
 import {
@@ -48,6 +51,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/shared/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerClose } from "~/shared/components/ui/drawer";
 import { EventListSkeleton } from "~/modules/events/components/event-list/event-list";
 import { EventPageSkeleton } from "~/modules/events/components/event-list/event-page-skeleton";
 import { EventsListPageSkeleton } from "~/modules/events/components/event-list/events-list-page-skeleton";
@@ -58,6 +62,8 @@ import type { CommunityLoaderData } from "~/modules/community/server/community-l
 import type { Community } from "~/modules/community/model/community-types";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
+
+import { AnnouncementModal } from "~/modules/announcements/components/announcement-modal";
 
 const EventList = lazy(() =>
   import("~/modules/events/components/event-list/event-list").then((module) => ({
@@ -158,6 +164,7 @@ export default function CommunityPage() {
     !isMember && !isOwner
   );
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isEventSidebarOpen, setIsEventSidebarOpen] = useState(false);
   const [eventRegistrationCount, setEventRegistrationCount] = useState<
@@ -166,6 +173,7 @@ export default function CommunityPage() {
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
   const [loadedEvents, setLoadedEvents] = useState<Event[]>([]);
   const [pendingEventsPage, setPendingEventsPage] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<CommunityLoaderData["announcements"][number] | null>(null);
   const eventsPageOverlayRef = useRef<HTMLDivElement>(null);
   const hasScrolledToTopRef = useRef(false);
 
@@ -598,6 +606,18 @@ export default function CommunityPage() {
                   <Calendar className="h-5 w-5" />
                   Upcoming Events
                 </CardTitle>
+                {isOwner && community && loadedEvents.length > 0 && (
+                  <Button
+                    asChild
+                    size="icon"
+                    className="h-7 w-7 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    title="Create event"
+                  >
+                    <Link to={`/dashboard/${community.slug}/events/create`}>
+                      <Plus className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -607,6 +627,7 @@ export default function CommunityPage() {
                     communityId={community.id}
                     communitySlug={community.slug}
                     limit={3}
+                    isOwner={isOwner}
                     onEventClick={(event) => {
                       setSelectedEvent(event);
                       setIsEventSidebarOpen(true);
@@ -647,45 +668,76 @@ export default function CommunityPage() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2 lg:row-span-2 lg:col-span-1 border hover:border-primary/30 transition-colors shadow-none">
+          <Card className="md:col-span-2 lg:row-span-2 lg:col-span-1 border hover:border-primary/30 transition-colors shadow-none relative">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2 text-foreground">
-                <Megaphone className="h-5 w-5" />
-                Announcements
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+                  <Megaphone className="h-5 w-5" />
+                  Announcements
+                </CardTitle>
+                {isOwner && announcements.length > 0 && (
+                  <Button
+                    onClick={() => setIsAnnouncementModalOpen(true)}
+                    size="icon"
+                    className="h-7 w-7 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                    title="Add announcement"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4 min-h-[300px]">
               {announcements.length === 0 ? (
-                <div className="h-full min-h-[250px] flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground text-center">
-                    No announcements yet.
-                  </p>
+                <div className="h-full min-h-[250px] flex flex-col items-center justify-center space-y-4">
+                  <div className="flex flex-col items-center space-y-2">
+                    <Megaphone className="h-10 w-10 text-muted-foreground/50" />
+                    <p className="text-sm font-medium text-muted-foreground text-center">
+                      No announcements yet
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 text-center max-w-xs">
+                      Keep your community informed with updates and announcements
+                    </p>
+                  </div>
+                  {isOwner && (
+                    <Button
+                      onClick={() => setIsAnnouncementModalOpen(true)}
+                      size="sm"
+                      className="mt-3"
+                    >
+                      Add Announcement
+                    </Button>
+                  )}
                 </div>
               ) : (
                 announcements.map((announcement) => (
-                  <div key={announcement.id} className="rounded-md border p-3 space-y-3">
-                    <div>
-                      <h3 className="font-semibold text-sm text-foreground">{announcement.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(announcement.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {announcement.description}
-                    </p>
-                    {announcement.images.length > 0 && (
-                      <div className="grid grid-cols-2 gap-2">
-                        {announcement.images.map((image) => (
-                          <img
-                            key={image.id}
-                            src={image.image_url}
-                            alt={announcement.title}
-                            className="h-24 w-full object-cover rounded-md border"
-                          />
-                        ))}
+                  <button
+                    key={announcement.id}
+                    type="button"
+                    onClick={() => setSelectedAnnouncement(announcement)}
+                    className="w-full text-left rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/30 transition-colors block"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <h3 className="font-semibold text-sm text-foreground">{announcement.title}</h3>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {announcement.description}
+                        </p>
                       </div>
-                    )}
-                  </div>
+                      <div className="flex flex-col items-end justify-between self-stretch shrink-0">
+                        <span className="text-xs font-medium text-primary whitespace-nowrap">
+                          {new Date(announcement.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Eye className="h-3.5 w-3.5" />
+                          <span>16</span>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
                 ))
               )}
             </CardContent>
@@ -714,6 +766,130 @@ export default function CommunityPage() {
         userProfile={user ? profile : null}
         isUserRegistered={false}
       />
+
+      {community && user && isOwner && (
+        <AnnouncementModal
+          open={isAnnouncementModalOpen}
+          onOpenChange={setIsAnnouncementModalOpen}
+          communityId={community.id}
+          communitySlug={community.slug}
+          createdBy={user.id}
+          communityName={community.name}
+        />
+      )}
+
+      {isMobile ? (
+        <Drawer
+          open={!!selectedAnnouncement}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedAnnouncement(null);
+            }
+          }}
+        >
+          <DrawerContent className="bg-background">
+            <div className="overflow-y-auto scroll-none max-h-[calc(100vh-80px)] px-6 py-4 space-y-4">
+              {selectedAnnouncement && (
+                <>
+                  {selectedAnnouncement.images?.[0]?.image_url && (
+                    <img
+                      src={selectedAnnouncement.images[0].image_url}
+                      alt={selectedAnnouncement.title}
+                      className="h-[13rem] w-full object-cover object-[20%_70%] rounded-lg"
+                    />
+                  )}
+
+                  <h2 className="font-bold text-2xl leading-[125%]">
+                    {selectedAnnouncement.title}
+                  </h2>
+
+                  <div className="flex items-center justify-between pb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {displayLogo ? (
+                        <img
+                          src={displayLogo}
+                          alt={displayName}
+                          className="h-6 w-6 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full bg-primary" />
+                      )}
+                      <span className="font-semibold text-sm">{displayName}</span>
+                    </div>
+                    <time className="font-medium text-xs" dateTime={selectedAnnouncement.created_at}>
+                      {new Date(selectedAnnouncement.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </time>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 scroll-none">
+                    {selectedAnnouncement.description}
+                  </p>
+                </>
+              )}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog
+          open={!!selectedAnnouncement}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedAnnouncement(null);
+            }
+          }}
+        >
+          <DialogContent
+            showCloseButton={false}
+            className="w-[380px] rounded-[24px] p-0 gap-0 overflow-hidden border border-border"
+          >
+            {selectedAnnouncement && (
+              <div className="px-[1.5rem] md:px-[3.75rem] py-[1.5rem] md:py-[2.2rem] space-y-4">
+                {selectedAnnouncement.images?.[0]?.image_url && (
+                  <img
+                    src={selectedAnnouncement.images[0].image_url}
+                    alt={selectedAnnouncement.title}
+                    className="h-[15rem] md:h-[19rem] w-full object-cover object-[20%_70%]  md:object-[20%_60%] rounded-[9.45px]"
+                  />
+                )}
+
+                <h2 className="font-bold text-[34px] leading-[125%] tracking-[0%]">
+                  {selectedAnnouncement.title}
+                </h2>
+
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {displayLogo ? (
+                      <img
+                        src={displayLogo}
+                        alt={displayName}
+                        className="h-[2.6rem] w-[2.6rem] rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-4 w-4 rounded-full bg-primary" />
+                    )}
+                    <span className="font-semibold text-[15px] leading-[1.5] tracking-normal align-middle">{displayName}</span>
+                  </div>
+                  <time className="font-medium text-[12px] leading-[1.5] tracking-normal align-middle" dateTime={selectedAnnouncement.created_at}>
+                    {new Date(selectedAnnouncement.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </time>
+                </div>
+
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 max-h-[230px] overflow-y-auto pr-1 scroll-none">
+                  {selectedAnnouncement.description}
+                </p>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
 
       {isMobile && community && showStickyButton && (
         <div

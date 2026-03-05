@@ -6,104 +6,200 @@ import {
   Heading,
   Hr,
   Html,
+  Font,
   Img,
   Preview,
   Section,
   Tailwind,
   Text,
+  Row,
+  Column,
 } from "@react-email/components";
 import * as React from "react";
+
 
 interface CommunityAnnouncementEmailProps {
   title: string;
   description: string;
   communityName: string;
   announcementLink: string;
-  recipientName: string;
   imageUrls?: string[];
+  createdAt?: string;
+  communityLogo?: string;
 }
 
 export const CommunityAnnouncementEmail = ({
-  title = "Community Announcement",
-  description = "We have an important update for you.",
-  communityName = "Luhive Community",
+  title = "New Game Community!",
+  description = `What do you want to announce? What do you want to announce? What do you want to announce?
+
+What do you want to announce? What do you want to announce? What do you want to announce?`,
+  communityName = "Luhive",
   announcementLink = "https://luhive.com",
-  recipientName = "there",
-  imageUrls = [],
-}: CommunityAnnouncementEmailProps) => (
-  <Html>
-    <Preview>{title}</Preview>
-    <Tailwind>
-      <Head />
-      <Body className="bg-white" style={{ fontFamily: 'Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-        <Container className="mx-auto py-5 pb-12 px-4 max-w-[600px]">
-          <Section className="text-center mb-8">
-            <Img
-              src="https://luhive.com/LuhiveLogo.png"
-              alt="Luhive"
-              width="48"
-              height="46"
-              className="mx-auto mb-6"
-            />
-            <Heading className="text-[28px] font-semibold leading-tight mb-2.5 mt-0" style={{ color: '#242424' }}>
-              📣 New Announcement
-            </Heading>
-          </Section>
+  imageUrls = [
+    "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e",
+  ],
+  createdAt = new Date().toISOString(),
+  communityLogo = "https://luhive.com/LuhiveLogo.png",
+}: CommunityAnnouncementEmailProps) => {
+  const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
-          <Text className="text-base leading-relaxed mb-5" style={{ color: '#6B6B6B' }}>
-            Hi {recipientName},
-          </Text>
+  return (
+    <Html>
+      <Head>
+  <Font
+    fontFamily="Manrope"
+    fallbackFontFamily="Arial"
+    webFont={{
+      url: "https://fonts.gstatic.com/s/manrope/v15/xn7gYHE41ni1AdIRggexSg.woff2",
+      format: "woff2",
+    }}
+    fontWeight={400}
+    fontStyle="normal"
+  />
+</Head>
+      <Preview>{title}</Preview>
 
-          <Text className="text-base leading-relaxed mb-5" style={{ color: '#6B6B6B' }}>
-            {communityName} shared a new announcement for members:
-          </Text>
+      <Tailwind>
+        <Body
+          className="bg-white"
+          style={{ fontFamily: 'Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+        >
+          <Container className="max-w-[600px] mx-auto px-6 py-8">
 
-          <Section className="rounded-lg p-6 mb-8" style={{ backgroundColor: '#F9F9F9', border: '1px solid #E6E6E6' }}>
-            <Heading className="text-xl font-semibold leading-tight mb-4 mt-0" style={{ color: '#242424' }}>
-              {title}
-            </Heading>
-            <Text className="text-sm leading-relaxed m-0 whitespace-pre-wrap" style={{ color: '#6B6B6B' }}>
-              {description}
-            </Text>
-          </Section>
-
-          {imageUrls.length > 0 && (
-            <Section className="mb-8">
-              {imageUrls.map((url, index) => (
-                <Img
-                  key={`${url}-${index}`}
-                  src={url}
-                  alt={`Announcement image ${index + 1}`}
-                  width="560"
-                  className="rounded-md mb-3"
-                />
-              ))}
+            {/* TITLE */}
+            <Section className="mb-6">
+              <Heading
+                className="font-manrope font-semibold text-[38px] leading-[100%] tracking-[-0.03em] m-0"
+                style={{ color: "#242424" }}
+              >
+                {title}
+              </Heading>
             </Section>
-          )}
 
-          <Section className="text-center mb-8">
-            <Button
-              href={announcementLink}
-              className="text-white rounded-md text-base font-semibold no-underline text-center inline-block py-3.5 px-8"
-              style={{ backgroundColor: '#FF8040' }}
-            >
-              View Community
-            </Button>
-          </Section>
+            {/* COMMUNITY + DATE */}
+            <Section className="mb-6">
+              <Row>
+                <Column align="left">
+                  <Row>
+                    <Column style={{width:"30px"}}>
+                      <Img
+                        src={communityLogo}
+                        style={{objectFit: "cover", width:"22px", height:"22px" }}
+                      />
+                    </Column>
 
-          <Text className="text-sm leading-relaxed text-center mb-8" style={{ color: '#6B6B6B' }}>
-            You’re receiving this email because you are a member of {communityName}.
-          </Text>
+                    <Column>
+                      <Text
+                        className="font-semibold text-[14px] leading-[150%] tracking-[0] align-middle"
+                      >
+                        {communityName}
+                      </Text>
+                    </Column>
+                  </Row>
+                </Column>
 
-          <Hr className="my-8" style={{ borderColor: '#E6E6E6' }} />
+                <Column align="right">
+                  <Text
+                    className="text-xs m-0"
+                    style={{ color: "#9B9B9B" }}
+                  >
+                    {formattedDate}
+                  </Text>
+                </Column>
+              </Row>
+            </Section>
 
-          <Text className="text-xs text-center m-0" style={{ color: '#6B6B6B' }}>
-            © {new Date().getFullYear()} Luhive. All rights reserved.
-          </Text>
-        </Container>
-      </Body>
-    </Tailwind>
-  </Html>
-);
+            {/* IMAGE */}
+            {imageUrls?.length > 0 && (
+              <Section className="mb-6 text-center">
+                <Img
+                  src={imageUrls[0]}
+                  width="340"
+                  height="200"
+                  alt="Announcement image"
+                  className="rounded-[12px]"
+                  style={{
+                    width: "340px",
+                    height: "200px",
+                    borderRadius: "12px",
+                    objectFit: "cover",
+                    margin: "0 auto",
+                    display: "block",
+                  }}
+                />
+              </Section>
+            )}
+
+            {/* DESCRIPTION */}
+            <Section className="mb-8">
+              <Text
+                className="font-manrope text-[15px] leading-[150%] m-0"
+                style={{
+                  color: "#6B6B6B",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {description}
+              </Text>
+            </Section>
+
+            {/* BUTTON */}
+            <Section className="mb-10">
+              <Button
+                href={announcementLink}
+                className="font-manrope font-semibold text-sm text-white"
+                style={{
+                  backgroundColor: "#FF6A2A",
+                  padding: "14px 26px",
+                  borderRadius: "10px",
+                  textDecoration: "none",
+                  display: "inline-block",
+                }}
+              >
+                See {communityName}
+              </Button>
+            </Section>
+
+            <Hr style={{ borderColor: "#E8E8E8", margin: "24px 0" }} />
+
+            {/* FOOTER */}
+            <Section className="text-center mt-6">
+
+              <Text
+                className="text-xs mb-4"
+                style={{ color: "#9B9B9B" }}
+              >
+                Create your community on
+              </Text>
+
+              <Img
+                src="https://luhive.com/LuhiveLogo.png"
+                alt="Luhive"
+                width="28"
+                style={{
+                  margin: "0 auto 12px auto",
+                  display: "block",
+                }}
+              />
+
+              <Text
+                className="text-xs m-0"
+                style={{ color: "#9B9B9B" }}
+              >
+                © {new Date().getFullYear()} Luhive. All rights reserved.
+              </Text>
+
+            </Section>
+
+          </Container>
+        </Body>
+      </Tailwind>
+    </Html>
+  );
+};
 
 export default CommunityAnnouncementEmail;

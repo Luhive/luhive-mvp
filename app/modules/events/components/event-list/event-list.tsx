@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
+import { Button } from '~/shared/components/ui/button';
 import type { Event } from '~/shared/models/entity.types';
 import type { ExternalPlatform } from '~/modules/events/model/event.types';
 import { Badge } from '~/shared/components/ui/badge';
-import { Calendar, MapPin, Users, CalendarX, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Users, CalendarX, CalendarPlus, ExternalLink } from 'lucide-react';
 import dayjs, { type Dayjs } from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -24,9 +25,10 @@ interface EventListProps {
 	limit?: number;
 	onEventClick?: (event: Event) => void;
 	onEventsLoaded?: (events: Event[]) => void;
+  isOwner?: boolean;
 }
 
-export function EventList({ communityId, communitySlug, limit = 3, onEventClick, onEventsLoaded }: EventListProps) {
+export function EventList({ communityId, communitySlug, limit = 3, onEventClick, onEventsLoaded, isOwner = false }: EventListProps) {
 	const [events, setEvents] = useState<Event[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -67,7 +69,7 @@ export function EventList({ communityId, communitySlug, limit = 3, onEventClick,
   }
 
   if (events.length === 0) {
-    return <EventListEmpty />;
+    return <EventListEmpty communitySlug={communitySlug} isOwner={isOwner} />;
   }
 
 	return (
@@ -249,7 +251,19 @@ export function EventListSkeleton({ count = 3 }: { count?: number }) {
   );
 }
 
-function EventListEmpty() {
+function EventListEmpty({ communitySlug, isOwner }: { communitySlug: string; isOwner: boolean }) {
+  if (isOwner) {
+    return (
+      <div className="flex min-h-[250px] flex-col items-center justify-center px-4 text-center">
+        <CalendarPlus className="h-8 w-8 text-muted-foreground" />
+        <p className="mt-3 text-base text-muted-foreground">Add New Event</p>
+        <Button asChild size="sm" className="mt-4">
+          <Link to={`/dashboard/${communitySlug}/events/create`}>Create Event</Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
       <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
