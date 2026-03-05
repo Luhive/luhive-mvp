@@ -97,16 +97,25 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const serviceClient = createServiceRoleClient();
 
+    console.log(`[Email Tracking] Processing email opened:`, {
+      email,
+      messageId,
+      announcementId,
+      timestamp: new Date().toISOString(),
+    });
+
     const userId = await findUserIdByEmail(serviceClient, email);
     if (!userId) {
-      console.warn(`User not found for email: ${email}`);
+      console.warn(`[Email Tracking] User not found for email: ${email}`);
       return new Response(JSON.stringify({ received: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    const { data: existingView } = await serviceClient
+    console.log(`[Email Tracking] Found user: ${userId} for email: ${email}`);
+
+    const { data: existingView, error: existingError } = await serviceClient
       .from("announcement_views")
       .select("id")
       .eq("announcement_id", announcementId)
@@ -114,32 +123,60 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("view_source", "email")
       .limit(1);
 
+    if (existingError) {
+      console.error(`[Email Tracking] Error checking existing view:`, existingError);
+    }
+
     if (existingView && existingView.length > 0) {
-      return new Response(JSON.stringify({ received: true, recorded: true }), {
+      console.log(`[Email Tracking] View already recorded for this user`);
+      return new Response(JSON.stringify({ received: true, recorded: true, duplicate: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
 
     // Create a view record with announcement ID
-    const { error: insertError } = await serviceClient
+    console.log(`[Email Tracking] Attempting to insert view record:`, {
+      announcement_id: announcementId,
+      user_id: userId,
+      view_source: "email",
+    });
+
+    const { data: insertedData, error: insertError } = await serviceClient
       .from("announcement_views")
       .insert({
         announcement_id: announcementId,
         user_id: userId,
         view_source: "email",
-      });
+      })
+      .select();
 
     if (insertError) {
-      console.error("Error recording email open view:", insertError);
-      // Still return 200 to acknowledge webhook receipt
-      return new Response(JSON.stringify({ received: true, error: "Failed to record view" }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
+      console.error(`[Email Tracking] RLS/Insert Error:`, {
+        message: insertError.message,
+        code: (insertError as any).code,
+        details: (insertError as any).details,
+        hint: (insertError as any).hint,
       });
+      // Still return 200 to acknowledge webhook receipt
+      return new Response(
+        JSON.stringify({
+          received: true,
+          error: "Failed to record view",
+          details: insertError.message,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
-    console.log(`Email open tracked for announcement: ${announcementId}, user: ${userId}`);
+    console.log(`[Email Tracking] ✅ Successfully tracked email open:`, {
+      announcementId,
+      userId,
+      insertedData,
+    });
 
     return new Response(JSON.stringify({ received: true, recorded: true }), {
       status: 200,
