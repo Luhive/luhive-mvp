@@ -376,4 +376,9 @@ select:-webkit-autofill:active {
   scrollbar-width: none;
   scrollbar-color: #ff8040 white;
 }
-/* 
+
+.scroll-none{
+  overflow: auto;
+  scrollbar-width: none;      
+  -ms-overflow-style: none;
+}

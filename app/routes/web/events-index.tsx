@@ -10,6 +10,7 @@ interface OutletContext {
   community: Community | null;
   loading: boolean;
   slug: string;
+  activeTab: 'upcoming' | 'past';
   onEventClick?: (event: Event) => void;
 }
 
@@ -44,7 +45,7 @@ export function meta({ params }: { params: { slug: string } }) {
 }
 
 export default function EventsIndex() {
-  const { community, loading, slug, onEventClick } = useOutletContext<OutletContext>();
+  const { community, loading, slug, activeTab, onEventClick } = useOutletContext<OutletContext>();
   const location = useLocation();
   const hasRestoredScrollRef = useRef(false);
   const savedScrollRef = useRef<number | null>(null);
@@ -81,6 +82,7 @@ export default function EventsIndex() {
       community={community}
       loading={loading}
       slug={slug}
+      activeTab={activeTab}
       initialEvents={initialEvents}
       onEventClick={onEventClick}
     />

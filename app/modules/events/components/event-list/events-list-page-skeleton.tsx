@@ -1,10 +1,10 @@
 import { Link, useNavigate } from 'react-router';
+import { useState } from 'react';
 import { Card, CardContent } from '~/shared/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/shared/components/ui/tabs';
 import { Skeleton } from '~/shared/components/ui/skeleton';
 import { Button } from '~/shared/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '~/shared/components/ui/avatar';
-import { Calendar, MapPin, Users, Infinity, ArrowLeft, X } from 'lucide-react';
+import { Calendar, MapPin, Users, Infinity, ArrowLeft } from 'lucide-react';
 import { TopNavigation } from '~/shared/components/navigation';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -28,6 +28,7 @@ export function EventsListPageSkeleton({ events, communitySlug, community, user,
 	// Don't show skeletons if we already have events loaded
 	const skeletonCount = events.length < 3 ? Math.max(0, 3 - events.length) : 0;
 	const navigate = useNavigate();
+	const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
 	const handleBack = () => {
 		navigate(`/c/${communitySlug}`, { replace: true });
@@ -77,25 +78,60 @@ export function EventsListPageSkeleton({ events, communitySlug, community, user,
 							)}
 						</div>
 					</div>
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={handleBack}
-						className="h-9 w-9"
+					<div className="hidden sm:inline-flex bg-muted text-muted-foreground h-9 w-full max-w-md items-center justify-center rounded-lg p-[3px]">
+						<button
+							type="button"
+							onClick={() => setActiveTab('upcoming')}
+							className={`inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md px-2 py-1 text-sm font-medium transition-[color,box-shadow] ${
+								activeTab === 'upcoming'
+									? 'bg-background text-foreground shadow-sm'
+									: 'text-foreground'
+							}`}
+						>
+							Upcoming
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveTab('past')}
+							className={`inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md px-2 py-1 text-sm font-medium transition-[color,box-shadow] ${
+								activeTab === 'past'
+									? 'bg-background text-foreground shadow-sm'
+									: 'text-foreground'
+							}`}
+						>
+							Past
+						</button>
+					</div>
+				</div>
+				<div className="mt-4 sm:hidden bg-muted text-muted-foreground inline-flex h-9 w-full items-center justify-center rounded-lg p-[3px]">
+					<button
+						type="button"
+						onClick={() => setActiveTab('upcoming')}
+						className={`inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md px-2 py-1 text-sm font-medium transition-[color,box-shadow] ${
+							activeTab === 'upcoming'
+								? 'bg-background text-foreground shadow-sm'
+								: 'text-foreground'
+						}`}
 					>
-						<X className="h-5 w-5" />
-					</Button>
+						Upcoming
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab('past')}
+						className={`inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center rounded-md px-2 py-1 text-sm font-medium transition-[color,box-shadow] ${
+							activeTab === 'past'
+								? 'bg-background text-foreground shadow-sm'
+								: 'text-foreground'
+						}`}
+					>
+						Past
+					</button>
 				</div>
 			</div>
 
 			{/* Content */}
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				<Tabs defaultValue="upcoming" className="w-full">
-					<TabsList className="grid w-full max-w-md grid-cols-2">
-						<TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-						<TabsTrigger value="past">Past</TabsTrigger>
-					</TabsList>
-					<TabsContent value="upcoming" className="mt-6">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 sm:pt-8">
+				{activeTab === 'upcoming' ? (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							{/* Show existing events */}
 							{events.map((event) => (
@@ -111,11 +147,9 @@ export function EventsListPageSkeleton({ events, communitySlug, community, user,
 								<EventCardSkeleton key={`skeleton-${i}`} />
 							))}
 						</div>
-					</TabsContent>
-					<TabsContent value="past" className="mt-6">
-						<EventsGridSkeleton />
-					</TabsContent>
-				</Tabs>
+				) : (
+					<EventsGridSkeleton />
+				)}
 			</div>
 		</>
 	);

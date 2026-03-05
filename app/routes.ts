@@ -28,11 +28,13 @@ export default [
     route("c/:slug/events/:eventId", "routes/web/event-detail.tsx"),
     route("c/:slug/events/:eventId/collaboration", "routes/c.$slug.events.$eventId.collaboration.tsx"),
     route("c/:slug/collaboration-invite/:collaborationId", "routes/c.$slug.collaboration-invite.$collaborationId.tsx"),
-    route("c/:slug/events/:eventId/verify", "routes/web/event-verify.tsx"),
-    route(
-      "c/:slug/events/:eventId/verification-sent",
-      "routes/web/event-verification-sent.tsx",
-    ),
+
+    // route("c/:slug/events/:eventId/verify", "routes/web/event-verify.tsx"),
+    // route(
+    //   "c/:slug/events/:eventId/verification-sent",
+    //   "routes/web/event-verification-sent.tsx",
+    // ),
+    route("c/:slug/announcements/:announcementId", "routes/web/c.$slug.announcements.$announcementId.tsx"),
   ]),
 
   route("login", "routes/auth/login.tsx"),
@@ -46,6 +48,9 @@ export default [
     index("routes/dashboard/overview.tsx"),
     route("profile", "routes/dashboard/edit-profile.tsx"),
     route("events", "routes/dashboard/events.tsx"),
+    route("announcements", "routes/dashboard/announcements.tsx"),
+    route("announcements/create", "routes/dashboard/announcements-create.tsx"),
+    route("announcements/:announcementId/edit", "routes/dashboard/announcements-edit.tsx"),
     route("events/:eventId/edit", "routes/dashboard/event-edit.tsx"),
     route("events/create", "routes/dashboard/events-create.tsx"),
     route(
@@ -67,6 +72,7 @@ export default [
   route("auth/email-sent/reset", "routes/auth/reset-password-email-sent.tsx"),
 
   route("auth/verify", "routes/auth/verify.tsx"),
+  route("auth/verify-otp", "routes/auth/verify-otp.tsx"),
   route("auth/forgot-password", "routes/auth/forgot-password.tsx"),
   route("auth/verify/reset-password", "routes/auth/verify-reset-password.tsx"),
 
@@ -89,6 +95,7 @@ export default [
   route("api/join-community", "routes/api/join-community.tsx"),
   route("api/events/new-event-notification", "routes/api/events/new-event-notification.tsx"),
   route("api/events/collaboration-notification", "routes/api/events/collaboration-notification.tsx"),
+  route("api/announcements/new-announcement-notification", "routes/api/announcements/new-announcement-notification.tsx"),
 
 
   // Integrations API routes (Google Forms)

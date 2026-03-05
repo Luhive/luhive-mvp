@@ -3,14 +3,19 @@ import { createClient } from "~/shared/lib/supabase/server";
 import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { supabase } = createClient(request);
+  const { supabase, headers } = createClient(request);
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return redirect("/login");
+    const returnUrl = new URL(request.url).pathname + new URL(request.url).search;
+    headers.append(
+      "Set-Cookie",
+      `pending_return_to=${encodeURIComponent(returnUrl)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
+    );
+    return redirect("/login", { headers });
   }
 
   const formData = await request.formData();

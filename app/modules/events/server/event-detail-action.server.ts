@@ -1,10 +1,8 @@
-import crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { createClient } from "~/shared/lib/supabase/server";
 import {
-  sendVerificationEmail,
   sendRegistrationConfirmationEmail,
   sendRegistrationRequestEmail,
   sendSubscriptionConfirmationEmail,
@@ -49,255 +47,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (communityError || !community) {
     console.error("Community not found for event:", eventId, communityError);
     return { success: false, error: "Community not found" };
-  }
-
-  if (intent === "anonymous-custom-questions") {
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const customAnswersStr = formData.get("custom_answers") as string;
-
-    if (!name || !email) {
-      return { success: false, error: "Name and email are required" };
-    }
-
-    let customAnswers = null;
-    if (customAnswersStr) {
-      try {
-        customAnswers = JSON.parse(customAnswersStr);
-      } catch (e) {
-        console.error("Error parsing custom_answers:", e);
-      }
-    }
-
-    if (event.custom_questions) {
-      const { validateCustomAnswers } = await import(
-        "~/modules/events/utils/custom-questions"
-      );
-      const validation = validateCustomAnswers(
-        customAnswers || {},
-        event.custom_questions as any
-      );
-      if (!validation.valid) {
-        return {
-          success: false,
-          error: "Please fill in all required fields",
-          validationErrors: validation.errors,
-        };
-      }
-    }
-
-    const { data: existingRegistration } = await supabase
-      .from("event_registrations")
-      .select("id, is_verified")
-      .eq("event_id", eventId)
-      .eq("anonymous_email", email)
-      .maybeSingle();
-
-    if (existingRegistration?.is_verified) {
-      return {
-        success: false,
-        error: "This email is already registered for this event",
-      };
-    }
-
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const approvalStatus = event.is_approve_required ? "pending" : "approved";
-
-    // Get community ID from slug to track registration source
-    let registrationSourceCommunityId = community.id;
-    if (slug && slug !== community.slug) {
-      // User is registering from a co-host community page
-      const { data: sourceCommunity } = await supabase
-        .from("communities")
-        .select("id")
-        .eq("slug", slug)
-        .single();
-      if (sourceCommunity) {
-        registrationSourceCommunityId = sourceCommunity.id;
-      }
-    }
-
-    const { error: registerError } = await supabase
-      .from("event_registrations")
-      .insert({
-        event_id: eventId,
-        anonymous_name: name,
-        anonymous_email: email,
-        rsvp_status: "going",
-        is_verified: false,
-        verification_token: verificationToken,
-        token_expires_at: tokenExpiresAt.toISOString(),
-        approval_status: approvalStatus,
-        custom_answers: customAnswers,
-        registration_source_community_id: registrationSourceCommunityId,
-      });
-
-    if (registerError) {
-      const duplicateError = sanitizeDuplicateError(registerError, {
-        email,
-        isVerified: existingRegistration?.is_verified,
-      });
-      if (duplicateError) {
-        return { success: false, error: duplicateError };
-      }
-      console.error("Error creating registration:", registerError);
-      return {
-        success: false,
-        error: "Failed to create registration. Please try again.",
-      };
-    }
-
-    const verificationLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}/verify?token=${verificationToken}`;
-    const registerAccountLink = `${new URL(request.url).origin}/signup`;
-
-    try {
-      await sendVerificationEmail({
-        eventTitle: event.title,
-        communityName: community.name,
-        verificationLink,
-        recipientName: name,
-        recipientEmail: email,
-        registerAccountLink,
-      });
-    } catch (error) {
-      console.error("Failed to send verification email:", error);
-    }
-
-    return redirect(
-      `/c/${slug}/events/${eventId}/verification-sent?email=${encodeURIComponent(email)}`
-    );
-  }
-
-  if (intent === "anonymous-register") {
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-
-    if (!name || !email) {
-      return { success: false, error: "Name and email are required" };
-    }
-
-    const hasCustomQuestions =
-      event.custom_questions &&
-      (
-        (event.custom_questions as { phone?: { enabled?: boolean } })
-          .phone?.enabled ||
-        ((event.custom_questions as { custom?: unknown[] }).custom?.length ?? 0) > 0
-      );
-
-    if (hasCustomQuestions) {
-      return {
-        success: true,
-        needsCustomQuestions: true,
-        anonymousName: name,
-        anonymousEmail: email,
-      };
-    }
-
-    const { data: existingRegistration, error: existingRegistrationError } =
-      await supabase
-        .from("event_registrations")
-        .select("id, is_verified")
-        .eq("event_id", eventId)
-        .eq("anonymous_email", email)
-        .maybeSingle();
-
-    if (
-      existingRegistrationError &&
-      existingRegistrationError.code !== "PGRST116"
-    ) {
-      console.error("Error checking registration:", existingRegistrationError);
-      return {
-        success: false,
-        error: "Failed to check existing registration",
-      };
-    }
-
-    if (existingRegistration) {
-      if (existingRegistration.is_verified) {
-        return {
-          success: false,
-          error: "This email is already registered for this event",
-        };
-      } else {
-        return {
-          success: false,
-          error: "A verification email has already been sent to this address",
-        };
-      }
-    }
-
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const approvalStatus = event.is_approve_required ? "pending" : "approved";
-
-    // Get community ID from slug to track registration source
-    let registrationSourceCommunityId = community.id;
-    if (slug && slug !== community.slug) {
-      // User is registering from a co-host community page
-      const { data: sourceCommunity } = await supabase
-        .from("communities")
-        .select("id")
-        .eq("slug", slug)
-        .single();
-      if (sourceCommunity) {
-        registrationSourceCommunityId = sourceCommunity.id;
-      }
-    }
-
-    const { error: registerError } = await supabase
-      .from("event_registrations")
-      .insert({
-        event_id: eventId,
-        anonymous_name: name,
-        anonymous_email: email,
-        rsvp_status: "going",
-        is_verified: false,
-        verification_token: verificationToken,
-        token_expires_at: tokenExpiresAt.toISOString(),
-        approval_status: approvalStatus,
-        registration_source_community_id: registrationSourceCommunityId,
-      });
-
-    if (registerError) {
-      const duplicateError = sanitizeDuplicateError(registerError, {
-        email,
-        isVerified: existingRegistration?.is_verified,
-      });
-      if (duplicateError) {
-        return { success: false, error: duplicateError };
-      }
-      console.error("Error creating registration:", registerError);
-      return {
-        success: false,
-        error: "Failed to create registration. Please try again.",
-      };
-    }
-
-    const verificationLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}/verify?token=${verificationToken}`;
-    const registerAccountLink = `${new URL(request.url).origin}/signup`;
-
-    try {
-      await sendVerificationEmail({
-        eventTitle: event.title,
-        communityName: community.name,
-        verificationLink,
-        recipientName: name,
-        recipientEmail: email,
-        registerAccountLink,
-      });
-    } catch (error) {
-      console.error("Failed to send verification email:", error);
-    }
-
-    const submissionSource = formData.get("_source");
-    if (submissionSource === "sidebar") {
-      return { success: true, verificationSent: true, email };
-    }
-
-    return redirect(
-      `/c/${slug}/events/${eventId}/verification-sent?email=${encodeURIComponent(email)}`
-    );
   }
 
   if (intent === "anonymous-subscribe") {
@@ -409,6 +158,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
     } catch (error) {
       console.error("Failed to send subscription confirmation email:", error);
+    }
+
+    // Notify host and co-host community admins about new subscription
+    try {
+      const hostCommunityName = community.name;
+      const { data: collaborations } = await supabase
+        .from("event_collaborations")
+        .select("community_id, community:communities(name)")
+        .eq("event_id", eventId)
+        .eq("status", "accepted")
+        .neq("role", "host");
+
+      const coHostCommunityNames = collaborations
+        ?.map((c: any) => c.community?.name)
+        .filter(Boolean) as string[] || [];
+
+      await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "registration-notification",
+          eventId,
+          hostCommunityId: event.community_id,
+          hostCommunityName,
+          coHostCommunityNames,
+          eventTitle: event.title,
+          registrantName: name || email?.split("@")[0] || "Someone",
+          registrantEmail: email,
+          eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+          eventTime: eventDate.format("h:mm A z"),
+          eventLink,
+        }),
+      });
+    } catch (notifyError) {
+      console.error("Failed to trigger registration notification:", notifyError);
     }
 
     return {
@@ -736,6 +522,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
     } catch (error) {
       console.error("Failed to send subscription email:", error);
+    }
+
+    // Notify host and co-host community admins about new subscription
+    try {
+      const hostCommunityName = community.name;
+      const { data: collaborations } = await supabase
+        .from("event_collaborations")
+        .select("community_id, community:communities(name)")
+        .eq("event_id", eventId)
+        .eq("status", "accepted")
+        .neq("role", "host");
+
+      const coHostCommunityNames = collaborations
+        ?.map((c: any) => c.community?.name)
+        .filter(Boolean) as string[] || [];
+
+      await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "registration-notification",
+          eventId,
+          hostCommunityId: event.community_id,
+          hostCommunityName,
+          coHostCommunityNames,
+          eventTitle: event.title,
+          registrantName: profile?.full_name || user.email?.split("@")[0] || "Someone",
+          registrantEmail: user.email || "",
+          eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+          eventTime: eventDate.format("h:mm A z"),
+          eventLink,
+        }),
+      });
+    } catch (notifyError) {
+      console.error("Failed to trigger registration notification:", notifyError);
     }
 
     return {

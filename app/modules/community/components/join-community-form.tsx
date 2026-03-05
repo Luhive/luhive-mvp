@@ -42,6 +42,7 @@ import {
   type MemberJoinFormValues,
 } from "~/modules/community/model/registration-schema"
 import { toast } from "sonner"
+import { OtpInputInline } from "~/modules/auth/components/otp-input-inline";
 
 interface JoinCommunityFormProps {
   communityId: string
@@ -53,6 +54,29 @@ interface JoinCommunityFormProps {
   returnTo?: string
 }
 
+type GuestStep = "email" | "details" | "otp";
+
+type CheckEmailFetcherData = {
+  success?: boolean;
+  otpSent?: boolean;
+  userExists?: boolean;
+  email?: string;
+  error?: string;
+};
+
+type SignupFetcherData = {
+  success?: boolean;
+  otpSent?: boolean;
+  email?: string;
+  error?: string;
+  fieldErrors?: {
+    name?: string[];
+    surname?: string[];
+    email?: string[];
+    password?: string[];
+  };
+};
+
 export function JoinCommunityForm({
   communityId,
   communityName,
@@ -62,16 +86,21 @@ export function JoinCommunityForm({
   trigger,
   returnTo,
 }: JoinCommunityFormProps) {
-  const [open, setOpen] = React.useState(false)
-  const isMobile = useIsMobile()
-  const joinFetcher = useFetcher()
-  const revalidator = useRevalidator()
-  const submit = useSubmit()
-  const navigation = useNavigation()
-  const navigate = useNavigate()
-  const [isEmailStepComplete, setIsEmailStepComplete] = React.useState(false)
-  const [emailStepError, setEmailStepError] = React.useState<string | null>(null)
-  const lastProcessedFetcherDataRef = React.useRef<unknown>(null)
+  const [open, setOpen] = React.useState(false);
+  const isMobile = useIsMobile();
+  const joinFetcher = useFetcher();
+  const checkEmailFetcher = useFetcher<CheckEmailFetcherData>();
+  const signupFetcher = useFetcher<SignupFetcherData>();
+  const revalidator = useRevalidator();
+  const navigate = useNavigate();
+  const submit = useSubmit();
+  const navigation = useNavigation();
+  const [guestStep, setGuestStep] = React.useState<GuestStep>("email");
+  const [otpEmail, setOtpEmail] = React.useState("");
+  const [emailStepError, setEmailStepError] = React.useState<string | null>(
+    null,
+  );
+  const lastProcessedFetcherDataRef = React.useRef<unknown>(null);
 
   const guestForm = useForm<GuestJoinFormValues>({
     resolver: zodResolver(guestJoinSchema),
@@ -79,97 +108,157 @@ export function JoinCommunityForm({
       name: "",
       surname: "",
       email: "",
+      password: "",
       communityId: communityId,
     },
-  })
+  });
 
   const memberForm = useForm<MemberJoinFormValues>({
     resolver: zodResolver(memberJoinSchema),
     defaultValues: {
       communityId: communityId,
     },
-  })
+  });
 
   const isSubmitting =
-    joinFetcher.state === "submitting" || joinFetcher.state === "loading"
+    joinFetcher.state === "submitting" || joinFetcher.state === "loading";
+
+  const isCheckingEmail =
+    checkEmailFetcher.state === "submitting" ||
+    checkEmailFetcher.state === "loading";
 
   // OAuth uses submit to /signup, so we track it via navigation
-  const submittingIntent = navigation.formData?.get("intent") as string | null
-  const isSubmittingOAuth = navigation.state === "submitting" && submittingIntent === "oauth"
+  const submittingIntent = navigation.formData?.get("intent") as string | null;
+  const isSubmittingOAuth =
+    navigation.state === "submitting" && submittingIntent === "oauth";
+  const isSubmittingGuestSignup =
+    signupFetcher.state === "submitting" || signupFetcher.state === "loading";
 
   // For logged-in users: handle leave
   const handleLeave = () => {
-    const formData = new FormData()
-    formData.append("intent", "leave_community")
-    formData.append("communityId", communityId)
+    const formData = new FormData();
+    formData.append("intent", "leave_community");
+    formData.append("communityId", communityId);
 
-    joinFetcher.submit(formData, { method: "post", action: "/api/join-community" })
-    setOpen(false)
-  }
+    joinFetcher.submit(formData, {
+      method: "post",
+      action: "/api/join-community",
+    });
+    setOpen(false);
+  };
 
   // For logged-in users: submit directly to join
   const onMemberSubmit = (values: MemberJoinFormValues) => {
-    const formData = new FormData()
-    formData.append("intent", "join_community")
-    formData.append("communityId", values.communityId)
+    const formData = new FormData();
+    formData.append("intent", "join_community");
+    formData.append("communityId", values.communityId);
 
-    joinFetcher.submit(formData, { method: "post", action: "/api/join-community" })
-  }
+    joinFetcher.submit(formData, {
+      method: "post",
+      action: "/api/join-community",
+    });
+  };
 
-  // For non-logged-in users: redirect to register with params
+  // For non-logged-in users: signup inline in modal and move to OTP step
   const onGuestSubmit = (values: GuestJoinFormValues) => {
-    const normalizedEmail = values.email.trim()
-    const params = new URLSearchParams({
-      name: values.name,
-      surname: values.surname,
-      email: normalizedEmail,
-      communityId: values.communityId,
-      communityName: communityName,
-    })
-    if (returnTo) params.set("returnTo", returnTo)
-    navigate(`/signup?${params.toString()}`)
-  }
+    const normalizedEmail = values.email.trim();
+    const formData = new FormData();
+    formData.append("intent", "password");
+    formData.append("_modal", "true");
+    formData.append("name", values.name);
+    formData.append("surname", values.surname);
+    formData.append("email", normalizedEmail);
+    formData.append("password", values.password);
+    formData.append("communityId", values.communityId);
+    if (returnTo) formData.append("returnTo", returnTo);
+
+    signupFetcher.submit(formData, { method: "post", action: "/signup" });
+  };
 
   // Handle Google OAuth for guest users
   const handleGoogleOAuth = () => {
-    const formData = new FormData()
-    formData.append("intent", "oauth")
-    formData.append("provider", "google")
-    formData.append("communityId", communityId)
-    if (returnTo) formData.append("returnTo", returnTo)
+    const formData = new FormData();
+    formData.append("intent", "oauth");
+    formData.append("provider", "google");
+    formData.append("communityId", communityId);
+    if (returnTo) formData.append("returnTo", returnTo);
 
     // Submit to register route
-    submit(formData, { method: "post", action: "/signup" })
-  }
+    submit(formData, { method: "post", action: "/signup" });
+  };
 
   // Close dialog/drawer on successful join/leave, show toast, and revalidate page data (once per response)
   React.useEffect(() => {
-    const data = joinFetcher.data as { success?: boolean; message?: string; error?: string } | undefined
-    if (!isLoggedIn || joinFetcher.state !== "idle" || !data) return
-    if (lastProcessedFetcherDataRef.current === joinFetcher.data) return
-    lastProcessedFetcherDataRef.current = joinFetcher.data
+    const data = joinFetcher.data as
+      | { success?: boolean; message?: string; error?: string }
+      | undefined;
+    if (!isLoggedIn || joinFetcher.state !== "idle" || !data) return;
+    if (lastProcessedFetcherDataRef.current === joinFetcher.data) return;
+    lastProcessedFetcherDataRef.current = joinFetcher.data;
     if (data.success) {
-      toast.success(data.message || "Success!")
-      setOpen(false)
-      memberForm.reset()
-      revalidator.revalidate()
+      toast.success(data.message || "Success!");
+      setOpen(false);
+      memberForm.reset();
+      revalidator.revalidate();
     } else if (data.error) {
-      toast.error(data.error)
+      toast.error(data.error);
     }
-  }, [isLoggedIn, joinFetcher.state, joinFetcher.data, memberForm, revalidator])
+  }, [
+    isLoggedIn,
+    joinFetcher.state,
+    joinFetcher.data,
+    memberForm,
+    revalidator,
+  ]);
 
   React.useEffect(() => {
-    if (open) return
+    const data = signupFetcher.data;
+    if (!data || signupFetcher.state !== "idle") return;
+
+    if (data.success && data.otpSent) {
+      const email = (data.email || guestForm.getValues("email") || "").trim();
+      setOtpEmail(email);
+      setGuestStep("otp");
+      return;
+    }
+
+    if (data.error) {
+      toast.error(data.error);
+    }
+  }, [guestForm, signupFetcher.data, signupFetcher.state]);
+
+  React.useEffect(() => {
+    const data = checkEmailFetcher.data;
+    if (!data || checkEmailFetcher.state !== "idle") return;
+
+    if (data.userExists) {
+      setOtpEmail((data.email || guestForm.getValues("email") || "").trim());
+      setGuestStep("otp");
+      return;
+    }
+    if (data.success && !data.userExists) {
+      setGuestStep("details");
+      return;
+    }
+    if (data.error) {
+      setEmailStepError(data.error);
+    }
+  }, [checkEmailFetcher.data, checkEmailFetcher.state, guestForm]);
+
+  React.useEffect(() => {
+    if (open) return;
 
     guestForm.reset({
       name: "",
       surname: "",
       email: "",
+      password: "",
       communityId,
-    })
-    setIsEmailStepComplete(false)
-    setEmailStepError(null)
-  }, [communityId, guestForm, open])
+    });
+    setGuestStep("email");
+    setOtpEmail("");
+    setEmailStepError(null);
+  }, [communityId, guestForm, open]);
 
   const defaultTrigger = isMember ? (
     <Button
@@ -192,36 +281,44 @@ export function JoinCommunityForm({
         </span>
       </span>
     </Button>
-  )
+  );
 
-  const consentMessage = `By joining ${communityName}, you agree to email notifications. Unsubscribe anytime.`
+  const consentMessage = `By joining ${communityName}, you agree to email notifications. Unsubscribe anytime.`;
 
   const headerDescription = isMember
     ? "You are currently a member of this community."
     : isLoggedIn
       ? "Review the details below and confirm to join our community."
-      : null
+      : null;
 
   const handleContinueWithEmail = () => {
-    const rawEmail = guestForm.getValues("email")
-    const trimmedEmail = typeof rawEmail === "string" ? rawEmail.trim() : ""
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const rawEmail = guestForm.getValues("email");
+    const trimmedEmail = typeof rawEmail === "string" ? rawEmail.trim() : "";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
-      setEmailStepError("Please enter a valid email address.")
-      return
+      setEmailStepError("Please enter a valid email address.");
+      return;
     }
 
-    setEmailStepError(null)
-    guestForm.setValue("email", trimmedEmail, { shouldValidate: true })
-    setIsEmailStepComplete(true)
-  }
+    setEmailStepError(null);
+    guestForm.setValue("email", trimmedEmail, { shouldValidate: true });
+
+    const formData = new FormData();
+    formData.append("intent", "check-email");
+    formData.append("_modal", "true");
+    formData.append("email", trimmedEmail);
+    checkEmailFetcher.submit(formData, { method: "post", action: "/signup" });
+  };
 
   // Leave confirmation content
   const LeaveConfirmationContent = () => (
     <div className="space-y-4">
       <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
-        <p>Are you sure you want to leave {communityName}? You will no longer receive updates about events and announcements.</p>
+        <p>
+          Are you sure you want to leave {communityName}? You will no longer
+          receive updates about events and announcements.
+        </p>
       </div>
 
       {isMobile ? (
@@ -280,12 +377,15 @@ export function JoinCommunityForm({
         </div>
       )}
     </div>
-  )
+  );
 
   // Form content for logged-in users (just consent)
   const MemberFormContent = () => (
     <Form {...memberForm}>
-      <form onSubmit={memberForm.handleSubmit(onMemberSubmit)} className="space-y-4">
+      <form
+        onSubmit={memberForm.handleSubmit(onMemberSubmit)}
+        className="space-y-4"
+      >
         {userEmail && (
           <div className="space-y-2">
             <FormLabel>Your Email</FormLabel>
@@ -340,15 +440,20 @@ export function JoinCommunityForm({
             </Button>
           </div>
         )}
-        <p className="text-center text-xs text-muted-foreground">{consentMessage}</p>
+        <p className="text-center text-xs text-muted-foreground">
+          {consentMessage}
+        </p>
       </form>
     </Form>
-  )
+  );
 
   // Form content for non-logged-in users (name, surname, email)
   const GuestFormContent = () => (
     <Form {...guestForm}>
-      <form onSubmit={guestForm.handleSubmit(onGuestSubmit)} className="space-y-4">
+      <form
+        onSubmit={guestForm.handleSubmit(onGuestSubmit)}
+        className="space-y-4"
+      >
         <Button
           type="button"
           onClick={handleGoogleOAuth}
@@ -363,10 +468,22 @@ export function JoinCommunityForm({
             aria-hidden
             focusable="false"
           >
-            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.843 32.658 29.29 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20c10.494 0 19.143-7.656 19.143-20 0-1.341-.147-2.652-.432-3.917z" />
-            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.813C14.297 16.128 18.787 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 15.316 4 7.954 8.924 6.306 14.691z" />
-            <path fill="#4CAF50" d="M24 44c5.196 0 9.86-1.992 13.38-5.223l-6.173-5.234C29.093 34.484 26.682 35.5 24 35.5c-5.262 0-9.799-3.507-11.397-8.248l-6.52 5.017C8.704 39.043 15.83 44 24 44z" />
-            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z" />
+            <path
+              fill="#FFC107"
+              d="M43.611 20.083H42V20H24v8h11.303C33.843 32.658 29.29 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20c10.494 0 19.143-7.656 19.143-20 0-1.341-.147-2.652-.432-3.917z"
+            />
+            <path
+              fill="#FF3D00"
+              d="M6.306 14.691l6.571 4.813C14.297 16.128 18.787 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 15.316 4 7.954 8.924 6.306 14.691z"
+            />
+            <path
+              fill="#4CAF50"
+              d="M24 44c5.196 0 9.86-1.992 13.38-5.223l-6.173-5.234C29.093 34.484 26.682 35.5 24 35.5c-5.262 0-9.799-3.507-11.397-8.248l-6.52 5.017C8.704 39.043 15.83 44 24 44z"
+            />
+            <path
+              fill="#1976D2"
+              d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z"
+            />
           </svg>
           {isSubmittingOAuth ? <Spinner /> : "Continue with Google"}
         </Button>
@@ -389,9 +506,9 @@ export function JoinCommunityForm({
                   aria-label="Email"
                   {...field}
                   onChange={(event) => {
-                    field.onChange(event.target.value)
+                    field.onChange(event.target.value);
                     if (emailStepError) {
-                      setEmailStepError(null)
+                      setEmailStepError(null);
                     }
                   }}
                 />
@@ -400,21 +517,29 @@ export function JoinCommunityForm({
             </FormItem>
           )}
         />
-        {emailStepError && <p className="text-sm text-destructive">{emailStepError}</p>}
+        {emailStepError && (
+          <p className="text-sm text-destructive">{emailStepError}</p>
+        )}
 
         <input type="hidden" {...guestForm.register("communityId")} />
 
-        {!isEmailStepComplete && (
-          <Button type="button" onClick={handleContinueWithEmail} disabled={isSubmittingOAuth} className="w-full">
-            Continue with Email
+        {guestStep === "email" && (
+          <Button
+            type="button"
+            onClick={handleContinueWithEmail}
+            disabled={isCheckingEmail || isSubmittingOAuth}
+            className="w-full"
+          >
+            {isCheckingEmail ? <Spinner /> : "Continue with Email"}
           </Button>
         )}
 
         <div
-          className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out ${isEmailStepComplete
+          className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out ${
+            guestStep === "details"
               ? "max-h-[420px] opacity-100 translate-y-0"
               : "max-h-0 opacity-0 translate-y-1 pointer-events-none"
-            }`}
+          }`}
         >
           <div>
             <div className="space-y-4 pt-2">
@@ -423,7 +548,7 @@ export function JoinCommunityForm({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                  <FormControl>
+                    <FormControl>
                       <Input placeholder="Name" aria-label="Name" {...field} />
                     </FormControl>
                     <FormMessage />
@@ -436,58 +561,131 @@ export function JoinCommunityForm({
                 name="surname"
                 render={({ field }) => (
                   <FormItem>
-                  <FormControl>
-                      <Input placeholder="Surname" aria-label="Surname" {...field} />
+                    <FormControl>
+                      <Input
+                        placeholder="Surname"
+                        aria-label="Surname"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              <FormField
+                control={guestForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        aria-label="Password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {signupFetcher.data?.fieldErrors?.password && (
+                <p className="text-sm text-destructive">
+                  {signupFetcher.data.fieldErrors.password[0]}
+                </p>
+              )}
+
+              {signupFetcher.data?.error && (
+                <p className="text-sm text-destructive">
+                  {signupFetcher.data.error}
+                </p>
+              )}
+
               {isMobile ? (
                 <DrawerFooter className="px-0">
-                  <Button type="submit" disabled={isSubmittingOAuth} className="w-full">
-                    Continue to Sign Up
+                  <Button
+                    type="submit"
+                    disabled={isSubmittingOAuth || isSubmittingGuestSignup}
+                    className="w-full"
+                  >
+                    {isSubmittingGuestSignup ? (
+                      <Spinner />
+                    ) : (
+                      "Continue to Verify"
+                    )}
                   </Button>
                 </DrawerFooter>
               ) : (
-                  <Button type="submit" disabled={isSubmittingOAuth} className="w-full">
-                    Continue to Sign Up
-                  </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingOAuth || isSubmittingGuestSignup}
+                  className="w-full"
+                >
+                  {isSubmittingGuestSignup ? <Spinner /> : "Continue to Verify"}
+                </Button>
               )}
             </div>
           </div>
         </div>
-        <p className="text-center text-xs text-muted-foreground">{consentMessage}</p>
+        <p className="text-center text-xs text-muted-foreground">
+          {consentMessage}
+        </p>
       </form>
     </Form>
-  )
+  );
 
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{trigger || defaultTrigger}</DrawerTrigger>
-        <DrawerContent className="pb-6">
+        <DrawerContent className="max-h-[90dvh] flex flex-col overflow-hidden">
           <DrawerHeader>
-            <DrawerTitle className={!isMember ? "text-center text-2xl font-extrabold tracking-tight" : undefined}>
-              {isMember ? `Leave ${communityName}` : `Join ${communityName}`}
+            <DrawerTitle
+              className={
+                !isMember
+                  ? "text-center text-2xl font-extrabold tracking-tight"
+                  : undefined
+              }
+            >
+              {isMember
+                ? `Leave ${communityName}`
+                : !isLoggedIn && guestStep === "otp"
+                  ? "Verify your email"
+                  : `Join ${communityName}`}
             </DrawerTitle>
             {headerDescription && (
-              <DrawerDescription>{headerDescription}</DrawerDescription>
+              <DrawerDescription className="">
+                {headerDescription}
+              </DrawerDescription>
             )}
           </DrawerHeader>
-          <div className="px-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             {isMember ? (
               <LeaveConfirmationContent />
             ) : isLoggedIn ? (
               <MemberFormContent />
+            ) : guestStep === "otp" ? (
+              <OtpInputInline
+                email={otpEmail}
+                communityId={communityId}
+                returnTo={returnTo}
+                onSuccess={() => {
+                  toast.success(`Welcome to ${communityName}!`);
+                  setOpen(false);
+                  navigate(window.location.pathname + window.location.search, {
+                    replace: true,
+                  });
+                }}
+              />
             ) : (
               <GuestFormContent />
             )}
           </div>
         </DrawerContent>
       </Drawer>
-    )
+    );
   }
 
   return (
@@ -495,8 +693,18 @@ export function JoinCommunityForm({
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className={!isMember ? "text-center text-2xl font-extrabold tracking-tight" : undefined}>
-            {isMember ? `Leave ${communityName}` : `Join ${communityName}`}
+          <DialogTitle
+            className={
+              !isMember
+                ? "text-center text-2xl font-extrabold tracking-tight"
+                : undefined
+            }
+          >
+            {isMember
+              ? `Leave ${communityName}`
+              : !isLoggedIn && guestStep === "otp"
+                ? "Verify your email"
+                : `Join ${communityName}`}
           </DialogTitle>
           {headerDescription && (
             <DialogDescription>{headerDescription}</DialogDescription>
@@ -506,11 +714,24 @@ export function JoinCommunityForm({
           <LeaveConfirmationContent />
         ) : isLoggedIn ? (
           <MemberFormContent />
+        ) : guestStep === "otp" ? (
+          <OtpInputInline
+            email={otpEmail}
+            communityId={communityId}
+            returnTo={returnTo}
+            onSuccess={() => {
+              toast.success(`Welcome to ${communityName}!`);
+              setOpen(false);
+              navigate(window.location.pathname + window.location.search, {
+                replace: true,
+              });
+            }}
+          />
         ) : (
           <GuestFormContent />
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 

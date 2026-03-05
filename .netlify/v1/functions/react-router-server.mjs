@@ -3,9 +3,8 @@
 
     export const config = {
       name: "React Router server handler",
-      generator: "@netlify/vite-plugin-react-router@2.1.2",
+      generator: "@netlify/vite-plugin-react-router@2.0.1",
       path: "/*",
-      excludedPath: ["/.netlify/*"],
       preferStatic: true,
     };
     

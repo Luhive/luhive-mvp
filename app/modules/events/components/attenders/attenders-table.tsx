@@ -847,14 +847,14 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
       {selectedAttender && (
         isMobile ? (
           <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-            <DrawerContent>
+            <DrawerContent className="flex flex-col overflow-hidden">
               <DrawerHeader>
                 <DrawerTitle>{selectedAttender.name}</DrawerTitle>
                 <DrawerDescription>
                   Complete registration details
                 </DrawerDescription>
               </DrawerHeader>
-              <div className="px-4 pb-4 overflow-y-auto space-y-6">
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-6">
                 {/* Basic Information */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">

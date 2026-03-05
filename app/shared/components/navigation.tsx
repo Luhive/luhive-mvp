@@ -63,7 +63,12 @@ export function TopNavigation({ user }: TopNavigationProps) {
               </Link>
 
               <Button
-                onClick={() => submit(null, { method: "post", action: "/logout" })}
+                onClick={() => {
+                  const returnTo = window.location.pathname + window.location.search;
+                  const formData = new FormData();
+                  formData.append("returnTo", returnTo);
+                  submit(formData, { method: "post", action: "/logout" });
+                }}
                 variant="link"
                 className="hover:shadow-sm hover:scale-110 hover:text-red-500 text-foreground/50 cursor-pointer"
                 size="icon"
@@ -78,7 +83,15 @@ export function TopNavigation({ user }: TopNavigationProps) {
               className="py-0 px-5 h-9 bg-primary/20 rounded-xl hover:bg-primary/30 active:bg-primary/40 transition-all"
               asChild
             >
-              <Link to="/login">
+              <Link
+                to="/login"
+                onClick={() => {
+                  window.localStorage.setItem(
+                    "post_login_return_to",
+                    window.location.pathname + window.location.search
+                  );
+                }}
+              >
                 <p className="text-primary text-md">Sign In</p>
               </Link>
             </Button>

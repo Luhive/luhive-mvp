@@ -121,7 +121,7 @@ export function AnonymousSubscriptionDialog({
               Enter your details to receive event reminders. We'll send you a verification email.
             </DrawerDescription>
           </DrawerHeader>
-          <div className="px-4 pb-4">{content}</div>
+          <div className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">{content}</div>
         </DrawerContent>
       </Drawer>
     );

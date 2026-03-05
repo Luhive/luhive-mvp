@@ -29,7 +29,7 @@ interface EventInfoSectionProps {
 	isUnregistering: boolean;
 	isSubmitting: boolean;
 	onShowCustomQuestionsForm: () => void;
-	onShowAnonymousDialog: () => void;
+	onShowRsvpModal: () => void;
 	onShowSubscribeDialog: () => void;
 }
 
@@ -48,7 +48,7 @@ export function EventInfoSection({
 	isUnregistering,
 	isSubmitting,
 	onShowCustomQuestionsForm,
-	onShowAnonymousDialog,
+	onShowRsvpModal,
 	onShowSubscribeDialog,
 }: EventInfoSectionProps) {
 	const { isUserRegistered } = userData;
@@ -109,7 +109,7 @@ export function EventInfoSection({
 					isUnregistering={isUnregistering}
 					isSubmitting={isSubmitting}
 					onShowCustomQuestionsForm={onShowCustomQuestionsForm}
-					onShowAnonymousDialog={onShowAnonymousDialog}
+					onShowRsvpModal={onShowRsvpModal}
 					onShowSubscribeDialog={onShowSubscribeDialog}
 				/>
 
