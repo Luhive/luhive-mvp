@@ -93,6 +93,7 @@ export async function action({ request }: ActionFunctionArgs) {
         });
       }
       console.log(`[Web Tracking] ✅ View recorded`);
+    }
 
     // Get updated view count
     const { count: viewCount, error: countError } = await serviceClient
