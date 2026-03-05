@@ -17,52 +17,58 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const client = createClient(request);
-    const session = await client.auth.getSession();
+    const { supabase, headers } = createClient(request);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session.data.session?.user?.id) {
+    if (!user?.id) {
+      headers.set("Content-Type", "application/json");
       return new Response(JSON.stringify({ error: "Not authenticated" }), {
         status: 401,
-        headers: { "Content-Type": "application/json" },
+        headers,
       });
     }
 
     // Insert view record
-    const { error: insertError } = await client
+    const { error: insertError } = await supabase
       .from("announcement_views")
       .insert({
         announcement_id: announcementId,
-        user_id: session.data.session.user.id,
+        user_id: user.id,
         view_source: "web",
       });
 
     if (insertError) {
       console.error("Error recording announcement view:", insertError);
+      headers.set("Content-Type", "application/json");
       return new Response(JSON.stringify({ error: "Failed to record view" }), {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers,
       });
     }
 
     // Get updated view count
-    const { data: viewData, error: countError } = await client
+    const { data: viewData, error: countError } = await supabase
       .from("announcement_views")
       .select("id")
       .eq("announcement_id", announcementId);
 
     if (countError) {
       console.error("Error fetching view count:", countError);
+      headers.set("Content-Type", "application/json");
       return new Response(JSON.stringify({ error: "Failed to fetch view count" }), {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers,
       });
     }
 
     const viewCount = viewData?.length || 0;
 
+    headers.set("Content-Type", "application/json");
     return new Response(JSON.stringify({ success: true, viewCount }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers,
     });
   } catch (error) {
     console.error("Error in track-view endpoint:", error);
