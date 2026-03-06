@@ -26,6 +26,8 @@ interface CommunityAnnouncementEmailProps {
   imageUrls?: string[];
   createdAt?: string;
   communityLogo?: string;
+  announcementId?: string;
+  userId?: string;
 }
 
 export const CommunityAnnouncementEmail = ({
@@ -40,6 +42,8 @@ What do you want to announce? What do you want to announce? What do you want to 
   ],
   createdAt = new Date().toISOString(),
   communityLogo = "https://luhive.com/LuhiveLogo.png",
+  announcementId,
+  userId,
 }: CommunityAnnouncementEmailProps) => {
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
@@ -196,6 +200,17 @@ What do you want to announce? What do you want to announce? What do you want to 
             </Section>
 
           </Container>
+
+          {/* Email tracking pixel */}
+          {announcementId && userId && (
+            <Img
+              src={`https://luhive.com/api/announcements/track-email-open?announcementId=${announcementId}&userId=${userId}`}
+              alt=""
+              width="1"
+              height="1"
+              style={{ display: "none" }}
+            />
+          )}
         </Body>
       </Tailwind>
     </Html>

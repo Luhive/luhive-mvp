@@ -292,6 +292,7 @@ interface AnnouncementNotificationEmailData {
   recipientName: string;
   imageUrls?: string[];
   announcementId?: string;
+  recipientUserId?: string;
 }
 
 export async function sendRegistrationRequestEmail(
@@ -1333,6 +1334,7 @@ export async function sendAnnouncementNotificationEmail(
     recipientName,
     imageUrls,
     announcementId,
+    recipientUserId,
   } = data;
 
   if (!resend) {
@@ -1359,10 +1361,8 @@ export async function sendAnnouncementNotificationEmail(
         announcementLink,
         recipientName,
         imageUrls: imageUrls || [],
-      }),
-      ...(announcementId && { metadata: { announcementId } }),
-      ...(announcementId && {
-        tags: [{ name: "announcement_id", value: announcementId }],
+        announcementId,
+        userId: recipientUserId,
       }),
     });
 
