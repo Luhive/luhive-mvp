@@ -158,7 +158,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const { data: event } = await supabase
       .from("events")
-      .select("id, community_id, title, start_time, timezone, custom_questions, is_approve_required")
+      .select("id, community_id, title, start_time, end_time, timezone, custom_questions, is_approve_required, location_address, online_meeting_link")
       .eq("id", eventId)
       .single();
 
@@ -194,43 +194,44 @@ export async function action({ request }: ActionFunctionArgs) {
         registeredEvent = true;
         registeredEventCommunityId = event.community_id as string;
 
-        // Notify host and co-host community admins about new registration
+        // Hoist shared variables for admin notification and registrant email
+        const { data: hostCommunity } = await supabase
+          .from("communities")
+          .select("name, slug")
+          .eq("id", event.community_id)
+          .single();
+
+        const { data: collaborations } = await supabase
+          .from("event_collaborations")
+          .select("community_id, community:communities(name)")
+          .eq("event_id", eventId)
+          .eq("status", "accepted")
+          .neq("role", "host");
+
+        const coHostCommunityNames = collaborations
+          ?.map((c: { community?: { name?: string } | { name?: string }[] }) =>
+            Array.isArray((c as any).community)
+              ? (c as any).community[0]?.name
+              : (c as any).community?.name
+          )
+          .filter(Boolean) as string[] | [];
+
+        const fullName = name && surname ? `${name} ${surname}`.trim() : null;
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        const registrantName =
+          fullName || profile?.full_name || data.user.email?.split("@")[0] || "Someone";
+        const tz = (event.timezone as string) ?? "UTC";
+        const eventDate = dayjs(event.start_time).tz(tz);
+        const origin = new URL(request.url).origin;
+        const eventLink = `${origin}/c/${hostCommunity?.slug ?? "unknown"}/events/${eventId}`;
+
+        // Block 1 — notify host and co-host community admins
         try {
-          const { data: hostCommunity } = await supabase
-            .from("communities")
-            .select("name, slug")
-            .eq("id", event.community_id)
-            .single();
-
-          const { data: collaborations } = await supabase
-            .from("event_collaborations")
-            .select("community_id, community:communities(name)")
-            .eq("event_id", eventId)
-            .eq("status", "accepted")
-            .neq("role", "host");
-
-          const coHostCommunityNames = collaborations
-            ?.map((c: { community?: { name?: string } | { name?: string }[] }) =>
-              Array.isArray((c as any).community)
-                ? (c as any).community[0]?.name
-                : (c as any).community?.name
-            )
-            .filter(Boolean) as string[] | [];
-
-          const fullName = name && surname ? `${name} ${surname}`.trim() : null;
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", data.user.id)
-            .maybeSingle();
-
-          const registrantName =
-            fullName || profile?.full_name || data.user.email?.split("@")[0] || "Someone";
-          const tz = (event.timezone as string) ?? "UTC";
-          const eventDate = dayjs(event.start_time).tz(tz);
-          const origin = new URL(request.url).origin;
-          const eventLink = `${origin}/c/${hostCommunity?.slug ?? "unknown"}/events/${eventId}`;
-
           await fetch(`${origin}/api/events/collaboration-notification`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -250,6 +251,34 @@ export async function action({ request }: ActionFunctionArgs) {
           });
         } catch (notifyError) {
           console.error("Failed to trigger registration notification:", notifyError);
+        }
+
+        // Block 2 — send registrant confirmation email via API
+        const recipientEmail = data.user.email ?? "";
+        if (recipientEmail) {
+          try {
+            await fetch(`${origin}/api/events/registration-confirmation`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                approvalStatus,
+                recipientEmail,
+                recipientName: registrantName,
+                eventTitle: (event.title as string) ?? "Event",
+                communityName: hostCommunity?.name ?? "Community",
+                eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+                eventTime: eventDate.format("h:mm A z"),
+                eventLink,
+                registerAccountLink: `${origin}/signup`,
+                startTimeISO: event.start_time,
+                endTimeISO: (event as { end_time?: string }).end_time ?? event.start_time,
+                locationAddress: (event as { location_address?: string }).location_address ?? undefined,
+                onlineMeetingLink: (event as { online_meeting_link?: string }).online_meeting_link ?? undefined,
+              }),
+            });
+          } catch (emailError) {
+            console.error("Failed to trigger registration confirmation email:", emailError);
+          }
         }
       }
     }

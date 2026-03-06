@@ -165,9 +165,7 @@ export default function CommunityPage() {
     whatsapp?: string;
   } | null;
 
-  const [showStickyButton, setShowStickyButton] = useState(
-    !isMember && !isOwner
-  );
+  const showStickyButton = !isMember && !isOwner;
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);

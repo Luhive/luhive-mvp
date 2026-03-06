@@ -2,11 +2,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { createClient } from "~/shared/lib/supabase/server";
-import {
-  sendRegistrationConfirmationEmail,
-  sendRegistrationRequestEmail,
-  sendSubscriptionConfirmationEmail,
-} from "~/shared/lib/email.server";
+import { sendSubscriptionConfirmationEmail } from "~/shared/lib/email.server";
 import { getExternalPlatformName } from "~/modules/events/utils/external-platform";
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import { sanitizeDuplicateError } from "~/modules/events/utils/sanitize-error";
@@ -323,46 +319,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     const eventDate = dayjs(event.start_time).tz(event.timezone);
     const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
+    const origin = new URL(request.url).origin;
 
-    if (approvalStatus === "pending") {
-      try {
-        await sendRegistrationRequestEmail({
+    try {
+      await fetch(`${origin}/api/events/registration-confirmation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          approvalStatus,
+          recipientEmail: user.email || "",
+          recipientName: profile?.full_name || "there",
           eventTitle: event.title,
           communityName: community.name,
-          eventLink,
-          recipientName: profile?.full_name || "there",
-          recipientEmail: user.email || "",
           eventDate: eventDate.format("dddd, MMMM D, YYYY"),
           eventTime: eventDate.format("h:mm A z"),
-        });
-      } catch (error) {
-        console.error("Failed to send request email:", error);
-      }
+          eventLink,
+          registerAccountLink: `${origin}/signup`,
+          startTimeISO: event.start_time,
+          endTimeISO: event.end_time || event.start_time,
+          locationAddress: event.location_address || undefined,
+          onlineMeetingLink: event.online_meeting_link || undefined,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to trigger registration confirmation email:", error);
+    }
+
+    if (approvalStatus === "pending") {
       return {
         success: true,
         message: "Registration request sent! Waiting for approval.",
       };
-    }
-
-    const registerAccountLink = `${new URL(request.url).origin}/signup`;
-
-    try {
-      await sendRegistrationConfirmationEmail({
-        eventTitle: event.title,
-        communityName: community.name,
-        eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-        eventTime: eventDate.format("h:mm A z"),
-        eventLink,
-        recipientName: profile?.full_name || "there",
-        recipientEmail: user.email || "",
-        registerAccountLink,
-        locationAddress: event.location_address || undefined,
-        onlineMeetingLink: event.online_meeting_link || undefined,
-        startTimeISO: event.start_time,
-        endTimeISO: event.end_time || event.start_time,
-      });
-    } catch (error) {
-      console.error("Failed to send confirmation email:", error);
     }
 
     // Notify host and co-host community admins about new registration

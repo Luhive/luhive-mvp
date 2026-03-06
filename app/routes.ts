@@ -95,6 +95,7 @@ export default [
   route("api/join-community", "routes/api/join-community.tsx"),
   route("api/events/new-event-notification", "routes/api/events/new-event-notification.tsx"),
   route("api/events/collaboration-notification", "routes/api/events/collaboration-notification.tsx"),
+  route("api/events/registration-confirmation", "routes/api/events/registration-confirmation.tsx"),
   route("api/announcements/new-announcement-notification", "routes/api/announcements/new-announcement-notification.tsx"),
 
 
