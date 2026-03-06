@@ -1,6 +1,6 @@
 import { createServiceRoleClient } from "~/shared/lib/supabase/server";
 import type { ActionFunctionArgs } from "react-router";
-import { getCommunityMemberEmails } from "~/modules/community/utils/community-members";
+import { getCommunityMemberEmailsWithIds } from "~/modules/community/utils/community-members";
 import { sendAnnouncementNotificationEmail } from "~/shared/lib/email.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -26,8 +26,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const serviceClient = createServiceRoleClient();
 
-    const memberEmails = await getCommunityMemberEmails(communityId, serviceClient);
-    if (memberEmails.length === 0) {
+    const memberEmailsWithIds = await getCommunityMemberEmailsWithIds(communityId, serviceClient);
+    if (memberEmailsWithIds.length === 0) {
       return { success: true, message: "No members to notify" };
     }
 
@@ -36,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
     let successCount = 0;
     let errorCount = 0;
 
-    for (const email of memberEmails) {
+    for (const { email, userId } of memberEmailsWithIds) {
       try {
         const recipientName = email.split("@")[0];
 
@@ -49,6 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
           recipientName,
           imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
           announcementId,
+          recipientUserId: userId,
         });
 
         successCount++;

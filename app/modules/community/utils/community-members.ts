@@ -62,6 +62,67 @@ export async function getCommunityMemberEmails(
 }
 
 /**
+ * Get all member emails and IDs from a community (including all roles)
+ * Returns array of objects with both email and userId
+ * Uses service role client to fetch user data from auth.users
+ */
+export async function getCommunityMemberEmailsWithIds(
+  communityId: string,
+  supabaseClient?: ServiceClient
+): Promise<Array<{ email: string; userId: string }>> {
+  const supabase = supabaseClient || createServiceRoleClient();
+
+  // Get all community members
+  const { data: members, error } = await supabase
+    .from("community_members")
+    .select("user_id")
+    .eq("community_id", communityId);
+
+  if (error || !members) {
+    console.error("Error fetching community members:", error);
+    return [];
+  }
+
+  if (members.length === 0) {
+    return [];
+  }
+
+  // Get user IDs (filter out null values)
+  const userIds = members
+    .map((m) => m.user_id)
+    .filter((id): id is string => id !== null && id !== undefined);
+
+  if (userIds.length === 0) {
+    return [];
+  }
+
+  // Get emails from auth.users table
+  const results: Array<{ email: string; userId: string }> = [];
+
+  for (const userId of userIds) {
+    try {
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+
+      if (userError) {
+        console.error("Error fetching user:", userId, userError);
+        continue;
+      }
+
+      if (userData?.user?.email) {
+        results.push({
+          email: userData.user.email,
+          userId,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching user email for:", userId, err);
+    }
+  }
+
+  return results;
+}
+
+/**
  * Get owner and admin emails from a community
  * Uses service role client to fetch emails from auth.users
  */
