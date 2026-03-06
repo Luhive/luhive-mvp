@@ -204,7 +204,7 @@ What do you want to announce? What do you want to announce? What do you want to 
           {/* Email tracking pixel */}
           {announcementId && userId && (
             <Img
-              src={`https://dev.luhive.com/api/announcements/track-email-open?announcementId=${announcementId}&userId=${userId}`}
+              src={`https://luhive.com/api/announcements/track-email-open?announcementId=${announcementId}&userId=${userId}`}
               alt=""
               width="1"
               height="1"
