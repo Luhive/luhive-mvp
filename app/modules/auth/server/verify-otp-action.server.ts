@@ -284,6 +284,14 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  const { data: userProfile } = await supabase
+    .from("profiles")
+    .select("full_name, avatar_url")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  const fullName = userProfile?.full_name ?? null;
+  const avatarUrl = userProfile?.avatar_url ?? null;
+
   if (referralCommunityId) {
     const { data: existingMember } = await supabase
       .from("community_members")
@@ -375,7 +383,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       if (isModal) {
         return Response.json(
-          { success: true, joined, communitySlug, registeredEvent },
+          { success: true, joined, communitySlug, registeredEvent, fullName, avatarUrl },
           { headers }
         );
       }
@@ -387,7 +395,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (isModal) {
     return Response.json(
-      { success: true, joined, communitySlug, registeredEvent },
+      { success: true, joined, communitySlug, registeredEvent, fullName, avatarUrl },
       { headers }
     );
   }
