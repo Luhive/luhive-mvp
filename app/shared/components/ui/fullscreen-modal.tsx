@@ -45,7 +45,7 @@ export function FullscreenModal({
           />
           <DialogPrimitive.Content
             className={cn(
-              "fixed inset-x-0 bottom-0 z-50 h-[100dvh] flex flex-col",
+              "fixed inset-0 z-50 flex flex-col",
               "bg-background shadow-lg",
               "data-[state=open]:animate-in data-[state=closed]:animate-out",
               "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",

@@ -405,8 +405,8 @@ export function EventRsvpModal({
         onSuccess={userExists ? handleOtpSuccessExistingUser : handleOtpSuccessNewUser}
         name={!userExists ? detailsForm.getValues("name") : undefined}
         surname={!userExists ? detailsForm.getValues("surname") : undefined}
-        eventId={!userExists ? eventId : undefined}
-        customAnswers={!userExists && customAnswers ? JSON.stringify(customAnswers) : undefined}
+        eventId={!userExists || !hasCustomQuestions ? eventId : undefined}
+        customAnswers={customAnswers ? JSON.stringify(customAnswers) : undefined}
       />
     </div>
   );
