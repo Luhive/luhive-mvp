@@ -87,6 +87,8 @@ export function EventRsvpModal({
   const [emailStepError, setEmailStepError] = React.useState<string | null>(null);
   const [joinCommunity, setJoinCommunity] = React.useState(true);
   const [customAnswers, setCustomAnswers] = React.useState<CustomAnswerJson | null>(null);
+  const [existingUserFullName, setExistingUserFullName] = React.useState<string | null>(null);
+  const [existingUserAvatarUrl, setExistingUserAvatarUrl] = React.useState<string | null>(null);
 
   const emailForm = useForm<EmailFormValues>({
     defaultValues: { email: "" },
@@ -169,6 +171,8 @@ export function EventRsvpModal({
     setEmailStepError(null);
     setJoinCommunity(true);
     setCustomAnswers(null);
+    setExistingUserFullName(null);
+    setExistingUserAvatarUrl(null);
   }, [open, emailForm, detailsForm]);
 
   const handleContinueWithEmail = () => {
@@ -238,7 +242,12 @@ export function EventRsvpModal({
     });
   };
 
-  const handleOtpSuccessExistingUser = () => {
+  const handleOtpSuccessExistingUser = (userData?: {
+    fullName?: string | null;
+    avatarUrl?: string | null;
+  }) => {
+    if (userData?.fullName) setExistingUserFullName(userData.fullName);
+    setExistingUserAvatarUrl(userData?.avatarUrl ?? null);
     if (hasCustomQuestions) {
       setStep("questions");
     } else {
@@ -358,8 +367,9 @@ export function EventRsvpModal({
         onOpenChange={() => {}}
         eventId={eventId}
         customQuestions={customQuestions}
-        userName={otpEmail?.split("@")[0] || undefined}
+        userName={existingUserFullName ?? otpEmail?.split("@")[0] ?? undefined}
         userEmail={otpEmail}
+        userAvatarUrl={existingUserAvatarUrl ?? undefined}
         userPhone={userPhone ?? undefined}
         onSubmit={handleQuestionsSubmitFromExisting}
         isSubmitting={isSubmittingQuestions}

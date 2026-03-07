@@ -12,6 +12,8 @@ type VerifyFetcherData = {
   code?: "expired" | "invalid" | "too-many-attempts";
   joined?: boolean;
   communitySlug?: string | null;
+  fullName?: string | null;
+  avatarUrl?: string | null;
 };
 
 type ResendFetcherData = {
@@ -24,7 +26,7 @@ interface OtpInputInlineProps {
   email: string;
   communityId?: string | null;
   returnTo?: string | null;
-  onSuccess: () => void;
+  onSuccess: (userData?: { fullName?: string | null; avatarUrl?: string | null }) => void;
   /** Event RSVP flow: pass-through to verify-otp-action */
   name?: string;
   surname?: string;
@@ -89,7 +91,10 @@ export function OtpInputInline({
     }
 
     completedOnceRef.current = true;
-    onSuccess();
+    onSuccess({
+      fullName: verifyFetcher.data.fullName ?? null,
+      avatarUrl: verifyFetcher.data.avatarUrl ?? null,
+    });
   }, [onSuccess, verifyFetcher.data]);
 
   useEffect(() => {
