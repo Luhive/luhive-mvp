@@ -61,31 +61,21 @@ export async function action({ request }: ActionFunctionArgs) {
         
         console.log("Sending emails to co-host members:", coHostEmails.length);
 
-        for (const email of coHostEmails) {
-          try {
-            const recipientName = email.split("@")[0];
-            await sendNewCollaborationEventEmail({
-              eventTitle,
-              hostCommunityName: hostName,
-              coHostCommunityName: coHostName,
-              eventDate,
-              eventTime,
-              eventLink,
-              recipientEmail: email,
-              recipientName,
-              isNewEvent: true,
-              locationAddress,
-              onlineMeetingLink,
-            });
-            console.log("Email sent to co-host:", email);
-            // Add delay to avoid rate limiting (Resend allows 2 requests per second)
-            await new Promise(resolve => setTimeout(resolve, 600));
-          } catch (error) {
-            console.error("Failed to send collaboration notification to co-host member:", email, error);
-            // Still add delay even on error to respect rate limit
-            await new Promise(resolve => setTimeout(resolve, 600));
-          }
-        }
+        const coHostPayloads = coHostEmails.map((email) => ({
+          eventTitle,
+          hostCommunityName: hostName,
+          coHostCommunityName: coHostName,
+          eventDate,
+          eventTime,
+          eventLink,
+          recipientEmail: email,
+          recipientName: email.split("@")[0],
+          isNewEvent: true,
+          locationAddress,
+          onlineMeetingLink,
+        }));
+
+        await sendNewCollaborationEventEmail(coHostPayloads);
       }
 
       // Send to all host community members
@@ -111,31 +101,21 @@ export async function action({ request }: ActionFunctionArgs) {
         
         console.log("Sending emails to host members:", hostEmails.length);
 
-        for (const email of hostEmails) {
-          try {
-            const recipientName = email.split("@")[0];
-            await sendNewCollaborationEventEmail({
-              eventTitle,
-              hostCommunityName: hostName,
-              coHostCommunityName: coHostName,
-              eventDate,
-              eventTime,
-              eventLink,
-              recipientEmail: email,
-              recipientName,
-              isNewEvent: true,
-              locationAddress,
-              onlineMeetingLink,
-            });
-            console.log("Email sent to host member:", email);
-            // Add delay to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 600));
-          } catch (error) {
-            console.error("Failed to send collaboration notification to host member:", email, error);
-            // Still add delay even on error
-            await new Promise(resolve => setTimeout(resolve, 600));
-          }
-        }
+        const hostPayloads = hostEmails.map((email) => ({
+          eventTitle,
+          hostCommunityName: hostName,
+          coHostCommunityName: coHostName,
+          eventDate,
+          eventTime,
+          eventLink,
+          recipientEmail: email,
+          recipientName: email.split("@")[0],
+          isNewEvent: true,
+          locationAddress,
+          onlineMeetingLink,
+        }));
+
+        await sendNewCollaborationEventEmail(hostPayloads);
       }
 
       return { success: true, message: "Collaboration notifications sent" };
@@ -168,31 +148,21 @@ export async function action({ request }: ActionFunctionArgs) {
 
         console.log("Sending emails to co-host members for existing event:", coHostEmails.length);
 
-        for (const email of coHostEmails) {
-          try {
-            const recipientName = email.split("@")[0];
-            await sendNewCollaborationEventEmail({
-              eventTitle,
-              hostCommunityName: hostName,
-              coHostCommunityName: coHostName,
-              eventDate,
-              eventTime,
-              eventLink,
-              recipientEmail: email,
-              recipientName,
-              isNewEvent: false,
-              locationAddress,
-              onlineMeetingLink,
-            });
-            console.log("Email sent to co-host for existing event:", email);
-            // Add delay to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 600));
-          } catch (error) {
-            console.error("Failed to send collaboration notification to co-host member for existing event:", email, error);
-            // Still add delay even on error
-            await new Promise(resolve => setTimeout(resolve, 600));
-          }
-        }
+        const existingCoHostPayloads = coHostEmails.map((email) => ({
+          eventTitle,
+          hostCommunityName: hostName,
+          coHostCommunityName: coHostName,
+          eventDate,
+          eventTime,
+          eventLink,
+          recipientEmail: email,
+          recipientName: email.split("@")[0],
+          isNewEvent: false,
+          locationAddress,
+          onlineMeetingLink,
+        }));
+
+        await sendNewCollaborationEventEmail(existingCoHostPayloads);
       }
 
       return { success: true, message: "Collaboration notifications sent" };
@@ -240,7 +210,9 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       allAdminIds = [...new Set([...allAdminIds, ...coHostAdminIds])];
 
-      // Get emails for these users via auth.admin
+      // Get emails for these users via auth.admin and send as a batch
+      const registrationPayloads = [];
+
       for (const adminId of allAdminIds) {
         try {
           const { data: ownerData } = await serviceClient.auth.admin.getUserById(adminId);
@@ -252,7 +224,7 @@ export async function action({ request }: ActionFunctionArgs) {
               .eq("id", adminId)
               .maybeSingle();
 
-            await sendEventRegistrationNotificationEmail({
+            registrationPayloads.push({
               eventTitle,
               registrantName,
               registrantEmail,
@@ -264,14 +236,14 @@ export async function action({ request }: ActionFunctionArgs) {
               recipientEmail: ownerData.user.email,
               recipientName: profile?.full_name || ownerData.user.email.split("@")[0],
             });
-            // Add delay to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 600));
           }
         } catch (error) {
-          console.error("Failed to send registration notification to admin:", adminId, error);
-          // Still add delay even on error
-          await new Promise(resolve => setTimeout(resolve, 600));
+          console.error("Failed to prepare registration notification for admin:", adminId, error);
         }
+      }
+
+      if (registrationPayloads.length > 0) {
+        await sendEventRegistrationNotificationEmail(registrationPayloads);
       }
 
       return { success: true, message: "Registration notifications sent" };

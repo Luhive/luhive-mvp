@@ -45,35 +45,22 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const communityName = community?.name || "Unknown Community";
 
-    // Send emails to all community members
-    let successCount = 0;
-    let errorCount = 0;
+    // Prepare batch payloads and send emails to all community members in one call
+    const payloads = memberEmails.map((email) => ({
+      eventTitle,
+      communityName,
+      eventDate,
+      eventTime,
+      eventLink,
+      recipientEmail: email,
+      recipientName: email.split("@")[0],
+      locationAddress,
+      onlineMeetingLink,
+    }));
 
-    for (const email of memberEmails) {
-      try {
-        const recipientName = email.split("@")[0];
-
-        await sendNewEventNotificationEmail({
-          eventTitle,
-          communityName,
-          eventDate,
-          eventTime,
-          eventLink,
-          recipientEmail: email,
-          recipientName,
-          locationAddress,
-          onlineMeetingLink,
-        });
-        successCount++;
-        // Add delay to avoid rate limiting (Resend allows 2 requests per second)
-        await new Promise(resolve => setTimeout(resolve, 600));
-      } catch (error) {
-        console.error("Failed to send new event notification to:", email, error);
-        errorCount++;
-        // Still add delay even on error to respect rate limit
-        await new Promise(resolve => setTimeout(resolve, 600));
-      }
-    }
+    const { successCount, errorCount } = await sendNewEventNotificationEmail(
+      payloads
+    );
 
     console.log(`New event notification: ${successCount} sent, ${errorCount} failed for event ${eventId}`);
 
