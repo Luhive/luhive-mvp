@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import type React from "react";
 import { EventVerificationEmail } from "~/templates/event-verification-email";
 import { EventConfirmationEmail } from "~/templates/event-confirmation-email";
 import { EventStatusUpdateEmail } from "~/templates/event-status-update-email";
@@ -119,6 +120,271 @@ if (emailConfig.resendApiKey) {
 }
 
 const FROM_EMAIL = getFromEmail();
+
+/**
+ * Core email sending types and helpers
+ */
+
+type BaseEmailPayload = {
+  to: string | string[];
+  subject: string;
+  /**
+   * Use either `react` (preferred) or `html` for the body, not both.
+   */
+  react?: React.ReactElement;
+  html?: string;
+  attachments?: {
+    filename: string;
+    content: string;
+  }[];
+  tags?: string[];
+  /**
+   * Optional contextual metadata for logging
+   */
+  metadata?: Record<string, unknown>;
+};
+
+type EmailSendResult = {
+  to: string;
+  success: boolean;
+  id?: string;
+  error?: {
+    message: string;
+    name?: string;
+  };
+};
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+async function sendEmailsInternal(
+  payloads: BaseEmailPayload[]
+): Promise<EmailSendResult[]> {
+  if (payloads.length === 0) return [];
+
+  if (!resend) {
+    const errorMsg =
+      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  if (!isValidEmailFormat(FROM_EMAIL)) {
+    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  const results: EmailSendResult[] = [];
+  const chunks = chunkArray(payloads, 100);
+  const batchStart = Date.now();
+
+  console.log(
+    `📨 Sending ${payloads.length} email(s) via unified email service in ${chunks.length} chunk(s)...`
+  );
+
+  for (const [chunkIndex, chunk] of chunks.entries()) {
+    const chunkStart = Date.now();
+    const isSingle = chunk.length === 1;
+    console.log(
+      `   Processing chunk ${chunkIndex + 1}/${chunks.length} (${chunk.length} email(s)) - mode: ${
+        isSingle ? "single" : "batch"
+      }`
+    );
+
+    if (isSingle) {
+      const payload = chunk[0]!;
+      try {
+        const toArray = Array.isArray(payload.to) ? payload.to : [payload.to];
+
+        const { data, error } = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: toArray,
+          subject: payload.subject,
+          react: payload.react,
+          html: payload.html,
+          attachments:
+            payload.attachments && payload.attachments.length > 0
+              ? payload.attachments
+              : undefined,
+        } as any);
+
+        if (error) {
+          const errorDetails: Record<string, unknown> = {
+            message: (error as any).message,
+          };
+          if ("name" in (error as any) && typeof (error as any).name === "string") {
+            errorDetails.name = (error as any).name;
+          }
+          console.error("❌ Resend API error (single):", errorDetails, {
+            to: payload.to,
+            subject: payload.subject,
+            metadata: payload.metadata,
+          });
+          results.push({
+            to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+            success: false,
+            error: {
+              message: (error as any).message,
+              name: (error as any).name,
+            },
+          });
+        } else {
+          console.log("✅ Email sent successfully (single):", {
+            id: (data as any)?.id,
+            to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+            subject: payload.subject,
+            metadata: payload.metadata,
+          });
+          results.push({
+            to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+            success: true,
+            id: (data as any)?.id,
+          });
+        }
+      } catch (error) {
+        console.error("❌ Error sending email (single):", {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          to: payload.to,
+          subject: payload.subject,
+          metadata: payload.metadata,
+        });
+        results.push({
+          to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+          success: false,
+          error: {
+            message:
+              error instanceof Error ? error.message : String(error),
+            name: error instanceof Error ? error.name : undefined,
+          },
+        });
+      }
+    } else {
+      try {
+        const batchPayload = chunk.map((payload) => ({
+          from: FROM_EMAIL,
+          to: Array.isArray(payload.to) ? payload.to : [payload.to],
+          subject: payload.subject,
+          react: payload.react,
+          html: payload.html,
+          attachments:
+            payload.attachments && payload.attachments.length > 0
+              ? payload.attachments
+              : undefined,
+        }));
+
+        const { data, error } = await (resend as any).batch.send(
+          batchPayload
+        );
+
+        if (error) {
+          const errorDetails: Record<string, unknown> = {
+            message: (error as any).message,
+          };
+          if ("name" in (error as any) && typeof (error as any).name === "string") {
+            errorDetails.name = (error as any).name;
+          }
+          console.error("❌ Resend batch API error:", errorDetails, {
+            chunkSize: chunk.length,
+          });
+
+          for (const payload of chunk) {
+            results.push({
+              to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+              success: false,
+              error: {
+                message: (error as any).message,
+                name: (error as any).name,
+              },
+            });
+          }
+        } else {
+          const items: any[] = Array.isArray(data) ? data : [];
+          console.log("✅ Batch email send succeeded:", {
+            chunkSize: chunk.length,
+            returned: items.length,
+          });
+
+          chunk.forEach((payload, index) => {
+            const item = items[index];
+            results.push({
+              to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+              success: true,
+              id: item?.id,
+            });
+          });
+        }
+      } catch (error) {
+        console.error("❌ Error sending batch emails:", {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          chunkSize: chunk.length,
+        });
+        for (const payload of chunk) {
+          results.push({
+            to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+            success: false,
+            error: {
+              message:
+                error instanceof Error ? error.message : String(error),
+              name: error instanceof Error ? error.name : undefined,
+            },
+          });
+        }
+      }
+
+      const chunkEnd = Date.now();
+      console.log(
+        `   ⏱️ Chunk ${chunkIndex + 1}/${chunks.length} completed in ${
+          (chunkEnd - chunkStart) / 1000
+        }s`
+      );
+    }
+  }
+
+  const batchEnd = Date.now();
+  console.log(
+    `📨 Unified email service finished: total=${payloads.length}, success=${
+      results.filter((r) => r.success).length
+    }, failed=${results.filter((r) => !r.success).length
+    }, durationSec=${(batchEnd - batchStart) / 1000}`
+  );
+
+  return results;
+}
+
+async function sendEmail(payload: BaseEmailPayload): Promise<EmailSendResult> {
+  const [result] = await sendEmailsInternal([payload]);
+  return result;
+}
+
+async function sendEmailBatch(
+  payloads: BaseEmailPayload[]
+): Promise<EmailSendResult[]> {
+  return sendEmailsInternal(payloads);
+}
+
+/**
+ * Plan-aligned helper names
+ * These wrap the core helpers above to match the documented API in the plan.
+ */
+async function sendEmailInternal(
+  payload: BaseEmailPayload
+): Promise<EmailSendResult> {
+  return sendEmail(payload);
+}
+
+async function sendEmailsBatch(
+  payloads: BaseEmailPayload[]
+): Promise<EmailSendResult[]> {
+  return sendEmailBatch(payloads);
+}
 
 // Export configuration for debugging
 export function getEmailConfig() {
@@ -308,67 +574,48 @@ export async function sendRegistrationRequestEmail(
     eventTime,
   } = data;
 
-  // Runtime validation
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  console.log(`📧 Attempting to send registration request email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    subject: `Registration Request Received: ${eventTitle}`,
+  });
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  const result = await sendEmailInternal({
+    to: recipientEmail,
+    subject: `Registration Request Received: ${eventTitle}`,
+    react: EventRegistrationRequestEmail({
+      eventTitle,
+      communityName,
+      eventLink,
+      recipientName,
+      eventDate,
+      eventTime,
+    }),
+    metadata: {
+      template: "EventRegistrationRequestEmail",
+      eventTitle,
+      communityName,
+    },
+  });
 
-  console.log(`📧 Attempting to send registration request email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: Registration Request Received: ${eventTitle}`);
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `Registration Request Received: ${eventTitle}`,
-      react: EventRegistrationRequestEmail({
-        eventTitle,
-        communityName,
-        eventLink,
-        recipientName,
-        eventDate,
-        eventTime,
-      }),
-    });
-
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(`Failed to send request email: ${error.message}`);
-    }
-
-    console.log(`✅ Registration request email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
+  if (!result.success) {
+    console.error("❌ Failed to send request email:", {
       to: recipientEmail,
-    });
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending request email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      recipientEmail,
       fromEmail: FROM_EMAIL,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send request email: ${result.error?.message || "Unknown error"}`
+    );
   }
+
+  console.log(`✅ Registration request email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendVerificationEmail(data: VerificationEmailData) {
@@ -381,66 +628,49 @@ export async function sendVerificationEmail(data: VerificationEmailData) {
     registerAccountLink,
   } = data;
 
-  // Runtime validation
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  console.log(`📧 Attempting to send verification email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    subject: `Verify your registration for ${eventTitle}`,
+  });
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  const result = await sendEmailInternal({
+    to: recipientEmail,
+    subject: `Verify your registration for ${eventTitle}`,
+    react: EventVerificationEmail({
+      eventTitle,
+      communityName,
+      verificationLink,
+      recipientName,
+      registerAccountLink,
+    }),
+    metadata: {
+      template: "EventVerificationEmail",
+      eventTitle,
+      communityName,
+    },
+  });
 
-  console.log(`📧 Attempting to send verification email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: Verify your registration for ${eventTitle}`);
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `Verify your registration for ${eventTitle}`,
-      react: EventVerificationEmail({
-        eventTitle,
-        communityName,
-        verificationLink,
-        recipientName,
-        registerAccountLink,
-      }),
-    });
-
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(`Failed to send verification email: ${error.message}`);
-    }
-
-    console.log(`✅ Verification email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
+  if (!result.success) {
+    console.error("❌ Failed to send verification email:", {
       to: recipientEmail,
-    });
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending verification email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      recipientEmail,
       fromEmail: FROM_EMAIL,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send verification email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Verification email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
@@ -459,103 +689,87 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
     endTimeISO,
   } = data;
 
-  // Runtime validation
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  const attachments: { filename: string; content: string }[] = [];
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  console.log(`📧 Attempting to send status update email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Status: ${status}`);
-
-  try {
-    const attachments = [];
-
-    // Add ICS attachment if approved and dates are provided
-    if (status === "approved" && startTimeISO && endTimeISO) {
-      console.log(`   Generating ICS attachment...`);
-      const icsContent = generateICS({
-        title: eventTitle,
-        description: `${eventTitle}\n\nHosted by: ${communityName}\n\nView event details: ${eventLink}`,
-        location: locationAddress || onlineMeetingLink || "Online Event",
-        startTime: startTimeISO,
-        endTime: endTimeISO,
-        url: eventLink,
-        organizerName: communityName,
-        organizerEmail: "events@luhive.com",
-      });
-
-      attachments.push({
-        filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
-        content: Buffer.from(icsContent).toString("base64"),
-      });
-      console.log(`   ICS attachment created`);
-    }
-
-    const subject =
-      status === "approved"
-        ? `Registration Approved: ${eventTitle}`
-        : `Registration Update: ${eventTitle}`;
-    console.log(`   Subject: ${subject}`);
-
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject,
-      react: EventStatusUpdateEmail({
-        eventTitle,
-        communityName,
-        eventLink,
-        recipientName,
-        status,
-        eventDate,
-        eventTime,
-        locationAddress,
-        onlineMeetingLink,
-      }),
-      attachments: attachments.length > 0 ? attachments : undefined,
+  // Add ICS attachment if approved and dates are provided
+  if (status === "approved" && startTimeISO && endTimeISO) {
+    console.log(`   Generating ICS attachment...`);
+    const icsContent = generateICS({
+      title: eventTitle,
+      description: `${eventTitle}\n\nHosted by: ${communityName}\n\nView event details: ${eventLink}`,
+      location: locationAddress || onlineMeetingLink || "Online Event",
+      startTime: startTimeISO,
+      endTime: endTimeISO,
+      url: eventLink,
+      organizerName: communityName,
+      organizerEmail: "events@luhive.com",
     });
 
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(`Failed to send status update email: ${error.message}`);
-    }
+    attachments.push({
+      filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
+      content: Buffer.from(icsContent).toString("base64"),
+    });
+    console.log(`   ICS attachment created`);
+  }
 
-    console.log(`✅ Status update email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
-      to: recipientEmail,
+  const subject =
+    status === "approved"
+      ? `Registration Approved: ${eventTitle}`
+      : `Registration Update: ${eventTitle}`;
+
+  console.log(`📧 Attempting to send status update email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    status,
+    subject,
+  });
+
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject,
+    react: EventStatusUpdateEmail({
+      eventTitle,
+      communityName,
+      eventLink,
+      recipientName,
       status,
-      hasAttachment: attachments.length > 0,
-    });
+      eventDate,
+      eventTime,
+      locationAddress,
+      onlineMeetingLink,
+    }),
+    attachments,
+    metadata: {
+      template: "EventStatusUpdateEmail",
+      eventTitle,
+      communityName,
+      status,
+    },
+  });
 
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending status update email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      recipientEmail,
+  if (!result.success) {
+    console.error("❌ Failed to send status update email:", {
+      to: recipientEmail,
       fromEmail: FROM_EMAIL,
       status,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send status update email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Status update email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+    status,
+    hasAttachment: attachments.length > 0,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendEventScheduleUpdateEmail(
@@ -573,67 +787,52 @@ export async function sendEventScheduleUpdateEmail(
     onlineMeetingLink,
   } = data;
 
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  console.log(`📧 Attempting to send event schedule update email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    subject: `Event Updated: ${eventTitle}`,
+  });
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: `Event Updated: ${eventTitle}`,
+    react: EventUpdateEmail({
+      eventTitle,
+      communityName,
+      eventDate,
+      eventTime,
+      eventLink,
+      recipientName,
+      locationAddress,
+      onlineMeetingLink,
+    }),
+    metadata: {
+      template: "EventUpdateEmail",
+      eventTitle,
+      communityName,
+    },
+  });
 
-  console.log(`📧 Attempting to send event schedule update email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `Event Updated: ${eventTitle}`,
-      react: EventUpdateEmail({
-        eventTitle,
-        communityName,
-        eventDate,
-        eventTime,
-        eventLink,
-        recipientName,
-        locationAddress,
-        onlineMeetingLink,
-      }),
-    });
-
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(`Failed to send event schedule update email: ${error.message}`);
-    }
-
-    console.log(`✅ Event schedule update email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
+  if (!result.success) {
+    console.error("❌ Failed to send event schedule update email:", {
       to: recipientEmail,
-    });
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending event schedule update email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      recipientEmail,
       fromEmail: FROM_EMAIL,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send event schedule update email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Event schedule update email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendEventReminderEmail(data: {
@@ -657,28 +856,16 @@ export async function sendEventReminderEmail(data: {
     message,
   } = data;
 
-  if (!resend) {
-    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  console.log(`📧 Attempting to send event reminder email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    subject: `Reminder: ${eventTitle}`,
+  });
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  console.log(`📧 Attempting to send event reminder email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `Reminder: ${eventTitle}`,
-      html: `
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: `Reminder: ${eventTitle}`,
+    html: `
         <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424;">
           <p>Hi ${recipientName},</p>
           <p>${message}</p>
@@ -687,32 +874,33 @@ export async function sendEventReminderEmail(data: {
           <p style="color:#6B6B6B;font-size:12px;">${communityName}</p>
         </div>
       `,
-    });
+    metadata: {
+      template: "EventReminderEmail",
+      eventTitle,
+      communityName,
+    },
+  });
 
-    if (error) {
-      const errorDetails: Record<string, unknown> = { message: error.message };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error (reminder):", errorDetails);
-      throw new Error(`Failed to send reminder email: ${error.message}`);
-    }
-
-    console.log(`✅ Event reminder email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
+  if (!result.success) {
+    console.error("❌ Failed to send event reminder email:", {
       to: recipientEmail,
+      fromEmail: FROM_EMAIL,
+      error: result.error,
     });
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending event reminder email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      recipientEmail,
-    });
-    throw error;
+    throw new Error(
+      `Failed to send reminder email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Event reminder email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendRegistrationConfirmationEmail(
@@ -733,92 +921,74 @@ export async function sendRegistrationConfirmationEmail(
     endTimeISO,
   } = data;
 
-  // Runtime validation
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  console.log(`📧 Attempting to send confirmation email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    subject: `You're registered for ${eventTitle}!`,
+  });
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  // Generate ICS file content
+  console.log(`   Generating ICS attachment...`);
+  const icsContent = generateICS({
+    title: eventTitle,
+    description: `${eventTitle}\n\nHosted by: ${communityName}\n\nView event details: ${eventLink}`,
+    location: locationAddress || onlineMeetingLink || "Online Event",
+    startTime: startTimeISO,
+    endTime: endTimeISO,
+    url: eventLink,
+    organizerName: communityName,
+    organizerEmail: "events@luhive.com",
+  });
+  console.log(`   ICS attachment created`);
 
-  console.log(`📧 Attempting to send confirmation email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: You're registered for ${eventTitle}!`);
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: `You're registered for ${eventTitle}!`,
+    react: EventConfirmationEmail({
+      eventTitle,
+      communityName,
+      eventDate,
+      eventTime,
+      eventLink,
+      recipientName,
+      registerAccountLink,
+      locationAddress,
+      onlineMeetingLink,
+    }),
+    attachments: [
+      {
+        filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
+        content: Buffer.from(icsContent).toString("base64"),
+      },
+    ],
+    metadata: {
+      template: "EventConfirmationEmail",
+      eventTitle,
+      communityName,
+    },
+  });
 
-  try {
-    // Generate ICS file content
-    console.log(`   Generating ICS attachment...`);
-    const icsContent = generateICS({
-      title: eventTitle,
-      description: `${eventTitle}\n\nHosted by: ${communityName}\n\nView event details: ${eventLink}`,
-      location: locationAddress || onlineMeetingLink || "Online Event",
-      startTime: startTimeISO,
-      endTime: endTimeISO,
-      url: eventLink,
-      organizerName: communityName,
-      organizerEmail: "events@luhive.com",
-    });
-    console.log(`   ICS attachment created`);
-
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `You're registered for ${eventTitle}!`,
-      react: EventConfirmationEmail({
-        eventTitle,
-        communityName,
-        eventDate,
-        eventTime,
-        eventLink,
-        recipientName,
-        registerAccountLink,
-        locationAddress,
-        onlineMeetingLink,
-      }),
-      // Add ICS calendar attachment
-      attachments: [
-        {
-          filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
-          content: Buffer.from(icsContent).toString("base64"),
-        },
-      ],
-    });
-
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(`Failed to send confirmation email: ${error.message}`);
-    }
-
-    console.log(`✅ Confirmation email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
+  if (!result.success) {
+    console.error("❌ Failed to send confirmation email:", {
       to: recipientEmail,
-      hasAttachment: true,
-    });
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending confirmation email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      recipientEmail,
       fromEmail: FROM_EMAIL,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send confirmation email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Confirmation email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+    hasAttachment: true,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendCommunityWaitlistNotification(
@@ -833,72 +1003,52 @@ export async function sendCommunityWaitlistNotification(
     submittedAt,
   } = data;
 
-  // Runtime validation
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
   const recipientEmail = "luhive.startup@gmail.com";
-  console.log(`📧 Attempting to send waitlist notification email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: New Community Request: ${communityName}`);
+  console.log(`📧 Attempting to send waitlist notification email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    subject: `New Community Request: ${communityName}`,
+  });
 
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `New Community Request: ${communityName}`,
-      react: CommunityWaitlistNotification({
-        communityName,
-        userName,
-        userEmail,
-        website,
-        description,
-        submittedAt,
-      }),
-    });
-
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(
-        `Failed to send waitlist notification email: ${error.message}`
-      );
-    }
-
-    console.log(`✅ Waitlist notification email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
-      to: recipientEmail,
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: `New Community Request: ${communityName}`,
+    react: CommunityWaitlistNotification({
       communityName,
-    });
+      userName,
+      userEmail,
+      website,
+      description,
+      submittedAt,
+    }),
+    metadata: {
+      template: "CommunityWaitlistNotification",
+      communityName,
+    },
+  });
 
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending waitlist notification email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      recipientEmail,
+  if (!result.success) {
+    console.error("❌ Failed to send waitlist notification email:", {
+      to: recipientEmail,
       fromEmail: FROM_EMAIL,
       communityName,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send waitlist notification email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Waitlist notification email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+    communityName,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendCommunityJoinNotification(
@@ -913,74 +1063,56 @@ export async function sendCommunityJoinNotification(
     joinedAt,
   } = data;
 
-  // Runtime validation
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
   const dashboardLink = `${process.env.APP_URL || "https://luhive.com"}/dashboard/${communitySlug}/members`;
 
-  console.log(`📧 Attempting to send community join notification email:`);
-  console.log(`   To: ${ownerEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: New member joined ${communityName}!`);
+  console.log(`📧 Attempting to send community join notification email:`, {
+    to: ownerEmail,
+    from: FROM_EMAIL,
+    subject: `New member joined ${communityName}!`,
+  });
 
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [ownerEmail],
-      subject: `New member joined ${communityName}!`,
-      react: CommunityJoinNotification({
-        communityName,
-        communitySlug,
-        memberName,
-        memberEmail,
-        joinedAt,
-        dashboardLink,
-      }),
-    });
-
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(
-        `Failed to send community join notification email: ${error.message}`
-      );
-    }
-
-    console.log(`✅ Community join notification email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
-      to: ownerEmail,
+  const result = await sendEmail({
+    to: ownerEmail,
+    subject: `New member joined ${communityName}!`,
+    react: CommunityJoinNotification({
+      communityName,
+      communitySlug,
+      memberName,
+      memberEmail,
+      joinedAt,
+      dashboardLink,
+    }),
+    metadata: {
+      template: "CommunityJoinNotification",
       communityName,
       memberName,
-    });
+    },
+  });
 
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending community join notification email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      ownerEmail,
+  if (!result.success) {
+    console.error("❌ Failed to send community join notification email:", {
+      to: ownerEmail,
       fromEmail: FROM_EMAIL,
       communityName,
+      memberName,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send community join notification email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Community join notification email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: ownerEmail,
+    communityName,
+    memberName,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendSubscriptionConfirmationEmail(
@@ -1003,94 +1135,76 @@ export async function sendSubscriptionConfirmationEmail(
     endTimeISO,
   } = data;
 
-  // Runtime validation
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  console.log(`📧 Attempting to send subscription confirmation email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    subject: `You're subscribed for updates about ${eventTitle}!`,
+  });
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  // Generate ICS file content
+  console.log(`   Generating ICS attachment...`);
+  const icsContent = generateICS({
+    title: eventTitle,
+    description: `${eventTitle}\n\nHosted by: ${communityName}\n\nView event details: ${eventLink}`,
+    location: locationAddress || onlineMeetingLink || "Online Event",
+    startTime: startTimeISO,
+    endTime: endTimeISO,
+    url: eventLink,
+    organizerName: communityName,
+    organizerEmail: "events@luhive.com",
+  });
+  console.log(`   ICS attachment created`);
 
-  console.log(`📧 Attempting to send subscription confirmation email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: You're subscribed for updates about ${eventTitle}!`);
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: `You're subscribed for updates about ${eventTitle}!`,
+    react: EventSubscriptionEmail({
+      eventTitle,
+      communityName,
+      eventDate,
+      eventTime,
+      eventLink,
+      externalRegistrationUrl,
+      externalPlatformName,
+      recipientName,
+      registerAccountLink,
+      locationAddress,
+      onlineMeetingLink,
+    }),
+    attachments: [
+      {
+        filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
+        content: Buffer.from(icsContent).toString("base64"),
+      },
+    ],
+    metadata: {
+      template: "EventSubscriptionEmail",
+      eventTitle,
+      communityName,
+    },
+  });
 
-  try {
-    // Generate ICS file content
-    console.log(`   Generating ICS attachment...`);
-    const icsContent = generateICS({
-      title: eventTitle,
-      description: `${eventTitle}\n\nHosted by: ${communityName}\n\nView event details: ${eventLink}`,
-      location: locationAddress || onlineMeetingLink || "Online Event",
-      startTime: startTimeISO,
-      endTime: endTimeISO,
-      url: eventLink,
-      organizerName: communityName,
-      organizerEmail: "events@luhive.com",
-    });
-    console.log(`   ICS attachment created`);
-
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `You're subscribed for updates about ${eventTitle}!`,
-      react: EventSubscriptionEmail({
-        eventTitle,
-        communityName,
-        eventDate,
-        eventTime,
-        eventLink,
-        externalRegistrationUrl,
-        externalPlatformName,
-        recipientName,
-        registerAccountLink,
-        locationAddress,
-        onlineMeetingLink,
-      }),
-      // Add ICS calendar attachment
-      attachments: [
-        {
-          filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
-          content: Buffer.from(icsContent).toString("base64"),
-        },
-      ],
-    });
-
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(`Failed to send subscription email: ${error.message}`);
-    }
-
-    console.log(`✅ Subscription confirmation email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
+  if (!result.success) {
+    console.error("❌ Failed to send subscription email:", {
       to: recipientEmail,
-      hasAttachment: true,
-    });
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending subscription confirmation email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      recipientEmail,
       fromEmail: FROM_EMAIL,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send subscription email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Subscription confirmation email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+    hasAttachment: true,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendCollaborationInviteEmail(
@@ -1106,68 +1220,52 @@ export async function sendCollaborationInviteEmail(
     invitedByName,
   } = data;
 
-  // Runtime validation
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  console.log(`📧 Attempting to send collaboration invite email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    subject: `Collaboration Invitation: ${eventTitle}`,
+  });
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  console.log(`📧 Attempting to send collaboration invite email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: Collaboration Invitation: ${eventTitle}`);
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `Collaboration Invitation: ${eventTitle}`,
-      react: CollaborationInviteEmail({
-        eventTitle,
-        hostCommunityName,
-        coHostCommunityName,
-        recipientEmail,
-        inviteLink,
-        eventLink,
-        invitedByName,
-      }),
-    });
-
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(`Failed to send collaboration invite email: ${error.message}`);
-    }
-
-    console.log(`✅ Collaboration invite email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
-      to: recipientEmail,
-    });
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending collaboration invite email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: `Collaboration Invitation: ${eventTitle}`,
+    react: CollaborationInviteEmail({
+      eventTitle,
+      hostCommunityName,
+      coHostCommunityName,
       recipientEmail,
+      inviteLink,
+      eventLink,
+      invitedByName,
+    }),
+    metadata: {
+      template: "CollaborationInviteEmail",
+      eventTitle,
+      hostCommunityName,
+      coHostCommunityName,
+    },
+  });
+
+  if (!result.success) {
+    console.error("❌ Failed to send collaboration invite email:", {
+      to: recipientEmail,
       fromEmail: FROM_EMAIL,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send collaboration invite email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Collaboration invite email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 export async function sendCollaborationAcceptedEmail(
@@ -1181,107 +1279,74 @@ export async function sendCollaborationAcceptedEmail(
     eventLink,
   } = data;
 
-  // Runtime validation
-  if (!resend) {
-    const errorMsg =
-      "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  console.log(`📧 Attempting to send collaboration accepted email:`, {
+    to: recipientEmail,
+    from: FROM_EMAIL,
+    subject: `Collaboration Accepted: ${eventTitle}`,
+  });
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  console.log(`📧 Attempting to send collaboration accepted email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: Collaboration Accepted: ${eventTitle}`);
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `Collaboration Accepted: ${eventTitle}`,
-      react: CollaborationAcceptedEmail({
-        eventTitle,
-        hostCommunityName,
-        coHostCommunityName,
-        recipientEmail,
-        eventLink,
-      }),
-    });
-
-    if (error) {
-      const errorDetails: Record<string, unknown> = {
-        message: error.message,
-      };
-      if ("name" in error && typeof error.name === "string") {
-        errorDetails.name = error.name;
-      }
-      console.error("❌ Resend API error:", errorDetails);
-      throw new Error(`Failed to send collaboration accepted email: ${error.message}`);
-    }
-
-    console.log(`✅ Collaboration accepted email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
-      to: recipientEmail,
-    });
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending collaboration accepted email:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: `Collaboration Accepted: ${eventTitle}`,
+    react: CollaborationAcceptedEmail({
+      eventTitle,
+      hostCommunityName,
+      coHostCommunityName,
       recipientEmail,
+      eventLink,
+    }),
+    metadata: {
+      template: "CollaborationAcceptedEmail",
+      eventTitle,
+      hostCommunityName,
+      coHostCommunityName,
+    },
+  });
+
+  if (!result.success) {
+    console.error("❌ Failed to send collaboration accepted email:", {
+      to: recipientEmail,
       fromEmail: FROM_EMAIL,
+      error: result.error,
     });
-    throw error;
+    throw new Error(
+      `Failed to send collaboration accepted email: ${
+        result.error?.message || "Unknown error"
+      }`
+    );
   }
+
+  console.log(`✅ Collaboration accepted email sent successfully:`, {
+    id: result.id,
+    from: FROM_EMAIL,
+    to: recipientEmail,
+  });
+
+  return { success: true, data: { id: result.id } };
 }
 
 /**
- * Send notification to community members about a new event created by their community
+ * Send notification to community members about a new event created by their community.
+ * Supports both single and batch sending.
  */
 export async function sendNewEventNotificationEmail(
-  data: NewEventNotificationEmailData
+  data: NewEventNotificationEmailData | NewEventNotificationEmailData[]
 ) {
-  const {
-    eventTitle,
-    communityName,
-    eventDate,
-    eventTime,
-    eventLink,
-    recipientEmail,
-    recipientName,
-    locationAddress,
-    onlineMeetingLink,
-  } = data;
+  const items = Array.isArray(data) ? data : [data];
 
-  if (!resend) {
-    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  console.log(`📧 Attempting to send new event notification email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: New Event: ${eventTitle}`);
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
+  const payloads: BaseEmailPayload[] = items.map(
+    ({
+      eventTitle,
+      communityName,
+      eventDate,
+      eventTime,
+      eventLink,
+      recipientEmail,
+      recipientName,
+      locationAddress,
+      onlineMeetingLink,
+    }) => ({
+      to: recipientEmail,
       subject: `New Event: ${eventTitle}`,
       html: `
         <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
@@ -1299,132 +1364,128 @@ export async function sendNewEventNotificationEmail(
           <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">${communityName}</p>
         </div>
       `,
-    });
+      metadata: {
+        template: "NewEventNotificationEmail",
+        eventTitle,
+        communityName,
+      },
+    })
+  );
 
-    if (error) {
-      console.error("❌ Resend API error:", error);
-      throw new Error(`Failed to send new event notification: ${error.message}`);
+  console.log(
+    `📧 Attempting to send new event notification emails (count: ${payloads.length})`
+  );
+
+  const results = await sendEmailBatch(payloads);
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const result of results) {
+    if (result.success) {
+      successCount += 1;
+    } else {
+      errorCount += 1;
     }
-
-    console.log(`✅ New event notification email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
-      to: recipientEmail,
-    });
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending new event notification email:", {
-      error: error instanceof Error ? error.message : String(error),
-      recipientEmail,
-    });
-    throw error;
   }
+
+  if (errorCount > 0) {
+    console.error(
+      `❌ Some new event notification emails failed: success=${successCount}, failed=${errorCount}`
+    );
+  }
+
+  return { successCount, errorCount, results };
 }
 
 export async function sendAnnouncementNotificationEmail(
-  data: AnnouncementNotificationEmailData
+  data: AnnouncementNotificationEmailData | AnnouncementNotificationEmailData[]
 ) {
-  const {
-    title,
-    description,
-    communityName,
-    announcementLink,
-    recipientEmail,
-    recipientName,
-    imageUrls,
-    announcementId,
-    recipientUserId,
-  } = data;
+  const items = Array.isArray(data) ? data : [data];
 
-  if (!resend) {
-    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
+  const payloads: BaseEmailPayload[] = items.map(
+    ({
+      title,
+      description,
+      communityName,
+      announcementLink,
+      recipientEmail,
+      imageUrls,
+      announcementId,
+      recipientUserId,
+    }) => ({
+      to: recipientEmail,
       subject: `${title}`,
       react: CommunityAnnouncementEmail({
         title,
         description,
         communityName,
         announcementLink,
-        recipientName,
         imageUrls: imageUrls || [],
         announcementId,
         userId: recipientUserId,
       }),
-    });
+      metadata: {
+        template: "CommunityAnnouncementEmail",
+        communityName,
+        announcementId,
+      },
+    })
+  );
 
-    if (error) {
-      console.error("❌ Resend API error for announcement email:", error);
-      throw new Error(`Failed to send announcement email: ${error.message}`);
+  console.log(
+    `📧 Attempting to send announcement notification emails (count: ${payloads.length})`
+  );
+
+  const results = await sendEmailBatch(payloads);
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const result of results) {
+    if (result.success) {
+      successCount += 1;
+    } else {
+      errorCount += 1;
     }
-
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending announcement email:", {
-      error: error instanceof Error ? error.message : String(error),
-      recipientEmail,
-    });
-    throw error;
   }
+
+  if (errorCount > 0) {
+    console.error(
+      `❌ Some announcement notification emails failed: success=${successCount}, failed=${errorCount}`
+    );
+  }
+
+  return { successCount, errorCount, results };
 }
 
 /**
  * Send notification to community members when a co-host accepts collaboration on a new event
  */
 export async function sendNewCollaborationEventEmail(
-  data: NewCollaborationEventEmailData
+  data: NewCollaborationEventEmailData | NewCollaborationEventEmailData[]
 ) {
-  const {
-    eventTitle,
-    hostCommunityName,
-    coHostCommunityName,
-    eventDate,
-    eventTime,
-    eventLink,
-    recipientEmail,
-    recipientName,
-    isNewEvent,
-    locationAddress,
-    onlineMeetingLink,
-  } = data;
+  const items = Array.isArray(data) ? data : [data];
 
-  if (!resend) {
-    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  const eventType = isNewEvent ? "New Event" : "Event Update";
-  console.log(`📧 Attempting to send new collaboration event email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: ${eventType} - ${eventTitle} (${coHostCommunityName} joined)`);
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `${eventType}: ${eventTitle} (${coHostCommunityName} joined)`,
-      html: `
+  const payloads: BaseEmailPayload[] = items.map(
+    ({
+      eventTitle,
+      hostCommunityName,
+      coHostCommunityName,
+      eventDate,
+      eventTime,
+      eventLink,
+      recipientEmail,
+      recipientName,
+      isNewEvent,
+      locationAddress,
+      onlineMeetingLink,
+    }) => {
+      const eventType = isNewEvent ? "New Event" : "Event Update";
+      return {
+        to: recipientEmail,
+        subject: `${eventType}: ${eventTitle} (${coHostCommunityName} joined)`,
+        html: `
         <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #ff8040;">${isNewEvent ? 'New Collaborative Event!' : 'Event Collaboration Update!'}</h2>
           <p>Hi ${recipientName},</p>
@@ -1442,75 +1503,75 @@ export async function sendNewCollaborationEventEmail(
           <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">Luhive Events</p>
         </div>
       `,
-    });
-
-    if (error) {
-      console.error("❌ Resend API error:", error);
-      throw new Error(`Failed to send collaboration event notification: ${error.message}`);
+        metadata: {
+          template: "NewCollaborationEventEmail",
+          eventTitle,
+          hostCommunityName,
+          coHostCommunityName,
+          isNewEvent,
+        },
+      };
     }
+  );
 
-    console.log(`✅ Collaboration event email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
-      to: recipientEmail,
-    });
+  console.log(
+    `📧 Attempting to send collaboration event emails (count: ${payloads.length})`
+  );
 
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending collaboration event email:", {
-      error: error instanceof Error ? error.message : String(error),
-      recipientEmail,
-    });
-    throw error;
+  const results = await sendEmailBatch(payloads);
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const result of results) {
+    if (result.success) {
+      successCount += 1;
+    } else {
+      errorCount += 1;
+    }
   }
+
+  if (errorCount > 0) {
+    console.error(
+      `❌ Some collaboration event emails failed: success=${successCount}, failed=${errorCount}`
+    );
+  }
+
+  return { successCount, errorCount, results };
 }
 
 /**
  * Send notification to host and co-host owners/admins when someone registers for their event
  */
 export async function sendEventRegistrationNotificationEmail(
-  data: EventRegistrationNotificationEmailData
+  data:
+    | EventRegistrationNotificationEmailData
+    | EventRegistrationNotificationEmailData[]
 ) {
-  const {
-    eventTitle,
-    registrantName,
-    registrantEmail,
-    hostCommunityName,
-    coHostCommunityNames,
-    eventDate,
-    eventTime,
-    eventLink,
-    recipientEmail,
-    recipientName,
-  } = data;
+  const items = Array.isArray(data) ? data : [data];
 
-  if (!resend) {
-    const errorMsg = "Resend client not initialized. Check RESEND_API_KEY environment variable.";
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
+  const payloads: BaseEmailPayload[] = items.map(
+    ({
+      eventTitle,
+      registrantName,
+      registrantEmail,
+      hostCommunityName,
+      coHostCommunityNames,
+      eventDate,
+      eventTime,
+      eventLink,
+      recipientEmail,
+      recipientName,
+    }) => {
+      const coHostsText =
+        coHostCommunityNames.length > 0
+          ? coHostCommunityNames.join(", ")
+          : "none";
 
-  if (!isValidEmailFormat(FROM_EMAIL)) {
-    const errorMsg = `Invalid FROM_EMAIL format: ${FROM_EMAIL}`;
-    console.error(`❌ ${errorMsg}`);
-    throw new Error(errorMsg);
-  }
-
-  const coHostsText = coHostCommunityNames.length > 0 
-    ? coHostCommunityNames.join(", ") 
-    : "none";
-
-  console.log(`📧 Attempting to send event registration notification email:`);
-  console.log(`   To: ${recipientEmail}`);
-  console.log(`   From: ${FROM_EMAIL}`);
-  console.log(`   Subject: New Registration: ${eventTitle}`);
-
-  try {
-    const { data: emailData, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [recipientEmail],
-      subject: `New Registration: ${eventTitle}`,
-      html: `
+      return {
+        to: recipientEmail,
+        subject: `New Registration: ${eventTitle}`,
+        html: `
         <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #ff8040;">New Event Registration!</h2>
           <p>Hi ${recipientName},</p>
@@ -1527,25 +1588,37 @@ export async function sendEventRegistrationNotificationEmail(
           <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">Luhive Events</p>
         </div>
       `,
-    });
-
-    if (error) {
-      console.error("❌ Resend API error:", error);
-      throw new Error(`Failed to send registration notification: ${error.message}`);
+        metadata: {
+          template: "EventRegistrationNotificationEmail",
+          eventTitle,
+          hostCommunityName,
+        },
+      };
     }
+  );
 
-    console.log(`✅ Registration notification email sent successfully:`, {
-      id: emailData?.id,
-      from: FROM_EMAIL,
-      to: recipientEmail,
-    });
+  console.log(
+    `📧 Attempting to send event registration notification emails (count: ${payloads.length})`
+  );
 
-    return { success: true, data: emailData };
-  } catch (error) {
-    console.error("❌ Error sending registration notification email:", {
-      error: error instanceof Error ? error.message : String(error),
-      recipientEmail,
-    });
-    throw error;
+  const results = await sendEmailBatch(payloads);
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const result of results) {
+    if (result.success) {
+      successCount += 1;
+    } else {
+      errorCount += 1;
+    }
   }
+
+  if (errorCount > 0) {
+    console.error(
+      `❌ Some registration notification emails failed: success=${successCount}, failed=${errorCount}`
+    );
+  }
+
+  return { successCount, errorCount, results };
 }

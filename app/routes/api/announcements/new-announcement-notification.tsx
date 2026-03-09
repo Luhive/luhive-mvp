@@ -33,33 +33,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const announcementLink = `${new URL(request.url).origin}/c/${communitySlug}`;
 
-    let successCount = 0;
-    let errorCount = 0;
+    const payloads = memberEmailsWithIds.map(({ email, userId }) => ({
+      title,
+      description,
+      communityName,
+      announcementLink,
+      recipientEmail: email,
+      imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
+      announcementId,
+      recipientUserId: userId,
+    }));
 
-    for (const { email, userId } of memberEmailsWithIds) {
-      try {
-        const recipientName = email.split("@")[0];
-
-        await sendAnnouncementNotificationEmail({
-          title,
-          description,
-          communityName,
-          announcementLink,
-          recipientEmail: email,
-          recipientName,
-          imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
-          announcementId,
-          recipientUserId: userId,
-        });
-
-        successCount++;
-        await new Promise((resolve) => setTimeout(resolve, 600));
-      } catch (error) {
-        console.error("Failed to send announcement notification to:", email, error);
-        errorCount++;
-        await new Promise((resolve) => setTimeout(resolve, 600));
-      }
-    }
+    const { successCount, errorCount } = await sendAnnouncementNotificationEmail(
+      payloads
+    );
 
     await (serviceClient as any)
       .from("community_announcements")
