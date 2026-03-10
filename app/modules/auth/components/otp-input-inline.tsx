@@ -52,17 +52,21 @@ export function OtpInputInline({
   const verifyFetcher = useFetcher<VerifyFetcherData>();
   const resendFetcher = useFetcher<ResendFetcherData>();
   const [otpValue, setOtpValue] = useState("");
-  const [lastFailedToken, setLastFailedToken] = useState<string | null>(null);
+  const [displayError, setDisplayError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
   const autoSubmittedTokenRef = useRef("");
   const completedOnceRef = useRef(false);
+  const otpContainerRef = useRef<HTMLDivElement>(null);
 
   const isVerifying = verifyFetcher.state === "submitting";
   const isResending = resendFetcher.state === "submitting";
-  const visibleError =
-    !isVerifying && verifyFetcher.data?.error && otpValue === lastFailedToken
-      ? verifyFetcher.data.error
-      : null;
+
+  const focusOtpInput = () => {
+    window.setTimeout(() => {
+      const input = otpContainerRef.current?.querySelector("input") as HTMLInputElement | null;
+      input?.focus();
+    }, 0);
+  };
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -80,9 +84,10 @@ export function OtpInputInline({
     if (resendFetcher.data.success) {
       toast.success(resendFetcher.data.message || "A new code was sent.");
       setOtpValue("");
-      setLastFailedToken(null);
+      setDisplayError(null);
       autoSubmittedTokenRef.current = "";
       setSecondsLeft(RESEND_SECONDS);
+      focusOtpInput();
       return;
     }
 
@@ -92,25 +97,43 @@ export function OtpInputInline({
   }, [resendFetcher.data]);
 
   useEffect(() => {
+    if (!verifyFetcher.data) {
+      return;
+    }
+
+    if (verifyFetcher.data.error) {
+      setDisplayError(verifyFetcher.data.error);
+
+      if (verifyFetcher.data.code === "invalid") {
+        setOtpValue("");
+        autoSubmittedTokenRef.current = "";
+        focusOtpInput();
+      }
+
+      return;
+    }
+
+    setDisplayError(null);
+  }, [verifyFetcher.data]);
+
+  useEffect(() => {
+    if (displayError && otpValue.length > 0) {
+      setDisplayError(null);
+    }
+  }, [displayError, otpValue]);
+
+  useEffect(() => {
     if (!verifyFetcher.data?.success || completedOnceRef.current) {
       return;
     }
 
     completedOnceRef.current = true;
-    setLastFailedToken(null);
+    setDisplayError(null);
     onSuccess({
       fullName: verifyFetcher.data.fullName ?? null,
       avatarUrl: verifyFetcher.data.avatarUrl ?? null,
     });
   }, [onSuccess, verifyFetcher.data]);
-
-  useEffect(() => {
-    if (!verifyFetcher.data?.error) {
-      return;
-    }
-
-    setLastFailedToken(autoSubmittedTokenRef.current || otpValue);
-  }, [verifyFetcher.data]);
 
   useEffect(() => {
     if (otpValue.length < OTP_LENGTH) {
@@ -202,7 +225,7 @@ export function OtpInputInline({
         We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>.
       </p>
 
-      <div className="flex justify-center">
+      <div ref={otpContainerRef} className="flex justify-center">
         <InputOTP
           maxLength={OTP_LENGTH}
           value={otpValue}
@@ -223,8 +246,8 @@ export function OtpInputInline({
         </InputOTP>
       </div>
 
-      {visibleError && (
-        <p className="text-sm text-destructive text-center">{visibleError}</p>
+      {displayError && (
+        <p className="text-sm text-destructive text-center">{displayError}</p>
       )}
 
       <Button
