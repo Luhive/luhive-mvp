@@ -936,7 +936,7 @@ export default function CommunityPage() {
                   </time>
                 </div>
 
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 max-h-[230px] overflow-y-auto pr-1 custom-scroll-design">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 max-h-[230px] overflow-y-auto pr-3 custom-scroll-design">
                   {selectedAnnouncement.description}
                 </p>
               </div>
