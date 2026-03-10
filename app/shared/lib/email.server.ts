@@ -555,9 +555,12 @@ interface AnnouncementNotificationEmailData {
   communityName: string;
   announcementLink: string;
   recipientEmail: string;
-  recipientName: string;
+  recipientName?: string;
   imageUrls?: string[];
+  createdAt?: string;
+  communityLogo?: string;
   announcementId?: string;
+  userId?: string;
   recipientUserId?: string;
 }
 
@@ -1411,7 +1414,10 @@ export async function sendAnnouncementNotificationEmail(
       announcementLink,
       recipientEmail,
       imageUrls,
+      createdAt,
+      communityLogo,
       announcementId,
+      userId,
       recipientUserId,
     }) => ({
       to: recipientEmail,
@@ -1423,8 +1429,10 @@ export async function sendAnnouncementNotificationEmail(
         communityName,
         announcementLink,
         imageUrls: imageUrls || [],
+        createdAt,
+        communityLogo,
         announcementId,
-        userId: recipientUserId,
+        userId: userId ?? recipientUserId,
       }),
       metadata: {
         template: "CommunityAnnouncementEmail",
