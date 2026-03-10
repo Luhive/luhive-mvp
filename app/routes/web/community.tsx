@@ -828,7 +828,7 @@ export default function CommunityPage() {
           }}
         >
           <DrawerContent className="bg-background">
-            <div className="overflow-y-auto scroll-none max-h-[calc(100vh-80px)] px-6 py-4 space-y-4">
+            <div className="overflow-y-auto custom-scroll-design max-h-[calc(100vh-80px)] px-6 py-4 space-y-4">
               {selectedAnnouncement && (
                 <>
                   {selectedAnnouncement.images?.[0]?.image_url && (
@@ -872,7 +872,7 @@ export default function CommunityPage() {
                     </time>
                   </div>
 
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 scroll-none">
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 custom-scroll-design">
                     {selectedAnnouncement.description}
                   </p>
                 </>
@@ -936,7 +936,7 @@ export default function CommunityPage() {
                   </time>
                 </div>
 
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 max-h-[230px] overflow-y-auto pr-1 scroll-none">
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 max-h-[230px] overflow-y-auto pr-3 custom-scroll-design">
                   {selectedAnnouncement.description}
                 </p>
               </div>

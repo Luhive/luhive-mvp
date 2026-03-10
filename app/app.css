@@ -382,3 +382,27 @@ select:-webkit-autofill:active {
   scrollbar-width: none;      
   -ms-overflow-style: none;
 }
+
+.custom-scroll-design::-webkit-scrollbar {
+  width: 3px;
+}
+
+/* Track */
+.custom-scroll-design::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+  height: 10px;
+}
+
+/* Handle */
+.custom-scroll-design::-webkit-scrollbar-thumb {
+  background: #ff8040;
+  border-radius: 5px;
+
+  transition: 0.3s;
+}
+
+/* Handle on hover */
+.custom-scroll-design::-webkit-scrollbar-thumb:hover {
+  background: #fb8b53;
+}
