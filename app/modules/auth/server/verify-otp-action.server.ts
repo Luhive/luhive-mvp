@@ -92,7 +92,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (error || !data.user) {
     const message = (error?.message || "").toLowerCase();
-    const isExpired = message.includes("expired");
+    const isInvalid =
+      message.includes("invalid") ||
+      message.includes("incorrect") ||
+      message.includes("wrong");
+    const isExpired = message.includes("expired") && !isInvalid;
     const isTooManyAttempts =
       message.includes("too many") || message.includes("over_email_send_rate_limit");
 

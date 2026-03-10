@@ -52,12 +52,17 @@ export function OtpInputInline({
   const verifyFetcher = useFetcher<VerifyFetcherData>();
   const resendFetcher = useFetcher<ResendFetcherData>();
   const [otpValue, setOtpValue] = useState("");
+  const [lastFailedToken, setLastFailedToken] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
   const autoSubmittedTokenRef = useRef("");
   const completedOnceRef = useRef(false);
 
   const isVerifying = verifyFetcher.state === "submitting";
   const isResending = resendFetcher.state === "submitting";
+  const visibleError =
+    !isVerifying && verifyFetcher.data?.error && otpValue === lastFailedToken
+      ? verifyFetcher.data.error
+      : null;
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -75,6 +80,7 @@ export function OtpInputInline({
     if (resendFetcher.data.success) {
       toast.success(resendFetcher.data.message || "A new code was sent.");
       setOtpValue("");
+      setLastFailedToken(null);
       autoSubmittedTokenRef.current = "";
       setSecondsLeft(RESEND_SECONDS);
       return;
@@ -91,11 +97,20 @@ export function OtpInputInline({
     }
 
     completedOnceRef.current = true;
+    setLastFailedToken(null);
     onSuccess({
       fullName: verifyFetcher.data.fullName ?? null,
       avatarUrl: verifyFetcher.data.avatarUrl ?? null,
     });
   }, [onSuccess, verifyFetcher.data]);
+
+  useEffect(() => {
+    if (!verifyFetcher.data?.error) {
+      return;
+    }
+
+    setLastFailedToken(autoSubmittedTokenRef.current || otpValue);
+  }, [verifyFetcher.data]);
 
   useEffect(() => {
     if (otpValue.length < OTP_LENGTH) {
@@ -208,8 +223,8 @@ export function OtpInputInline({
         </InputOTP>
       </div>
 
-      {verifyFetcher.data?.error && (
-        <p className="text-sm text-destructive text-center">{verifyFetcher.data.error}</p>
+      {visibleError && (
+        <p className="text-sm text-destructive text-center">{visibleError}</p>
       )}
 
       <Button
