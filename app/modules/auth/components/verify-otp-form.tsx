@@ -39,9 +39,11 @@ export function VerifyOtpForm() {
   const submit = useSubmit();
 
   const [otpValue, setOtpValue] = useState("");
+  const [storedReturnTo, setStoredReturnTo] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
   const autoSubmittedTokenRef = useRef("");
   const verifyFormRef = useRef<HTMLFormElement>(null);
+  const effectiveReturnTo = returnTo || storedReturnTo;
 
   const submittedIntent = navigation.formData?.get("intent") as string | null;
   const isVerifying = navigation.state === "submitting" && submittedIntent === "verify";
@@ -53,6 +55,11 @@ export function VerifyOtpForm() {
     }, 1000);
 
     return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const path = window.localStorage.getItem("post_login_return_to") || "";
+    setStoredReturnTo(path.startsWith("/") ? path : null);
   }, []);
 
   useEffect(() => {
@@ -122,7 +129,7 @@ export function VerifyOtpForm() {
           <input type="hidden" name="intent" value="verify" />
           <input type="hidden" name="email" value={email} />
           {communityId && <input type="hidden" name="communityId" value={communityId} />}
-          {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
+          {effectiveReturnTo && <input type="hidden" name="returnTo" value={effectiveReturnTo} />}
           <input type="hidden" name="token" value={otpValue} />
 
           <div className="flex justify-center">
