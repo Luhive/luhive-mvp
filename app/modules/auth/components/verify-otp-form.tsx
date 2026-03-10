@@ -40,17 +40,23 @@ export function VerifyOtpForm() {
 
   const [otpValue, setOtpValue] = useState("");
   const [storedReturnTo, setStoredReturnTo] = useState<string | null>(null);
-  const [lastFailedToken, setLastFailedToken] = useState<string | null>(null);
+  const [displayError, setDisplayError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
   const autoSubmittedTokenRef = useRef("");
   const verifyFormRef = useRef<HTMLFormElement>(null);
+  const otpContainerRef = useRef<HTMLDivElement>(null);
   const effectiveReturnTo = returnTo || storedReturnTo;
 
   const submittedIntent = navigation.formData?.get("intent") as string | null;
   const isVerifying = navigation.state === "submitting" && submittedIntent === "verify";
   const isResending = resendFetcher.state === "submitting";
-  const visibleError =
-    !isVerifying && actionData?.error && otpValue === lastFailedToken ? actionData.error : null;
+
+  const focusOtpInput = () => {
+    window.setTimeout(() => {
+      const input = otpContainerRef.current?.querySelector("input") as HTMLInputElement | null;
+      input?.focus();
+    }, 0);
+  };
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -74,8 +80,9 @@ export function VerifyOtpForm() {
       toast.success(resendFetcher.data.message || "A new code was sent.");
       setSecondsLeft(RESEND_SECONDS);
       setOtpValue("");
-      setLastFailedToken(null);
+      setDisplayError(null);
       autoSubmittedTokenRef.current = "";
+      focusOtpInput();
       return;
     }
 
@@ -85,12 +92,30 @@ export function VerifyOtpForm() {
   }, [resendFetcher.data]);
 
   useEffect(() => {
-    if (!actionData?.error) {
+    if (!actionData) {
       return;
     }
 
-    setLastFailedToken(autoSubmittedTokenRef.current || otpValue);
+    if (actionData.error) {
+      setDisplayError(actionData.error);
+
+      if (actionData.code === "invalid") {
+        setOtpValue("");
+        autoSubmittedTokenRef.current = "";
+        focusOtpInput();
+      }
+
+      return;
+    }
+
+    setDisplayError(null);
   }, [actionData]);
+
+  useEffect(() => {
+    if (displayError && otpValue.length > 0) {
+      setDisplayError(null);
+    }
+  }, [displayError, otpValue]);
 
   useEffect(() => {
     if (otpValue.length < OTP_LENGTH) {
@@ -144,7 +169,7 @@ export function VerifyOtpForm() {
           {effectiveReturnTo && <input type="hidden" name="returnTo" value={effectiveReturnTo} />}
           <input type="hidden" name="token" value={otpValue} />
 
-          <div className="flex justify-center">
+          <div ref={otpContainerRef} className="flex justify-center">
             <InputOTP
               maxLength={OTP_LENGTH}
               value={otpValue}
@@ -165,8 +190,8 @@ export function VerifyOtpForm() {
             </InputOTP>
           </div>
 
-          {visibleError && (
-            <p className="text-sm text-destructive text-center">{visibleError}</p>
+          {displayError && (
+            <p className="text-sm text-destructive text-center">{displayError}</p>
           )}
 
           <Button
