@@ -109,7 +109,7 @@ export function OtpInputInline({
 
     autoSubmittedTokenRef.current = otpValue;
 
-    const formData = new FormData();
+    const formData = new FormData(); 
     formData.append("intent", "verify");
     formData.append("_modal", "true");
     formData.append("email", email);

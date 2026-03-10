@@ -1416,6 +1416,7 @@ export async function sendAnnouncementNotificationEmail(
     }) => ({
       to: recipientEmail,
       subject: `${title}`,
+      
       react: CommunityAnnouncementEmail({
         title,
         description,

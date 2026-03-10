@@ -54,26 +54,28 @@ What do you want to announce? What do you want to announce? What do you want to 
   return (
     <Html>
       <Head>
-  <Font
-    fontFamily="Manrope"
-    fallbackFontFamily="Arial"
-    webFont={{
-      url: "https://fonts.gstatic.com/s/manrope/v15/xn7gYHE41ni1AdIRggexSg.woff2",
-      format: "woff2",
-    }}
-    fontWeight={400}
-    fontStyle="normal"
-  />
-</Head>
+        <Font
+          fontFamily="Manrope"
+          fallbackFontFamily="Arial"
+          webFont={{
+            url: "https://fonts.gstatic.com/s/manrope/v15/xn7gYHE41ni1AdIRggexSg.woff2",
+            format: "woff2",
+          }}
+          fontWeight={400}
+          fontStyle="normal"
+        />
+      </Head>
       <Preview>{title}</Preview>
 
       <Tailwind>
         <Body
           className="bg-white"
-          style={{ fontFamily: 'Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}
+          style={{
+            fontFamily:
+              'Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          }}
         >
           <Container className="max-w-[600px] mx-auto px-6 py-8">
-
             {/* TITLE */}
             <Section className="mb-6">
               <Heading
@@ -89,17 +91,19 @@ What do you want to announce? What do you want to announce? What do you want to 
               <Row>
                 <Column align="left">
                   <Row>
-                    <Column style={{width:"30px"}}>
+                    <Column style={{ width: "30px" }}>
                       <Img
                         src={communityLogo}
-                        style={{objectFit: "cover", width:"22px", height:"22px" }}
+                        style={{
+                          objectFit: "cover",
+                          width: "22px",
+                          height: "22px",
+                        }}
                       />
                     </Column>
 
                     <Column>
-                      <Text
-                        className="font-semibold text-[14px] leading-[150%] tracking-[0] align-middle"
-                      >
+                      <Text className="font-semibold text-[14px] leading-[150%] tracking-[0] align-middle">
                         {communityName}
                       </Text>
                     </Column>
@@ -107,10 +111,7 @@ What do you want to announce? What do you want to announce? What do you want to 
                 </Column>
 
                 <Column align="right">
-                  <Text
-                    className="text-xs m-0"
-                    style={{ color: "#9B9B9B" }}
-                  >
+                  <Text className="text-xs m-0" style={{ color: "#9B9B9B" }}>
                     {formattedDate}
                   </Text>
                 </Column>
@@ -119,19 +120,16 @@ What do you want to announce? What do you want to announce? What do you want to 
 
             {/* IMAGE */}
             {imageUrls?.length > 0 && (
-              <Section className="mb-6 text-center">
+              <Section className="mb-6">
                 <Img
                   src={imageUrls[0]}
-                  width="340"
-                  height="200"
+                  width="548"
                   alt="Announcement image"
-                  className="rounded-[12px]"
                   style={{
-                    width: "340px",
-                    height: "200px",
+                    width: "100%",
+                    maxWidth: "548px",
+                    height: "auto",
                     borderRadius: "12px",
-                    objectFit: "cover",
-                    margin: "0 auto",
                     display: "block",
                   }}
                 />
@@ -141,7 +139,7 @@ What do you want to announce? What do you want to announce? What do you want to 
             {/* DESCRIPTION */}
             <Section className="mb-8">
               <Text
-                className="font-manrope text-[15px] leading-[150%] m-0"
+                className="font-manrope text-[18px] leading-[150%] m-0"
                 style={{
                   color: "#6B6B6B",
                   whiteSpace: "pre-line",
@@ -172,11 +170,7 @@ What do you want to announce? What do you want to announce? What do you want to 
 
             {/* FOOTER */}
             <Section className="text-center mt-6">
-
-              <Text
-                className="text-xs mb-4"
-                style={{ color: "#9B9B9B" }}
-              >
+              <Text className="text-xs mb-4" style={{ color: "#9B9B9B" }}>
                 Create your community on
               </Text>
 
@@ -190,15 +184,10 @@ What do you want to announce? What do you want to announce? What do you want to 
                 }}
               />
 
-              <Text
-                className="text-xs m-0"
-                style={{ color: "#9B9B9B" }}
-              >
+              <Text className="text-xs m-0" style={{ color: "#9B9B9B" }}>
                 © {new Date().getFullYear()} Luhive. All rights reserved.
               </Text>
-
             </Section>
-
           </Container>
 
           {/* Email tracking pixel */}
