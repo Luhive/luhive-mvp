@@ -40,6 +40,7 @@ export function VerifyOtpForm() {
 
   const [otpValue, setOtpValue] = useState("");
   const [storedReturnTo, setStoredReturnTo] = useState<string | null>(null);
+  const [lastFailedToken, setLastFailedToken] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
   const autoSubmittedTokenRef = useRef("");
   const verifyFormRef = useRef<HTMLFormElement>(null);
@@ -48,6 +49,8 @@ export function VerifyOtpForm() {
   const submittedIntent = navigation.formData?.get("intent") as string | null;
   const isVerifying = navigation.state === "submitting" && submittedIntent === "verify";
   const isResending = resendFetcher.state === "submitting";
+  const visibleError =
+    !isVerifying && actionData?.error && otpValue === lastFailedToken ? actionData.error : null;
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -71,6 +74,7 @@ export function VerifyOtpForm() {
       toast.success(resendFetcher.data.message || "A new code was sent.");
       setSecondsLeft(RESEND_SECONDS);
       setOtpValue("");
+      setLastFailedToken(null);
       autoSubmittedTokenRef.current = "";
       return;
     }
@@ -79,6 +83,14 @@ export function VerifyOtpForm() {
       toast.error(resendFetcher.data.error);
     }
   }, [resendFetcher.data]);
+
+  useEffect(() => {
+    if (!actionData?.error) {
+      return;
+    }
+
+    setLastFailedToken(autoSubmittedTokenRef.current || otpValue);
+  }, [actionData]);
 
   useEffect(() => {
     if (otpValue.length < OTP_LENGTH) {
@@ -153,8 +165,8 @@ export function VerifyOtpForm() {
             </InputOTP>
           </div>
 
-          {actionData?.error && (
-            <p className="text-sm text-destructive text-center">{actionData.error}</p>
+          {visibleError && (
+            <p className="text-sm text-destructive text-center">{visibleError}</p>
           )}
 
           <Button
