@@ -5,9 +5,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const params = new URLSearchParams();
   const email = (url.searchParams.get("email") || "").trim();
+  const communityId = (url.searchParams.get("communityId") || "").trim();
+  const returnTo = (url.searchParams.get("returnTo") || "").trim();
 
   if (email) {
     params.set("email", email);
+  }
+
+  if (communityId) {
+    params.set("communityId", communityId);
+  }
+
+  if (returnTo.startsWith("/")) {
+    params.set("returnTo", returnTo);
   }
 
   const target = email
