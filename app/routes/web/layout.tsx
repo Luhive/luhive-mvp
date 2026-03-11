@@ -1,5 +1,5 @@
 import type { Route } from "./+types/layout";
-import { Outlet, useLoaderData } from "react-router";
+import { Outlet, useLoaderData, useMatches } from "react-router";
 import { useEffect } from "react";
 import { TopNavigation } from "~/shared/components/navigation";
 import { createClient } from "~/shared/lib/supabase/server";
@@ -35,8 +35,25 @@ export async function loader({ request }: Route.LoaderArgs): Promise<TopNavigati
   };
 }
 
+export function shouldRevalidate({
+  formMethod,
+  defaultShouldRevalidate,
+}: {
+  formMethod?: string;
+  defaultShouldRevalidate: boolean;
+}) {
+  // Skip layout revalidation on link navigations - navbar user data is stable.
+  // Revalidate only on form submissions (login, profile updates, etc.).
+  if (formMethod === "GET" || formMethod === undefined) return false;
+  return defaultShouldRevalidate;
+}
+
 export default function TopNavigationLayout() {
   const { user } = useLoaderData<typeof loader>();
+  const matches = useMatches();
+  const isEditorRoute = matches.some(
+    (m) => typeof m.id === "string" && m.id.includes("announcement-new"),
+  );
 
   // Set Sentry user context when user is available
   useEffect(() => {
@@ -52,11 +69,11 @@ export default function TopNavigationLayout() {
 
   return (
     <div className="min-h-screen container mx-auto px-5 bg-background flex flex-col">
-      <TopNavigation user={user} />
+      {!isEditorRoute && <TopNavigation user={user} />}
       <main className="flex-1 pb-5 lg:pb-0">
         <Outlet />
       </main>
-      <Footer />
+      {!isEditorRoute && <Footer />}
     </div>
   );
 }

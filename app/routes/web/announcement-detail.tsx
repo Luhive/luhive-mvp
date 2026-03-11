@@ -3,7 +3,6 @@ export { loader } from '~/modules/announcements/server/announcement-detail-loade
 import { useLoaderData, Link } from 'react-router';
 import { ChevronLeft, Share2 } from 'lucide-react';
 import { Button } from '~/shared/components/ui/button';
-import { Badge } from '~/shared/components/ui/badge';
 import type { AnnouncementDetailLoaderData } from '~/modules/announcements/server/announcement-detail-loader.server';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import type { Swiper as SwiperClass } from 'swiper';

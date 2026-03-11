@@ -13,28 +13,36 @@ export default [
   layout("routes/web/layout.tsx", [
     route("hub", "routes/web/hub.tsx"),
     route("profile", "routes/web/profile.tsx"),
-    route("c/:slug", "routes/web/community.tsx"),
+    route("c/:slug", "routes/web/community.tsx", [
+      route("announcements/new", "routes/web/announcement-new.tsx"),
+      route(
+        "announcements/:announcementId",
+        "routes/web/announcement-detail.tsx",
+      ),
+      route("events", "routes/web/events-layout.tsx", [
+        index("routes/web/events-index.tsx"),
+      ]),
+      route("events/:eventId", "routes/web/event-detail.tsx"),
+      route(
+        "events/:eventId/collaboration",
+        "routes/c.$slug.events.$eventId.collaboration.tsx",
+      ),
+    ]),
+    route(
+      "c/:slug/collaboration-invite/:collaborationId",
+      "routes/c.$slug.collaboration-invite.$collaborationId.tsx",
+    ),
     route("create-community", "routes/web/create-community.tsx"),
     route(
       "create-community/success",
       "routes/web/create-community-success.tsx",
     ),
 
-    // Events routes with nested layout
-    route("c/:slug/events", "routes/web/events-layout.tsx", [
-      index("routes/web/events-index.tsx"),
-    ]),
-
-    route("c/:slug/events/:eventId", "routes/web/event-detail.tsx"),
-    route("c/:slug/events/:eventId/collaboration", "routes/c.$slug.events.$eventId.collaboration.tsx"),
-    route("c/:slug/collaboration-invite/:collaborationId", "routes/c.$slug.collaboration-invite.$collaborationId.tsx"),
-
     // route("c/:slug/events/:eventId/verify", "routes/web/event-verify.tsx"),
     // route(
     //   "c/:slug/events/:eventId/verification-sent",
     //   "routes/web/event-verification-sent.tsx",
     // ),
-    route("c/:slug/announcements/:announcementId", "routes/web/c.$slug.announcements.$announcementId.tsx"),
   ]),
 
   route("login", "routes/auth/login.tsx"),
@@ -50,7 +58,10 @@ export default [
     route("events", "routes/dashboard/events.tsx"),
     route("announcements", "routes/dashboard/announcements.tsx"),
     route("announcements/create", "routes/dashboard/announcements-create.tsx"),
-    route("announcements/:announcementId/edit", "routes/dashboard/announcements-edit.tsx"),
+    route(
+      "announcements/:announcementId/edit",
+      "routes/dashboard/announcements-edit.tsx",
+    ),
     route("events/:eventId/edit", "routes/dashboard/event-edit.tsx"),
     route("events/create", "routes/dashboard/events-create.tsx"),
     route(
@@ -88,18 +99,32 @@ export default [
   ),
   route("api/events/schedule-update", "routes/api/events/schedule-update.tsx"),
   route("api/events/email-debug", "routes/api/events/email-debug.tsx"),
-  route(
-  "api/events/send-reminders",
-  "routes/api/events/send-reminders.tsx"
-  ),
+  route("api/events/send-reminders", "routes/api/events/send-reminders.tsx"),
   route("api/join-community", "routes/api/join-community.tsx"),
-  route("api/events/new-event-notification", "routes/api/events/new-event-notification.tsx"),
-  route("api/events/collaboration-notification", "routes/api/events/collaboration-notification.tsx"),
-  route("api/events/registration-confirmation", "routes/api/events/registration-confirmation.tsx"),
-  route("api/announcements/new-announcement-notification", "routes/api/announcements/new-announcement-notification.tsx"),
-  route("api/announcements/track-view", "routes/api/announcements/track-view.tsx"),
-  route("api/announcements/track-email-open", "routes/api/announcements/track-email-open.tsx"),
-
+  route(
+    "api/events/new-event-notification",
+    "routes/api/events/new-event-notification.tsx",
+  ),
+  route(
+    "api/events/collaboration-notification",
+    "routes/api/events/collaboration-notification.tsx",
+  ),
+  route(
+    "api/events/registration-confirmation",
+    "routes/api/events/registration-confirmation.tsx",
+  ),
+  route(
+    "api/announcements/new-announcement-notification",
+    "routes/api/announcements/new-announcement-notification.tsx",
+  ),
+  route(
+    "api/announcements/track-view",
+    "routes/api/announcements/track-view.tsx",
+  ),
+  route(
+    "api/announcements/track-email-open",
+    "routes/api/announcements/track-email-open.tsx",
+  ),
 
   // Integrations API routes (Google Forms)
   route(
