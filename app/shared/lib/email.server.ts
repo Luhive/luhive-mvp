@@ -4,6 +4,7 @@ import { EventVerificationEmail } from "~/templates/event-verification-email";
 import { EventConfirmationEmail } from "~/templates/event-confirmation-email";
 import { EventStatusUpdateEmail } from "~/templates/event-status-update-email";
 import { EventUpdateEmail } from "~/templates/event-update-email";
+import { EventReminderEmail } from "~/templates/event-reminder-email";
 import { EventRegistrationRequestEmail } from "~/templates/event-registration-request-email";
 import { EventSubscriptionEmail } from "~/templates/event-subscription-email";
 import { CommunityWaitlistNotification } from "~/templates/community-waitlist-notification";
@@ -142,6 +143,11 @@ type BaseEmailPayload = {
    * Optional contextual metadata for logging
    */
   metadata?: Record<string, unknown>;
+  /**
+   * Optional custom from address. Format: "Name <email@example.com>"
+   * If not provided, defaults to FROM_EMAIL
+   */
+  from?: string;
 };
 
 type EmailSendResult = {
@@ -203,7 +209,7 @@ async function sendEmailsInternal(
         const toArray = Array.isArray(payload.to) ? payload.to : [payload.to];
 
         const { data, error } = await resend.emails.send({
-          from: FROM_EMAIL,
+          from: payload.from ?? FROM_EMAIL,
           to: toArray,
           subject: payload.subject,
           react: payload.react,
@@ -268,7 +274,7 @@ async function sendEmailsInternal(
     } else {
       try {
         const batchPayload = chunk.map((payload) => ({
-          from: FROM_EMAIL,
+          from: payload.from ?? FROM_EMAIL,
           to: Array.isArray(payload.to) ? payload.to : [payload.to],
           subject: payload.subject,
           react: payload.react,
@@ -555,9 +561,12 @@ interface AnnouncementNotificationEmailData {
   communityName: string;
   announcementLink: string;
   recipientEmail: string;
-  recipientName: string;
+  recipientName?: string;
   imageUrls?: string[];
+  createdAt?: string;
+  communityLogo?: string;
   announcementId?: string;
+  userId?: string;
   recipientUserId?: string;
 }
 
@@ -717,9 +726,11 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
       ? `Registration Approved: ${eventTitle}`
       : `Registration Update: ${eventTitle}`;
 
+  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
+
   console.log(`📧 Attempting to send status update email:`, {
     to: recipientEmail,
-    from: FROM_EMAIL,
+    from: `${communityName} <${baseEmailAddress}>`,
     status,
     subject,
   });
@@ -727,6 +738,7 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
   const result = await sendEmail({
     to: recipientEmail,
     subject,
+    from: `${communityName} <${baseEmailAddress}>`,
     react: EventStatusUpdateEmail({
       eventTitle,
       communityName,
@@ -761,9 +773,10 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
     );
   }
 
+  const baseEmailAddressLog = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
   console.log(`✅ Status update email sent successfully:`, {
     id: result.id,
-    from: FROM_EMAIL,
+    from: `${communityName} <${baseEmailAddressLog}>`,
     to: recipientEmail,
     status,
     hasAttachment: attachments.length > 0,
@@ -787,15 +800,18 @@ export async function sendEventScheduleUpdateEmail(
     onlineMeetingLink,
   } = data;
 
+  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
+
   console.log(`📧 Attempting to send event schedule update email:`, {
     to: recipientEmail,
-    from: FROM_EMAIL,
+    from: `${communityName} <${baseEmailAddress}>`,
     subject: `Event Updated: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
     subject: `Event Updated: ${eventTitle}`,
+    from: `${communityName} <${baseEmailAddress}>`,
     react: EventUpdateEmail({
       eventTitle,
       communityName,
@@ -826,9 +842,10 @@ export async function sendEventScheduleUpdateEmail(
     );
   }
 
+  const baseEmailAddressLog = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
   console.log(`✅ Event schedule update email sent successfully:`, {
     id: result.id,
-    from: FROM_EMAIL,
+    from: `${communityName} <${baseEmailAddressLog}>`,
     to: recipientEmail,
   });
 
@@ -838,46 +855,58 @@ export async function sendEventScheduleUpdateEmail(
 export async function sendEventReminderEmail(data: {
   eventTitle: string;
   communityName: string;
+  communityLogoUrl?: string | null;
   eventDate: string;
   eventTime: string;
   eventLink: string;
   recipientName: string;
   recipientEmail: string;
-  message: string;
+  message?: string;
+  locationAddress?: string;
+  reminderTime?: "1-hour" | "3-hours" | "1-day";
 }) {
   const {
     eventTitle,
     communityName,
+    communityLogoUrl,
     eventDate,
     eventTime,
     eventLink,
     recipientName,
     recipientEmail,
     message,
+    locationAddress,
+    reminderTime = "1-hour",
   } = data;
+
+  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   console.log(`📧 Attempting to send event reminder email:`, {
     to: recipientEmail,
-    from: FROM_EMAIL,
+    from: `${communityName} <${baseEmailAddress}>`,
     subject: `Reminder: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
     subject: `Reminder: ${eventTitle}`,
-    html: `
-        <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424;">
-          <p>Hi ${recipientName},</p>
-          <p>${message}</p>
-          <p><strong>${eventTitle}</strong><br/>${eventDate} at ${eventTime}</p>
-          <p><a href="${eventLink}" style="color:#ff8040">View event details</a></p>
-          <p style="color:#6B6B6B;font-size:12px;">${communityName}</p>
-        </div>
-      `,
+    from: `${communityName} <${baseEmailAddress}>`,
+    react: EventReminderEmail({
+      eventTitle,
+      communityName,
+      communityLogoUrl: communityLogoUrl || null,
+      eventDate,
+      eventTime,
+      eventLink,
+      recipientName,
+      locationAddress,
+      reminderTime,
+    }),
     metadata: {
       template: "EventReminderEmail",
       eventTitle,
       communityName,
+      message,
     },
   });
 
@@ -1220,15 +1249,18 @@ export async function sendCollaborationInviteEmail(
     invitedByName,
   } = data;
 
+  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
+
   console.log(`📧 Attempting to send collaboration invite email:`, {
     to: recipientEmail,
-    from: FROM_EMAIL,
+    from: `${hostCommunityName} <${baseEmailAddress}>`,
     subject: `Collaboration Invitation: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
     subject: `Collaboration Invitation: ${eventTitle}`,
+    from: `${hostCommunityName} <${baseEmailAddress}>`,
     react: CollaborationInviteEmail({
       eventTitle,
       hostCommunityName,
@@ -1247,9 +1279,10 @@ export async function sendCollaborationInviteEmail(
   });
 
   if (!result.success) {
+    const baseEmailAddressErr = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
     console.error("❌ Failed to send collaboration invite email:", {
       to: recipientEmail,
-      fromEmail: FROM_EMAIL,
+      fromEmail: `${hostCommunityName} <${baseEmailAddressErr}>`,
       error: result.error,
     });
     throw new Error(
@@ -1259,9 +1292,10 @@ export async function sendCollaborationInviteEmail(
     );
   }
 
+  const baseEmailAddressLog = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
   console.log(`✅ Collaboration invite email sent successfully:`, {
     id: result.id,
-    from: FROM_EMAIL,
+    from: `${hostCommunityName} <${baseEmailAddressLog}>`,
     to: recipientEmail,
   });
 
@@ -1279,15 +1313,18 @@ export async function sendCollaborationAcceptedEmail(
     eventLink,
   } = data;
 
+  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
+
   console.log(`📧 Attempting to send collaboration accepted email:`, {
     to: recipientEmail,
-    from: FROM_EMAIL,
+    from: `${hostCommunityName} <${baseEmailAddress}>`,
     subject: `Collaboration Accepted: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
     subject: `Collaboration Accepted: ${eventTitle}`,
+    from: `${hostCommunityName} <${baseEmailAddress}>`,
     react: CollaborationAcceptedEmail({
       eventTitle,
       hostCommunityName,
@@ -1304,9 +1341,10 @@ export async function sendCollaborationAcceptedEmail(
   });
 
   if (!result.success) {
+    const baseEmailAddressErr = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
     console.error("❌ Failed to send collaboration accepted email:", {
       to: recipientEmail,
-      fromEmail: FROM_EMAIL,
+      fromEmail: `${hostCommunityName} <${baseEmailAddressErr}>`,
       error: result.error,
     });
     throw new Error(
@@ -1316,9 +1354,10 @@ export async function sendCollaborationAcceptedEmail(
     );
   }
 
+  const baseEmailAddressLog2 = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
   console.log(`✅ Collaboration accepted email sent successfully:`, {
     id: result.id,
-    from: FROM_EMAIL,
+    from: `${hostCommunityName} <${baseEmailAddressLog2}>`,
     to: recipientEmail,
   });
 
@@ -1334,6 +1373,8 @@ export async function sendNewEventNotificationEmail(
 ) {
   const items = Array.isArray(data) ? data : [data];
 
+  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
+
   const payloads: BaseEmailPayload[] = items.map(
     ({
       eventTitle,
@@ -1348,6 +1389,7 @@ export async function sendNewEventNotificationEmail(
     }) => ({
       to: recipientEmail,
       subject: `New Event: ${eventTitle}`,
+      from: `${communityName} <${baseEmailAddress}>`,
       html: `
         <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #ff8040;">New Event Created!</h2>
@@ -1403,6 +1445,8 @@ export async function sendAnnouncementNotificationEmail(
 ) {
   const items = Array.isArray(data) ? data : [data];
 
+  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
+
   const payloads: BaseEmailPayload[] = items.map(
     ({
       title,
@@ -1411,20 +1455,25 @@ export async function sendAnnouncementNotificationEmail(
       announcementLink,
       recipientEmail,
       imageUrls,
+      createdAt,
+      communityLogo,
       announcementId,
+      userId,
       recipientUserId,
     }) => ({
       to: recipientEmail,
       subject: `${title}`,
-      
+      from: `${communityName} <${baseEmailAddress}>`,
       react: CommunityAnnouncementEmail({
         title,
         description,
         communityName,
         announcementLink,
         imageUrls: imageUrls || [],
+        createdAt,
+        communityLogo,
         announcementId,
-        userId: recipientUserId,
+        userId: userId ?? recipientUserId,
       }),
       metadata: {
         template: "CommunityAnnouncementEmail",
@@ -1468,6 +1517,8 @@ export async function sendNewCollaborationEventEmail(
 ) {
   const items = Array.isArray(data) ? data : [data];
 
+  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
+
   const payloads: BaseEmailPayload[] = items.map(
     ({
       eventTitle,
@@ -1486,6 +1537,7 @@ export async function sendNewCollaborationEventEmail(
       return {
         to: recipientEmail,
         subject: `${eventType}: ${eventTitle} (${coHostCommunityName} joined)`,
+        from: `${hostCommunityName} <${baseEmailAddress}>`,
         html: `
         <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #ff8040;">${isNewEvent ? 'New Collaborative Event!' : 'Event Collaboration Update!'}</h2>
@@ -1501,7 +1553,7 @@ export async function sendNewCollaborationEventEmail(
             ${onlineMeetingLink ? `<p style="margin: 5px 0;"><strong>🔗 Online:</strong> <a href="${onlineMeetingLink}" style="color: #ff8040;">Join Meeting</a></p>` : ''}
           </div>
           <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event Details</a></p>
-          <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">Luhive Events</p>
+          <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">${hostCommunityName}</p>
         </div>
       `,
         metadata: {

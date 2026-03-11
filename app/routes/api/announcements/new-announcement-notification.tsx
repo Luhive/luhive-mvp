@@ -18,6 +18,9 @@ export async function action({ request }: ActionFunctionArgs) {
       title,
       description,
       imageUrls,
+      createdAt,
+      communityLogo,
+      logo_url,
     } = body;
 
     if (!announcementId || !communityId || !title || !description || !communitySlug) {
@@ -25,6 +28,17 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const serviceClient = createServiceRoleClient();
+
+    let resolvedCommunityLogo = communityLogo ?? logo_url;
+    if (!resolvedCommunityLogo) {
+      const { data: communityData } = await (serviceClient as any)
+        .from("communities")
+        .select("logo_url")
+        .eq("id", communityId)
+        .maybeSingle();
+
+      resolvedCommunityLogo = communityData?.logo_url ?? undefined;
+    }
 
     const memberEmailsWithIds = await getCommunityMemberEmailsWithIds(communityId, serviceClient);
     if (memberEmailsWithIds.length === 0) {
@@ -40,8 +54,10 @@ export async function action({ request }: ActionFunctionArgs) {
       announcementLink,
       recipientEmail: email,
       imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
+      createdAt,
+      communityLogo: resolvedCommunityLogo,
       announcementId,
-      recipientUserId: userId,
+      userId,
     }));
 
     const { successCount, errorCount } = await sendAnnouncementNotificationEmail(
