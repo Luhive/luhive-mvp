@@ -71,6 +71,13 @@ export function AnnouncementCompose({ onSubmit, isSubmitting, onUploadingChange 
     }
   };
 
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const el = e.target;
+    setDescription(el.value);
+    el.style.height = "auto";
+    el.style.height = `${Math.max(el.scrollHeight, 280)}px`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -151,10 +158,10 @@ export function AnnouncementCompose({ onSubmit, isSubmitting, onUploadingChange 
       <div className="relative">
         <Textarea
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={handleDescriptionChange}
           placeholder="What do you want to announce?"
           maxLength={1000}
-          className="border-0 shadow-none bg-transparent px-0 pt-0 pb-6 pr-8 rounded-none min-h-full !text-[16px] !leading-[150%] !font-medium !text-foreground/70 placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:border-0 resize-none"
+          className="border-0 shadow-none bg-transparent px-0 pt-0 pb-6 pr-8 rounded-none min-h-[280px] !text-[16px] !leading-[150%] !font-medium !text-foreground/70 placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:border-0 resize-none"
         />
         <div className="absolute bottom-2 right-0">
           <CharacterCounter current={description.length} max={1000} />

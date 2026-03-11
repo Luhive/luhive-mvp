@@ -88,7 +88,7 @@ export default function AnnouncementNewPage() {
   const backTo = slug ? `/c/${slug}` : "/";
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b">
         <div className="w-full py-3 flex items-center justify-between gap-3">
           <Link
