@@ -12,7 +12,10 @@ export default [
   // Routes with top navigation layout
   layout("routes/web/layout.tsx", [
     route("hub", "routes/web/hub.tsx"),
-    route("profile", "routes/web/profile.tsx"),
+    route("profile", "routes/web/profile.tsx", [
+      index("routes/web/profile-index.tsx"),
+      route("settings", "routes/web/profile-settings.tsx"),
+    ]),
     route("c/:slug", "routes/web/community.tsx", [
       route("announcements/new", "routes/web/announcement-new.tsx"),
       route(
