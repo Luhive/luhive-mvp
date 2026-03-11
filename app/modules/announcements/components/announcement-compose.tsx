@@ -100,7 +100,11 @@ export function AnnouncementCompose({ onSubmit, isSubmitting, onUploadingChange 
   };
 
   return (
-    <form id="announcement-compose-form" onSubmit={handleSubmit} className="flex flex-col">
+    <form
+      id="announcement-compose-form"
+      onSubmit={handleSubmit}
+      className="flex flex-col"
+    >
       {!coverImageUrl ? (
         <label className="cursor-pointer flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
           <input
@@ -161,7 +165,7 @@ export function AnnouncementCompose({ onSubmit, isSubmitting, onUploadingChange 
           onChange={handleDescriptionChange}
           placeholder="What do you want to announce?"
           maxLength={1000}
-          className="border-0 shadow-none bg-transparent px-0 pt-0 pb-6 pr-8 rounded-none min-h-[280px] !text-[16px] !leading-[150%] !font-medium !text-foreground/70 placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:border-0 resize-none"
+          className="border-0 shadow-none bg-transparent px-0 pt-0 pb-6 pr-0 rounded-none min-h-[280px] !text-[16px] !leading-[150%] !font-medium !text-foreground/70 placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:border-0 resize-none"
         />
         <div className="absolute bottom-2 right-0">
           <CharacterCounter current={description.length} max={1000} />
