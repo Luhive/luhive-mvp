@@ -88,9 +88,9 @@ function AttenderInfo({
             </Badge>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Verified</span>
-            <Badge variant={attender.is_verified ? "default" : "outline"}>
-              {attender.is_verified ? "Verified" : "Pending"}
+            <span className="text-sm text-muted-foreground">Checked In</span>
+            <Badge variant={attender.is_attended ? "default" : "outline"}>
+              {attender.is_attended ? "Checked in" : "Not checked in"}
             </Badge>
           </div>
           <div className="flex items-center justify-between">

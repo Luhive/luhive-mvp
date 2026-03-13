@@ -32,6 +32,16 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 
 	try {
+		const { data: existingRegistration, error: existingRegistrationError } = await supabase
+			.from("event_registrations")
+			.select("checkin_token")
+			.eq("id", registrationId)
+			.eq("event_id", eventId)
+			.single();
+		if (existingRegistrationError || !existingRegistration) {
+			return { success: false, error: "Registration not found" };
+		}
+
 		const { data: event, error: eventError } = await supabase
 			.from("events")
 			.select("*, community_id")
@@ -74,11 +84,20 @@ export async function action({ request }: ActionFunctionArgs) {
 			}
 		}
 
-		const { error: updateError } = await supabase
+		const updatePayload: { approval_status: "approved" | "rejected"; checkin_token?: string } = {
+			approval_status: status,
+		};
+		if (status === "approved" && !existingRegistration.checkin_token) {
+			updatePayload.checkin_token = crypto.randomUUID();
+		}
+
+		const { data: updatedRegistration, error: updateError } = await supabase
 			.from("event_registrations")
-			.update({ approval_status: status })
+			.update(updatePayload)
 			.eq("id", registrationId)
-			.eq("event_id", eventId);
+			.eq("event_id", eventId)
+			.select("checkin_token")
+			.single();
 		if (updateError) {
 			console.error("Error updating registration:", updateError);
 			return { success: false, error: "Failed to update status" };
@@ -136,6 +155,7 @@ export async function action({ request }: ActionFunctionArgs) {
 				onlineMeetingLink: event.online_meeting_link || undefined,
 				startTimeISO: event.start_time,
 				endTimeISO: event.end_time || event.start_time,
+				checkinToken: updatedRegistration?.checkin_token || existingRegistration.checkin_token,
 			});
 		}
 

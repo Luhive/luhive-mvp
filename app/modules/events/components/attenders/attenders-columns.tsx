@@ -140,11 +140,11 @@ export function createAttendersColumns({
       },
     },
     {
-      accessorKey: "is_verified",
-      header: "Verified",
+      accessorKey: "is_attended",
+      header: "Checked In",
       cell: ({ row }) => (
-        <Badge variant={row.original.is_verified ? "default" : "outline"}>
-          {row.original.is_verified ? "Verified" : "Pending"}
+        <Badge variant={row.original.is_attended ? "default" : "outline"}>
+          {row.original.is_attended ? "Checked in" : "Not checked in"}
         </Badge>
       ),
     },

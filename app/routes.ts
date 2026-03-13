@@ -72,6 +72,7 @@ export default [
       "events/:eventId/edit-external",
       "routes/dashboard/event-edit-external.tsx",
     ),
+    route("events/:eventId/scanner", "routes/dashboard/event-scanner.tsx"),
     route("attenders", "routes/dashboard/attenders.tsx"),
     route("forms", "routes/dashboard/forms.tsx"),
     route("forms/:formId", "routes/dashboard/forms-detail.tsx"),
@@ -113,6 +114,7 @@ export default [
     "api/events/registration-confirmation",
     "routes/api/events/registration-confirmation.tsx",
   ),
+  route("api/events/check-in", "routes/api/events/check-in.tsx"),
   route(
     "api/announcements/new-announcement-notification",
     "routes/api/announcements/new-announcement-notification.tsx",

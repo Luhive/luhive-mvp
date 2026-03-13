@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcement_views: {
+        Row: {
+          announcement_id: string
+          created_at: string
+          id: string
+          session_id: string | null
+          user_id: string | null
+          view_source: string
+        }
+        Insert: {
+          announcement_id: string
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          user_id?: string | null
+          view_source: string
+        }
+        Update: {
+          announcement_id?: string
+          created_at?: string
+          id?: string
+          session_id?: string | null
+          user_id?: string | null
+          view_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_views_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "community_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       communities: {
         Row: {
           cover_url: string | null
@@ -78,6 +113,92 @@ export type Database = {
             columns: ["parent_community_id"]
             isOneToOne: false
             referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_announcement_images: {
+        Row: {
+          announcement_id: string
+          created_at: string
+          id: string
+          image_url: string
+          sort_order: number
+          storage_path: string | null
+        }
+        Insert: {
+          announcement_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          sort_order?: number
+          storage_path?: string | null
+        }
+        Update: {
+          announcement_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          sort_order?: number
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_announcement_images_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "community_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_announcements: {
+        Row: {
+          community_id: string
+          created_at: string
+          created_by: string
+          description: string
+          email_sent_at: string | null
+          id: string
+          published: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          community_id: string
+          created_at?: string
+          created_by: string
+          description: string
+          email_sent_at?: string | null
+          id?: string
+          published?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          community_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          email_sent_at?: string | null
+          id?: string
+          published?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_announcements_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -162,39 +283,6 @@ export type Database = {
           },
         ]
       }
-      community_waitlist: {
-        Row: {
-          community_name: string
-          created_at: string | null
-          description: string | null
-          id: string
-          status: string
-          updated_at: string | null
-          user_id: string
-          website: string | null
-        }
-        Insert: {
-          community_name: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          status?: string
-          updated_at?: string | null
-          user_id: string
-          website?: string | null
-        }
-        Update: {
-          community_name?: string
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          status?: string
-          updated_at?: string | null
-          user_id?: string
-          website?: string | null
-        }
-        Relationships: []
-      }
       event_collaborations: {
         Row: {
           accepted_at: string | null
@@ -258,15 +346,18 @@ export type Database = {
       }
       event_registrations: {
         Row: {
+          attended_at: string | null
           anonymous_email: string | null
           anonymous_name: string | null
           anonymous_phone: string | null
           approval_status:
             | Database["public"]["Enums"]["event_approval_statuses"]
             | null
+          checkin_token: string | null
           custom_answers: Json | null
           event_id: string
           id: string
+          is_attended: boolean
           is_verified: boolean
           registered_at: string | null
           registration_source_community_id: string | null
@@ -277,15 +368,18 @@ export type Database = {
           verification_token: string | null
         }
         Insert: {
+          attended_at?: string | null
           anonymous_email?: string | null
           anonymous_name?: string | null
           anonymous_phone?: string | null
           approval_status?:
             | Database["public"]["Enums"]["event_approval_statuses"]
             | null
+          checkin_token?: string | null
           custom_answers?: Json | null
           event_id: string
           id?: string
+          is_attended?: boolean
           is_verified?: boolean
           registered_at?: string | null
           registration_source_community_id?: string | null
@@ -296,15 +390,18 @@ export type Database = {
           verification_token?: string | null
         }
         Update: {
+          attended_at?: string | null
           anonymous_email?: string | null
           anonymous_name?: string | null
           anonymous_phone?: string | null
           approval_status?:
             | Database["public"]["Enums"]["event_approval_statuses"]
             | null
+          checkin_token?: string | null
           custom_answers?: Json | null
           event_id?: string
           id?: string
+          is_attended?: boolean
           is_verified?: boolean
           registered_at?: string | null
           registration_source_community_id?: string | null
@@ -613,33 +710,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      waitlist_requests: {
-        Row: {
-          community_name: string
-          created_at: string | null
-          email_address: string
-          id: string
-          status: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          community_name: string
-          created_at?: string | null
-          email_address: string
-          id?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          community_name?: string
-          created_at?: string | null
-          email_address?: string
-          id?: string
-          status?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
     }
     Views: {

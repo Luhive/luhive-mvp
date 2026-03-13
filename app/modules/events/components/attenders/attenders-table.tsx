@@ -96,7 +96,7 @@ export const attenderSchema = z.object({
   avatar_url: z.string().nullable(),
   rsvp_status: z.enum(["going", "not_going", "maybe"]),
   approval_status: z.enum(["pending", "approved", "rejected"]).nullable().optional(),
-  is_verified: z.boolean(),
+  is_attended: z.boolean(),
   registered_at: z.string().nullable(),
   is_anonymous: z.boolean(),
   custom_answers: z.any().nullable().optional(),
@@ -192,7 +192,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
           anonymous_phone,
           rsvp_status,
           approval_status,
-          is_verified,
+          is_attended,
           registered_at,
           custom_answers,
           profiles (
@@ -250,7 +250,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
           avatar_url: reg.profiles?.avatar_url,
           rsvp_status: reg.rsvp_status,
           approval_status: reg.approval_status || "approved", // Default to approved if null (legacy)
-          is_verified: reg.is_verified,
+          is_attended: reg.is_attended ?? false,
           registered_at: reg.registered_at,
           is_anonymous: isAnonymous,
           custom_answers: reg.custom_answers,
@@ -367,7 +367,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         Phone: row.phone || "-",
         "RSVP Status": rsvpStatusConfig[row.rsvp_status]?.label || row.rsvp_status,
         "Approval Status": row.approval_status ? approvalStatusConfig[row.approval_status as EventApprovalStatus]?.label : "Approved",
-        Verified: row.is_verified ? "Yes" : "No",
+        "Checked In": row.is_attended ? "Yes" : "No",
         "Registered At": row.registered_at
           ? new Date(row.registered_at).toLocaleString()
           : "-",
@@ -490,11 +490,11 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         },
       },
       {
-        accessorKey: "is_verified",
-        header: "Verified",
+        accessorKey: "is_attended",
+        header: "Checked In",
         cell: ({ row }) => (
-          <Badge variant={row.original.is_verified ? "default" : "outline"}>
-            {row.original.is_verified ? "Verified" : "Pending"}
+          <Badge variant={row.original.is_attended ? "default" : "outline"}>
+            {row.original.is_attended ? "Checked in" : "Not checked in"}
           </Badge>
         ),
       },
@@ -904,9 +904,9 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Verified</span>
-                      <Badge variant={selectedAttender.is_verified ? "default" : "outline"}>
-                        {selectedAttender.is_verified ? "Verified" : "Pending"}
+                      <span className="text-sm text-muted-foreground">Checked In</span>
+                      <Badge variant={selectedAttender.is_attended ? "default" : "outline"}>
+                        {selectedAttender.is_attended ? "Checked in" : "Not checked in"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
@@ -995,9 +995,9 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Verified</span>
-                      <Badge variant={selectedAttender.is_verified ? "default" : "outline"}>
-                        {selectedAttender.is_verified ? "Verified" : "Pending"}
+                      <span className="text-sm text-muted-foreground">Checked In</span>
+                      <Badge variant={selectedAttender.is_attended ? "default" : "outline"}>
+                        {selectedAttender.is_attended ? "Checked in" : "Not checked in"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">

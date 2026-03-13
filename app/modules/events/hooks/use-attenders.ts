@@ -74,7 +74,7 @@ export function useAttenders({ eventId, isExternalEvent = false }: UseAttendersO
           avatar_url: reg.profiles?.avatar_url,
           rsvp_status: reg.rsvp_status,
           approval_status: reg.approval_status || "approved",
-          is_verified: reg.is_verified,
+          is_attended: reg.is_attended ?? false,
           registered_at: reg.registered_at,
           is_anonymous: isAnonymous,
           custom_answers: reg.custom_answers,
@@ -155,7 +155,7 @@ export function useAttenders({ eventId, isExternalEvent = false }: UseAttendersO
         "Approval Status": row.approval_status
           ? approvalStatusConfig[row.approval_status as EventApprovalStatus]?.label
           : "Approved",
-        Verified: row.is_verified ? "Yes" : "No",
+        "Checked In": row.is_attended ? "Yes" : "No",
         "Registered At": row.registered_at
           ? new Date(row.registered_at).toLocaleString()
           : "-",

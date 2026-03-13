@@ -13,6 +13,7 @@ import { CommunityAnnouncementEmail } from "~/templates/community-announcement-e
 import { CollaborationInviteEmail } from "~/templates/collaboration-invite-email";
 import { CollaborationAcceptedEmail } from "~/templates/collaboration-accepted-email";
 import { generateICS } from "~/modules/events/utils/ics-manager";
+import QRCode from "qrcode";
 
 // Utility function to mask sensitive values for logging
 function maskValue(value: string | undefined, showLength = true): string {
@@ -137,6 +138,7 @@ type BaseEmailPayload = {
   attachments?: {
     filename: string;
     content: string;
+    contentId?: string;
   }[];
   tags?: string[];
   /**
@@ -424,6 +426,7 @@ interface ConfirmationEmailData {
   onlineMeetingLink?: string;
   startTimeISO: string;
   endTimeISO: string;
+  checkinToken?: string | null;
 }
 
 interface StatusUpdateEmailData {
@@ -439,6 +442,7 @@ interface StatusUpdateEmailData {
   onlineMeetingLink?: string;
   startTimeISO?: string;
   endTimeISO?: string;
+  checkinToken?: string | null;
 }
 
 interface EventScheduleUpdateEmailData {
@@ -696,9 +700,11 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
     onlineMeetingLink,
     startTimeISO,
     endTimeISO,
+    checkinToken,
   } = data;
 
-  const attachments: { filename: string; content: string }[] = [];
+  const attachments: { filename: string; content: string; contentId?: string }[] = [];
+  let hasQrCode = false;
 
   // Add ICS attachment if approved and dates are provided
   if (status === "approved" && startTimeISO && endTimeISO) {
@@ -719,6 +725,23 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
       content: Buffer.from(icsContent).toString("base64"),
     });
     console.log(`   ICS attachment created`);
+  }
+
+  if (status === "approved" && checkinToken) {
+    const qrBuffer = await QRCode.toBuffer(checkinToken, { width: 300, margin: 1 });
+    // Inline QR (for clients supporting CID rendering in body)
+    attachments.push({
+      filename: "event-checkin-qr-inline.png",
+      content: qrBuffer.toString("base64"),
+      contentId: "event-qr",
+    });
+    // Fallback downloadable QR attachment
+    attachments.push({
+      filename: "event-checkin-qr.png",
+      content: qrBuffer.toString("base64"),
+    });
+    hasQrCode = true;
+    console.log(`   QR attachment created`);
   }
 
   const subject =
@@ -749,6 +772,7 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
       eventTime,
       locationAddress,
       onlineMeetingLink,
+      hasQrCode,
     }),
     attachments,
     metadata: {
@@ -948,6 +972,7 @@ export async function sendRegistrationConfirmationEmail(
     onlineMeetingLink,
     startTimeISO,
     endTimeISO,
+    checkinToken,
   } = data;
 
   console.log(`📧 Attempting to send confirmation email:`, {
@@ -970,26 +995,49 @@ export async function sendRegistrationConfirmationEmail(
   });
   console.log(`   ICS attachment created`);
 
+  const attachments: { filename: string; content: string; contentId?: string }[] = [
+    {
+      filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
+      content: Buffer.from(icsContent).toString("base64"),
+    },
+  ];
+
+  let hasQrCode = false;
+  if (checkinToken) {
+    const qrBuffer = await QRCode.toBuffer(checkinToken, { width: 300, margin: 1 });
+    // Inline QR (for clients supporting CID rendering in body)
+    attachments.push({
+      filename: "event-checkin-qr-inline.png",
+      content: qrBuffer.toString("base64"),
+      contentId: "event-qr",
+    });
+    // Fallback downloadable QR attachment
+    attachments.push({
+      filename: "event-checkin-qr.png",
+      content: qrBuffer.toString("base64"),
+    });
+    hasQrCode = true;
+    console.log(`   QR attachment created`);
+  }
+
+  const confirmationEmailProps = {
+    eventTitle,
+    communityName,
+    eventDate,
+    eventTime,
+    eventLink,
+    recipientName,
+    registerAccountLink,
+    locationAddress,
+    onlineMeetingLink,
+    hasQrCode,
+  };
+
   const result = await sendEmail({
     to: recipientEmail,
     subject: `You're registered for ${eventTitle}!`,
-    react: EventConfirmationEmail({
-      eventTitle,
-      communityName,
-      eventDate,
-      eventTime,
-      eventLink,
-      recipientName,
-      registerAccountLink,
-      locationAddress,
-      onlineMeetingLink,
-    }),
-    attachments: [
-      {
-        filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
-        content: Buffer.from(icsContent).toString("base64"),
-      },
-    ],
+    react: EventConfirmationEmail(confirmationEmailProps),
+    attachments,
     metadata: {
       template: "EventConfirmationEmail",
       eventTitle,
@@ -1014,7 +1062,7 @@ export async function sendRegistrationConfirmationEmail(
     id: result.id,
     from: FROM_EMAIL,
     to: recipientEmail,
-    hasAttachment: true,
+    hasAttachment: attachments.length > 0,
   });
 
   return { success: true, data: { id: result.id } };

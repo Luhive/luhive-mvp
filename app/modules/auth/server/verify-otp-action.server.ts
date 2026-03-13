@@ -184,6 +184,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const approvalStatus = event.is_approve_required ? "pending" : "approved";
+      const checkinToken =
+        approvalStatus === "approved" ? crypto.randomUUID() : null;
       const { error: regError } = await supabase.from("event_registrations").insert({
         event_id: eventId,
         user_id: data.user.id,
@@ -192,6 +194,7 @@ export async function action({ request }: ActionFunctionArgs) {
         approval_status: approvalStatus,
         custom_answers: customAnswers as import("~/shared/models/database.types").Json | undefined,
         registration_source_community_id: event.community_id,
+        checkin_token: checkinToken,
       });
 
       if (!regError) {
@@ -278,6 +281,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 endTimeISO: (event as { end_time?: string }).end_time ?? event.start_time,
                 locationAddress: (event as { location_address?: string }).location_address ?? undefined,
                 onlineMeetingLink: (event as { online_meeting_link?: string }).online_meeting_link ?? undefined,
+                checkinToken,
               }),
             });
           } catch (emailError) {
