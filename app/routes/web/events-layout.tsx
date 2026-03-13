@@ -1,59 +1,23 @@
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, Outlet, useNavigate, useMatches, useLocation, useNavigation } from "react-router";
-import { useEffect, useState, useMemo } from "react";
+import { Outlet, useParams, useLocation, useNavigation, Link, useRouteLoaderData } from "react-router";
+import { useEffect, useState } from "react";
 import { createClient } from "~/shared/lib/supabase/client";
-import { createClient as createServerClient } from "~/shared/lib/supabase/server";
-import type { Database } from "~/shared/models/database.types";
 import { Button } from "~/shared/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Skeleton } from "~/shared/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { EventPageSkeleton } from "~/modules/events/components/event-list/event-page-skeleton";
 import { EventPreviewSidebar } from "~/modules/events/components/event-list/event-preview-sidebar";
-import type { Community, Event, Profile } from "~/shared/models/entity.types";
-
-
-interface LoaderData {
-  slug: string;
-  user: { id: string; email?: string | null } | null;
-  profile: Profile | null;
-}
-
-interface CommunityLoaderData {
-  community: Community | null;
-  isOwner: boolean;
-  user: { id: string; email?: string | null } | null;
-  profile: Profile | null;
-  memberCount: number;
-  eventCount: number;
-}
-
-export async function loader({ params, request }: LoaderFunctionArgs) {
-  const slug = params.slug;
-  if (!slug) {
-    throw new Response("Not Found", { status: 404 });
-  }
-
-  const { supabase } = createServerClient(request);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: profile } = user
-    ? await supabase.from("profiles").select("*").eq("id", user.id).single()
-    : { data: null };
-
-  return {
-    slug,
-    user: user || null,
-    profile: profile ?? null,
-  };
-}
+import type { Community, Event } from "~/shared/models/entity.types";
+import type { CommunityLoaderData } from "~/modules/community/server/community-loader.server";
 
 export default function EventsLayout() {
-  const { slug, user: loaderUser, profile: loaderProfile } = useLoaderData<LoaderData>();
-  const navigate = useNavigate();
-  const matches = useMatches();
+  const { slug } = useParams<{ slug: string }>();
+  const parentData = useRouteLoaderData("routes/web/community") as CommunityLoaderData | undefined;
+  const community = parentData?.community ?? null;
+  const user = parentData?.user ?? null;
+  const profile = parentData?.profile ?? null;
+  const loading = !parentData;
+
   const location = useLocation();
   const navigation = useNavigation();
 
@@ -62,66 +26,6 @@ export default function EventsLayout() {
   const [eventRegistrationCount, setEventRegistrationCount] = useState<number | undefined>(undefined);
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
-
-  const navigationStateCommunity = (location.state as any)?.community as Community | null;
-
-  const parentCommunityData = useMemo(() => {
-    for (const match of matches) {
-      const data = match.data as any;
-      if (data && "community" in data && data.community) {
-        return data as CommunityLoaderData;
-      }
-    }
-    return null;
-  }, [matches]);
-
-  const parentNavigationUser = useMemo(() => {
-    for (const match of matches) {
-      const data = match.data as any;
-      if (data && "user" in data && !("community" in data)) {
-        return (data.user as Profile | null) || null;
-      }
-    }
-    return null;
-  }, [matches]);
-
-  const [community, setCommunity] = useState<Community | null>(
-    navigationStateCommunity || parentCommunityData?.community || null
-  );
-  const [loading, setLoading] = useState(!navigationStateCommunity && !parentCommunityData?.community);
-
-  useEffect(() => {
-    if (navigationStateCommunity) {
-      setCommunity(navigationStateCommunity);
-      setLoading(false);
-      return;
-    }
-    if (parentCommunityData?.community) {
-      setCommunity(parentCommunityData.community);
-      setLoading(false);
-      return;
-    }
-    async function fetchCommunity() {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from("communities")
-          .select("*")
-          .eq("slug", slug)
-          .single();
-        setCommunity(data);
-      } catch (error) {
-        console.error("Error fetching community:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCommunity();
-  }, [slug, navigationStateCommunity, parentCommunityData]);
-
-  const handleBack = () => {
-    navigate(`/c/${slug}`, { replace: true });
-  };
 
   const isEventsListPage = location.pathname === `/c/${slug}/events`;
 
@@ -166,8 +70,10 @@ export default function EventsLayout() {
       <div className="py-4 border-b">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={handleBack} className="h-9 w-9">
-              <ArrowLeft className="h-5 w-5" />
+            <Button variant="ghost" size="icon" asChild className="h-9 w-9">
+              <Link to={slug ? `/c/${slug}` : "#"}>
+                <ArrowLeft className="h-5 w-5" />
+              </Link>
             </Button>
             <div className="flex items-center gap-3">
               {loading ? (
@@ -282,14 +188,8 @@ export default function EventsLayout() {
           if (selectedEvent) setPendingEvent(selectedEvent);
         }}
         registrationCount={eventRegistrationCount}
-        user={
-          loaderUser
-            ? { id: loaderUser.id, email: loaderUser.email }
-            : (parentCommunityData?.user ?? null)
-        }
-        userProfile={
-          loaderProfile ?? parentCommunityData?.profile ?? parentNavigationUser
-        }
+        user={user ? { id: user.id, email: user.email } : null}
+        userProfile={profile}
         isUserRegistered={false}
       />
     </>

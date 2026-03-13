@@ -11,6 +11,7 @@ import type {
   DashboardCommunityData,
   Profile,
 } from "~/modules/dashboard/model/dashboard-types";
+import type { Community } from "~/shared/models/entity.types";
 import { createClient } from "~/shared/lib/supabase/client";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
 import { AppSidebar } from "~/modules/dashboard/components/app-sidebar";
@@ -36,6 +37,29 @@ async function clientLoader({
   const slug = params.slug;
   if (!slug) {
     throw redirect("/");
+  }
+
+  const navigationState =
+    typeof window !== "undefined"
+      ? (window.history.state?.usr as {
+          community?: Community;
+          profile?: Profile;
+          userEmail?: string;
+          role?: "owner" | "admin";
+        } | null)
+      : null;
+
+  if (
+    navigationState?.community?.slug === slug &&
+    navigationState?.role &&
+    navigationState?.profile
+  ) {
+    return {
+      community: navigationState.community,
+      user: navigationState.profile,
+      userEmail: navigationState.userEmail ?? "",
+      role: navigationState.role,
+    } satisfies DashboardCommunityData;
   }
 
   const supabase = createClient();

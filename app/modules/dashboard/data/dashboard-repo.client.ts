@@ -2,6 +2,10 @@ import type { Community } from "~/shared/models/entity.types";
 import { createClient } from "~/shared/lib/supabase/client";
 import { DashboardStatsData, Member } from "../model/dashboard-types";
 
+export type CommunityVisit = {
+  visited_at: string;
+};
+
 export async function getCommunityBySlugClient(slug: string) {
   const supabase = createClient();
 
@@ -90,4 +94,26 @@ export async function getStatsForCommunityClient(
       .size,
     joinedUsers: membersCount.count ?? 0,
   };
+}
+
+export async function getVisitsForCommunityClient(communityId: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("community_visits")
+    .select("visited_at")
+    .eq("community_id", communityId)
+    .not("visited_at", "is", null)
+    .order("visited_at", { ascending: false });
+
+  if (error) {
+    return { visits: [] as CommunityVisit[], error };
+  }
+
+  const visits: CommunityVisit[] =
+    data
+      ?.filter((visit) => typeof visit.visited_at === "string")
+      .map((visit) => ({ visited_at: visit.visited_at as string })) ?? [];
+
+  return { visits, error: null };
 }
