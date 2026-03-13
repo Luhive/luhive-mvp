@@ -25,6 +25,7 @@ interface EventStatusUpdateEmailProps {
 	eventTime?: string;
     locationAddress?: string;
     onlineMeetingLink?: string;
+	hasQrCode?: boolean;
 }
 
 export const EventStatusUpdateEmail = ({
@@ -37,6 +38,7 @@ export const EventStatusUpdateEmail = ({
 	eventTime,
     locationAddress,
     onlineMeetingLink,
+	hasQrCode = false,
 }: EventStatusUpdateEmailProps) => {
 	const isApproved = status === "approved";
 	const title = isApproved ? "Registration Approved!" : "Registration Status Update";
@@ -129,6 +131,21 @@ export const EventStatusUpdateEmail = ({
 									</Text>
 									<Text className="text-sm m-0" style={{ color: '#6B6B6B' }}>{communityName}</Text>
 								</Section>
+							</Section>
+						)}
+
+						{isApproved && hasQrCode && (
+							<Section className="text-center mb-8">
+								<Text className="text-sm mb-3 mt-0" style={{ color: "#6B6B6B" }}>
+									Show this QR code at check-in.
+								</Text>
+								<Img
+									src="cid:event-qr"
+									width="200"
+									height="200"
+									alt="Your event QR ticket"
+									className="mx-auto"
+								/>
 							</Section>
 						)}
 

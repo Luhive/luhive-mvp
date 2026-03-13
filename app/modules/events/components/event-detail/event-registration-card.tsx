@@ -107,6 +107,7 @@ export function EventRegistrationCard({
 						<NativeRegisteredView
 							event={event}
 							userRegistrationStatus={userRegistrationStatus}
+							userCheckinToken={userData.userCheckinToken}
 							registrationCount={registrationCount}
 							canRegister={canRegister}
 							isPastEvent={isPastEvent}

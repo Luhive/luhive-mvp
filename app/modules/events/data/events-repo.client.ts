@@ -179,7 +179,7 @@ export async function getEventRegistrationsClient(eventId: string) {
     .order("registered_at", { ascending: false });
 
   return {
-    registrations: (data || []) as EventRegistration[],
+    registrations: (data || []) as unknown as EventRegistration[],
     error,
   };
 }

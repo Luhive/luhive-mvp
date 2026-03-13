@@ -1,10 +1,11 @@
 import { lazy, Suspense } from "react";
-import { useLoaderData } from "react-router";
+import { Link, useLoaderData, useParams } from "react-router";
 import { AttendersTableSkeleton } from "~/modules/events/components/attenders/attenders-table-skeleton";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
 import { getEventByIdClient } from "~/modules/events/data/events-repo.client";
 import { createClient } from "~/shared/lib/supabase/client";
 import type { Database } from "~/shared/models/database.types";
+import { ScanQrCode } from "lucide-react";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 
@@ -111,6 +112,7 @@ export function meta() {
 
 export default function AttendersPage() {
   const { event, eventId, error } = useLoaderData<AttendersLoaderData>();
+  const { slug } = useParams();
 
   if (!eventId || !event) {
     return (
@@ -147,6 +149,17 @@ export default function AttendersPage() {
             </p>
           </div>
         </div>
+        {slug ? (
+          <div>
+            <Link
+              to={`/dashboard/${slug}/events/${eventId}/scanner`}
+              className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted"
+            >
+              <ScanQrCode className="h-4 w-4" />
+              Open QR Scanner
+            </Link>
+          </div>
+        ) : null}
 
         <Suspense fallback={<AttendersTableSkeleton />}>
           <AttendersTable

@@ -270,6 +270,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const approvalStatus = event.is_approve_required ? "pending" : "approved";
+    const checkinToken =
+      approvalStatus === "approved" ? crypto.randomUUID() : null;
 
     // Get community ID from slug to track registration source
     let registrationSourceCommunityId = community.id;
@@ -295,6 +297,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         approval_status: approvalStatus,
         custom_answers: customAnswers,
         registration_source_community_id: registrationSourceCommunityId,
+        checkin_token: checkinToken,
       });
 
     if (registerError) {
@@ -339,6 +342,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           endTimeISO: event.end_time || event.start_time,
           locationAddress: event.location_address || undefined,
           onlineMeetingLink: event.online_meeting_link || undefined,
+          checkinToken,
         }),
       });
     } catch (error) {
