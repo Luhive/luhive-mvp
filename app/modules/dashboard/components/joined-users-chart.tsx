@@ -1,13 +1,7 @@
 import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/shared/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/shared/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
@@ -30,11 +24,11 @@ type ChartPoint = {
 const chartConfig = {
   views: {
     label: "Community views",
-    color: "#666666",
+    color: "#f97316",
   },
   joined: {
     label: "Joined users",
-    color: "#9a9a9a",
+    color: "#fb923c",
   },
 } satisfies ChartConfig;
 
@@ -105,12 +99,6 @@ function buildPoints(
   return buckets;
 }
 
-function rangeLabel(range: TimeRange): string {
-  if (range === "30d") return "last 30 days";
-  if (range === "7d") return "last 7 days";
-  return "last 3 months";
-}
-
 export function JoinedUsersChart({
   members,
   visits,
@@ -133,8 +121,12 @@ export function JoinedUsersChart({
     <Card>
       <CardHeader className="flex flex-col gap-4 border-b border-border/50 pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <CardTitle className="text-base">Total Visitors</CardTitle>
-          <CardDescription>{`Total for the ${rangeLabel(range)}`}</CardDescription>
+          <p className="text-3xl font-semibold tabular-nums">
+            {totalViews.toLocaleString()}
+          </p>
+          <p className="text-muted-foreground text-sm">
+            Total for the selected range
+          </p>
         </div>
         <ToggleGroup
           type="single"
@@ -148,33 +140,59 @@ export function JoinedUsersChart({
           size="sm"
           className="rounded-md border border-border/60 bg-muted/30 p-1"
         >
-          <ToggleGroupItem value="90d" aria-label="Last 3 months" className="text-xs">
+          <ToggleGroupItem
+            value="90d"
+            aria-label="Last 3 months"
+            className="text-xs"
+          >
             Last 3 months
           </ToggleGroupItem>
-          <ToggleGroupItem value="30d" aria-label="Last 30 days" className="text-xs">
+          <ToggleGroupItem
+            value="30d"
+            aria-label="Last 30 days"
+            className="text-xs"
+          >
             Last 30 days
           </ToggleGroupItem>
-          <ToggleGroupItem value="7d" aria-label="Last 7 days" className="text-xs">
+          <ToggleGroupItem
+            value="7d"
+            aria-label="Last 7 days"
+            className="text-xs"
+          >
             Last 7 days
           </ToggleGroupItem>
         </ToggleGroup>
       </CardHeader>
       <CardContent className="pt-5">
-        <div className="mb-4">
-          <p className="text-3xl font-semibold tabular-nums">{totalViews.toLocaleString()}</p>
-          <p className="text-muted-foreground text-sm">Community views in selected range</p>
-        </div>
-
-        <ChartContainer config={chartConfig} className="h-[240px] w-full">
-          <AreaChart data={chartData} margin={{ left: 2, right: 2, top: 8, bottom: 4 }}>
+        <ChartContainer config={chartConfig} className="h-[240px] w-full ">
+          <AreaChart
+            data={chartData}
+            margin={{ left: 2, right: 2, top: 8, bottom: 4 }}
+          >
             <defs>
               <linearGradient id="fillViews" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-views)" stopOpacity={0.72} />
-                <stop offset="95%" stopColor="var(--color-views)" stopOpacity={0.05} />
+                <stop
+                  offset="0%"
+                  stopColor="var(--color-views)"
+                  stopOpacity={0.72}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-views)"
+                  stopOpacity={0.05}
+                />
               </linearGradient>
               <linearGradient id="fillJoined" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-joined)" stopOpacity={0.65} />
-                <stop offset="95%" stopColor="var(--color-joined)" stopOpacity={0.06} />
+                <stop
+                  offset="0%"
+                  stopColor="var(--color-joined)"
+                  stopOpacity={0.48}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-joined)"
+                  stopOpacity={0.06}
+                />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} stroke="#ececec" />
