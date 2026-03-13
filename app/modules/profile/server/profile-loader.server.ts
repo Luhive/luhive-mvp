@@ -1,8 +1,8 @@
 import { createClient } from "~/shared/lib/supabase/server";
 import type { LoaderFunctionArgs } from "react-router";
 import type { Database } from "~/shared/models/database.types";
+import { Profile } from "~/shared/models/entity.types";
 
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 export type ProfileLoaderData = {
   user: Profile | null;

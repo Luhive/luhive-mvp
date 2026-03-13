@@ -143,16 +143,32 @@ export function AnnouncementForm({
           type="file"
           accept="image/png,image/jpeg,image/webp"
           multiple
-          onChange={(event) => handleImageUpload(event.target.files)}
+          onChange={(event) => {
+            handleImageUpload(event.target.files);
+            event.target.value = "";
+          }}
           disabled={isUploading || imageUrls.length >= MAX_IMAGES}
         />
-        <p className="text-xs text-muted-foreground">Max 5 images, 5MB each.</p>
+        {isUploading ? (
+          <p className="text-xs text-muted-foreground">Uploading images...</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Max 5 images, 5MB each.
+          </p>
+        )}
 
         {imageUrls.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {imageUrls.map((url, index) => (
-              <div key={`${url}-${index}`} className="relative rounded-md border overflow-hidden">
-                <img src={url} alt={`Announcement image ${index + 1}`} className="h-28 w-full object-cover" />
+              <div
+                key={`${url}-${index}`}
+                className="relative rounded-md border overflow-hidden"
+              >
+                <img
+                  src={url}
+                  alt={`Announcement image ${index + 1}`}
+                  className="h-28 w-full object-cover"
+                />
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
