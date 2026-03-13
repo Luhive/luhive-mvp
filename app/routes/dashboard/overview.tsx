@@ -3,6 +3,7 @@ export { meta } from "~/modules/dashboard/model/overview-meta";
 import { useLoaderData } from "react-router";
 import { SectionCards } from "~/modules/dashboard/components/section-cards";
 import { DataTable } from "~/modules/dashboard/components/data-table";
+import { JoinedUsersChart } from "~/modules/dashboard/components/joined-users-chart";
 import {
   getCommunityBySlugClient,
   getMembersForCommunityClient,
@@ -52,7 +53,9 @@ export default function DashboardOverviewPage() {
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
       <SectionCards stats={stats} />
-      <div className="px-4 lg:px-6">{/* Charts will be loaded later */}</div>
+      <div className="px-4 lg:px-6">
+        <JoinedUsersChart members={members} />
+      </div>
       <div className="px-4 lg:px-6">
         <DataTable data={members} />
       </div>
