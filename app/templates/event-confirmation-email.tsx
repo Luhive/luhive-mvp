@@ -25,6 +25,7 @@ interface EventConfirmationEmailProps {
 	registerAccountLink: string;
 	locationAddress?: string;
 	onlineMeetingLink?: string;
+	hasQrCode?: boolean;
 }
 
 export const EventConfirmationEmail = ({
@@ -37,6 +38,7 @@ export const EventConfirmationEmail = ({
 	registerAccountLink = "https://luhive.com/signup",
 	locationAddress,
 	onlineMeetingLink,
+	hasQrCode = false,
 }: EventConfirmationEmailProps) => (
 	<Html>
 		<Preview>You're registered for {eventTitle}!</Preview>
@@ -124,6 +126,21 @@ export const EventConfirmationEmail = ({
 							View Event Details
 						</Button>
 					</Section>
+
+					{hasQrCode && (
+						<Section className="text-center mb-8">
+							<Text className="text-sm mb-3 mt-0" style={{ color: "#6B6B6B" }}>
+								Show this QR code at check-in.
+							</Text>
+							<Img
+								src="cid:event-qr"
+								width="200"
+								height="200"
+								alt="Your event QR ticket"
+								className="mx-auto"
+							/>
+						</Section>
+					)}
 
 					<Section className="border-l-4 p-4 mb-8 rounded" style={{ backgroundColor: '#FFF5EE', borderLeftColor: '#FF8040' }}>
 						<Text className="text-sm leading-relaxed m-0" style={{ color: '#6B6B6B' }}>

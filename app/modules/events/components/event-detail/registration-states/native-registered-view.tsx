@@ -2,11 +2,13 @@ import { Form } from "react-router";
 import { CheckCircle2, Hourglass, AlertTriangle } from "lucide-react";
 import { Button } from "~/shared/components/ui/button";
 import { Activity } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import type { Event } from "~/shared/models/entity.types";
 
 interface NativeRegisteredViewProps {
 	event: Event;
 	userRegistrationStatus: string | null;
+	userCheckinToken: string | null;
 	registrationCount: number;
 	canRegister: boolean;
 	isPastEvent: boolean;
@@ -16,6 +18,7 @@ interface NativeRegisteredViewProps {
 export function NativeRegisteredView({
 	event,
 	userRegistrationStatus,
+	userCheckinToken,
 	registrationCount,
 	canRegister,
 	isPastEvent,
@@ -54,6 +57,15 @@ export function NativeRegisteredView({
 					<span className="font-semibold">
 						{registrationCount}/{event.capacity || 0}
 					</span>
+				</div>
+			</Activity>
+
+			<Activity mode={userRegistrationStatus === "approved" && !!userCheckinToken ? "visible" : "hidden"}>
+				<div className="pt-3 border-t space-y-2">
+					<p className="text-sm font-medium">Your Check-in QR</p>
+					<div className="inline-flex rounded-md bg-white p-2 border">
+						{userCheckinToken ? <QRCodeSVG value={userCheckinToken} size={168} /> : null}
+					</div>
 				</div>
 			</Activity>
 

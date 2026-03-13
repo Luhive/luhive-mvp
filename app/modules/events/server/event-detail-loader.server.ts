@@ -23,6 +23,7 @@ export interface UserData {
   registrationCount: number;
   isUserRegistered: boolean;
   userRegistrationStatus: string | null;
+  userCheckinToken: string | null;
   canRegister: boolean;
   user: { id: string; email?: string | null } | null;
   userProfile: Profile | null;
@@ -133,19 +134,21 @@ export async function loader({
   } = await supabase.auth.getUser();
   let isUserRegistered = false;
   let userRegistrationStatus: string | null = null;
+  let userCheckinToken: string | null = null;
   let isOwnerOrAdmin = false;
   let userProfile: Profile | null = null;
 
   if (u) {
     const { data: registration } = await supabase
       .from("event_registrations")
-      .select("id, approval_status")
+      .select("id, approval_status, checkin_token")
       .eq("event_id", event.id)
       .eq("user_id", u.id)
       .single();
 
     isUserRegistered = !!registration;
     userRegistrationStatus = registration?.approval_status || null;
+    userCheckinToken = registration?.checkin_token || null;
 
     const { data: membership } = await supabase
       .from("community_members")
@@ -181,6 +184,7 @@ export async function loader({
     registrationCount: regCount || 0,
     isUserRegistered,
     userRegistrationStatus,
+    userCheckinToken,
     canRegister,
     user: u || null,
     userProfile,

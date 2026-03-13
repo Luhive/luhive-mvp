@@ -25,6 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
       endTimeISO,
       locationAddress,
       onlineMeetingLink,
+      checkinToken,
     } = body;
 
     if (
@@ -69,6 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
         onlineMeetingLink: onlineMeetingLink ?? undefined,
         startTimeISO,
         endTimeISO,
+        checkinToken: checkinToken ?? null,
       });
     }
 
