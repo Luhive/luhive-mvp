@@ -9,7 +9,7 @@ export const attenderSchema = z.object({
   avatar_url: z.string().nullable(),
   rsvp_status: z.enum(["going", "not_going", "maybe"]),
   approval_status: z.enum(["pending", "approved", "rejected"]).nullable().optional(),
-  is_verified: z.boolean(),
+  is_attended: z.boolean(),
   registered_at: z.string().nullable(),
   is_anonymous: z.boolean(),
   custom_answers: z.any().nullable().optional(),

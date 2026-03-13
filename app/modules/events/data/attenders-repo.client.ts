@@ -47,7 +47,7 @@ export async function getEventAttendersRaw(eventId: string) {
       anonymous_phone,
       rsvp_status,
       approval_status,
-      is_verified,
+      is_attended,
       registered_at,
       custom_answers,
       profiles (

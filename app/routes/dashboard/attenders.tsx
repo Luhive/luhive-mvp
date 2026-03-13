@@ -5,6 +5,7 @@ import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-rep
 import { getEventByIdClient } from "~/modules/events/data/events-repo.client";
 import { createClient } from "~/shared/lib/supabase/client";
 import type { Database } from "~/shared/models/database.types";
+import { ScanQrCode } from "lucide-react";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 
@@ -152,8 +153,9 @@ export default function AttendersPage() {
           <div>
             <Link
               to={`/dashboard/${slug}/events/${eventId}/scanner`}
-              className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted"
+              className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted"
             >
+              <ScanQrCode className="h-4 w-4" />
               Open QR Scanner
             </Link>
           </div>
