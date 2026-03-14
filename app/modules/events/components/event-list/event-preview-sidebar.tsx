@@ -1,5 +1,5 @@
 import { useNavigate, Form, useNavigation, useFetcher } from "react-router";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Bell,
   ChevronRight,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -40,6 +41,10 @@ import { EventRsvpModal } from "../registration/event-rsvp-modal";
 import { AnonymousSubscriptionDialog } from "../registration/anonymous-subscription-dialog";
 import { CustomQuestionsForm } from "../registration/custom-questions-form";
 import { createClient } from "~/shared/lib/supabase/client";
+import {
+  getEventTrackingContext,
+  shouldTrackEventVisit,
+} from "~/modules/events/utils/event-session-tracker";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -86,6 +91,10 @@ export function EventPreviewSidebar({
   const [isOwnerOrAdmin, setIsOwnerOrAdmin] = useState(false);
   const lastSubmittedIntentRef = useRef<SubmissionIntent | null>(null);
   const prevEventIdRef = useRef<string | null>(null);
+  const trackingContext = useMemo(
+    () => (event?.id ? getEventTrackingContext(event.id) : undefined),
+    [event?.id],
+  );
 
   // Sync local state with prop when it changes
   useEffect(() => {
@@ -251,6 +260,41 @@ export function EventPreviewSidebar({
     checkRegistrationStatus();
   }, [open, user?.id, event?.id]);
 
+  useEffect(() => {
+    if (!open || !event || !community || !trackingContext) {
+      return;
+    }
+
+    if (!shouldTrackEventVisit(event.id)) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("intent", "track_visit");
+    formData.append("eventId", event.id);
+    formData.append("communityId", community.id);
+    formData.append("sessionId", trackingContext.sessionId);
+    formData.append("utmSource", trackingContext.utmSource);
+    if (trackingContext.utmMedium) formData.append("utmMedium", trackingContext.utmMedium);
+    if (trackingContext.utmCampaign) formData.append("utmCampaign", trackingContext.utmCampaign);
+    if (trackingContext.utmContent) formData.append("utmContent", trackingContext.utmContent);
+    if (trackingContext.utmTerm) formData.append("utmTerm", trackingContext.utmTerm);
+    if (trackingContext.referrerUrl) formData.append("referrerUrl", trackingContext.referrerUrl);
+    if (trackingContext.referrerDomain) formData.append("referrerDomain", trackingContext.referrerDomain);
+
+    fetch(`/c/${community.slug}/events/${event.id}`, {
+      method: "POST",
+      body: formData,
+    }).catch((error) => {
+      console.error("Failed to track event preview visit:", error);
+    });
+  }, [
+    open,
+    event,
+    community,
+    trackingContext,
+  ]);
+
   // Check if current user is owner/admin of the community (for Manage CTA)
   useEffect(() => {
     if (!open || !user || !community) return;
@@ -308,6 +352,8 @@ export function EventPreviewSidebar({
   const isSubmitting =
     fetcher.state === "submitting" || fetcher.state === "loading";
   const currentSubmittingIntent = fetcher.formData?.get("intent");
+  const isRegistering =
+    isSubmitting && currentSubmittingIntent === "register";
   const isUnregistering =
     isSubmitting && currentSubmittingIntent === "unregister";
 
@@ -412,6 +458,13 @@ export function EventPreviewSidebar({
     const formData = new FormData();
     formData.append("intent", "register");
     formData.append("custom_answers", JSON.stringify(answers));
+    if (trackingContext?.sessionId) formData.append("eventSessionId", trackingContext.sessionId);
+    if (trackingContext?.utmSource) formData.append("eventUtmSource", trackingContext.utmSource);
+    if (trackingContext?.utmMedium) formData.append("eventUtmMedium", trackingContext.utmMedium);
+    if (trackingContext?.utmCampaign) formData.append("eventUtmCampaign", trackingContext.utmCampaign);
+    if (trackingContext?.utmContent) formData.append("eventUtmContent", trackingContext.utmContent);
+    if (trackingContext?.utmTerm) formData.append("eventUtmTerm", trackingContext.utmTerm);
+    if (trackingContext?.firstVisitStartedAt) formData.append("eventFirstVisitStartedAt", trackingContext.firstVisitStartedAt);
 
     fetcher.submit(formData, {
       method: "POST",
@@ -450,6 +503,15 @@ export function EventPreviewSidebar({
                 Event Page
                 <ExternalLink className="h-3.5 w-3.5" />
               </Button>
+
+              {isOwnerOrAdmin && (
+                <Button asChild variant="outline" size="sm" className="gap-1.5">
+                  <a href={`/dashboard/${community.slug}/events/${event.id}/statistics`}>
+                    Insight
+                    <BarChart3 className="h-3.5 w-3.5" />
+                  </a>
+                </Button>
+              )}
 
               <Button
                 variant="outline"
@@ -638,10 +700,10 @@ export function EventPreviewSidebar({
                   onClick={handleRegisterClick}
                   className="w-[20rem]"
                   size="lg"
-                  disabled={isSubmitting}
+                  disabled={isRegistering}
                 >
                   <Bell className="h-4 w-4 mr-2" />
-                  {isSubmitting ? "Processing..." : "Subscribe for Updates"}
+                  {isRegistering ? "Processing..." : "Subscribe for Updates"}
                 </Button>
               ) : user ? (
                 // Logged-in user: show registration form
@@ -670,9 +732,9 @@ export function EventPreviewSidebar({
                     onClick={handleRegisterClick}
                     className="w-[15rem]"
                     size="default"
-                    disabled={isSubmitting}
+                    disabled={isRegistering}
                   >
-                    {isSubmitting ? "Registering..." : "Register"}
+                    {isRegistering ? "Registering..." : "Register"}
                   </Button>
                 ) : (
                   <fetcher.Form
@@ -683,13 +745,20 @@ export function EventPreviewSidebar({
                     }}
                   >
                     <input type="hidden" name="intent" value="register" />
+                    <input type="hidden" name="eventSessionId" value={trackingContext?.sessionId ?? ""} />
+                    <input type="hidden" name="eventUtmSource" value={trackingContext?.utmSource ?? "direct"} />
+                    <input type="hidden" name="eventUtmMedium" value={trackingContext?.utmMedium ?? ""} />
+                    <input type="hidden" name="eventUtmCampaign" value={trackingContext?.utmCampaign ?? ""} />
+                    <input type="hidden" name="eventUtmContent" value={trackingContext?.utmContent ?? ""} />
+                    <input type="hidden" name="eventUtmTerm" value={trackingContext?.utmTerm ?? ""} />
+                    <input type="hidden" name="eventFirstVisitStartedAt" value={trackingContext?.firstVisitStartedAt ?? ""} />
                     <Button
                       type="submit"
                       className="w-[20rem]"
                       size="lg"
-                      disabled={isSubmitting}
+                      disabled={isRegistering}
                     >
-                      {isSubmitting ? "Registering..." : "Register"}
+                      {isRegistering ? "Registering..." : "Register"}
                     </Button>
                   </fetcher.Form>
                 )
@@ -699,9 +768,9 @@ export function EventPreviewSidebar({
                   onClick={handleRegisterClick}
                   className="w-[20rem]"
                   size="lg"
-                  disabled={isSubmitting}
+                  disabled={isRegistering}
                 >
-                  {isSubmitting ? "Processing..." : "Register"}
+                  {isRegistering ? "Processing..." : "Register"}
                 </Button>
               )}
             </div>
@@ -720,6 +789,7 @@ export function EventPreviewSidebar({
         hasCustomQuestions={!!hasCustomQuestions}
         customQuestions={(event.custom_questions as CustomQuestionJson) ?? null}
         userPhone={userPhone ?? undefined}
+        trackingContext={trackingContext}
       />
       <AnonymousSubscriptionDialog
         open={showSubscribeDialog}

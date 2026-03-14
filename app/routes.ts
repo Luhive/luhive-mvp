@@ -72,6 +72,10 @@ export default [
       "events/:eventId/edit-external",
       "routes/dashboard/event-edit-external.tsx",
     ),
+    route(
+      "events/:eventId/statistics",
+      "routes/dashboard/event-statistics.tsx",
+    ),
     route("events/:eventId/scanner", "routes/dashboard/event-scanner.tsx"),
     route("attenders", "routes/dashboard/attenders.tsx"),
     route("forms", "routes/dashboard/forms.tsx"),

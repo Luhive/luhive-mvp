@@ -13,6 +13,7 @@ import type { Community, Event } from "~/shared/models/entity.types";
 import type { TimeRemaining } from "~/modules/events/model/event-detail-view.types";
 import type { UserData } from "~/modules/events/server/event-detail-loader.server";
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
+import type { EventTrackingContext } from "~/modules/events/utils/event-session-tracker";
 
 interface EventRegistrationCardProps {
 	event: Event;
@@ -28,6 +29,7 @@ interface EventRegistrationCardProps {
 	isRegistering: boolean;
 	isUnregistering: boolean;
 	isSubmitting: boolean;
+	eventTrackingContext: EventTrackingContext;
 	onShowCustomQuestionsForm: () => void;
 	onShowRsvpModal: () => void;
 	onShowSubscribeDialog: () => void;
@@ -47,6 +49,7 @@ export function EventRegistrationCard({
 	isRegistering,
 	isUnregistering,
 	isSubmitting,
+	eventTrackingContext,
 	onShowCustomQuestionsForm,
 	onShowRsvpModal,
 	onShowSubscribeDialog,
@@ -131,6 +134,7 @@ export function EventRegistrationCard({
 							hasCustomQuestions={hasCustomQuestions}
 							isRegistering={isRegistering}
 							isSubmitting={isSubmitting}
+							eventTrackingContext={eventTrackingContext}
 							onShowCustomQuestionsForm={onShowCustomQuestionsForm}
 							onShowRsvpModal={onShowRsvpModal}
 						/>

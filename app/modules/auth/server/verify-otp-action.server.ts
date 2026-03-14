@@ -4,12 +4,27 @@ import timezone from "dayjs/plugin/timezone";
 import { redirect } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
+import { getIpLocation } from "~/shared/lib/ip-location.server";
 import { sendCommunityJoinNotification } from "~/shared/lib/email.server";
+import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const OTP_LENGTH = 6;
+
+function getTimeToRegisterSeconds(startedAt: string | null): number | null {
+  if (!startedAt) {
+    return null;
+  }
+
+  const started = new Date(startedAt);
+  if (Number.isNaN(started.getTime())) {
+    return null;
+  }
+
+  return Math.max(0, Math.floor((Date.now() - started.getTime()) / 1000));
+}
 
 function getSafeReturnTo(returnTo: string | null): string | null {
   if (!returnTo) {
@@ -147,6 +162,22 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Event RSVP flow: register for event if eventId provided
   const eventId = (formData.get("eventId") as string | null)?.trim();
+  const eventSessionId =
+    (formData.get("eventSessionId") as string | null)?.trim() || null;
+  const eventUtmSource = normalizeUtmSource(
+    (formData.get("eventUtmSource") as string | null)?.trim() || null,
+  );
+  const eventUtmMedium =
+    (formData.get("eventUtmMedium") as string | null)?.trim() || null;
+  const eventUtmCampaign =
+    (formData.get("eventUtmCampaign") as string | null)?.trim() || null;
+  const eventUtmContent =
+    (formData.get("eventUtmContent") as string | null)?.trim() || null;
+  const eventUtmTerm =
+    (formData.get("eventUtmTerm") as string | null)?.trim() || null;
+  const eventFirstVisitStartedAt =
+    (formData.get("eventFirstVisitStartedAt") as string | null)?.trim() || null;
+
   let registeredEvent = false;
   let registeredEventCommunityId: string | null = null;
   if (eventId) {
@@ -186,6 +217,59 @@ export async function action({ request }: ActionFunctionArgs) {
       const approvalStatus = event.is_approve_required ? "pending" : "approved";
       const checkinToken =
         approvalStatus === "approved" ? crypto.randomUUID() : null;
+
+      const registrationLocation = await getIpLocation();
+
+      let registrationSessionId: string | null = eventSessionId;
+      let registrationCountry: string | null = registrationLocation.country;
+      let registrationCity: string | null = registrationLocation.city;
+      let timeToRegisterSeconds: number | null = getTimeToRegisterSeconds(
+        eventFirstVisitStartedAt,
+      );
+      let utmSource = eventUtmSource;
+      let utmMedium = eventUtmMedium;
+      let utmCampaign = eventUtmCampaign;
+      let utmContent = eventUtmContent;
+      let utmTerm = eventUtmTerm;
+
+      let firstVisitQuery = (supabase as any)
+        .from("event_visits")
+        .select(
+          "visited_at, session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, country, city",
+        )
+        .eq("event_id", eventId)
+        .order("visited_at", { ascending: true })
+        .limit(1);
+
+      if (eventSessionId) {
+        firstVisitQuery = firstVisitQuery.eq("session_id", eventSessionId);
+      } else {
+        firstVisitQuery = firstVisitQuery.eq("user_id", data.user.id);
+      }
+
+      const { data: firstVisitRows } = await firstVisitQuery;
+      const firstVisit = firstVisitRows?.[0] ?? null;
+
+      if (firstVisit) {
+        registrationSessionId = registrationSessionId || firstVisit.session_id || null;
+        registrationCountry = firstVisit.country || null;
+        registrationCity = firstVisit.city || null;
+        utmSource = normalizeUtmSource(firstVisit.utm_source || utmSource);
+        utmMedium = firstVisit.utm_medium || utmMedium;
+        utmCampaign = firstVisit.utm_campaign || utmCampaign;
+        utmContent = firstVisit.utm_content || utmContent;
+        utmTerm = firstVisit.utm_term || utmTerm;
+
+        const visitedAt = new Date(firstVisit.visited_at);
+        const now = new Date();
+        if (!Number.isNaN(visitedAt.getTime())) {
+          timeToRegisterSeconds = Math.max(
+            0,
+            Math.floor((now.getTime() - visitedAt.getTime()) / 1000),
+          );
+        }
+      }
+
       const { error: regError } = await supabase.from("event_registrations").insert({
         event_id: eventId,
         user_id: data.user.id,
@@ -195,6 +279,15 @@ export async function action({ request }: ActionFunctionArgs) {
         custom_answers: customAnswers as import("~/shared/models/database.types").Json | undefined,
         registration_source_community_id: event.community_id,
         checkin_token: checkinToken,
+        registration_session_id: registrationSessionId,
+        registration_country: registrationCountry,
+        registration_city: registrationCity,
+        time_to_register_seconds: timeToRegisterSeconds,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
+        utm_content: utmContent,
+        utm_term: utmTerm,
       });
 
       if (!regError) {

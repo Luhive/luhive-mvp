@@ -23,6 +23,10 @@ import { OtpInputInline } from "~/modules/auth/components/otp-input-inline";
 import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
 import type { CustomQuestionJson } from "~/modules/events/model/event.types";
 import type { CustomAnswerJson } from "~/modules/events/model/event.types";
+import {
+  getEventTrackingContext,
+  type EventTrackingContext,
+} from "~/modules/events/utils/event-session-tracker";
 
 const emailSchema = z.object({ email: z.string().email() });
 type EmailFormValues = z.infer<typeof emailSchema>;
@@ -60,6 +64,7 @@ export interface EventRsvpModalProps {
   customQuestions: CustomQuestionJson | null;
   userPhone?: string | null;
   returnTo?: string;
+  trackingContext?: EventTrackingContext;
 }
 
 export function EventRsvpModal({
@@ -73,6 +78,7 @@ export function EventRsvpModal({
   customQuestions,
   userPhone,
   returnTo,
+  trackingContext,
 }: EventRsvpModalProps) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -106,6 +112,10 @@ export function EventRsvpModal({
 
   const pathname = `/c/${communitySlug}/events/${eventId}`;
   const eventActionUrl = pathname;
+  const resolvedTrackingContext = React.useMemo(
+    () => trackingContext ?? getEventTrackingContext(eventId),
+    [eventId, trackingContext],
+  );
 
   // checkEmailFetcher: existing user -> otp, new user -> details
   React.useEffect(() => {
@@ -417,6 +427,13 @@ export function EventRsvpModal({
         surname={!userExists ? detailsForm.getValues("surname") : undefined}
         eventId={!userExists || !hasCustomQuestions ? eventId : undefined}
         customAnswers={customAnswers ? JSON.stringify(customAnswers) : undefined}
+        eventSessionId={resolvedTrackingContext.sessionId}
+        eventUtmSource={resolvedTrackingContext.utmSource}
+        eventUtmMedium={resolvedTrackingContext.utmMedium}
+        eventUtmCampaign={resolvedTrackingContext.utmCampaign}
+        eventUtmContent={resolvedTrackingContext.utmContent}
+        eventUtmTerm={resolvedTrackingContext.utmTerm}
+        eventFirstVisitStartedAt={resolvedTrackingContext.firstVisitStartedAt}
       />
     </div>
   );

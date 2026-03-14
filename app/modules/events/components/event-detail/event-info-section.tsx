@@ -2,13 +2,14 @@ import { Activity } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { Calendar, MapPin, Video, ExternalLink } from "lucide-react";
+import { Calendar, MapPin, Video, ExternalLink, BarChart3 } from "lucide-react";
 import { Button } from "~/shared/components/ui/button";
 import { Separator } from "~/shared/components/ui/separator";
 import type { Community, Event } from "~/shared/models/entity.types";
 import type { TimeRemaining } from "~/modules/events/model/event-detail-view.types";
 import type { UserData } from "~/modules/events/server/event-detail-loader.server";
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
+import type { EventTrackingContext } from "~/modules/events/utils/event-session-tracker";
 import { EventRegistrationCard } from "./event-registration-card";
 
 dayjs.extend(utc);
@@ -28,6 +29,7 @@ interface EventInfoSectionProps {
 	isRegistering: boolean;
 	isUnregistering: boolean;
 	isSubmitting: boolean;
+	eventTrackingContext: EventTrackingContext;
 	onShowCustomQuestionsForm: () => void;
 	onShowRsvpModal: () => void;
 	onShowSubscribeDialog: () => void;
@@ -47,11 +49,12 @@ export function EventInfoSection({
 	isRegistering,
 	isUnregistering,
 	isSubmitting,
+	eventTrackingContext,
 	onShowCustomQuestionsForm,
 	onShowRsvpModal,
 	onShowSubscribeDialog,
 }: EventInfoSectionProps) {
-	const { isUserRegistered } = userData;
+ const { isUserRegistered, isOwnerOrAdmin } = userData;
 	const tz = event.timezone ?? "UTC";
 	const eventDate = dayjs(event.start_time).tz(tz);
 	const eventEndDate = event.end_time ? dayjs(event.end_time).tz(tz) : null;
@@ -59,7 +62,17 @@ export function EventInfoSection({
 	return (
 		<div className="contents lg:block lg:space-y-6">
 			<div className="order-2">
-				<h1 className="text-3xl md:text-4xl font-bold leading-tight">{event.title}</h1>
+				<div className="flex items-start justify-between gap-4">
+					<h1 className="text-3xl md:text-4xl font-bold leading-tight">{event.title}</h1>
+					<Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
+						<Button asChild variant="outline" size="sm" className="shrink-0 gap-1.5">
+							<a href={`/dashboard/${community.slug}/events/${event.id}/statistics`}>
+								Insight
+								<BarChart3 className="h-4 w-4" />
+							</a>
+						</Button>
+					</Activity>
+				</div>
 			</div>
 
 			<div className="order-4 space-y-6">
@@ -108,6 +121,7 @@ export function EventInfoSection({
 					isRegistering={isRegistering}
 					isUnregistering={isUnregistering}
 					isSubmitting={isSubmitting}
+					eventTrackingContext={eventTrackingContext}
 					onShowCustomQuestionsForm={onShowCustomQuestionsForm}
 					onShowRsvpModal={onShowRsvpModal}
 					onShowSubscribeDialog={onShowSubscribeDialog}

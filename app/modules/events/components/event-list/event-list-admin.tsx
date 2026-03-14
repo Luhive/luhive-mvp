@@ -745,9 +745,13 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                                 </a>
                                               </DropdownMenuItem>
                                             )}
-                                            <DropdownMenuItem disabled>
-                                              <BarChart3 className="w-4 h-4 mr-2" />
-                                              View Analytics
+                                            <DropdownMenuItem asChild>
+                                              <Link
+                                                to={`/dashboard/${communitySlug}/events/${event.id}/statistics`}
+                                              >
+                                                <BarChart3 className="w-4 h-4 mr-2" />
+                                                View Analytics
+                                              </Link>
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem

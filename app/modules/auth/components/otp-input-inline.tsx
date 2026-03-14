@@ -33,6 +33,13 @@ interface OtpInputInlineProps {
   eventId?: string;
   customAnswers?: string;
   joinCommunity?: boolean;
+  eventSessionId?: string;
+  eventUtmSource?: string;
+  eventUtmMedium?: string | null;
+  eventUtmCampaign?: string | null;
+  eventUtmContent?: string | null;
+  eventUtmTerm?: string | null;
+  eventFirstVisitStartedAt?: string;
 }
 
 const OTP_LENGTH = 6;
@@ -48,6 +55,13 @@ export function OtpInputInline({
   eventId,
   customAnswers,
   joinCommunity,
+  eventSessionId,
+  eventUtmSource,
+  eventUtmMedium,
+  eventUtmCampaign,
+  eventUtmContent,
+  eventUtmTerm,
+  eventFirstVisitStartedAt,
 }: OtpInputInlineProps) {
   const verifyFetcher = useFetcher<VerifyFetcherData>();
   const resendFetcher = useFetcher<ResendFetcherData>();
@@ -162,6 +176,13 @@ export function OtpInputInline({
     if (surname) formData.append("surname", surname);
     if (eventId) formData.append("eventId", eventId);
     if (customAnswers) formData.append("customAnswers", customAnswers);
+    if (eventSessionId) formData.append("eventSessionId", eventSessionId);
+    if (eventUtmSource) formData.append("eventUtmSource", eventUtmSource);
+    if (eventUtmMedium) formData.append("eventUtmMedium", eventUtmMedium);
+    if (eventUtmCampaign) formData.append("eventUtmCampaign", eventUtmCampaign);
+    if (eventUtmContent) formData.append("eventUtmContent", eventUtmContent);
+    if (eventUtmTerm) formData.append("eventUtmTerm", eventUtmTerm);
+    if (eventFirstVisitStartedAt) formData.append("eventFirstVisitStartedAt", eventFirstVisitStartedAt);
     if (joinCommunity === false) formData.append("joinCommunity", "false");
 
     verifyFetcher.submit(formData, { method: "post", action: "/auth/verify-otp" });
@@ -170,6 +191,13 @@ export function OtpInputInline({
     customAnswers,
     email,
     eventId,
+    eventSessionId,
+    eventUtmCampaign,
+    eventUtmContent,
+    eventUtmMedium,
+    eventUtmSource,
+    eventUtmTerm,
+    eventFirstVisitStartedAt,
     isVerifying,
     joinCommunity,
     name,
@@ -195,6 +223,13 @@ export function OtpInputInline({
     if (surname) formData.append("surname", surname);
     if (eventId) formData.append("eventId", eventId);
     if (customAnswers) formData.append("customAnswers", customAnswers);
+    if (eventSessionId) formData.append("eventSessionId", eventSessionId);
+    if (eventUtmSource) formData.append("eventUtmSource", eventUtmSource);
+    if (eventUtmMedium) formData.append("eventUtmMedium", eventUtmMedium);
+    if (eventUtmCampaign) formData.append("eventUtmCampaign", eventUtmCampaign);
+    if (eventUtmContent) formData.append("eventUtmContent", eventUtmContent);
+    if (eventUtmTerm) formData.append("eventUtmTerm", eventUtmTerm);
+    if (eventFirstVisitStartedAt) formData.append("eventFirstVisitStartedAt", eventFirstVisitStartedAt);
     if (joinCommunity === false) formData.append("joinCommunity", "false");
 
     verifyFetcher.submit(formData, { method: "post", action: "/auth/verify-otp" });
