@@ -8,14 +8,82 @@ import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import { sanitizeDuplicateError } from "~/modules/events/utils/sanitize-error";
 import { redirect } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
+import { getIpLocation } from "~/shared/lib/ip-location.server";
+import { getUserAgent } from "~/modules/community/utils/user-agent";
+import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+function getTimeToRegisterSeconds(startedAt: string | null): number | null {
+  if (!startedAt) {
+    return null;
+  }
+
+  const started = new Date(startedAt);
+  if (Number.isNaN(started.getTime())) {
+    return null;
+  }
+
+  return Math.max(0, Math.floor((Date.now() - started.getTime()) / 1000));
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { supabase } = createClient(request);
   const formData = await request.formData();
   const intent = formData.get("intent") as string;
+
+  if (intent === "track_visit") {
+    try {
+      const eventId = (formData.get("eventId") as string | null)?.trim() || "";
+      const communityId =
+        (formData.get("communityId") as string | null)?.trim() || "";
+      const sessionId = (formData.get("sessionId") as string | null)?.trim() || "";
+
+      if (!eventId || !communityId || !sessionId) {
+        return { success: false, error: "Missing tracking fields" };
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const location = await getIpLocation();
+      const ua = getUserAgent(request);
+
+      const { error: visitInsertError } = await (supabase as any).from("event_visits").insert({
+        event_id: eventId,
+        community_id: communityId,
+        session_id: sessionId,
+        user_id: user?.id || null,
+        utm_source: normalizeUtmSource(formData.get("utmSource") as string | null),
+        utm_medium: (formData.get("utmMedium") as string | null) || null,
+        utm_campaign: (formData.get("utmCampaign") as string | null) || null,
+        utm_content: (formData.get("utmContent") as string | null) || null,
+        utm_term: (formData.get("utmTerm") as string | null) || null,
+        referrer_url: (formData.get("referrerUrl") as string | null) || null,
+        referrer_domain: (formData.get("referrerDomain") as string | null) || null,
+        country: location.country,
+        city: location.city,
+        region: location.region,
+        timezone: location.timezone,
+        device_type: ua.device.type || null,
+        browser: ua.browser.name || null,
+        os: ua.os.name || null,
+        is_mobile: ua.device.isMobile || false,
+      });
+
+      if (visitInsertError) {
+        console.error("Failed to insert event visit:", visitInsertError);
+        return { success: false, error: "Failed to track visit" };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to track event visit:", error);
+      return { success: false };
+    }
+  }
 
   const slug = (params as { slug?: string }).slug;
   const eventId = (params as { eventId?: string }).eventId;
@@ -273,6 +341,63 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const checkinToken =
       approvalStatus === "approved" ? crypto.randomUUID() : null;
 
+    const eventSessionId =
+      (formData.get("eventSessionId") as string | null)?.trim() || null;
+    const eventFirstVisitStartedAt =
+      (formData.get("eventFirstVisitStartedAt") as string | null)?.trim() || null;
+
+    const registrationLocation = await getIpLocation();
+
+    let registrationSessionId: string | null = eventSessionId;
+    let registrationCountry: string | null = registrationLocation.country;
+    let registrationCity: string | null = registrationLocation.city;
+    let timeToRegisterSeconds: number | null = getTimeToRegisterSeconds(
+      eventFirstVisitStartedAt,
+    );
+    let utmSource = normalizeUtmSource(formData.get("eventUtmSource") as string | null);
+    let utmMedium = (formData.get("eventUtmMedium") as string | null) || null;
+    let utmCampaign = (formData.get("eventUtmCampaign") as string | null) || null;
+    let utmContent = (formData.get("eventUtmContent") as string | null) || null;
+    let utmTerm = (formData.get("eventUtmTerm") as string | null) || null;
+
+    let firstVisitQuery = (supabase as any)
+      .from("event_visits")
+      .select(
+        "visited_at, session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, country, city",
+      )
+      .eq("event_id", eventId)
+      .order("visited_at", { ascending: true })
+      .limit(1);
+
+    if (eventSessionId) {
+      firstVisitQuery = firstVisitQuery.eq("session_id", eventSessionId);
+    } else {
+      firstVisitQuery = firstVisitQuery.eq("user_id", user.id);
+    }
+
+    const { data: firstVisitRows } = await firstVisitQuery;
+    const firstVisit = firstVisitRows?.[0] ?? null;
+
+    if (firstVisit) {
+      registrationSessionId = registrationSessionId || firstVisit.session_id || null;
+      registrationCountry = firstVisit.country || null;
+      registrationCity = firstVisit.city || null;
+      utmSource = normalizeUtmSource(firstVisit.utm_source || utmSource);
+      utmMedium = firstVisit.utm_medium || utmMedium;
+      utmCampaign = firstVisit.utm_campaign || utmCampaign;
+      utmContent = firstVisit.utm_content || utmContent;
+      utmTerm = firstVisit.utm_term || utmTerm;
+
+      const visitedAt = new Date(firstVisit.visited_at);
+      const now = new Date();
+      if (!Number.isNaN(visitedAt.getTime())) {
+        timeToRegisterSeconds = Math.max(
+          0,
+          Math.floor((now.getTime() - visitedAt.getTime()) / 1000),
+        );
+      }
+    }
+
     // Get community ID from slug to track registration source
     let registrationSourceCommunityId = community.id;
     if (slug && slug !== community.slug) {
@@ -298,6 +423,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
         custom_answers: customAnswers,
         registration_source_community_id: registrationSourceCommunityId,
         checkin_token: checkinToken,
+        registration_session_id: registrationSessionId,
+        registration_country: registrationCountry,
+        registration_city: registrationCity,
+        time_to_register_seconds: timeToRegisterSeconds,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
+        utm_content: utmContent,
+        utm_term: utmTerm,
       });
 
     if (registerError) {

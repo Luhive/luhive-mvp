@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "~/shared/components/ui/avatar";
 import type { Community, Event } from "~/shared/models/entity.types";
 import type { UserData } from "~/modules/events/server/event-detail-loader.server";
 import type { TimeRemaining } from "~/modules/events/model/event-detail-view.types";
+import type { EventTrackingContext } from "~/modules/events/utils/event-session-tracker";
 
 interface NativeCanRegisterViewProps {
 	event: Event;
@@ -16,6 +17,7 @@ interface NativeCanRegisterViewProps {
 	hasCustomQuestions: boolean;
 	isRegistering: boolean;
 	isSubmitting: boolean;
+	eventTrackingContext: EventTrackingContext;
 	onShowCustomQuestionsForm: () => void;
 	onShowRsvpModal: () => void;
 }
@@ -29,6 +31,7 @@ export function NativeCanRegisterView({
 	hasCustomQuestions,
 	isRegistering,
 	isSubmitting,
+	eventTrackingContext,
 	onShowCustomQuestionsForm,
 	onShowRsvpModal,
 }: NativeCanRegisterViewProps) {
@@ -108,6 +111,13 @@ export function NativeCanRegisterView({
 				) : (
 					<Form method="post">
 						<input type="hidden" name="intent" value="register" />
+						<input type="hidden" name="eventSessionId" value={eventTrackingContext.sessionId} />
+						<input type="hidden" name="eventUtmSource" value={eventTrackingContext.utmSource} />
+						<input type="hidden" name="eventUtmMedium" value={eventTrackingContext.utmMedium ?? ""} />
+						<input type="hidden" name="eventUtmCampaign" value={eventTrackingContext.utmCampaign ?? ""} />
+						<input type="hidden" name="eventUtmContent" value={eventTrackingContext.utmContent ?? ""} />
+						<input type="hidden" name="eventUtmTerm" value={eventTrackingContext.utmTerm ?? ""} />
+						<input type="hidden" name="eventFirstVisitStartedAt" value={eventTrackingContext.firstVisitStartedAt} />
 						<Button type="submit" className="w-full" size="sm" disabled={isRegistering}>
 							{isRegistering ? "Registering..." : "Register"}
 						</Button>
