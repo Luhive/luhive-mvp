@@ -29,7 +29,7 @@ import {
 } from "react-router";
 import { createClient as createClientBrowser } from "~/shared/lib/supabase/client";
 import type { Database } from "~/shared/models/database.types";
-import { useEffect, useState, Suspense, lazy, useRef } from "react";
+import { useEffect, useState, Suspense, lazy } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Button } from "~/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/shared/components/ui/card";
@@ -50,7 +50,6 @@ import {
   Link2,
   Megaphone,
   Plus,
-  X,
   Eye,
 } from "lucide-react";
 import { Activity } from "react";
@@ -68,15 +67,6 @@ import {
 } from "~/modules/community/utils/session-tracker";
 import { JoinCommunityForm } from "~/modules/community/components/join-community-form";
 import { CoverPictureUpload } from "~/modules/community/components/cover-picture-upload";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/shared/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerClose } from "~/shared/components/ui/drawer";
 import { EventListSkeleton } from "~/modules/events/components/event-list/event-list";
 import { EventPageSkeleton } from "~/modules/events/components/event-list/event-page-skeleton";
 import { EventPreviewSidebar } from "~/modules/events/components/event-list/event-preview-sidebar";
@@ -84,8 +74,20 @@ import { useIsMobile } from "~/shared/hooks/use-mobile";
 import { toast } from "sonner";
 import type { CommunityLoaderData } from "~/modules/community/server/community-loader.server";
 import type { Community } from "~/modules/community/model/community-types";
+import {
+  MorphingDialog,
+  MorphingDialogTrigger,
+  MorphingDialogContent,
+  MorphingDialogTitle,
+  MorphingDialogImage,
+  MorphingDialogSubtitle,
+  MorphingDialogClose,
+  MorphingDialogContainer,
+} from "~/components/core/morphing-dialog";
+import { ScrollArea } from "~/shared/components/ui/scroll-area";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
+type Announcement = CommunityLoaderData["announcements"][number];
 
 
 const EventList = lazy(() =>
@@ -136,7 +138,7 @@ export default function CommunityPage() {
     analytics,
     memberCount,
     eventCount,
-    announcements,
+    announcements: loaderAnnouncements,
   } = loaderData;
 
   useEffect(() => {
@@ -191,9 +193,25 @@ export default function CommunityPage() {
   >(undefined);
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
   const [loadedEvents, setLoadedEvents] = useState<Event[]>([]);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<
-    CommunityLoaderData["announcements"][number] | null
-  >(null);
+  const [announcementItems, setAnnouncementItems] = useState<Announcement[]>(
+    loaderAnnouncements,
+  );
+  const [selectedAnnouncement, setSelectedAnnouncement] =
+    useState<Announcement | null>(null);
+
+  useEffect(() => {
+    setAnnouncementItems(loaderAnnouncements);
+    setSelectedAnnouncement((current) => {
+      if (!current) {
+        return null;
+      }
+
+      return (
+        loaderAnnouncements.find((announcement) => announcement.id === current.id) ||
+        current
+      );
+    });
+  }, [loaderAnnouncements]);
 
   useEffect(() => {
     if (navigation.state === "idle") {
@@ -230,7 +248,9 @@ export default function CommunityPage() {
       return;
     }
 
-    if (!shouldTrackAnnouncementView(selectedAnnouncement.id)) {
+    const selectedAnnouncementId = selectedAnnouncement.id;
+
+    if (!shouldTrackAnnouncementView(selectedAnnouncementId)) {
       return;
     }
 
@@ -241,13 +261,32 @@ export default function CommunityPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            announcementId: selectedAnnouncement.id,
+            announcementId: selectedAnnouncementId,
             sessionId,
           }),
         });
 
+        const result = await response.json().catch(() => null);
+
         if (!response.ok) {
           console.error("Failed to track announcement view");
+          return;
+        }
+
+        if (typeof result?.viewCount === "number") {
+          setAnnouncementItems((current) =>
+            current.map((announcement) =>
+              announcement.id === selectedAnnouncementId
+                ? { ...announcement, viewCount: result.viewCount }
+                : announcement,
+            ),
+          );
+
+          setSelectedAnnouncement((current) =>
+            current?.id === selectedAnnouncementId
+              ? { ...current, viewCount: result.viewCount }
+              : current,
+          );
         }
       } catch (error) {
         console.error("Error tracking announcement view:", error);
@@ -695,7 +734,7 @@ export default function CommunityPage() {
                     <Megaphone className="h-5 w-5" />
                     Announcements
                   </CardTitle>
-                  {isOwner && announcements.length > 0 && (
+                  {isOwner && announcementItems.length > 0 && (
                     <Link
                       to={`/c/${community?.slug}/announcements/new`}
                       prefetch="render"
@@ -708,7 +747,7 @@ export default function CommunityPage() {
                 </div>
               </CardHeader>
               <CardContent className="min-h-[300px]">
-                {announcements.length === 0 ? (
+                {announcementItems.length === 0 ? (
                   <div className="h-full min-h-[250px] flex flex-col items-center justify-center space-y-4">
                     <div className="flex flex-col items-center space-y-2">
                       <Megaphone className="h-10 w-10 text-muted-foreground/50" />
@@ -732,38 +771,138 @@ export default function CommunityPage() {
                   </div>
                 ) : (
                   <div className="overflow-y-auto max-h-[320px] space-y-4 pr-1">
-                    {announcements.map((announcement) => (
-                      <button
+                    {announcementItems.map((announcement) => (
+                      <MorphingDialog
                         key={announcement.id}
-                        type="button"
-                        onClick={() => setSelectedAnnouncement(announcement)}
-                        className="w-full text-left rounded-lg border border-border p-3 hover:border-primary/50 hover:bg-muted/30 transition-colors block"
+                        open={selectedAnnouncement?.id === announcement.id}
+                        onOpenChange={(open) => {
+                          setSelectedAnnouncement(open ? announcement : null);
+                        }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 200,
+                          damping: 24,
+                        }}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0 space-y-1">
-                            <h3 className="font-semibold text-sm text-foreground">
-                              {announcement.title}
-                            </h3>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {announcement.description}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end justify-between self-stretch shrink-0">
-                            <span className="text-xs font-medium text-primary whitespace-nowrap">
-                              {new Date(
-                                announcement.created_at,
-                              ).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              })}
-                            </span>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Eye className="h-3.5 w-3.5" />
-                              <span>{announcement.viewCount || 0}</span>
+                        <MorphingDialogTrigger
+                          style={{ borderRadius: "16px" }}
+                          className="border border-border bg-background hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 p-3">
+                            {announcement.images?.[0]?.image_url ? (
+                              <MorphingDialogImage
+                                src={announcement.images[0].image_url}
+                                alt={announcement.title}
+                                className="h-14 w-14 shrink-0 object-cover object-center"
+                                style={{ borderRadius: "10px" }}
+                              />
+                            ) : (
+                              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] bg-muted text-primary">
+                                <Megaphone className="h-5 w-5" />
+                              </div>
+                            )}
+
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <MorphingDialogTitle className="line-clamp-1 text-sm font-semibold text-foreground">
+                                {announcement.title}
+                              </MorphingDialogTitle>
+                              
+                              <p className="line-clamp-2 text-xs text-muted-foreground">
+                                {announcement.description}
+                              </p>
+                            </div>
+
+                            <div className="flex shrink-0 flex-col items-end justify-between gap-2 self-stretch">
+                              <span className="whitespace-nowrap text-xs font-medium text-primary">
+                                {new Date(announcement.created_at).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    month: "short",
+                                    day: "numeric",
+                                  },
+                                )}
+                              </span>
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Eye className="h-3.5 w-3.5" />
+                                <span>{announcement.viewCount || 0}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </button>
+                        </MorphingDialogTrigger>
+
+                        <MorphingDialogContainer>
+                          <MorphingDialogContent
+                            style={{ borderRadius: isMobile ? "24px 24px 0 0" : "24px" }}
+                            className="relative h-auto w-full border border-border bg-background shadow-2xl sm:max-w-[680px]"
+                          >
+                            <div className="h-[88vh] sm:h-[90vh] overflow-y-auto custom-scroll-design">
+                              <div className="relative p-5 sm:p-6">
+                                <div className="flex justify-center pb-6 pt-6 sm:pb-8 sm:pt-6">
+                                  {announcement.images?.[0]?.image_url ? (
+                                    <MorphingDialogImage
+                                      src={announcement.images[0].image_url}
+                                      alt={announcement.title}
+                                      className="h-[15rem] md:h-[19rem] w-full object-cover object-[20%_70%] md:object-[20%_60%] rounded-[9.45px]"
+                                      style={{ borderRadius: "9.45px" }}
+                                    />
+                                  ) : (
+                                    <div className="flex h-[220px] w-full max-w-[320px] items-center justify-center rounded-[18px] bg-muted text-primary">
+                                      <Megaphone className="h-10 w-10" />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="space-y-4">
+                                  <div>
+                                    <MorphingDialogTitle className="text-2xl font-bold leading-tight text-foreground sm:text-[34px] sm:leading-[1.2]">
+                                      {announcement.title}
+                                    </MorphingDialogTitle>
+                                  </div>
+
+                                  <div className="flex items-center justify-between gap-4 pb-4">
+                                    <div className="flex min-w-0 items-center gap-2">
+                                      {displayLogo ? (
+                                        <img
+                                          src={displayLogo}
+                                          alt={displayName}
+                                          className="h-[2.6rem] w-[2.6rem] rounded-full object-cover"
+                                        />
+                                      ) : (
+                                        <div className="h-9 w-9 rounded-full bg-primary/10" />
+                                      )}
+                                      <span className="truncate font-semibold text-[15px] leading-[1.5] tracking-normal align-middle text-foreground">
+                                        {displayName}
+                                      </span>
+                                    </div>
+
+                                    <div className="text-right text-muted-foreground">
+                                      <time
+                                        dateTime={announcement.created_at}
+                                        className="font-medium text-[12px] leading-[1.5] tracking-normal align-middle"
+                                      >
+                                        {new Date(announcement.created_at).toLocaleDateString(
+                                          "en-US",
+                                          {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                          },
+                                        )}
+                                      </time>
+                                    </div>
+                                  </div>
+
+                                  <div className="pb-6 text-sm leading-7 whitespace-pre-wrap text-muted-foreground sm:text-[15px]">
+                                    {announcement.description}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* <MorphingDialogClose className="text-muted-foreground" /> */}
+                          </MorphingDialogContent>
+                        </MorphingDialogContainer>
+                      </MorphingDialog>
                     ))}
                   </div>
                 )}
@@ -794,133 +933,6 @@ export default function CommunityPage() {
           isUserRegistered={false}
         />
 
-        {isMobile ? (
-          <Drawer
-            open={!!selectedAnnouncement}
-            onOpenChange={(open) => {
-              if (!open) {
-                setSelectedAnnouncement(null);
-              }
-            }}
-          >
-            <DrawerContent className="bg-background">
-              <div className="overflow-y-auto custom-scroll-design max-h-[calc(100vh-80px)] px-6 py-4 space-y-4">
-                {selectedAnnouncement && (
-                  <>
-                    {selectedAnnouncement.images?.[0]?.image_url && (
-                      <img
-                        src={selectedAnnouncement.images[0].image_url}
-                        alt={selectedAnnouncement.title}
-                        className="h-[13rem] w-full object-cover object-[20%_70%] rounded-lg"
-                      />
-                    )}
-
-                    <h2 className="font-bold text-2xl leading-[125%]">
-                      {selectedAnnouncement.title}
-                    </h2>
-
-                    <div className="flex items-center justify-between pb-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {displayLogo ? (
-                          <img
-                            src={displayLogo}
-                            alt={displayName}
-                            className="h-6 w-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-4 w-4 rounded-full bg-primary" />
-                        )}
-                        <span className="font-semibold text-sm">
-                          {displayName}
-                        </span>
-                      </div>
-                      <time
-                        className="font-medium text-xs"
-                        dateTime={selectedAnnouncement.created_at}
-                      >
-                        {new Date(
-                          selectedAnnouncement.created_at,
-                        ).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </time>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 custom-scroll-design">
-                      {selectedAnnouncement.description}
-                    </p>
-                  </>
-                )}
-              </div>
-            </DrawerContent>
-          </Drawer>
-        ) : (
-          <Dialog
-            open={!!selectedAnnouncement}
-            onOpenChange={(open) => {
-              if (!open) {
-                setSelectedAnnouncement(null);
-              }
-            }}
-          >
-            <DialogContent
-              showCloseButton={false}
-              className="w-full max-w-[650px] sm:max-w-[650px] h-[95vh] overflow-y-auto rounded-[24px] p-0 gap-0 border border-border"
-            >
-              {selectedAnnouncement && (
-                <div className="px-[1.5rem] md:px-[3.75rem] py-[1.5rem] md:py-[2.2rem] space-y-4">
-                  {selectedAnnouncement.images?.[0]?.image_url && (
-                    <img
-                      src={selectedAnnouncement.images[0].image_url}
-                      alt={selectedAnnouncement.title}
-                      className="h-[15rem] md:h-[19rem] w-full object-cover object-[20%_70%]  md:object-[20%_60%] rounded-[9.45px]"
-                    />
-                  )}
-
-                  <h2 className="font-bold text-[34px] leading-[125%] tracking-[0%]">
-                    {selectedAnnouncement.title}
-                  </h2>
-
-                  <div className="flex items-center justify-between pb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {displayLogo ? (
-                        <img
-                          src={displayLogo}
-                          alt={displayName}
-                          className="h-[2.6rem] w-[2.6rem] rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-4 w-4 rounded-full bg-primary" />
-                      )}
-                      <span className="font-semibold text-[15px] leading-[1.5] tracking-normal align-middle">
-                        {displayName}
-                      </span>
-                    </div>
-                    <time
-                      className="font-medium text-[12px] leading-[1.5] tracking-normal align-middle"
-                      dateTime={selectedAnnouncement.created_at}
-                    >
-                      {new Date(
-                        selectedAnnouncement.created_at,
-                      ).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </time>
-                  </div>
-
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-7 max-h-[230px] overflow-y-auto pr-3 custom-scroll-design">
-                    {selectedAnnouncement.description}
-                  </p>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
-        )}
-
         {isMobile && community && showStickyButton && (
           <div
             className={`fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-background via-background to-background/0 pointer-events-none transition-opacity duration-300 ease-in-out ${showStickyButton ? "opacity-100" : "opacity-0 pointer-events-none"}`}
@@ -938,7 +950,7 @@ export default function CommunityPage() {
                   <Button className="w-full py-6 rounded-xl shadow-lg hover:shadow-xl text-base font-semibold transition-all duration-200 bg-primary hover:bg-primary/90">
                     <span className="flex items-center justify-center gap-2">
                       <Users className="h-5 w-5" />
-                      <span>Join</span>
+                      <span>Join Community</span>
                     </span>
                   </Button>
                 }
