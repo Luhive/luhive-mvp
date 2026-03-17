@@ -68,6 +68,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       console.log("[event_visits] client", {
         ipOverride: clientIp,
+        geoOverride: {
+          country: clientCountry,
+          city: clientCity,
+          region: clientRegion,
+          timezone: clientTimezone,
+        },
         ip: location.ip,
         country: mergedLocation.country,
         city: mergedLocation.city,

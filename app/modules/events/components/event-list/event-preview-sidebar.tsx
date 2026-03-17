@@ -314,25 +314,51 @@ export function EventPreviewSidebar({
           }
 
           if (ip) {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 1500);
-            const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
-              method: "GET",
-              signal: controller.signal,
-            });
-            clearTimeout(timeout);
-            if (res.ok) {
-              const data = (await res.json()) as any;
-              geo = {
-                ip,
-                country: typeof data?.country === "string" ? data.country : null,
-                city: typeof data?.city === "string" ? data.city : null,
-                region: typeof data?.region === "string" ? data.region : null,
-                timezone: typeof data?.timezone?.id === "string" ? data.timezone.id : null,
-              };
-            } else {
-              geo = { ip, country: null, city: null, region: null, timezone: null };
+            async function tryFetchJson(url: string): Promise<any | null> {
+              try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 1500);
+                const res = await fetch(url, { method: "GET", signal: controller.signal });
+                clearTimeout(timeout);
+                if (!res.ok) return null;
+                return await res.json();
+              } catch {
+                return null;
+              }
             }
+
+            const ipWho = await tryFetchJson(`https://ipwho.is/${encodeURIComponent(ip)}`);
+            const ipApiCo = ipWho
+              ? null
+              : await tryFetchJson(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+
+            geo = {
+              ip,
+              country:
+                typeof ipWho?.country === "string"
+                  ? ipWho.country
+                  : typeof ipApiCo?.country_name === "string"
+                    ? ipApiCo.country_name
+                    : null,
+              city:
+                typeof ipWho?.city === "string"
+                  ? ipWho.city
+                  : typeof ipApiCo?.city === "string"
+                    ? ipApiCo.city
+                    : null,
+              region:
+                typeof ipWho?.region === "string"
+                  ? ipWho.region
+                  : typeof ipApiCo?.region === "string"
+                    ? ipApiCo.region
+                    : null,
+              timezone:
+                typeof ipWho?.timezone?.id === "string"
+                  ? ipWho.timezone.id
+                  : typeof ipApiCo?.timezone === "string"
+                    ? ipApiCo.timezone
+                    : null,
+            };
 
             if (geo) window.sessionStorage.setItem(geoKey, JSON.stringify(geo));
           }
