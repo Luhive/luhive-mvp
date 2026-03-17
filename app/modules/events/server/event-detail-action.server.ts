@@ -39,6 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const communityId =
         (formData.get("communityId") as string | null)?.trim() || "";
       const sessionId = (formData.get("sessionId") as string | null)?.trim() || "";
+      const clientIp = (formData.get("clientIp") as string | null)?.trim() || null;
 
       if (!eventId || !communityId || !sessionId) {
         return { success: false, error: "Missing tracking fields" };
@@ -48,8 +49,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      const location = await getIpLocation();
+      const location = await getIpLocation(request, clientIp);
       const ua = getUserAgent(request);
+
+      console.log("[event_visits] client", {
+        ipOverride: clientIp,
+        ip: location.ip,
+        country: location.country,
+        city: location.city,
+        region: location.region,
+        timezone: location.timezone,
+      });
 
       const { error: visitInsertError } = await (supabase as any).from("event_visits").insert({
         event_id: eventId,
@@ -63,6 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         utm_term: (formData.get("utmTerm") as string | null) || null,
         referrer_url: (formData.get("referrerUrl") as string | null) || null,
         referrer_domain: (formData.get("referrerDomain") as string | null) || null,
+        ip: location.ip,
         country: location.country,
         city: location.city,
         region: location.region,
@@ -178,6 +189,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         is_verified: true,
         approval_status: "approved",
         registration_source_community_id: registrationSourceCommunityId,
+        registration_ip: (await getIpLocation(request)).ip,
       });
 
     if (subscribeError) {
@@ -346,9 +358,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const eventFirstVisitStartedAt =
       (formData.get("eventFirstVisitStartedAt") as string | null)?.trim() || null;
 
-    const registrationLocation = await getIpLocation();
+    const registrationLocation = await getIpLocation(request);
 
     let registrationSessionId: string | null = eventSessionId;
+    let registrationIp: string | null = registrationLocation.ip;
     let registrationCountry: string | null = registrationLocation.country;
     let registrationCity: string | null = registrationLocation.city;
     let timeToRegisterSeconds: number | null = getTimeToRegisterSeconds(
@@ -363,7 +376,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     let firstVisitQuery = (supabase as any)
       .from("event_visits")
       .select(
-        "visited_at, session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, country, city",
+        "visited_at, session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, ip, country, city",
       )
       .eq("event_id", eventId)
       .order("visited_at", { ascending: true })
@@ -380,6 +393,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     if (firstVisit) {
       registrationSessionId = registrationSessionId || firstVisit.session_id || null;
+      registrationIp = registrationIp || firstVisit.ip || null;
       registrationCountry = firstVisit.country || null;
       registrationCity = firstVisit.city || null;
       utmSource = normalizeUtmSource(firstVisit.utm_source || utmSource);
@@ -424,6 +438,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         registration_source_community_id: registrationSourceCommunityId,
         checkin_token: checkinToken,
         registration_session_id: registrationSessionId,
+        registration_ip: registrationIp,
         registration_country: registrationCountry,
         registration_city: registrationCity,
         time_to_register_seconds: timeToRegisterSeconds,
@@ -598,6 +613,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         is_verified: true,
         approval_status: "approved",
         registration_source_community_id: registrationSourceCommunityId,
+        registration_ip: (await getIpLocation(request)).ip,
       });
 
     if (subscribeError) {

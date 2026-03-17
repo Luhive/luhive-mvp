@@ -218,7 +218,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const checkinToken =
         approvalStatus === "approved" ? crypto.randomUUID() : null;
 
-      const registrationLocation = await getIpLocation();
+      const registrationLocation = await getIpLocation(request);
 
       let registrationSessionId: string | null = eventSessionId;
       let registrationCountry: string | null = registrationLocation.country;
@@ -280,6 +280,7 @@ export async function action({ request }: ActionFunctionArgs) {
         registration_source_community_id: event.community_id,
         checkin_token: checkinToken,
         registration_session_id: registrationSessionId,
+        registration_ip: registrationLocation.ip,
         registration_country: registrationCountry,
         registration_city: registrationCity,
         time_to_register_seconds: timeToRegisterSeconds,

@@ -269,25 +269,57 @@ export function EventPreviewSidebar({
       return;
     }
 
-    const formData = new FormData();
-    formData.append("intent", "track_visit");
-    formData.append("eventId", event.id);
-    formData.append("communityId", community.id);
-    formData.append("sessionId", trackingContext.sessionId);
-    formData.append("utmSource", trackingContext.utmSource);
-    if (trackingContext.utmMedium) formData.append("utmMedium", trackingContext.utmMedium);
-    if (trackingContext.utmCampaign) formData.append("utmCampaign", trackingContext.utmCampaign);
-    if (trackingContext.utmContent) formData.append("utmContent", trackingContext.utmContent);
-    if (trackingContext.utmTerm) formData.append("utmTerm", trackingContext.utmTerm);
-    if (trackingContext.referrerUrl) formData.append("referrerUrl", trackingContext.referrerUrl);
-    if (trackingContext.referrerDomain) formData.append("referrerDomain", trackingContext.referrerDomain);
+    let cancelled = false;
+    (async () => {
+      let clientIp: string | null = null;
+      try {
+        const key = "luhive_public_ip";
+        clientIp = window.sessionStorage.getItem(key);
+        if (!clientIp) {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 1200);
+          const res = await fetch("https://api.ipify.org?format=json", {
+            method: "GET",
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          if (res.ok) {
+            const data = (await res.json()) as { ip?: string };
+            clientIp = typeof data.ip === "string" ? data.ip : null;
+            if (clientIp) window.sessionStorage.setItem(key, clientIp);
+          }
+        }
+      } catch {
+        clientIp = null;
+      }
 
-    fetch(`/c/${community.slug}/events/${event.id}`, {
-      method: "POST",
-      body: formData,
-    }).catch((error) => {
-      console.error("Failed to track event preview visit:", error);
-    });
+      if (cancelled) return;
+
+      const formData = new FormData();
+      formData.append("intent", "track_visit");
+      formData.append("eventId", event.id);
+      formData.append("communityId", community.id);
+      formData.append("sessionId", trackingContext.sessionId);
+      formData.append("utmSource", trackingContext.utmSource);
+      if (clientIp) formData.append("clientIp", clientIp);
+      if (trackingContext.utmMedium) formData.append("utmMedium", trackingContext.utmMedium);
+      if (trackingContext.utmCampaign) formData.append("utmCampaign", trackingContext.utmCampaign);
+      if (trackingContext.utmContent) formData.append("utmContent", trackingContext.utmContent);
+      if (trackingContext.utmTerm) formData.append("utmTerm", trackingContext.utmTerm);
+      if (trackingContext.referrerUrl) formData.append("referrerUrl", trackingContext.referrerUrl);
+      if (trackingContext.referrerDomain) formData.append("referrerDomain", trackingContext.referrerDomain);
+
+      fetch(`/c/${community.slug}/events/${event.id}`, {
+        method: "POST",
+        body: formData,
+      }).catch((error) => {
+        console.error("Failed to track event preview visit:", error);
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     open,
     event,
