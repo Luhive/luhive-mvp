@@ -118,7 +118,8 @@ async function lookupIpApi(ip: string): Promise<IpLocationData | null> {
   const timeout = setTimeout(() => controller.abort(), 1500);
 
   try {
-    const response = await fetch(`http://ip-api.com/json/${ip}`, {
+    // Use HTTPS: many production runtimes block/redirect plain HTTP
+    const response = await fetch(`https://ip-api.com/json/${ip}`, {
       method: "GET",
       signal: controller.signal,
     });
@@ -197,30 +198,42 @@ export async function getIpLocation(
   const override = (clientIpOverride || "").trim();
   const ip = override && isPublicIp(override) ? override : getClientIp(request);
 
-  // Fast path: platform already provides geo data via headers
-  const headerGeo = getGeoFromHeaders(request);
-  if (headerGeo && (headerGeo.country || headerGeo.city)) {
-    return { ip, ...headerGeo };
+  function isCountryCode(v: string | null): boolean {
+    if (!v) return false;
+    const s = v.trim();
+    return /^[A-Z]{2}$/.test(s);
   }
 
-  // Fallback: lookup geo by client IP via ip-api.com
+  // Platform-provided geo headers (Cloudflare/Vercel/Netlify/etc.)
+  const headerGeo = getGeoFromHeaders(request);
+  const headerResult: IpLocationData = {
+    ip,
+    country: headerGeo?.country || null,
+    city: headerGeo?.city || null,
+    region: headerGeo?.region || null,
+    timezone: headerGeo?.timezone || null,
+  };
+
+  // Fill any missing fields via geo lookup by IP (some platforms only provide country code like "AZ")
   if (ip) {
     const apiResult = await lookupIpApi(ip);
-    if (apiResult) {
-      return apiResult;
-    }
+    const ipWhoResult = apiResult ? null : await lookupIpWho(ip);
+    const resolved = apiResult || ipWhoResult;
 
-    const ipWhoResult = await lookupIpWho(ip);
-    if (ipWhoResult) {
-      return ipWhoResult;
+    if (resolved) {
+      return {
+        ip: resolved.ip || headerResult.ip,
+        // Prefer full country name from provider when header only has a 2-letter code
+        country:
+          (isCountryCode(headerResult.country) ? null : headerResult.country) ||
+          resolved.country ||
+          headerResult.country,
+        city: headerResult.city || resolved.city || null,
+        region: headerResult.region || resolved.region || null,
+        timezone: headerResult.timezone || resolved.timezone || null,
+      };
     }
   }
 
-  return {
-    ip,
-    country: null,
-    city: null,
-    region: null,
-    timezone: null,
-  };
+  return headerResult;
 }
