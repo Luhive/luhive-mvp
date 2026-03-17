@@ -15,6 +15,36 @@ import {
 	shouldTrackEventVisit,
 } from "~/modules/events/utils/event-session-tracker";
 
+async function getPublicIp(): Promise<string | null> {
+	try {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 1200);
+		const res = await fetch("https://api.ipify.org?format=json", {
+			method: "GET",
+			signal: controller.signal,
+		});
+		clearTimeout(timeout);
+		if (!res.ok) return null;
+		const data = (await res.json()) as { ip?: string };
+		return typeof data.ip === "string" ? data.ip : null;
+	} catch {
+		return null;
+	}
+}
+
+async function getPublicIpCached(): Promise<string | null> {
+	try {
+		const key = "luhive_public_ip";
+		const cached = window.sessionStorage.getItem(key);
+		if (cached) return cached;
+		const ip = await getPublicIp();
+		if (ip) window.sessionStorage.setItem(key, ip);
+		return ip;
+	} catch {
+		return null;
+	}
+}
+
 export function EventDetail({
 	event,
 	community,
@@ -52,25 +82,36 @@ export function EventDetail({
 			return;
 		}
 
-		const formData = new FormData();
-		formData.append("intent", "track_visit");
-		formData.append("eventId", event.id);
-		formData.append("communityId", community.id);
-		formData.append("sessionId", trackingContext.sessionId);
-		formData.append("utmSource", trackingContext.utmSource);
-		if (trackingContext.utmMedium) formData.append("utmMedium", trackingContext.utmMedium);
-		if (trackingContext.utmCampaign) formData.append("utmCampaign", trackingContext.utmCampaign);
-		if (trackingContext.utmContent) formData.append("utmContent", trackingContext.utmContent);
-		if (trackingContext.utmTerm) formData.append("utmTerm", trackingContext.utmTerm);
-		if (trackingContext.referrerUrl) formData.append("referrerUrl", trackingContext.referrerUrl);
-		if (trackingContext.referrerDomain) formData.append("referrerDomain", trackingContext.referrerDomain);
+		let cancelled = false;
+		(async () => {
+			const clientIp = await getPublicIpCached();
+			if (cancelled) return;
 
-		fetch(`/c/${community.slug}/events/${event.id}`, {
-			method: "POST",
-			body: formData,
-		}).catch((error) => {
-			console.error("Failed to track event visit:", error);
-		});
+			const formData = new FormData();
+			formData.append("intent", "track_visit");
+			formData.append("eventId", event.id);
+			formData.append("communityId", community.id);
+			formData.append("sessionId", trackingContext.sessionId);
+			formData.append("utmSource", trackingContext.utmSource);
+			if (clientIp) formData.append("clientIp", clientIp);
+			if (trackingContext.utmMedium) formData.append("utmMedium", trackingContext.utmMedium);
+			if (trackingContext.utmCampaign) formData.append("utmCampaign", trackingContext.utmCampaign);
+			if (trackingContext.utmContent) formData.append("utmContent", trackingContext.utmContent);
+			if (trackingContext.utmTerm) formData.append("utmTerm", trackingContext.utmTerm);
+			if (trackingContext.referrerUrl) formData.append("referrerUrl", trackingContext.referrerUrl);
+			if (trackingContext.referrerDomain) formData.append("referrerDomain", trackingContext.referrerDomain);
+
+			fetch(`/c/${community.slug}/events/${event.id}`, {
+				method: "POST",
+				body: formData,
+			}).catch((error) => {
+				console.error("Failed to track event visit:", error);
+			});
+		})();
+
+		return () => {
+			cancelled = true;
+		};
 	}, [
 		community.id,
 		community.slug,
