@@ -45,6 +45,57 @@ async function getPublicIpCached(): Promise<string | null> {
 	}
 }
 
+type PublicGeo = {
+	ip: string;
+	country: string | null;
+	city: string | null;
+	region: string | null;
+	timezone: string | null;
+};
+
+async function getPublicGeoCached(): Promise<PublicGeo | null> {
+	try {
+		const key = "luhive_public_geo_v1";
+		const cached = window.sessionStorage.getItem(key);
+		if (cached) {
+			const parsed = JSON.parse(cached) as Partial<PublicGeo>;
+			if (typeof parsed.ip === "string" && parsed.ip) {
+				return {
+					ip: parsed.ip,
+					country: typeof parsed.country === "string" ? parsed.country : null,
+					city: typeof parsed.city === "string" ? parsed.city : null,
+					region: typeof parsed.region === "string" ? parsed.region : null,
+					timezone: typeof parsed.timezone === "string" ? parsed.timezone : null,
+				};
+			}
+		}
+
+		const ip = await getPublicIpCached();
+		if (!ip) return null;
+
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 1500);
+		const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+			method: "GET",
+			signal: controller.signal,
+		});
+		clearTimeout(timeout);
+		if (!res.ok) return { ip, country: null, city: null, region: null, timezone: null };
+		const data = (await res.json()) as any;
+		const geo: PublicGeo = {
+			ip,
+			country: typeof data?.country === "string" ? data.country : null,
+			city: typeof data?.city === "string" ? data.city : null,
+			region: typeof data?.region === "string" ? data.region : null,
+			timezone: typeof data?.timezone?.id === "string" ? data.timezone.id : null,
+		};
+		window.sessionStorage.setItem(key, JSON.stringify(geo));
+		return geo;
+	} catch {
+		return null;
+	}
+}
+
 export function EventDetail({
 	event,
 	community,
@@ -84,7 +135,7 @@ export function EventDetail({
 
 		let cancelled = false;
 		(async () => {
-			const clientIp = await getPublicIpCached();
+			const geo = await getPublicGeoCached();
 			if (cancelled) return;
 
 			const formData = new FormData();
@@ -93,7 +144,11 @@ export function EventDetail({
 			formData.append("communityId", community.id);
 			formData.append("sessionId", trackingContext.sessionId);
 			formData.append("utmSource", trackingContext.utmSource);
-			if (clientIp) formData.append("clientIp", clientIp);
+			if (geo?.ip) formData.append("clientIp", geo.ip);
+			if (geo?.country) formData.append("clientCountry", geo.country);
+			if (geo?.city) formData.append("clientCity", geo.city);
+			if (geo?.region) formData.append("clientRegion", geo.region);
+			if (geo?.timezone) formData.append("clientTimezone", geo.timezone);
 			if (trackingContext.utmMedium) formData.append("utmMedium", trackingContext.utmMedium);
 			if (trackingContext.utmCampaign) formData.append("utmCampaign", trackingContext.utmCampaign);
 			if (trackingContext.utmContent) formData.append("utmContent", trackingContext.utmContent);

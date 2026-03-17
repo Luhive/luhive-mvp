@@ -271,26 +271,74 @@ export function EventPreviewSidebar({
 
     let cancelled = false;
     (async () => {
-      let clientIp: string | null = null;
+      let geo: {
+        ip: string;
+        country: string | null;
+        city: string | null;
+        region: string | null;
+        timezone: string | null;
+      } | null = null;
+
       try {
-        const key = "luhive_public_ip";
-        clientIp = window.sessionStorage.getItem(key);
-        if (!clientIp) {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 1200);
-          const res = await fetch("https://api.ipify.org?format=json", {
-            method: "GET",
-            signal: controller.signal,
-          });
-          clearTimeout(timeout);
-          if (res.ok) {
-            const data = (await res.json()) as { ip?: string };
-            clientIp = typeof data.ip === "string" ? data.ip : null;
-            if (clientIp) window.sessionStorage.setItem(key, clientIp);
+        const geoKey = "luhive_public_geo_v1";
+        const cached = window.sessionStorage.getItem(geoKey);
+        if (cached) {
+          const parsed = JSON.parse(cached) as any;
+          if (typeof parsed?.ip === "string" && parsed.ip) {
+            geo = {
+              ip: parsed.ip,
+              country: typeof parsed.country === "string" ? parsed.country : null,
+              city: typeof parsed.city === "string" ? parsed.city : null,
+              region: typeof parsed.region === "string" ? parsed.region : null,
+              timezone: typeof parsed.timezone === "string" ? parsed.timezone : null,
+            };
+          }
+        }
+
+        if (!geo) {
+          const ipKey = "luhive_public_ip";
+          let ip = window.sessionStorage.getItem(ipKey);
+          if (!ip) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 1200);
+            const res = await fetch("https://api.ipify.org?format=json", {
+              method: "GET",
+              signal: controller.signal,
+            });
+            clearTimeout(timeout);
+            if (res.ok) {
+              const data = (await res.json()) as { ip?: string };
+              ip = typeof data.ip === "string" ? data.ip : null;
+              if (ip) window.sessionStorage.setItem(ipKey, ip);
+            }
+          }
+
+          if (ip) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 1500);
+            const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+              method: "GET",
+              signal: controller.signal,
+            });
+            clearTimeout(timeout);
+            if (res.ok) {
+              const data = (await res.json()) as any;
+              geo = {
+                ip,
+                country: typeof data?.country === "string" ? data.country : null,
+                city: typeof data?.city === "string" ? data.city : null,
+                region: typeof data?.region === "string" ? data.region : null,
+                timezone: typeof data?.timezone?.id === "string" ? data.timezone.id : null,
+              };
+            } else {
+              geo = { ip, country: null, city: null, region: null, timezone: null };
+            }
+
+            if (geo) window.sessionStorage.setItem(geoKey, JSON.stringify(geo));
           }
         }
       } catch {
-        clientIp = null;
+        geo = null;
       }
 
       if (cancelled) return;
@@ -301,7 +349,11 @@ export function EventPreviewSidebar({
       formData.append("communityId", community.id);
       formData.append("sessionId", trackingContext.sessionId);
       formData.append("utmSource", trackingContext.utmSource);
-      if (clientIp) formData.append("clientIp", clientIp);
+      if (geo?.ip) formData.append("clientIp", geo.ip);
+      if (geo?.country) formData.append("clientCountry", geo.country);
+      if (geo?.city) formData.append("clientCity", geo.city);
+      if (geo?.region) formData.append("clientRegion", geo.region);
+      if (geo?.timezone) formData.append("clientTimezone", geo.timezone);
       if (trackingContext.utmMedium) formData.append("utmMedium", trackingContext.utmMedium);
       if (trackingContext.utmCampaign) formData.append("utmCampaign", trackingContext.utmCampaign);
       if (trackingContext.utmContent) formData.append("utmContent", trackingContext.utmContent);
