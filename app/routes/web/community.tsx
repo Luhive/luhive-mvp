@@ -837,7 +837,7 @@ export default function CommunityPage() {
                           >
                             <div className="h-[88vh] sm:h-[90vh] overflow-y-auto custom-scroll-design">
                               <div className="relative p-5 sm:p-6">
-                                <div className="flex justify-center pb-6 pt-6 sm:pb-8 sm:pt-6">
+                                <div className="flex justify-center pb-6  sm:pb-8 ">
                                   {announcement.images?.[0]?.image_url ? (
                                     <MorphingDialogImage
                                       src={announcement.images[0].image_url}

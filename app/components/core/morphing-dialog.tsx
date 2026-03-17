@@ -74,14 +74,12 @@ function MorphingDialogTrigger({
   type = "button",
   ...props
 }: React.ComponentProps<typeof motion.button>) {
-  const { dialogId, setOpen, transition } = useMorphingDialog();
+  const { setOpen } = useMorphingDialog();
 
   return (
     <motion.button
-      layoutId={`${dialogId}-container`}
       type={type}
       className={cn("block w-full text-left", className)}
-      transition={transition}
       onClick={(event) => {
         onClick?.(event);
 
@@ -132,16 +130,15 @@ function MorphingDialogContent({
   className,
   ...props
 }: React.ComponentProps<typeof motion.div>) {
-  const { dialogId, transition } = useMorphingDialog();
+  const { transition } = useMorphingDialog();
 
   return (
     <Dialog.Content asChild onOpenAutoFocus={(event) => event.preventDefault()}>
       <motion.div
-        layoutId={`${dialogId}-container`}
         transition={transition}
-        initial={{ opacity: 0.96, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0.96, scale: 0.98 }}
+        initial={{ opacity: 0, scale: 0.95, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 8 }}
         className={cn(
           "relative z-10 overflow-hidden outline-none",
           className,
