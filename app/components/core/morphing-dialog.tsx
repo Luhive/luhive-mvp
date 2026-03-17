@@ -197,6 +197,63 @@ function MorphingDialogSubtitle({
   );
 }
 
+function MorphingDialogDescription({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<typeof motion.p>) {
+  const { dialogId, transition } = useMorphingDialog();
+
+  return (
+    <motion.p
+      layoutId={`${dialogId}-description`}
+      transition={transition}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.p>
+  );
+}
+
+function MorphingDialogDate({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<typeof motion.time>) {
+  const { dialogId, transition } = useMorphingDialog();
+
+  return (
+    <motion.time
+      layoutId={`${dialogId}-date`}
+      transition={transition}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.time>
+  );
+}
+
+function MorphingDialogViewCount({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<typeof motion.div>) {
+  const { dialogId, transition } = useMorphingDialog();
+
+  return (
+    <motion.div
+      layoutId={`${dialogId}-view-count`}
+      transition={transition}
+      className={className}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 function MorphingDialogClose({
   children,
   className,
@@ -223,6 +280,9 @@ export {
   MorphingDialogTitle,
   MorphingDialogImage,
   MorphingDialogSubtitle,
+  MorphingDialogDescription,
+  MorphingDialogDate,
+  MorphingDialogViewCount,
   MorphingDialogClose,
   MorphingDialogContainer,
 };
