@@ -81,6 +81,9 @@ import {
   MorphingDialogTitle,
   MorphingDialogImage,
   MorphingDialogSubtitle,
+  MorphingDialogDescription,
+  MorphingDialogDate,
+  MorphingDialogViewCount,
   MorphingDialogClose,
   MorphingDialogContainer,
 } from "~/components/core/morphing-dialog";
@@ -807,13 +810,13 @@ export default function CommunityPage() {
                                 {announcement.title}
                               </MorphingDialogTitle>
                               
-                              <p className="line-clamp-2 text-xs text-muted-foreground">
+                              <MorphingDialogDescription className="line-clamp-2 text-xs text-muted-foreground">
                                 {announcement.description}
-                              </p>
+                              </MorphingDialogDescription>
                             </div>
 
                             <div className="flex shrink-0 flex-col items-end justify-between gap-2 self-stretch">
-                              <span className="whitespace-nowrap text-xs font-medium text-primary">
+                              <MorphingDialogDate className="whitespace-nowrap text-xs font-medium text-primary">
                                 {new Date(announcement.created_at).toLocaleDateString(
                                   "en-US",
                                   {
@@ -821,11 +824,11 @@ export default function CommunityPage() {
                                     day: "numeric",
                                   },
                                 )}
-                              </span>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              </MorphingDialogDate>
+                              <MorphingDialogViewCount className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Eye className="h-3.5 w-3.5" />
                                 <span>{announcement.viewCount || 0}</span>
-                              </div>
+                              </MorphingDialogViewCount>
                             </div>
                           </div>
                         </MorphingDialogTrigger>
@@ -875,8 +878,8 @@ export default function CommunityPage() {
                                       </span>
                                     </div>
 
-                                    <div className="text-right text-muted-foreground">
-                                      <time
+                                    <div className="text-right text-muted-foreground flex flex-col items-end gap-1">
+                                      <MorphingDialogDate
                                         dateTime={announcement.created_at}
                                         className="font-medium text-[12px] leading-[1.5] tracking-normal align-middle"
                                       >
@@ -888,13 +891,18 @@ export default function CommunityPage() {
                                             year: "numeric",
                                           },
                                         )}
-                                      </time>
+                                      </MorphingDialogDate>
+
+                                      <MorphingDialogViewCount className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <Eye className="h-3.5 w-3.5" />
+                                        <span>{announcement.viewCount || 0}</span>
+                                      </MorphingDialogViewCount>
                                     </div>
                                   </div>
 
-                                  <div className="pb-6 text-sm leading-7 whitespace-pre-wrap text-muted-foreground sm:text-[15px]">
+                                  <MorphingDialogDescription className="pb-6 text-sm leading-7 whitespace-pre-wrap text-muted-foreground sm:text-[15px]">
                                     {announcement.description}
-                                  </div>
+                                  </MorphingDialogDescription>
                                 </div>
                               </div>
                             </div>
