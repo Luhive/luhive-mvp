@@ -40,6 +40,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         (formData.get("communityId") as string | null)?.trim() || "";
       const sessionId = (formData.get("sessionId") as string | null)?.trim() || "";
       const clientIp = (formData.get("clientIp") as string | null)?.trim() || null;
+      const clientCountry =
+        (formData.get("clientCountry") as string | null)?.trim() || null;
+      const clientCity = (formData.get("clientCity") as string | null)?.trim() || null;
+      const clientRegion =
+        (formData.get("clientRegion") as string | null)?.trim() || null;
+      const clientTimezone =
+        (formData.get("clientTimezone") as string | null)?.trim() || null;
 
       if (!eventId || !communityId || !sessionId) {
         return { success: false, error: "Missing tracking fields" };
@@ -50,15 +57,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
       } = await supabase.auth.getUser();
 
       const location = await getIpLocation(request, clientIp);
+      const mergedLocation = {
+        ...location,
+        country: clientCountry || location.country,
+        city: clientCity || location.city,
+        region: clientRegion || location.region,
+        timezone: clientTimezone || location.timezone,
+      };
       const ua = getUserAgent(request);
 
       console.log("[event_visits] client", {
         ipOverride: clientIp,
+        geoOverride: {
+          country: clientCountry,
+          city: clientCity,
+          region: clientRegion,
+          timezone: clientTimezone,
+        },
         ip: location.ip,
-        country: location.country,
-        city: location.city,
-        region: location.region,
-        timezone: location.timezone,
+        country: mergedLocation.country,
+        city: mergedLocation.city,
+        region: mergedLocation.region,
+        timezone: mergedLocation.timezone,
       });
 
       const { error: visitInsertError } = await (supabase as any).from("event_visits").insert({
@@ -74,10 +94,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         referrer_url: (formData.get("referrerUrl") as string | null) || null,
         referrer_domain: (formData.get("referrerDomain") as string | null) || null,
         ip: location.ip,
-        country: location.country,
-        city: location.city,
-        region: location.region,
-        timezone: location.timezone,
+        country: mergedLocation.country,
+        city: mergedLocation.city,
+        region: mergedLocation.region,
+        timezone: mergedLocation.timezone,
         device_type: ua.device.type || null,
         browser: ua.browser.name || null,
         os: ua.os.name || null,

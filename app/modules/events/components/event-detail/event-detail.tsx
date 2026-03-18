@@ -45,6 +45,88 @@ async function getPublicIpCached(): Promise<string | null> {
 	}
 }
 
+type PublicGeo = {
+	ip: string;
+	country: string | null;
+	city: string | null;
+	region: string | null;
+	timezone: string | null;
+};
+
+async function getPublicGeoCached(): Promise<PublicGeo | null> {
+	try {
+		const key = "luhive_public_geo_v1";
+		const cached = window.sessionStorage.getItem(key);
+		if (cached) {
+			const parsed = JSON.parse(cached) as Partial<PublicGeo>;
+			if (typeof parsed.ip === "string" && parsed.ip) {
+				return {
+					ip: parsed.ip,
+					country: typeof parsed.country === "string" ? parsed.country : null,
+					city: typeof parsed.city === "string" ? parsed.city : null,
+					region: typeof parsed.region === "string" ? parsed.region : null,
+					timezone: typeof parsed.timezone === "string" ? parsed.timezone : null,
+				};
+			}
+		}
+
+		const ip = await getPublicIpCached();
+		if (!ip) return null;
+
+		async function tryFetchJson(url: string): Promise<any | null> {
+			try {
+				const controller = new AbortController();
+				const timeout = setTimeout(() => controller.abort(), 1500);
+				const res = await fetch(url, { method: "GET", signal: controller.signal });
+				clearTimeout(timeout);
+				if (!res.ok) return null;
+				return await res.json();
+			} catch {
+				return null;
+			}
+		}
+
+		// Try multiple providers (some block/ratelimit per domain in production)
+		const ipWho = await tryFetchJson(`https://ipwho.is/${encodeURIComponent(ip)}`);
+		const ipApiCo = ipWho
+			? null
+			: await tryFetchJson(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+
+		const geo: PublicGeo = {
+			ip,
+			country:
+				typeof ipWho?.country === "string"
+					? ipWho.country
+					: typeof ipApiCo?.country_name === "string"
+						? ipApiCo.country_name
+						: null,
+			city:
+				typeof ipWho?.city === "string"
+					? ipWho.city
+					: typeof ipApiCo?.city === "string"
+						? ipApiCo.city
+						: null,
+			region:
+				typeof ipWho?.region === "string"
+					? ipWho.region
+					: typeof ipApiCo?.region === "string"
+						? ipApiCo.region
+						: null,
+			timezone:
+				typeof ipWho?.timezone?.id === "string"
+					? ipWho.timezone.id
+					: typeof ipApiCo?.timezone === "string"
+						? ipApiCo.timezone
+						: null,
+		};
+
+		window.sessionStorage.setItem(key, JSON.stringify(geo));
+		return geo;
+	} catch {
+		return null;
+	}
+}
+
 export function EventDetail({
 	event,
 	community,
@@ -84,7 +166,7 @@ export function EventDetail({
 
 		let cancelled = false;
 		(async () => {
-			const clientIp = await getPublicIpCached();
+			const geo = await getPublicGeoCached();
 			if (cancelled) return;
 
 			const formData = new FormData();
@@ -93,7 +175,11 @@ export function EventDetail({
 			formData.append("communityId", community.id);
 			formData.append("sessionId", trackingContext.sessionId);
 			formData.append("utmSource", trackingContext.utmSource);
-			if (clientIp) formData.append("clientIp", clientIp);
+			if (geo?.ip) formData.append("clientIp", geo.ip);
+			if (geo?.country) formData.append("clientCountry", geo.country);
+			if (geo?.city) formData.append("clientCity", geo.city);
+			if (geo?.region) formData.append("clientRegion", geo.region);
+			if (geo?.timezone) formData.append("clientTimezone", geo.timezone);
 			if (trackingContext.utmMedium) formData.append("utmMedium", trackingContext.utmMedium);
 			if (trackingContext.utmCampaign) formData.append("utmCampaign", trackingContext.utmCampaign);
 			if (trackingContext.utmContent) formData.append("utmContent", trackingContext.utmContent);
