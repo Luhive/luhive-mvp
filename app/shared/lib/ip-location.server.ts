@@ -6,24 +6,15 @@ export interface IpLocationData {
   timezone: string | null;
 }
 
-interface IpApiResponse {
-  status?: "success" | "fail";
-  message?: string;
-  query?: string;
-  country?: string;
-  city?: string;
-  regionName?: string;
-  timezone?: string;
-}
-
-interface IpWhoResponse {
-  success?: boolean;
+interface IpApiCoResponse {
+  error?: boolean;
+  reason?: string;
   ip?: string;
+  country_name?: string;
   country?: string;
   city?: string;
   region?: string;
-  timezone?: { id?: string };
-  message?: string;
+  timezone?: string;
 }
 
 /**
@@ -111,15 +102,14 @@ function getGeoFromHeaders(request: Request): Omit<IpLocationData, "ip"> | null 
 }
 
 /**
- * Lookup geo data for a specific IP using ip-api.com
+ * Lookup geo data for a specific IP using ipapi.co
  */
-async function lookupIpApi(ip: string): Promise<IpLocationData | null> {
+async function lookupIpApiCo(ip: string): Promise<IpLocationData | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 1500);
 
   try {
-    // Use HTTPS: many production runtimes block/redirect plain HTTP
-    const response = await fetch(`https://ip-api.com/json/${ip}`, {
+    const response = await fetch(`https://ipapi.co/${ip}/json/`, {
       method: "GET",
       signal: controller.signal,
     });
@@ -128,56 +118,21 @@ async function lookupIpApi(ip: string): Promise<IpLocationData | null> {
       return null;
     }
 
-    const data = (await response.json()) as IpApiResponse;
-    if (data.status !== "success") {
-      console.warn("[ip-location] ip-api failed", { ip, status: data.status, message: data.message });
-      return null;
-    }
-
-    return {
-      ip: data.query || ip,
-      country: data.country || null,
-      city: data.city || null,
-      region: data.regionName || null,
-      timezone: data.timezone || null,
-    };
-  } catch (error) {
-    console.error("Error looking up IP location:", error);
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function lookupIpWho(ip: string): Promise<IpLocationData | null> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 1500);
-
-  try {
-    const response = await fetch(`https://ipwho.is/${ip}`, {
-      method: "GET",
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = (await response.json()) as IpWhoResponse;
-    if (data.success === false) {
-      console.warn("[ip-location] ipwho.is failed", { ip, message: data.message });
+    const data = (await response.json()) as IpApiCoResponse;
+    if (data.error) {
+      console.warn("[ip-location] ipapi.co failed", { ip, reason: data.reason });
       return null;
     }
 
     return {
       ip: data.ip || ip,
-      country: data.country || null,
+      country: data.country_name || null,
       city: data.city || null,
       region: data.region || null,
-      timezone: data.timezone?.id || null,
+      timezone: data.timezone || null,
     };
   } catch (error) {
-    console.error("[ip-location] ipwho.is error:", error);
+    console.error("[ip-location] ipapi.co error:", error);
     return null;
   } finally {
     clearTimeout(timeout);
@@ -189,7 +144,7 @@ async function lookupIpWho(ip: string): Promise<IpLocationData | null> {
  *
  * 1. Extracts the real client IP from proxy / platform headers.
  * 2. If the platform already injects geo headers (Netlify, Cloudflare), uses those.
- * 3. Otherwise falls back to ip-api.com with the client IP.
+ * 3. Otherwise falls back to ipapi.co with the client IP.
  */
 export async function getIpLocation(
   request: Request,
@@ -216,9 +171,7 @@ export async function getIpLocation(
 
   // Fill any missing fields via geo lookup by IP (some platforms only provide country code like "AZ")
   if (ip) {
-    const apiResult = await lookupIpApi(ip);
-    const ipWhoResult = apiResult ? null : await lookupIpWho(ip);
-    const resolved = apiResult || ipWhoResult;
+    const resolved = await lookupIpApiCo(ip);
 
     if (resolved) {
       return {
