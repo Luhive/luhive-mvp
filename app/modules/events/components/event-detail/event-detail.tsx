@@ -7,6 +7,7 @@ import { useRegistrationTimer } from "~/modules/events/hooks/use-registration-ti
 import { useEventDetailToasts } from "~/modules/events/hooks/use-event-detail-toasts";
 import { EventSidebarPanel } from "./event-sidebar-panel";
 import { EventInfoSection } from "./event-info-section";
+import { EventAdminView } from "./event-admin-view";
 import type { CustomQuestionJson, ExternalPlatform } from "~/modules/events/model/event.types";
 import type { EventDetailLoaderData } from "~/modules/events/server/event-detail-loader.server";
 import { handleShare } from "../../utils/share-event";
@@ -263,37 +264,48 @@ export function EventDetail({
 				/>
 			)}
 			<main className="py-6 md:py-10">
-				<div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-8 lg:gap-12">
-					<EventSidebarPanel
+				{userData.isOwnerOrAdmin ? (
+					<EventAdminView
 						event={event}
 						community={community}
 						userData={userData}
-						isPastEvent={isPastEvent}
-						capacityPercentage={capacityPercentage}
+						hostingCommunities={hostingCommunities}
 						isExternalEvent={isExternalEvent}
 						onShare={() => handleShare(event)}
-						hostingCommunities={hostingCommunities}
 					/>
-					<EventInfoSection
-						event={event}
-						community={community}
-						userData={userData}
-						timeRemaining={timeRemaining}
-						registrationDeadlineFormatted={registrationDeadlineFormatted}
-						hasCustomQuestions={hasCustomQuestions}
-						isPastEvent={isPastEvent}
-						isExternalEvent={isExternalEvent}
-						externalPlatform={externalPlatform}
-						externalPlatformName={externalPlatformName}
-						isRegistering={isRegistering}
-						isUnregistering={isUnregistering}
-						isSubmitting={isSubmitting}
-						eventTrackingContext={trackingContext}
-						onShowCustomQuestionsForm={() => setShowCustomQuestionsForm(true)}
-						onShowRsvpModal={() => setShowRsvpModal(true)}
-						onShowSubscribeDialog={() => setShowSubscribeDialog(true)}
-					/>
-				</div>
+				) : (
+					<div className="flex flex-col gap-8 lg:grid lg:grid-cols-[400px_1fr] lg:gap-12">
+						<EventSidebarPanel
+							event={event}
+							community={community}
+							userData={userData}
+							isPastEvent={isPastEvent}
+							capacityPercentage={capacityPercentage}
+							isExternalEvent={isExternalEvent}
+							onShare={() => handleShare(event)}
+							hostingCommunities={hostingCommunities}
+						/>
+						<EventInfoSection
+							event={event}
+							community={community}
+							userData={userData}
+							timeRemaining={timeRemaining}
+							registrationDeadlineFormatted={registrationDeadlineFormatted}
+							hasCustomQuestions={hasCustomQuestions}
+							isPastEvent={isPastEvent}
+							isExternalEvent={isExternalEvent}
+							externalPlatform={externalPlatform}
+							externalPlatformName={externalPlatformName}
+							isRegistering={isRegistering}
+							isUnregistering={isUnregistering}
+							isSubmitting={isSubmitting}
+							eventTrackingContext={trackingContext}
+							onShowCustomQuestionsForm={() => setShowCustomQuestionsForm(true)}
+							onShowRsvpModal={() => setShowRsvpModal(true)}
+							onShowSubscribeDialog={() => setShowSubscribeDialog(true)}
+						/>
+					</div>
+				)}
 			</main>
 		</>
 	);
