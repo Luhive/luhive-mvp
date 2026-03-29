@@ -200,6 +200,43 @@ export class ObjectStorageService {
   ): Promise<UploadResult> {
     return this.deleteFile("community-profile-pictures", coverPath);
   }
+
+  /**
+   * Upload user profile avatar
+   */
+  async uploadProfileAvatarFile(file: Blob, userId: string): Promise<UploadResult> {
+    try {
+      const fileName = `avatar-${Date.now()}.jpg`;
+      const filePath = `user-avatars/${userId}/${fileName}`;
+
+      const { error } = await this.supabase.storage
+        .from("community-profile-pictures")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+          contentType: "image/jpeg",
+        });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      const { data: urlData } = this.supabase.storage
+        .from("community-profile-pictures")
+        .getPublicUrl(filePath);
+
+      return {
+        success: true,
+        url: urlData.publicUrl,
+        path: filePath,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Upload failed",
+      };
+    }
+  }
 }
 
 // Export utility functions for client-side usage
@@ -232,4 +269,9 @@ export const deleteCommunityCover = (
 ) => {
   const storage = new ObjectStorageService();
   return storage.deleteCommunityCover(communitySlug, coverPath);
+};
+
+export const uploadProfileAvatarFile = (file: Blob, userId: string) => {
+  const storage = new ObjectStorageService();
+  return storage.uploadProfileAvatarFile(file, userId);
 };

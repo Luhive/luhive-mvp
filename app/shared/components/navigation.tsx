@@ -1,7 +1,15 @@
 import { Link, useSubmit } from "react-router";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Button } from "~/shared/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/shared/components/ui/dropdown-menu";
 import LuhiveLogo from "~/assets/images/LuhiveLogo.svg";
 
 interface TopNavigationProps {
@@ -28,7 +36,12 @@ export function TopNavigation({ user }: TopNavigationProps) {
     <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 items-center justify-between">
         <div className="flex items-center gap-0">
-          <Link to="/hub" prefetch="intent" className="flex items-center gap-3" viewTransition>
+          <Link
+            to="/hub"
+            prefetch="intent"
+            className="flex items-center gap-3"
+            viewTransition
+          >
             <img className="h-5 w-5" src={LuhiveLogo} alt="Luhive Logo" />
             <h1 className="font-black text-xl tracking-tight">Luhive</h1>
           </Link>
@@ -41,7 +54,11 @@ export function TopNavigation({ user }: TopNavigationProps) {
             className="underline-offset-4 bg-transparent hover:bg-transparent hidden sm:flex"
             asChild
           >
-            <a href="https://tally.so/r/NpDVoG" target="_blank" rel="noopener noreferrer">
+            <a
+              href="https://tally.so/r/NpDVoG"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <span className="text-sm text-primary/60 hover:text-primary transition-colors">
                 Create Community
               </span>
@@ -49,34 +66,68 @@ export function TopNavigation({ user }: TopNavigationProps) {
           </Button>
 
           {user ? (
-            <div className="flex items-center gap-2">
-              <Link to="/profile">
-                <div className="flex gap-2 items-center cursor-pointer hover:bg-muted/50 p-2 rounded-lg">
-                  <Avatar className="h-8 w-8 border-2 cursor-pointer">
-                    <AvatarImage src={user?.avatar_url || undefined} alt={user?.full_name || "User"} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex gap-2 items-center cursor-pointer hover:bg-muted/50 p-2 rounded-lg outline-none"
+                >
+                  <Avatar className="h-8 w-8 border-2">
+                    <AvatarImage
+                      src={user?.avatar_url || undefined}
+                      alt={user?.full_name || "User"}
+                    />
                     <AvatarFallback className="bg-gradient-avatar flex items-center justify-center">
                       {getAvatarContent()}
-                  </AvatarFallback>
-                </Avatar>
-                  <p className="text-foreground/50 text-sm hidden sm:inline">{user?.full_name}</p>
-                </div>
-              </Link>
-
-              <Button
-                onClick={() => {
-                  const returnTo = window.location.pathname + window.location.search;
-                  const formData = new FormData();
-                  formData.append("returnTo", returnTo);
-                  submit(formData, { method: "post", action: "/logout" });
-                }}
-                variant="link"
-                className="hover:shadow-sm hover:scale-110 hover:text-red-500 text-foreground/50 cursor-pointer"
-                size="icon"
-                asChild
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-foreground/50 text-sm hidden sm:inline">
+                    {user?.full_name}
+                  </p>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild className="font-normal hover:bg-muted hover:text-foreground cursor-pointer rounded-sm">
+                  <Link to="/profile" className="flex items-center gap-2">
+                    <Avatar className="h-7 w-7 border-2">
+                      <AvatarImage
+                        src={user?.avatar_url || undefined}
+                        alt={user?.full_name || "User"}
+                      />
+                      <AvatarFallback className="bg-gradient-avatar flex items-center justify-center text-xs">
+                        {getAvatarContent()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm truncate">
+                      {user?.full_name ?? "User"}
+                    </span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  asChild
+                  className="focus:bg-muted focus:text-foreground cursor-pointer"
+                >
+                  <Link to="/profile/settings">
+                    <Settings className="size-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="focus:bg-muted focus:text-foreground cursor-pointer"
+                  onClick={() => {
+                    const returnTo =
+                      window.location.pathname + window.location.search;
+                    const formData = new FormData();
+                    formData.append("returnTo", returnTo);
+                    submit(formData, { method: "post", action: "/logout" });
+                  }}
+                >
+                  <LogOut className="size-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Button
               variant="ghost"
@@ -88,7 +139,7 @@ export function TopNavigation({ user }: TopNavigationProps) {
                 onClick={() => {
                   window.localStorage.setItem(
                     "post_login_return_to",
-                    window.location.pathname + window.location.search
+                    window.location.pathname + window.location.search,
                   );
                 }}
               >
