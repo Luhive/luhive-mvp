@@ -1,76 +1,68 @@
-import { createServiceRoleClient } from "~/shared/lib/supabase/server";
 import type { ActionFunctionArgs } from "react-router";
-import { getCommunityMemberEmails } from "~/modules/community/utils/community-members";
-import { sendNewEventNotificationEmail } from "~/shared/lib/email.server";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import { createServiceRoleClient } from "~/shared/lib/supabase/server";
+import { notifyNewEvent } from "~/modules/events/server/notify-new-event.server";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  try {
-    const body = await request.json();
-    const {
-      eventId,
-      communityId,
-      eventTitle,
-      eventDate,
-      eventTime,
-      eventLink,
-      locationAddress,
-      onlineMeetingLink,
-    } = body;
+  const debugToken = request.headers.get("X-Debug-Token");
+  if (!debugToken || debugToken !== process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response("Unauthorized", { status: 401 });
+  }
 
-    if (!eventId || !communityId || !eventTitle || !eventDate || !eventTime || !eventLink) {
-      return new Response("Missing required fields", { status: 400 });
+  try {
+    const { eventId } = await request.json();
+
+    if (!eventId) {
+      return new Response("Missing eventId", { status: 400 });
     }
 
-    // Create service role client for server-to-server calls
     const serviceClient = createServiceRoleClient();
 
-    // Get all community member emails using service client
-    const memberEmails = await getCommunityMemberEmails(communityId, serviceClient);
+    const { data: event } = await serviceClient
+      .from("events")
+      .select(`
+        id,
+        title,
+        start_time,
+        timezone,
+        community_id,
+        location_address,
+        online_meeting_link,
+        communities!inner ( slug )
+      `)
+      .eq("id", eventId)
+      .single();
 
-    if (memberEmails.length === 0) {
-      console.log("No community members to notify for new event:", eventId);
-      return { success: true, message: "No members to notify" };
+    if (!event) {
+      return new Response("Event not found", { status: 404 });
     }
 
-    // Get community name using service client
-    const { data: community } = await serviceClient
-      .from("communities")
-      .select("name")
-      .eq("id", communityId)
-      .maybeSingle();
+    const communitySlug = (event.communities as any)?.slug;
+    const eventStart = dayjs.tz(event.start_time, event.timezone);
 
-    const communityName = community?.name || "Unknown Community";
+    await notifyNewEvent({
+      eventId: event.id,
+      communityId: event.community_id,
+      eventTitle: event.title,
+      eventDate: eventStart.format("dddd, MMMM D, YYYY"),
+      eventTime: eventStart.format("h:mm A z"),
+      eventLink: `https://luhive.com/c/${communitySlug}/events/${event.id}`,
+      locationAddress: event.location_address ?? undefined,
+      onlineMeetingLink: event.online_meeting_link ?? undefined,
+    });
 
-    // Prepare batch payloads and send emails to all community members in one call
-    const payloads = memberEmails.map((email) => ({
-      eventTitle,
-      communityName,
-      eventDate,
-      eventTime,
-      eventLink,
-      recipientEmail: email,
-      recipientName: email.split("@")[0],
-      locationAddress,
-      onlineMeetingLink,
-    }));
-
-    const { successCount, errorCount } = await sendNewEventNotificationEmail(
-      payloads
-    );
-
-    console.log(`New event notification: ${successCount} sent, ${errorCount} failed for event ${eventId}`);
-
-    return {
-      success: true,
-      sent: successCount,
-      failed: errorCount,
-    };
+    return { success: true, eventId };
   } catch (error) {
-    console.error("Error in new-event-notification API:", error);
+    console.error("Error in new-event-notification debug API:", error);
     return new Response("Internal server error", { status: 500 });
   }
 }

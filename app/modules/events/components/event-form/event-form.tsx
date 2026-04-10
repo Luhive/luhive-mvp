@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useFetcher } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '~/shared/components/ui/card';
 import { Button } from '~/shared/components/ui/button';
 import { Separator } from '~/shared/components/ui/separator';
@@ -20,6 +20,7 @@ import type { CollaborationWithCommunity } from '~/modules/events/components/col
 import { createClient } from '~/shared/lib/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '~/shared/models/database.types';
+import type { EventCreateResult, EventCreateError } from '~/modules/events/server/event-create-action.server';
 import type { CustomQuestionJson } from '~/modules/events/model/event.types';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -70,6 +71,12 @@ export function EventForm({
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initialRef = useRef<Partial<EventFormData> | undefined>(initialData);
+  const createFetcher = useFetcher<EventCreateResult | EventCreateError>();
+  const submitIsDraftRef = useRef(false);
+  const pendingInvitesRef = useRef<{ id: string; name: string; slug: string; logo_url?: string | null }[]>([]);
+
+  // For create mode the loading state comes from the fetcher; edit uses the local state
+  const isBusy = mode === 'create' ? createFetcher.state !== 'idle' : isSubmitting;
 
   // Form state
   const [title, setTitle] = useState(initialData?.title || '');
@@ -134,6 +141,7 @@ export function EventForm({
   // Load collaborations when in edit mode
   useEffect(() => {
     if (mode === 'edit' && eventId) {
+      const currentEventId = eventId;
       async function loadCollaborations() {
         setLoadingCollaborations(true);
         const supabase = createClient();
@@ -143,7 +151,7 @@ export function EventForm({
           const { data: hostCollab } = await supabase
             .from('event_collaborations')
             .select('role')
-            .eq('event_id', eventId)
+            .eq('event_id', currentEventId)
             .eq('community_id', communityId)
             .eq('role', 'host')
             .eq('status', 'accepted')
@@ -163,7 +171,7 @@ export function EventForm({
                 logo_url
               )
             `)
-            .eq('event_id', eventId)
+            .eq('event_id', currentEventId)
             .order('created_at', { ascending: true });
           
           if (error) {
@@ -188,6 +196,71 @@ export function EventForm({
       loadCollaborations();
     }
   }, [mode, eventId, communityId]);
+
+  // Keep ref in sync so the fetcher effect always sees the latest pendingInvites
+  useEffect(() => {
+    pendingInvitesRef.current = pendingInvites;
+  }, [pendingInvites]);
+
+  // Handle server action response for event creation
+  useEffect(() => {
+    if (createFetcher.state !== 'idle' || !createFetcher.data) return;
+
+    const data = createFetcher.data;
+
+    if (!data.success) {
+      toast.error((data as EventCreateError).error || 'Failed to create event');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { eventId: newEventId, communitySlug: slug } = data as EventCreateResult;
+    const currentInvites = pendingInvitesRef.current;
+    const isDraft = submitIsDraftRef.current;
+
+    async function finishCreate() {
+      if (currentInvites.length > 0) {
+        try {
+          for (const p of currentInvites) {
+            try {
+              const form = new FormData();
+              form.append('intent', 'invite-collaboration');
+              form.append('coHostCommunityId', p.id);
+
+              const res = await fetch(`/c/${slug}/events/${newEventId}/collaboration`, {
+                method: 'POST',
+                body: form,
+                credentials: 'same-origin',
+              });
+
+              if (!res.ok) {
+                const body = await res.text();
+                console.error('Failed to send pending invite via action:', res.status, body);
+              } else {
+                const json = await res.json().catch(() => null);
+                if (!json || !json.success) {
+                  console.error('Invite action returned error for', p.id, json);
+                }
+              }
+            } catch (err) {
+              console.error('Error sending invite for pending community', p.id, err);
+            }
+          }
+          toast.success(`Sent ${currentInvites.length} collaboration invite(s)`);
+        } catch (inviteErr) {
+          console.error('Error sending pending invites:', inviteErr);
+        } finally {
+          setPendingInvites([]);
+        }
+      }
+
+      toast.success(`Event ${isDraft ? 'saved as draft' : 'published'} successfully!`);
+      navigate(`/dashboard/${slug}/events`);
+    }
+
+    finishCreate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createFetcher.state, createFetcher.data]);
 
   const hasOnlyScheduleOrLocationChanges = () => {
     if (!initialRef.current || mode !== 'edit') {
@@ -247,170 +320,102 @@ export function EventForm({
     setIsSubmitting(true);
 
     try {
-      // Initialize Supabase client (client-side only)
-      const supabase = createClient();
-
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('You must be logged in');
-        return;
-      }
-
-      const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
-
-      // Combine date and time into ISO timestamp with timezone
-      const startDateTime = dayjs.tz(
-        `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
-        timezone
-      ).toISOString();
-      
-      const endDateTime = endTime
-        ? dayjs.tz(
-            `${dayjs(startDate).format('YYYY-MM-DD')}T${endTime}`,
-            timezone
-          ).toISOString()
-        : null;
-
-      // Prepare event data
-      const eventData = {
-        community_id: communityId,
-        created_by: user.id,
-        title,
-        description: description || null,
-        start_time: startDateTime,
-        end_time: endDateTime,
-        timezone,
-        event_type: eventType,
-        location_address: locationAddress || null,
-        online_meeting_link: onlineMeetingLink || null,
-        discussion_link: discussionLink.trim() || null,
-        capacity: capacity || null,
-        registration_deadline: registrationDeadline ? registrationDeadline.toISOString() : null,
-        cover_url: coverUrl || null,
-        status: submitStatus,
-        is_approve_required: isApproveRequired,
-        custom_questions: customQuestions,
-      };
-
       if (mode === 'create') {
-        // Insert new event
-        const { data: newEvent, error } = await supabase
-          .from('events')
-          .insert(eventData)
-          .select('id')
-          .single();
+        const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
 
-        if (error || !newEvent) {
-          console.error('Error creating event:', error);
-          toast.error(error?.message || 'Failed to create event');
+        const startDateTime = dayjs.tz(
+          `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
+          timezone
+        ).toISOString();
+
+        const endDateTime = endTime
+          ? dayjs.tz(
+              `${dayjs(startDate).format('YYYY-MM-DD')}T${endTime}`,
+              timezone
+            ).toISOString()
+          : null;
+
+        const eventStartDateTime = dayjs.tz(
+          `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
+          timezone
+        );
+
+        submitIsDraftRef.current = isDraft;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        createFetcher.submit(
+          {
+            communityId,
+            communitySlug,
+            title,
+            description: description || null,
+            startTime: startDateTime,
+            endTime: endDateTime,
+            timezone,
+            eventType,
+            locationAddress: locationAddress || null,
+            onlineMeetingLink: onlineMeetingLink || null,
+            discussionLink: discussionLink.trim() || null,
+            capacity: capacity || null,
+            registrationDeadline: registrationDeadline ? registrationDeadline.toISOString() : null,
+            coverUrl: coverUrl || null,
+            status: submitStatus,
+            isApproveRequired,
+            customQuestions: customQuestions ?? null,
+            reminderTimes,
+            reminderMessage: reminderMessage || null,
+            eventDate: eventStartDateTime.format('dddd, MMMM D, YYYY'),
+            eventTime: eventStartDateTime.format('h:mm A z'),
+            eventLinkBase: window.location.origin,
+          } as any,
+          { method: 'POST', encType: 'application/json' }
+        );
+
+        // Navigation and toasts are handled in the createFetcher useEffect
+        return;
+      } else if (mode === 'edit' && eventId) {
+        const supabase = createClient();
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error('You must be logged in');
           return;
         }
 
-        // Create host collaboration record
-        const { error: collabError } = await supabase
-          .from('event_collaborations')
-          .insert({
-            event_id: newEvent.id,
-            community_id: communityId,
-            role: 'host',
-            status: 'accepted',
-            invited_by: user.id,
-            invited_at: new Date().toISOString(),
-            accepted_at: new Date().toISOString(),
-          });
+        const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
 
-        if (collabError) {
-          console.error('Error creating host collaboration:', collabError);
-          // Don't fail the event creation, just log the error
-        }
+        const startDateTime = dayjs.tz(
+          `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
+          timezone
+        ).toISOString();
 
-        // Create reminders if any are selected
-        if (reminderTimes.length > 0) {
-          const { error: reminderError } = await supabase
-            .from('event_reminders')
-            .insert({
-              event_id: newEvent.id,
-              reminder_times: reminderTimes,
-              custom_message: reminderMessage,
-            });
-
-          if (reminderError) {
-            console.error('Error creating event reminders:', reminderError);
-            // Don't fail the event creation, just log the error
-          }
-        }
-
-        // If there are pending invites collected during create flow, submit them to the collaboration action
-        // so the server can create the collaboration rows and send invitation emails.
-        if (pendingInvites.length > 0) {
-          try {
-            for (const p of pendingInvites) {
-              try {
-                const form = new FormData();
-                form.append('intent', 'invite-collaboration');
-                form.append('coHostCommunityId', p.id);
-
-                const res = await fetch(`/c/${communitySlug}/events/${newEvent.id}/collaboration`, {
-                  method: 'POST',
-                  body: form,
-                  credentials: 'same-origin',
-                });
-
-                if (!res.ok) {
-                  const body = await res.text();
-                  console.error('Failed to send pending invite via action:', res.status, body);
-                } else {
-                  const json = await res.json().catch(() => null);
-                  if (!json || !json.success) {
-                    console.error('Invite action returned error for', p.id, json);
-                  }
-                }
-              } catch (err) {
-                console.error('Error sending invite for pending community', p.id, err);
-              }
-            }
-            toast.success(`Sent ${pendingInvites.length} collaboration invite(s)`);
-          } catch (inviteErr) {
-            console.error('Error sending pending invites:', inviteErr);
-          } finally {
-            setPendingInvites([]);
-          }
-        }
-
-        // Send notification to community members about new event (only when published)
-        if (!isDraft) {
-          try {
-            const eventStartDateTime = dayjs.tz(
-              `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
+        const endDateTime = endTime
+          ? dayjs.tz(
+              `${dayjs(startDate).format('YYYY-MM-DD')}T${endTime}`,
               timezone
-            );
-            
-            await fetch('/api/events/new-event-notification', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                eventId: newEvent.id,
-                communityId: communityId,
-                eventTitle: title,
-                eventDate: eventStartDateTime.format('dddd, MMMM D, YYYY'),
-                eventTime: eventStartDateTime.format('h:mm A z'),
-                eventLink: `${window.location.origin}/c/${communitySlug}/events/${newEvent.id}`,
-                locationAddress: locationAddress || undefined,
-                onlineMeetingLink: onlineMeetingLink || undefined,
-              }),
-            });
-          } catch (notifyError) {
-            console.error('Failed to trigger new event notification emails:', notifyError);
-            // Don't fail the event creation if email fails
-          }
-        }
+            ).toISOString()
+          : null;
 
-        toast.success(`Event ${isDraft ? 'saved as draft' : 'published'} successfully!`);
-        navigate(`/dashboard/${communitySlug}/events`);
-      } else if (mode === 'edit' && eventId) {
+        const eventData = {
+          community_id: communityId,
+          created_by: user.id,
+          title,
+          description: description || null,
+          start_time: startDateTime,
+          end_time: endDateTime,
+          timezone,
+          event_type: eventType,
+          location_address: locationAddress || null,
+          online_meeting_link: onlineMeetingLink || null,
+          discussion_link: discussionLink.trim() || null,
+          capacity: capacity || null,
+          registration_deadline: registrationDeadline ? registrationDeadline.toISOString() : null,
+          cover_url: coverUrl || null,
+          status: submitStatus,
+          is_approve_required: isApproveRequired,
+          custom_questions: customQuestions as any,
+        };
+
         // Check if community is host (only host can update)
         const { data: collaboration } = await supabase
           .from('event_collaborations')
@@ -468,8 +473,6 @@ export function EventForm({
           }
         }
 
-        // If only schedule/location changed for a published event, notify attendees
-        const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
         if (submitStatus === 'published' && hasOnlyScheduleOrLocationChanges()) {
           try {
             await fetch('/api/events/schedule-update', {
@@ -513,10 +516,10 @@ export function EventForm({
           <Button
             type="button"
             variant="outline"
-            disabled={isSubmitting || !isValid()}
+            disabled={isBusy || !isValid()}
             onClick={() => handleSubmit(true)}
           >
-            {isSubmitting ? (
+            {isBusy ? (
               <>
                 <Spinner className="h-4 w-4 mr-2" />
                 Saving...
@@ -530,10 +533,10 @@ export function EventForm({
           </Button>
           <Button
             type="button"
-            disabled={isSubmitting || !isValid()}
+            disabled={isBusy || !isValid()}
             onClick={() => handleSubmit(false)}
           >
-            {isSubmitting ? (
+            {isBusy ? (
               <>
                 <Spinner className="h-4 w-4 mr-2" />
                 Publishing...
@@ -810,7 +813,7 @@ export function EventForm({
                                 logo_url
                               )
                             `)
-                            .eq('event_id', eventId)
+                            .eq('event_id', eventId!)
                             .order('created_at', { ascending: true });
                           
                           if (collabs) {
@@ -861,7 +864,7 @@ export function EventForm({
                             logo_url
                           )
                         `)
-                        .eq('event_id', eventId)
+                        .eq('event_id', eventId!)
                         .order('created_at', { ascending: true });
                     
                       if (collabs) {
@@ -889,7 +892,7 @@ export function EventForm({
           type="button"
           variant="outline"
           className="flex-1"
-          disabled={isSubmitting || !isValid()}
+          disabled={isBusy || !isValid()}
           onClick={() => handleSubmit(true)}
         >
           Save as Draft
@@ -897,7 +900,7 @@ export function EventForm({
         <Button
           type="button"
           className="flex-1"
-          disabled={isSubmitting || !isValid()}
+          disabled={isBusy || !isValid()}
           onClick={() => handleSubmit(false)}
         >
           Publish

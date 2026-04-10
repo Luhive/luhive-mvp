@@ -25,12 +25,12 @@ export default [
       route("events/:eventId", "routes/web/event-detail.tsx"),
       route(
         "events/:eventId/collaboration",
-        "routes/c.$slug.events.$eventId.collaboration.tsx",
+        "routes/web/event-collaboration.tsx",
       ),
     ]),
     route(
       "c/:slug/collaboration-invite/:collaborationId",
-      "routes/c.$slug.collaboration-invite.$collaborationId.tsx",
+      "routes/web/collaboration-invite.tsx",
     ),
     route("create-community", "routes/web/create-community.tsx"),
     route(
