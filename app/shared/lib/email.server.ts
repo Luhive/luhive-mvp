@@ -298,19 +298,59 @@ async function sendEmailsInternal(
           if ("name" in (error as any) && typeof (error as any).name === "string") {
             errorDetails.name = (error as any).name;
           }
-          console.error("❌ Resend batch API error:", errorDetails, {
+          console.warn("⚠️ Resend batch API error, falling back to individual sends:", errorDetails, {
             chunkSize: chunk.length,
           });
 
           for (const payload of chunk) {
-            results.push({
-              to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
-              success: false,
-              error: {
-                message: (error as any).message,
-                name: (error as any).name,
-              },
-            });
+            try {
+              const toArray = Array.isArray(payload.to) ? payload.to : [payload.to];
+              const { data: singleData, error: singleError } = await resend.emails.send({
+                from: payload.from ?? FROM_EMAIL,
+                to: toArray,
+                subject: payload.subject,
+                react: payload.react,
+                html: payload.html,
+                attachments:
+                  payload.attachments && payload.attachments.length > 0
+                    ? payload.attachments
+                    : undefined,
+              } as any);
+
+              if (singleError) {
+                console.error("❌ Fallback individual send failed:", {
+                  message: (singleError as any).message,
+                  to: payload.to,
+                });
+                results.push({
+                  to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+                  success: false,
+                  error: {
+                    message: (singleError as any).message,
+                    name: (singleError as any).name,
+                  },
+                });
+              } else {
+                results.push({
+                  to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+                  success: true,
+                  id: (singleData as any)?.id,
+                });
+              }
+            } catch (singleErr) {
+              console.error("❌ Fallback individual send threw:", {
+                error: singleErr instanceof Error ? singleErr.message : String(singleErr),
+                to: payload.to,
+              });
+              results.push({
+                to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+                success: false,
+                error: {
+                  message: singleErr instanceof Error ? singleErr.message : String(singleErr),
+                  name: singleErr instanceof Error ? singleErr.name : undefined,
+                },
+              });
+            }
           }
         } else {
           const items: any[] = Array.isArray(data) ? data : [];
@@ -329,21 +369,51 @@ async function sendEmailsInternal(
           });
         }
       } catch (error) {
-        console.error("❌ Error sending batch emails:", {
+        console.warn("⚠️ Batch send threw, falling back to individual sends:", {
           error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
           chunkSize: chunk.length,
         });
         for (const payload of chunk) {
-          results.push({
-            to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
-            success: false,
-            error: {
-              message:
-                error instanceof Error ? error.message : String(error),
-              name: error instanceof Error ? error.name : undefined,
-            },
-          });
+          try {
+            const toArray = Array.isArray(payload.to) ? payload.to : [payload.to];
+            const { data: singleData, error: singleError } = await resend.emails.send({
+              from: payload.from ?? FROM_EMAIL,
+              to: toArray,
+              subject: payload.subject,
+              react: payload.react,
+              html: payload.html,
+              attachments:
+                payload.attachments && payload.attachments.length > 0
+                  ? payload.attachments
+                  : undefined,
+            } as any);
+
+            if (singleError) {
+              results.push({
+                to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+                success: false,
+                error: {
+                  message: (singleError as any).message,
+                  name: (singleError as any).name,
+                },
+              });
+            } else {
+              results.push({
+                to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+                success: true,
+                id: (singleData as any)?.id,
+              });
+            }
+          } catch (singleErr) {
+            results.push({
+              to: Array.isArray(payload.to) ? payload.to.join(",") : payload.to,
+              success: false,
+              error: {
+                message: singleErr instanceof Error ? singleErr.message : String(singleErr),
+                name: singleErr instanceof Error ? singleErr.name : undefined,
+              },
+            });
+          }
         }
       }
 
