@@ -3,6 +3,7 @@ import { Flame } from 'lucide-react';
 
 import { Button } from '~/shared/components/ui/button';
 import { AnalyticsEvents } from '~/shared/lib/analytics';
+import { LUHIVE_CREATE_COMMUNITY_BOOKING_URL } from '~/shared/lib/utils/url';
 
 export function LandingPricing() {
   const { t } = useTranslation('landing');
@@ -88,7 +89,7 @@ export function LandingPricing() {
                     asChild
                   >
                     <a
-                      href="https://tally.so/r/NpDVoG"
+                      href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
                       target="_blank"
                       rel="noopener noreferrer"
                       className='text-[0.875rem] font-bold'
@@ -154,7 +155,7 @@ export function LandingPricing() {
                 asChild
               >
                 <a
-                  href="https://tally.so/r/NpDVoG"
+                  href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className='text-[0.875rem] font-bold'
@@ -185,7 +186,7 @@ export function LandingPricing() {
               asChild
             >
               <a
-                href="https://tally.so/r/NpDVoG"
+                href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => AnalyticsEvents.startCommunityClick('Pricing CTA V2')}

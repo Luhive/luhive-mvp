@@ -2,13 +2,17 @@ import { Link, useSubmit } from "react-router";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Button } from "~/shared/components/ui/button";
+import { cn } from "~/shared/lib/utils/cn";
+import { LUHIVE_CREATE_COMMUNITY_BOOKING_URL } from "~/shared/lib/utils/url";
 import LuhiveLogo from "~/assets/images/LuhiveLogo.svg";
 
 interface TopNavigationProps {
   user?: { id: string; avatar_url?: string | null; full_name?: string | null } | null;
+  /** Show the external "Create Community" CTA below the `sm` breakpoint (hub mobile). */
+  showCreateCommunityOnMobile?: boolean;
 }
 
-export function TopNavigation({ user }: TopNavigationProps) {
+export function TopNavigation({ user, showCreateCommunityOnMobile = false }: TopNavigationProps) {
   const submit = useSubmit();
 
   const getAvatarContent = () => {
@@ -38,10 +42,13 @@ export function TopNavigation({ user }: TopNavigationProps) {
           <Button
             variant="default"
             size="sm"
-            className="underline-offset-4 bg-transparent hover:bg-transparent hidden sm:flex"
+            className={cn(
+              "underline-offset-4 bg-transparent hover:bg-transparent",
+              showCreateCommunityOnMobile ? "flex" : "hidden sm:flex",
+            )}
             asChild
           >
-            <a href="https://tally.so/r/NpDVoG" target="_blank" rel="noopener noreferrer">
+            <a href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL} target="_blank" rel="noopener noreferrer">
               <span className="text-sm text-primary/60 hover:text-primary transition-colors">
                 Create Community
               </span>
