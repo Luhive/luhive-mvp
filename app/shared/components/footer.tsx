@@ -3,10 +3,11 @@ import LuhiveLogo from "~/assets/images/LuhiveLogo.svg";
 import Xsocialmedia from "~/assets/icons/Xsocialmedia.svg";
 import Linkedin from "~/assets/icons/Linkedin.svg";
 import Message from "~/assets/icons/Message.svg";
+import { FooterLanguageMenu } from "~/shared/components/footer-language-menu";
 
 export default function Footer() {
   return (
-    <footer className="py-3 pb-5 flex items-center justify-between bg-white text-gray-600">
+    <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 bg-white py-3 pb-5 text-gray-600">
       <div className="flex items-center space-x-5">
         <Link to="/" className="flex items-center gap-3">
           <img className="h-4 w-4" src={LuhiveLogo} alt="Luhive Logo" />
@@ -21,7 +22,7 @@ export default function Footer() {
         </a>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center gap-4 sm:gap-5">
         <a href="mailto:contact@luhive.com" className="hover:text-black transition">
           <img className="h-6 w-6" src={Message} alt="Message Icon" />
         </a>
@@ -41,6 +42,7 @@ export default function Footer() {
         >
           <img className="h-6 w-6" src={Linkedin} alt="LinkedIn Icon" />
         </a>
+        <FooterLanguageMenu className="ml-0.5" />
       </div>
     </footer>
   );

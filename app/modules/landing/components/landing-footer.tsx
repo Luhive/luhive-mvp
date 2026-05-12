@@ -3,6 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowUpRight01Icon } from '@hugeicons/core-free-icons';
 
 import { AnalyticsEvents } from '~/shared/lib/analytics';
+import { FooterLanguageMenu } from '~/shared/components/footer-language-menu';
 
 const LINK_ALI_ALIYEV = 'https://www.linkedin.com/in/alyaliyev/';
 const LINK_NILUFAR_SAFARLI = 'https://www.linkedin.com/in/nilufarsafarli/';
@@ -139,9 +140,16 @@ export function LandingFooter() {
             </div>
           </div>
 
-          <div className="flex w-full flex-wrap items-center justify-between gap-x-5 gap-y-3">
-            <FooterLogoWordmark />
-            <nav className="flex flex-wrap items-center justify-end gap-x-10 gap-y-1">
+          <div className="flex w-full flex-col gap-8">
+            <div className="flex w-full items-center justify-between gap-4">
+              <FooterLogoWordmark />
+              <FooterLanguageMenu
+                compactLabels
+                comfortableTouch
+                className="border-black bg-[#F6F4F1] hover:bg-[#f1eeeb] data-[state=open]:bg-[#f1eeeb] active:bg-[#ece8e3]"
+              />
+            </div>
+            <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <FooterLegalLinks />
             </nav>
           </div>
@@ -163,11 +171,14 @@ export function LandingFooter() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-12 gap-y-3">
-            <FooterLogoWordmark />
-            <nav className="flex flex-wrap items-center gap-x-10 gap-y-1">
-              <FooterLegalLinks />
-            </nav>
+          <div className="flex flex-wrap items-center justify-between gap-x-12 gap-y-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-12 gap-y-3">
+              <FooterLogoWordmark />
+              <nav className="flex flex-wrap items-center gap-x-10 gap-y-1">
+                <FooterLegalLinks />
+              </nav>
+            </div>
+            <FooterLanguageMenu className="border-black bg-[#F6F4F1] hover:bg-[#f1eeeb] data-[state=open]:bg-[#f1eeeb]" />
           </div>
         </div>
       </div>
