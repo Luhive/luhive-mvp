@@ -26,14 +26,14 @@ export function HubPageSkeleton({ user }: HubPageSkeletonProps) {
 				{/* Skeleton Grid */}
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{Array.from({ length: 6 }).map((_, i) => (
-						<Card key={i} className="h-full border shadow-none">
-							<CardHeader className="pb-3">
+						<Card key={i} className="h-full gap-5 border shadow-none">
+							<CardHeader className="pb-2">
 								<div className="flex items-start gap-4">
 									<Avatar className="h-16 w-16 border-2">
 										<Skeleton className="h-16 w-16 rounded-full bg-muted" />
 									</Avatar>
-									<div className="flex-1 min-w-0">
-										<Skeleton className="h-6 w-32 mb-2 bg-muted" />
+									<div className="flex-1 min-w-0 overflow-hidden">
+										<Skeleton className="mb-2 h-12 w-full bg-muted" />
 										<Skeleton className="h-4 w-24 bg-muted" />
 									</div>
 								</div>
@@ -42,11 +42,10 @@ export function HubPageSkeleton({ user }: HubPageSkeletonProps) {
 									<Skeleton className="h-5 w-20 rounded-full bg-muted" />
 								</div>
 							</CardHeader>
-							<CardContent className="space-y-3">
+							<CardContent className="space-y-2">
 								<Skeleton className="h-4 w-full bg-muted" />
 								<Skeleton className="h-4 w-full bg-muted" />
-								<Skeleton className="h-4 w-3/4 bg-muted" />
-								<div className="flex items-center gap-4 pt-2">
+								<div className="flex items-center gap-4">
 									<Skeleton className="h-4 w-12 bg-muted" />
 									<Skeleton className="h-4 w-12 bg-muted" />
 								</div>

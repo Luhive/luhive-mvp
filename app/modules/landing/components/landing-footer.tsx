@@ -4,8 +4,8 @@ import { ArrowUpRight01Icon } from '@hugeicons/core-free-icons';
 
 import { AnalyticsEvents } from '~/shared/lib/analytics';
 
-const LINK_ALI_ALIYEV = '#';
-const LINK_NILUFAR_SAFARLI = '#';
+const LINK_ALI_ALIYEV = 'https://www.linkedin.com/in/alyaliyev/';
+const LINK_NILUFAR_SAFARLI = 'https://www.linkedin.com/in/nilufarsafarli/';
 
 const LINK_LINKEDIN_SOCIAL = 'https://www.linkedin.com/company/luhive';
 
@@ -163,7 +163,7 @@ export function LandingFooter() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-12 gap-y-30">
+          <div className="flex flex-wrap items-center gap-x-12 gap-y-3">
             <FooterLogoWordmark />
             <nav className="flex flex-wrap items-center gap-x-10 gap-y-1">
               <FooterLegalLinks />
