@@ -75,7 +75,7 @@ export function LandingFAQ() {
               asChild
             >
               <a
-                href="https://tally.so/r/NpDVoG"
+                href="https://cal.com/luhive"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -96,7 +96,7 @@ export function LandingFAQ() {
               asChild
             >
               <a
-                href="https://tally.so/r/NpDVoG"
+                href="https://cal.com/luhive"
                 target="_blank"
                 rel="noopener noreferrer"
               >
