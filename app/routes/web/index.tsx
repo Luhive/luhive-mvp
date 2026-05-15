@@ -6,6 +6,7 @@ import "~/shared/lib/i18n";
 import { LandingNavbar } from "~/modules/landing/components/landing-navbar";
 import { LandingAbout } from "~/modules/landing/components/landing-about";
 import { LandingPartners } from "~/modules/landing/components/landing-partners";
+import { LandingAcknowledgement } from "~/modules/landing/components/landing-acknowledgement";
 import { LandingFeatures } from "~/modules/landing/components/landing-features";
 import { LandingPricing } from "~/modules/landing/components/landing-pricing";
 import { LandingFAQ } from "~/modules/landing/components/landing-faq";
@@ -23,6 +24,7 @@ export default function LandingPage() {
       <LandingNavbar />
       <LandingAbout />
       <LandingPartners />
+      <LandingAcknowledgement />
       <LandingFeatures />
       <LandingPricing />
       <LandingFAQ />

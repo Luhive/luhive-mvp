@@ -120,6 +120,10 @@
     "gdgBakuAlt": "GDG Baku logo",
     "aimAzAlt": "AIM Azerbaijan logo"
   },
+  "acknowledgement": {
+    "problem": "Your communities want to grow, but <strong>your data disappears after every event.</strong> No member history, no engagement record, no way to prove your value to a sponsor, so you <strong>start from zero, every single time.</strong>",
+    "solution": "<strong>Luhive</strong> is the operating system for <strong>community-as-a-startup</strong> — so you can finally <strong>grow, delegate,</strong> and <strong>monetize</strong> without losing everything you've\u00a0built."
+  },
   "contact": {
     "badge": "Join Our Community",
     "title": "Be Part of the Future",

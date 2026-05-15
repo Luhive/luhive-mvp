@@ -120,6 +120,10 @@
     "gdgBakuAlt": "GDG Baku loqosu",
     "aimAzAlt": "AIM Azərbaycan loqosu"
   },
+  "acknowledgement": {
+    "problem": "İcmalarınız böyümək istəyir, amma <strong>hər tədbirdən sonra məlumatlarınız yox olur.</strong> Üzv tarixçəsi yoxdur, fəallıq qeydi yoxdur, sponsor üçün dəyərinizi sübut etmək üçün heç bir yol yoxdur, ona görə də <strong>hər dəfə sıfırdan başlayırsınız.</strong>",
+    "solution": "<strong>Luhive</strong> <strong>icma-kimi-startap</strong> üçün əməliyyat sistemidir — nəhayət qurduğunuz hər şeyi itirmədən <strong>böyüyə, tapşırıq verə</strong> və <strong>monetizasiya edə</strong> bilərsiniz."
+  },
   "contact": {
     "badge": "İcmamıza Qoşulun",
     "title": "Gələcəyin Bir Hissəsi Olun",
