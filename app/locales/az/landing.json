@@ -210,23 +210,27 @@
   },
   "faqV2": {
     "badge": "Tez-tez verilən suallar",
-    "title": "Siz soruşursunuz, biz cavab veririk",
+    "title": "Sualınız var?",
     "items": {
-      "what-is-luhive": {
-        "question": "Luhive nədir?",
-        "answer": "Luhive icma menecerləri və təşkilatçılar üçün xüsusi olaraq qurulmuş hərtərəfli \"Əməliyyat Sistemi\"dir. Biz səpələnmiş alətləri aradan qaldıraraq, icmanızı idarə etmək, təhlil etmək və əvvəlkindən daha sürətlə genişləndirmək üçün vahid mərkəz təqdim edirik."
+      "members-new-account": {
+        "question": "Üzvlərim yeni hesab yaratmalıdırmı?",
+        "answer": "Xeyr. Üzvlər tədbirlərə Google və ya e-poçtları ilə qeydiyyatdan keçirlər — əvvəlki kimi. Onların tərəfində heç nə dəyişmir."
       },
-      "who-is-luhive-built-for": {
-        "question": "Luhive kimlər üçün yaradılıb?",
-        "answer": "Biz İcma Administratorları və Təşkilatçılarına yönəldik. Əgər təşkilat, qrup və ya icma idarə edirsinizsə, Luhive idarəetməni asan və effektiv etmək üçün vacib alətinizdir."
+      "replace-existing-tools": {
+        "question": "Bu, artıq istifadə etdiyim alətləri əvəz edəcəkmi?",
+        "answer": "Tədbir qeydiyyat axınınızı əvəz edir. İcma söhbəti üçün Telegram və ya WhatsApp-dan istifadə etməyə davam edə bilərsiniz — Luhive həmin alətlərin heç vaxt idarə edə bilmədiyi məlumat qatını idarə edir."
       },
-      "what-problem-does-luhive-solve": {
-        "question": "Luhive hansı problemi həll edir?",
-        "answer": "Biz parçalanmış ekosistem problemini həll edirik. Formalar, tədbirlər, elanlar və izləmə üçün 4-5 fərqli xarici alət istifadə etmək əvəzinə, siz bir, vahid platformadan istifadə edirsiniz. Bu vaxt itkisini və mürəkkəbliyi azaldır. Luhive sadəliyi tərifləyir"
+      "data-if-cancel": {
+        "question": "Ləğv etsəm məlumatlarıma nə olur?",
+        "answer": "Üzv tarixçəniz, tədbir qeydləriniz və analitikanız sizindir. Məlumatlarınızı girov kimi saxlamırıq."
       },
-      "how-does-luhive-provide-deep-analytics": {
-        "question": "Luhive \"Dərin Analitika\"nı necə təmin edir?",
-        "answer": "Platformamız üzv aktivliyi tarixçəsini, tədbir iştirakını və fəallığı izləyir. Bu zəngin məlumatlarla Üzv CRM sistemidir. Biz sizə nəyin işlədiyini, ən aktiv üzvlərinizin kim olduğunu və AI həllərimizlə növbəti tədbirinizi necə təkmilləşdirmək lazım olduğunu başa düşmək üçün lazım olan fəaliyyətə yönəldilmiş kəşfiyyatı veririk."
+      "only-large-communities": {
+        "question": "Luhive yalnız böyük icmalar üçündürmü?",
+        "answer": "Pulsuz plan 50 üzvə qədər dəstəkləyir — yeni başlayan icmalar üçün qurulub. Pro böyüməyə hazır olanda hər şeyi açır."
+      },
+      "different-from-luma-circle": {
+        "question": "Luhive Luma və ya Circle-dan nə ilə fərqlənir?",
+        "answer": "Luma tədbir alətidir. Circle kurs yaradıcıları üçündür. Luhive xüsusi olaraq üzv məlumatına ehtiyacı olan texnologiya və startap icma təşkilatçıları üçün qurulub, yalnız tədbir səhifələri deyil."
       }
     },
     "cta": {
