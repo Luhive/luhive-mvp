@@ -148,43 +148,29 @@
     "copyright": "© 2025 Luhive. All rights reserved."
   },
   "pricingV2": {
-    "badge": "Pricing",
     "title": "Choose your plan",
-    "ribbon": "Last 15 founding communities!",
-    "planName": "Premium Community",
-    "price": "39.99",
-    "currency": "USD / month",
-    "premiumCommunity": "Premium Community",
-    "free": "Free",
-    "bookDemo": "Claim Your Founding Spot",
-    "features": {
-      "feature1": "Full platform access",
-      "feature2": "All integrations & AI features",
-      "feature3": "Priority support & feature requests",
-      "feature4": "Grandfathered pricing when we launch",
-      "feature5": "Shape the product roadmap"
-    },
-    "cta": {
-      "title": "Create your own community",
-      "description": "Build the Digital Network of you to scale your connections & reach, infinitely.",
-      "button": "Get started"
-    },
-    "benefits": {
-      "benefit1": {
-        "number": "01",
-        "title": "Centralized Power",
-        "description": "Manage members, analytics, communication, and growth from a single dashboard. End tool juggling now."
+    "free": {
+      "title": "Free",
+      "description": "For organizers building something they believe in.",
+      "features": {
+        "feature1": "Run events.",
+        "feature2": "Grow your member base.",
+        "feature3": "Start capturing data up to 300 members."
       },
-      "benefit2": {
-        "number": "02",
-        "title": "Effortless Workflow",
-        "description": "Stop feeling drained by admin. Spend less time managing and more time connecting."
+      "price": "$0",
+      "period": "/month",
+      "cta": "Get Started"
+    },
+    "business": {
+      "brand": "Luhive",
+      "badge": "Business",
+      "description": "For communities that run like a business.",
+      "features": {
+        "feature1": "White label your platform.",
+        "feature2": "Connect your own tools.",
+        "feature3": "Request custom features."
       },
-      "benefit3": {
-        "number": "03",
-        "title": "Connected & Growing",
-        "description": "Integration with major platforms drives cross‑platform discovery. Get seen everywhere."
-      }
+      "cta": "Let's Talk"
     }
   },
   "blogsV2": {

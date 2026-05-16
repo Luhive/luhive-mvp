@@ -148,42 +148,29 @@
     "copyright": "© 2025 Luhive. Bütün hüquqlar qorunur."
   },
   "pricingV2": {
-    "badge": "Qiymətləndirmə",
     "title": "Planınızı seçin",
-    "ribbon": "Son 20 icma!",
-    "planName": "Premium İcma",
-    "price": "39.99",
-    "currency": "USD / ay",
-    "premiumCommunity": "Premium İcma",
-    "free": "Pulsuz",
-    "bookDemo": "Icmanızı başladın",
-    "features": {
-      "feature1": "Əsas planın hər şeyini əhatə edir",
-      "feature2": "Ətraflı mətbəx və vanna otağı təmizliyi",
-      "feature3": "Pəncərələrin və güzgülərin içərisi",
-      "feature4": "Döşəmə lövhələri, künclər və yüksək səthlər"
-    },
-    "cta": {
-      "title": "Öz icmanızı yaradın",
-      "description": "Əlaqələrinizi və çatdırılmasınızı sonsuz dərəcədə artırmaq üçün öz Rəqəmsal Şəbəkənizi qurun.",
-      "button": "Başlayın"
-    },
-    "benefits": {
-      "benefit1": {
-        "number": "01",
-        "title": "Mərkəzləşdirilmiş Güc",
-        "description": "Üzvləri, analitikanı, ünsiyyəti və böyüməni vahid idarəetmə panelindən idarə edin. Artıq alətlər arasında keçid etməyin."
+    "free": {
+      "title": "Pulsuz",
+      "description": "İnandıqları bir şey qurmaq üçün təşkilatçılar üçün.",
+      "features": {
+        "feature1": "Tədbirlər keçirin.",
+        "feature2": "Üzv bazanızı böyüdün.",
+        "feature3": "300 üzvə qədər məlumat toplamağa başlayın."
       },
-      "benefit2": {
-        "number": "02",
-        "title": "Asan İş Axını",
-        "description": "İdarəetmədən yorulmağı dayandırın. Daha az idarəetmə, daha çox əlaqə vaxtı sərf edin."
+      "price": "$0",
+      "period": "/ay",
+      "cta": "Başlayın"
+    },
+    "business": {
+      "brand": "Luhive",
+      "badge": "Biznes",
+      "description": "Biznes kimi fəaliyyət göstərən icmalar üçün.",
+      "features": {
+        "feature1": "Platformanızı white label edin.",
+        "feature2": "Öz alətlərinizi qoşun.",
+        "feature3": "Fərdi funksiyalar tələb edin."
       },
-      "benefit3": {
-        "number": "03",
-        "title": "Bağlı və Böyüyən",
-        "description": "Əsas platformalarla inteqrasiya platformalar arası kəşfiyyatı təmin edir. Hər yerdə görünün."
-      }
+      "cta": "Danışaq"
     }
   },
   "blogsV2": {
