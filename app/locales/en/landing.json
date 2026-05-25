@@ -16,9 +16,9 @@
     "tryForFree": "Start Your Community"
   },
   "hero": {
-    "title": "One Platform",
-    "titleHighlight": "Engaged",
-    "subtitle": "Unify your data, events, and announcements. Finally, a single source of truth for your community.",
+    "title": "You're running a community",
+    "titleHighlight": "You should be running a",
+    "subtitle": "Your community data disappears after every event. Luhive captures it automatically, building member history, engagement data, and sponsor proof",
     "ctaDiscover": "Discover Communities",
     "ctaCreate": "Create community",
     "tagline": "Build communities that matter"
@@ -26,7 +26,7 @@
   "about": {
     "badge": "About",
     "title": "The Future of Community Management",
-    "communities": "Communities",
+    "communities": "business",
     "startYourCommunity": "Start Your Community",
     "description": "We're building the ultimate community platform for verified organizations. Starting in Azerbaijan, scaling globally.",
     "problem": {
@@ -75,50 +75,111 @@
       "description": "Your community's data is safe with us. Enterprise-grade security meets user-friendly design."
     }
   },
-  "featuresV2": {
-    "headingLine1": "Discover our",
-    "headingLine2": "exceptional features",
-    "buildIntegrations": {
-      "title": "Built-in Integrations",
-      "description": "Built-in integrations for whenever you want."
-    },
-    "gamification": {
-      "title": "Gamification & Badges",
-      "description": "Stay active, earn badges, and make the most of your experience.",
-      "firstAdopter": "First Adopter",
-      "verifiedByLuhive": "Verified by Luhive",
-      "moreBadges": "+3"
-    },
-    "analytics": {
-      "title": "AI Powered Analytics",
-      "description": "Get smarter growth insights.",
-      "membersLabel": "Members",
-      "membersCount": "+2350",
-      "growthLabel": "+180.1% from last month",
-      "barChartAlt": "Bar chart showing community growth over time"
-    },
-    "manageCommunity": {
-      "title": "Manage Your Community Quickly",
-      "description": "Simplify your workflow by centralizing your most important public links and feedback channels.",
-      "quickActionsTitle": "Quick Actions",
-      "viewAnalytics": "View Analytics",
-      "createEvent": "Create an Event",
-      "copyPublicLink": "Copy Public Link"
-    },
-    "magicBox": {
-      "title": "Magic Box",
-      "description": "AI creates events and announcements you want only in seconds.",
-      "sampleText": "Oh yeah, almost forgot about the new software training thing. Need to tell people it's next week right on Tuesday morning at eleven am—I think. Just tell them...",
-      "announcement": "Announcement",
-      "event": "Event"
+  "featuresShowcase": {
+    "badge": "Features",
+    "heading": "Discover our exceptional features",
+    "visualAria": "Feature illustration placeholder",
+    "clickDetails": "Click details",
+    "items": {
+      "memberMemory": {
+        "title": "Member Memory",
+        "description": "Every registration, every attendance, every return — saved automatically. Your member list grows itself.",
+        "visual": {
+          "title": "Members",
+          "autoSynced": "Auto-synced from your events",
+          "weeklyGrowth": "+12 this week",
+          "tapForInsights": "Tap for insights",
+          "savedAutomatically": "Saved automatically",
+          "stepRegistered": "Registered",
+          "stepAttended": "Attended",
+          "stepReturned": "Returned",
+          "joinedEvents": "Joined {{count}} events",
+          "firstEventToday": "First event today",
+          "affinityHackathon": "Loves hackathons",
+          "affinityWebinar": "Often joins webinars",
+          "affinityWorkshop": "Prefers workshops",
+          "affinityAi": "Into AI events",
+          "affinityTips": "Tips & tricks fan",
+          "affinityCareer": "Career-focused events"
+        }
+      },
+      "eventIntelligence": {
+        "title": "Event Intelligence",
+        "description": "See which events actually worked, who showed up, and who keeps coming back. No spreadsheet needed.",
+        "visual": {
+          "title": "Recent Events",
+          "autoTracked": "Auto-tracked from check-ins",
+          "eventInsight": "Event insight",
+          "showRate": "Show rate",
+          "returning": "Returning",
+          "newAttendees": "New",
+          "monthlyTrend": "+8% attendance this month",
+          "avgShowRate": "Avg show rate · 78%",
+          "tapForInsights": "Tap for insights",
+          "aiSuggestionLabel": "AI insight",
+          "aiSuggestion": "Your AI hackathons outperform other formats by 40%. Consider running more.",
+          "formatHackathon": "Hackathon",
+          "formatWebinar": "Webinar",
+          "formatWorkshop": "Workshop",
+          "formatMixer": "Mixer"
+        }
+      },
+      "reachTheRightPeople": {
+        "title": "Reach the Right People",
+        "description": "Send announcements to your full community or filter by interest or attendance. No more blasting everyone with everything.",
+        "visual": {
+          "title": "Audiences",
+          "filteredByHistory": "Filtered from event history",
+          "segmentAll": "All members",
+          "segmentHackathon": "Hackathon fans",
+          "segmentWebinar": "Webinar regulars",
+          "segmentRecent": "New this month",
+          "filterAll": "Everyone in your community",
+          "filterHackathon": "Attended 2+ hackathons",
+          "filterWebinar": "Often joins webinars",
+          "filterRecent": "Joined in the last 30 days",
+          "memberCount": "{{count}} members",
+          "tapForPreview": "Tap for preview",
+          "announcementPreview": "Announcement preview",
+          "sendingTo": "Sending to {{count}} members",
+          "readyToSend": "Ready to send",
+          "sendButton": "Send",
+          "sentButton": "Sent!",
+          "sendAnnouncement": "Send announcement",
+          "lastSent": "Last announcement · 3 days ago"
+        }
+      },
+      "communityMemory": {
+        "title": "Community Memory",
+        "description": "New co-organizer joins and sees everything from day one. You step back and nothing disappears.",
+        "visual": {
+          "title": "Community History",
+          "autoPreserved": "Auto-preserved · never lost",
+          "activityEvent": "Event hosted",
+          "activityAnnouncement": "Announcement sent",
+          "activityMember": "Member joined",
+          "activityCoOrg": "Co-organizer added",
+          "metaAttended": "{{count}} attended",
+          "metaSentTo": "{{count}} members",
+          "metaMemberNumber": "Member #{{count}}",
+          "coOrgRole": "Co-organizer",
+          "tapForContext": "Tap for context",
+          "viewContext": "View context",
+          "contextAccess": "Context access",
+          "checkHistory": "Full event history",
+          "checkHistoryMeta": "6 events",
+          "checkMembers": "All members visible",
+          "checkMembersMeta": "248 members",
+          "checkAnnouncements": "Past announcements",
+          "checkAnnouncementsMeta": "12 sent",
+          "readyFromDayOne": "Ready from day one",
+          "preservedSince": "Context preserved since Oct '24"
+        }
+      }
     }
   },
   "partners": {
-    "badge": "Partners",
-    "title": "They trust us",
-    "supVcAlt": "SUP.VC logo",
-    "gdgBakuAlt": "GDG Baku logo",
-    "aimAzAlt": "AIM Azerbaijan logo"
+    "subtitle": "Trusted by communities around the world"
   },
   "contact": {
     "badge": "Join Our Community",

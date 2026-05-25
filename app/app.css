@@ -235,6 +235,11 @@ body {
 }
 
 /* Landing page animations */
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 @keyframes fadeInPage {
   to {
     opacity: 1;

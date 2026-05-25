@@ -1,0 +1,68 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 28px 6px 6px;
+  border-radius: 9999px;
+  background: #FF6D23;
+  color: white;
+  font-size: 1rem;
+  line-height: 1.5;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0px 2px 8px rgba(255, 109, 35, 0.4), 0px 1px 2px rgba(0, 0, 0, 0.06);
+  text-decoration: none;
+  font-family: inherit;
+  font-weight: inherit;
+}
+
+.btn:hover {
+  background: #E55A1A;
+  box-shadow: 0px 6px 18px rgba(255, 109, 35, 0.5);
+}
+
+.btn:active {
+  transform: scale(0.95);
+  transition: transform 100ms ease;
+}
+
+/* Avatar zooms right immediately on hover — scale(3) translate(50%) applies translate
+   in the avatar's own scaled coordinate space, pushing it far right */
+.avatar {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  transition: transform 500ms ease;
+}
+
+.btn:hover .avatar {
+  transform: scale(1.8) translate(150%);
+}
+
+/* "Book a Call" slides out to the right, delayed 300ms so the avatar animates first */
+.label {
+  transition: transform 500ms ease;
+  transition-delay: 300ms;
+  white-space: nowrap;
+}
+
+.btn:hover .label {
+  transform: translateX(200%);
+}
+
+/* "Let's go!" starts off-screen left, slides in with the same 300ms delay */
+.teaser {
+  position: absolute;
+  left: 1.5rem;
+  z-index: 2;
+  transform: translateX(-250%);
+  transition: transform 500ms ease;
+  white-space: nowrap;
+}
+
+.btn:hover .teaser {
+  transform: translateX(0);
+  transition-delay: 300ms;
+}

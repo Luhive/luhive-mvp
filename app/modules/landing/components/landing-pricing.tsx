@@ -15,10 +15,6 @@ export function LandingPricing() {
       <div className="mx-auto w-[90vw] 2xl:w-[90rem] text-center">
 
         <div className="mb-15 md:mb-10">
-          <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
-            <span>{t('pricingV2.badge')}</span>
-          </div>
           <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[3rem]">
             {t('pricingV2.title')}
           </h2>

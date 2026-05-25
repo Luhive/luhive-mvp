@@ -71,6 +71,9 @@ const ensureServerBuildEntry = (): PluginOption => {
 export default defineConfig((config) => {
   return {
     ssr: {},
+    server: {
+      allowedHosts: ["1421-82-194-22-223.ngrok-free.app"],
+    },
     plugins: [
       tailwindcss(),
       reactRouter(),

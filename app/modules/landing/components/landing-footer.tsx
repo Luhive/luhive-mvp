@@ -1,8 +1,8 @@
-import { Globe } from 'lucide-react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 import { AnalyticsEvents } from '~/shared/lib/analytics';
+import { LanguageSwitcher } from './language-switcher';
 
 const SOCIAL_LINKS = [
   {
@@ -67,7 +67,7 @@ export function LandingFooter() {
           </div>
 
           {/* Desktop: CTAs on right | Mobile: CTAs at top */}
-          <div className="flex w-full items-center justify-center gap-3 md:order-3 md:w-auto">
+          {/* <div className="flex w-full items-center justify-center gap-3 md:order-3 md:w-auto">
             <a
               href="https://luhive.com/hub"
               target="_blank"
@@ -78,7 +78,7 @@ export function LandingFooter() {
               <span className='text-md lg:text-lg font-medium underlines'>Discover Hub</span>
               <Globe className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 group-hover:-translate-y-1" />
             </a>
-          </div>
+          </div> */}
         </div>
 
         {/* Desktop: Logo in center | Mobile: Logo at bottom */}
@@ -92,8 +92,12 @@ export function LandingFooter() {
           </span>
         </div>
 
+        <div className="mt-6 flex justify-center">
+          <LanguageSwitcher />
+        </div>
+
         {/* Bottom navigation */}
-        <nav className="mt-6 footer-nav  flex flex-wrap items-center justify-center gap-12 text-xs font-medium text-muted-foreground sm:text-sm">
+        <nav className="mt-4 footer-nav flex flex-wrap items-center justify-center gap-12 text-xs font-medium text-muted-foreground sm:text-sm">
           <a href="#about" className="hover:text-foreground">
             {t('footerV2.nav.about')}
           </a>
