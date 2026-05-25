@@ -181,6 +181,10 @@
   "partners": {
     "subtitle": "Trusted by communities around the world"
   },
+  "acknowledgement": {
+    "problem": "Your communities want to grow, but <strong>your data disappears after every event.</strong> No member history, no engagement record, no way to prove your value to a sponsor, so you <strong>start from zero, every single time.</strong>",
+    "solution": "<strong>Luhive</strong> is the operating system for <strong>community-as-a-startup</strong> — so you can finally <strong>grow, delegate,</strong> and <strong>monetize</strong> without losing everything you've\u00a0built."
+  },
   "contact": {
     "badge": "Join Our Community",
     "title": "Be Part of the Future",
@@ -205,43 +209,29 @@
     "copyright": "© 2025 Luhive. All rights reserved."
   },
   "pricingV2": {
-    "badge": "Pricing",
     "title": "Choose your plan",
-    "ribbon": "Last 15 founding communities!",
-    "planName": "Premium Community",
-    "price": "39.99",
-    "currency": "USD / month",
-    "premiumCommunity": "Premium Community",
-    "free": "Free",
-    "bookDemo": "Claim Your Founding Spot",
-    "features": {
-      "feature1": "Full platform access",
-      "feature2": "All integrations & AI features",
-      "feature3": "Priority support & feature requests",
-      "feature4": "Grandfathered pricing when we launch",
-      "feature5": "Shape the product roadmap"
-    },
-    "cta": {
-      "title": "Create your own community",
-      "description": "Build the Digital Network of you to scale your connections & reach, infinitely.",
-      "button": "Get started"
-    },
-    "benefits": {
-      "benefit1": {
-        "number": "01",
-        "title": "Centralized Power",
-        "description": "Manage members, analytics, communication, and growth from a single dashboard. End tool juggling now."
+    "free": {
+      "title": "Free",
+      "description": "For organizers building something they believe in.",
+      "features": {
+        "feature1": "Run events.",
+        "feature2": "Grow your member base.",
+        "feature3": "Start capturing data up to 300 members."
       },
-      "benefit2": {
-        "number": "02",
-        "title": "Effortless Workflow",
-        "description": "Stop feeling drained by admin. Spend less time managing and more time connecting."
+      "price": "$0",
+      "period": "/month",
+      "cta": "Get Started"
+    },
+    "business": {
+      "brand": "Luhive",
+      "badge": "Business",
+      "description": "For communities that run like a business.",
+      "features": {
+        "feature1": "White label your platform.",
+        "feature2": "Connect your own tools.",
+        "feature3": "Request custom features."
       },
-      "benefit3": {
-        "number": "03",
-        "title": "Connected & Growing",
-        "description": "Integration with major platforms drives cross‑platform discovery. Get seen everywhere."
-      }
+      "cta": "Let's Talk"
     }
   },
   "blogsV2": {
@@ -267,24 +257,28 @@
     }
   },
   "faqV2": {
-    "badge": "FAQ's",
-    "title": "You ask and we answer",
+    "badge": "FAQ",
+    "title": "Got questions?",
     "items": {
-      "what-is-luhive": {
-        "question": "What is Luhive?",
-        "answer": "Luhive is the all-in-one \"Operating System\" built specifically for community managers and organizers. We eliminate the scattered tools by giving you a unified hub to manage, analyze, and scale your community faster than ever before."
+      "members-new-account": {
+        "question": "Do my members need to create a new account?",
+        "answer": "No. Members sign up for events using Google or their email — the same way they already do. Nothing changes on their end."
       },
-      "who-is-luhive-built-for": {
-        "question": "Who is Luhive built for?",
-        "answer": "We are focused on Community Admins and Organizers. If you manage an organization, a group, or a community, Luhive is your essential tool for making management easy and effective."
+      "replace-existing-tools": {
+        "question": "Will this replace the tools I'm already using?",
+        "answer": "It replaces your event registration flow. You can keep using Telegram or WhatsApp for community chat — Luhive handles the data layer those tools never could."
       },
-      "what-problem-does-luhive-solve": {
-        "question": "What problem does Luhive solve?",
-        "answer": "We solve the fragmented ecosystem problem. Instead of using 4-5 different external tools for forms, events, announcements, and tracking, you use one, single platform. This cuts down on time waste and complexity. Luhive praises simplicity"
+      "data-if-cancel": {
+        "question": "What happens to my data if I cancel?",
+        "answer": "Your member history, event records, and analytics are yours. We don't hold your data hostage."
       },
-      "how-does-luhive-provide-deep-analytics": {
-        "question": "How does Luhive provide \"Deep Analytics\"?",
-        "answer": "Our platform tracks member activity history, event attendance, and engagement. It's a Member CRM with rich data. We give you the actionable intelligence needed to understand what works, who your most active members are, and how to improve your next event with our AI solutions."
+      "only-large-communities": {
+        "question": "Is Luhive only for large communities?",
+        "answer": "The free plan supports up to 300 members — built for communities just getting started. Pro unlocks everything once you're ready to grow."
+      },
+      "different-from-luma-circle": {
+        "question": "How is Luhive different from Luma or Circle?",
+        "answer": "Luma is an event tool. Circle is built for course creators. Luhive is built specifically for tech and startup community organizers who need member data, not just event pages."
       }
     },
     "cta": {

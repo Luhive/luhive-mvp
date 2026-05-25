@@ -21,8 +21,8 @@ export function CommunityCard({ community }: CommunityCardProps) {
       viewTransition
       className="group"
     >
-      <Card className="h-full cursor-pointer border hover:border-primary/30 transition-all duration-200 shadow-none hover:shadow-md group transform-gpu hover:scale-[1.02] hover:-rotate-1">
-        <CardHeader className="pb-3">
+      <Card className="h-full gap-5 cursor-pointer border hover:border-primary/30 transition-all duration-200 shadow-none hover:shadow-md group transform-gpu hover:scale-[1.02] hover:-rotate-1">
+        <CardHeader className="pb-2">
           <div className="flex items-start gap-4">
             <Avatar className="h-16 w-16 border-2">
               <AvatarImage src={community.logo_url || ""} alt={community.name} />
@@ -30,8 +30,8 @@ export function CommunityCard({ community }: CommunityCardProps) {
                 {community.name.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-xl font-bold text-foreground mb-1 truncate">
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <CardTitle className="text-xl font-bold text-foreground mb-1 min-w-0 line-clamp-2 break-words leading-snug">
                 {community.name}
               </CardTitle>
               {community.tagline && (
@@ -60,9 +60,9 @@ export function CommunityCard({ community }: CommunityCardProps) {
             </div>
           )}
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2">
           {community.description && (
-            <p className="text-sm text-muted-foreground line-clamp-3">
+            <p className="text-sm leading-snug text-muted-foreground line-clamp-2">
               {community.description}
             </p>
           )}

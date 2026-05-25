@@ -1,5 +1,5 @@
 import type { Route } from "./+types/layout";
-import { Outlet, useLoaderData, useMatches } from "react-router";
+import { Outlet, useLoaderData, useMatches, useLocation } from "react-router";
 import { useEffect } from "react";
 import { TopNavigation } from "~/shared/components/navigation";
 import { createClient } from "~/shared/lib/supabase/server";
@@ -51,6 +51,8 @@ export function shouldRevalidate({
 export default function TopNavigationLayout() {
   const { user } = useLoaderData<typeof loader>();
   const matches = useMatches();
+  const location = useLocation();
+  const isHubPage = location.pathname === "/hub";
   const isEditorRoute = matches.some(
     (m) => typeof m.id === "string" && m.id.includes("announcement-new"),
   );
@@ -69,7 +71,9 @@ export default function TopNavigationLayout() {
 
   return (
     <div className="min-h-screen container mx-auto px-5 bg-background flex flex-col">
-      {!isEditorRoute && <TopNavigation user={user} />}
+      {!isEditorRoute && (
+        <TopNavigation user={user} showCreateCommunityOnMobile={isHubPage} />
+      )}
       <main className="flex-1 pb-5 lg:pb-0">
         <Outlet />
       </main>

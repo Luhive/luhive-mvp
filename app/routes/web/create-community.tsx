@@ -20,6 +20,7 @@ import { AlertCircle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import type { CreateCommunityLoaderData } from "~/modules/community/server/create-community-loader.server";
 import type { CreateCommunityActionData } from "~/modules/community/server/create-community-action.server";
+import { LUHIVE_CREATE_COMMUNITY_BOOKING_URL } from "~/shared/lib/utils/url";
 
 export default function CreateCommunityPage() {
   useLoaderData<CreateCommunityLoaderData>();
@@ -144,7 +145,16 @@ export default function CreateCommunityPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-4 pt-4">
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <Button type="button" className="min-w-[140px]" asChild>
+                <a
+                  href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Create Community
+                </a>
+              </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
@@ -153,10 +163,10 @@ export default function CreateCommunityPage() {
                 {isSubmitting ? (
                   <>
                     <Spinner className="mr-2 h-4 w-4" />
-                    Creating...
+                    Submitting...
                   </>
                 ) : (
-                  "Create Community"
+                  "Submit application"
                 )}
               </Button>
               <Button

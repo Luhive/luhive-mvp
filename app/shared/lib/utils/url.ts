@@ -5,6 +5,9 @@
  * both server and client code without pulling in browser-only dependencies.
  */
 
+/** Cal.com booking for community onboarding (used by Create Community CTAs). */
+export const LUHIVE_CREATE_COMMUNITY_BOOKING_URL = "https://cal.com/luhive";
+
 /**
  * Safely parse a URL string.
  *
