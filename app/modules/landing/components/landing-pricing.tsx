@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 
 import { GlowBorder } from "~/components/core/glowing-border";
 import { Button } from '~/shared/components/ui/button';
@@ -64,14 +63,16 @@ export function LandingPricing() {
                 className="h-auto w-full shrink-0 rounded-full bg-[#000000] px-6 py-3 text-sm font-semibold text-white hover:bg-[#000000]/90 sm:w-auto"
                 asChild
               >
-                <Link
-                  to="/signup"
+                <a
+                  href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() =>
-                    AnalyticsEvents.startCommunityClick("Pricing Free")
+                    AnalyticsEvents.bookDemoClick("Pricing Free")
                   }
                 >
                   {t("pricingV2.free.cta")}
-                </Link>
+                </a>
               </Button>
             </div>
           </article>

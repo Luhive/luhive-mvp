@@ -6,7 +6,8 @@
  */
 
 /** Cal.com booking for community onboarding (used by Create Community CTAs). */
-export const LUHIVE_CREATE_COMMUNITY_BOOKING_URL = "https://cal.com/luhive";
+export const LUHIVE_CREATE_COMMUNITY_BOOKING_URL =
+  "https://cal.com/luhive/30min?user=luhive";
 
 /**
  * Safely parse a URL string.
