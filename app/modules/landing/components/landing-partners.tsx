@@ -1,15 +1,15 @@
 import { useTranslation } from 'react-i18next';
 
 const PARTNERS = [
-  { src: "/landing/partners/Sup.svg", alt: "SUP.VC" },
-  { src: "/landing/partners/GDG.svg", alt: "GDG Baku" },
-  { src: "/landing/partners/Nextgenhub.svg", alt: "Nextgen Hub" },
-  { src: "/landing/partners/Cursor.svg", alt: "Cursor" },
-  { src: "/landing/partners/Techsales.svg", alt: "Techsales" },
-  { src: "/landing/partners/Xsolla.svg", alt: "Xsolla" },
-  { src: "/landing/partners/Eic.svg", alt: "EIC" },
-  { src: "/landing/partners/Hackcafe.svg", alt: "Hackcafe" },
-  { src: "/landing/partners/Wesolve.svg", alt: "Wesolve" },
+  { src: "/landing/partners/Sup.png", alt: "SUP.VC" },
+  { src: "/landing/partners/GDG.png", alt: "GDG Baku" },
+  { src: "/landing/partners/Nextgenhub.png", alt: "Nextgen Hub" },
+  { src: "/landing/partners/Cursor.png", alt: "Cursor" },
+  { src: "/landing/partners/Techsales.png", alt: "Techsales" },
+  { src: "/landing/partners/Xsolla.png", alt: "Xsolla" },
+  { src: "/landing/partners/Eic.png", alt: "EIC" },
+  { src: "/landing/partners/Hackcafe.png", alt: "Hackcafe" },
+  { src: "/landing/partners/Wesolve.png", alt: "Wesolve" },
 ];
 
 export function LandingPartners() {
@@ -23,8 +23,8 @@ export function LandingPartners() {
         </p>
 
         <div className="relative w-full flex-1 overflow-hidden">
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#F6F4F1] to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#F6F4F1] to-transparent" />
+         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#F6F4F1] to-transparent hidden md:block" />
+         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#F6F4F1] to-transparent hidden md:block" />
 
           <div
             className="flex w-max items-center opacity-60 gap-12 hover:[animation-play-state:paused]"
