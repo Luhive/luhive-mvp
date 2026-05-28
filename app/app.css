@@ -117,6 +117,9 @@ body {
   --secondary-foreground: #242424;
   --muted: oklch(0.97 0 0);
   --muted-foreground: #6B6B6B; /* Secondary Text */
+  --landing-canvas: #F6F4F1;
+  --landing-ink: #141414;
+  --landing-muted: #666661;
   --accent: #FF6D23; /* Accent */
   --accent-foreground: #FFFFFF;
   --destructive: oklch(0.577 0.245 27.325);

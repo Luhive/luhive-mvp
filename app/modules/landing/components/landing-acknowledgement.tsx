@@ -7,7 +7,7 @@ const strongClassName = 'font-semibold text-foreground';
 
 export function LandingAcknowledgement() {
   return (
-    <section className="bg-[#F6F4F1] py-14 lg:py-20">
+    <section className="bg-[#F6F4F1] py-16 md:py-24">
       <div className="mx-auto flex w-[90vw] max-w-[57rem] flex-col gap-10 lg:max-w-[60rem] lg:gap-14">
         <p className={paragraphClassName}>
           <Trans

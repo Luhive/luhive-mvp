@@ -19,19 +19,10 @@ export function LandingFeatures() {
   const panelId = useId();
 
   return (
-    <section id="features" className="bg-[#F6F4F1] py-12 md:py-15">
-      <div className="mx-auto flex w-[90vw] max-w-[90rem] flex-col items-center gap-12 md:gap-20">
-        <header className="flex w-full flex-col items-center gap-3 text-center">
-          <div className="flex h-[27px] items-center justify-center gap-2.5 rounded-[20px] px-4">
-            <span
-              className="size-2 shrink-0 rounded-full bg-[#FF6D23]"
-              aria-hidden
-            />
-            <p className="text-base font-medium leading-normal text-[#666661]">
-              {t("featuresShowcase.badge")}
-            </p>
-          </div>
-          <h2 className="max-w-[52rem] text-3xl font-medium leading-none tracking-tight text-[#141414] md:text-[3rem]">
+    <section id="features" className="bg-[#F6F4F1] py-16 md:py-24">
+      <div className="mx-auto flex w-[90vw] max-w-[70rem] flex-col items-center">
+        <header className="mb-12 flex w-full flex-col items-center gap-3 text-center md:mb-20">
+          <h2 className="max-w-[52rem] text-3xl font-medium leading-tight tracking-tight text-[#141414] md:text-[3rem]">
             {t("featuresShowcase.heading")}
           </h2>
         </header>

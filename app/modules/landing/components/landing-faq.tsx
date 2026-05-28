@@ -26,11 +26,11 @@ export function LandingFAQ() {
   return (
     <section
       id="faqs"
-      className="bg-[#F6F4F1] py-25 lg:py-38"
+      className="bg-[#F6F4F1] py-16 md:py-24"
     >
       <div className="mx-auto w-[90vw] 2xl:w-[90rem]">
-        <div className="mb-10 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+        <div className="mb-12 text-center md:mb-20">
+          <h2 className="text-3xl font-medium leading-tight tracking-tight text-[#141414] md:text-[3rem]">
             {t('faqV2.title')}
           </h2>
         </div>

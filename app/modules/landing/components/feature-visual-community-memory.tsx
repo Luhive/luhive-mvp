@@ -10,7 +10,7 @@ import {
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -142,7 +142,7 @@ function EntryMetaBadge({
     return (
       <Badge
         variant="outline"
-        className="ml-auto shrink-0 border-primary/30 text-[10px] font-medium text-primary"
+        className="shrink-0 border-primary/30 text-[10px] font-medium text-primary"
       >
         {t(`${prefix}.coOrgRole`)}
       </Badge>
@@ -159,28 +159,30 @@ function EntryMetaBadge({
   return (
     <Badge
       variant="outline"
-      className="ml-auto shrink-0 border-primary/30 text-[10px] font-medium text-primary"
+      className="shrink-0 border-primary/30 text-[10px] font-medium text-primary"
     >
       {t(`${prefix}.${metaKey}`, { count: metaCount })}
     </Badge>
   );
 }
 
-function FeedRowHeadline({
-  feedKey,
-  date,
-}: {
-  feedKey: FeedKey;
-  date: string;
-}) {
+function FeedRowHeadline({ label }: { label: string }) {
+  return (
+    <p className="truncate text-sm font-semibold leading-snug text-foreground">
+      {label}
+    </p>
+  );
+}
+
+function FeedRowSubline({ feedKey, date }: { feedKey: FeedKey; date: string }) {
   const { t } = useTranslation("landing");
   const prefix = "featuresShowcase.items.communityMemory.visual";
   const { activityI18nKey } = FEED_CONFIG[feedKey];
 
   return (
-    <p className="truncate text-sm font-semibold leading-snug text-foreground">
+    <p className="truncate text-[10px] text-muted-foreground">
       {t(`${prefix}.${activityI18nKey}`)}
-      <span className="mx-1 text-foreground/40" aria-hidden>
+      <span className="mx-1 text-muted-foreground/50" aria-hidden>
         ·
       </span>
       {date}
@@ -188,9 +190,34 @@ function FeedRowHeadline({
   );
 }
 
-function FeedRowDetail({ label }: { label: string }) {
+function ClickDetailsHint({ isContextOpen }: { isContextOpen?: boolean }) {
+  const { t } = useTranslation("landing");
+
   return (
-    <p className="truncate text-[10px] text-muted-foreground">{label}</p>
+    <>
+      <span className="hidden shrink-0 items-center gap-1 text-primary lg:flex">
+        <Pointer className="size-3" aria-hidden />
+        <span className="text-[10px] font-medium">
+          {t("featuresShowcase.clickDetails")}
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-1 text-primary lg:hidden">
+        {!isContextOpen && (
+          <>
+            <Pointer className="size-3 animate-pulse" aria-hidden />
+            <span className="text-[10px] font-medium">
+              {t("featuresShowcase.clickDetails")}
+            </span>
+          </>
+        )}
+        <ChevronDown
+          aria-hidden
+          className={`size-3.5 transition-transform duration-300 ${
+            isContextOpen ? "rotate-180" : ""
+          }`}
+        />
+      </span>
+    </>
   );
 }
 
@@ -231,77 +258,57 @@ function ContextAccessPanel() {
   );
 }
 
-function TimelineAttribution({ item }: { item: FeedItem }) {
+function TimelineAttribution({
+  item,
+  trailing,
+}: {
+  item: FeedItem;
+  trailing?: ReactNode;
+}) {
   return (
-    <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
-      <Avatar className="size-5 shrink-0">
-        <AvatarImage src={item.actor.avatarSrc} alt={item.actor.name} />
-        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-[8px] font-semibold text-primary-foreground">
-          {item.actor.initials}
-        </AvatarFallback>
-      </Avatar>
-      <span className="truncate text-[10px] font-medium text-foreground">
-        {item.actor.name}
-      </span>
-      <EntryMetaBadge feedKey={item.key} metaCount={item.metaCount} />
+    <div className="mt-1.5 flex items-center justify-between gap-2">
+      <div className="flex min-w-0 items-center gap-1.5">
+        <Avatar className="size-5 shrink-0">
+          <AvatarImage src={item.actor.avatarSrc} alt={item.actor.name} />
+          <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-[8px] font-semibold text-primary-foreground">
+            {item.actor.initials}
+          </AvatarFallback>
+        </Avatar>
+        <span className="truncate text-[10px] font-medium text-foreground">
+          {item.actor.name}
+        </span>
+      </div>
+      {trailing}
     </div>
   );
 }
 
-function TimelineEntryBody({
+function TimelineEntryContent({
   item,
   isContextOpen,
 }: {
   item: FeedItem;
   isContextOpen?: boolean;
 }) {
-  const { t } = useTranslation("landing");
-
-  if (item.isActive) {
-    return (
-      <>
-        <FeedRowHeadline feedKey={item.key} date={item.date} />
-        <div className="mt-0.5 flex items-center justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <FeedRowDetail label={item.label} />
-          </div>
-          <span className="hidden shrink-0 items-center gap-1 text-primary lg:flex">
-            <Pointer className="size-3" aria-hidden />
-            <span className="text-[10px] font-medium">
-              {t("featuresShowcase.clickDetails")}
-            </span>
-          </span>
-          <span className="flex shrink-0 items-center gap-1 text-primary lg:hidden">
-            {!isContextOpen && (
-              <>
-                <Pointer
-                  className="size-3 animate-pulse"
-                  aria-hidden
-                />
-                <span className="text-[10px] font-medium">
-                  {t("featuresShowcase.clickDetails")}
-                </span>
-              </>
-            )}
-            <ChevronDown
-              aria-hidden
-              className={`size-3.5 transition-transform duration-300 ${
-                isContextOpen ? "rotate-180" : ""
-              }`}
-            />
-          </span>
-        </div>
-        <TimelineAttribution item={item} />
-      </>
-    );
-  }
-
   return (
-    <>
-      <FeedRowHeadline feedKey={item.key} date={item.date} />
-      <FeedRowDetail label={item.label} />
-      <TimelineAttribution item={item} />
-    </>
+    <div className="min-w-0 flex-1">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <FeedRowHeadline label={item.label} />
+        </div>
+        <EntryMetaBadge feedKey={item.key} metaCount={item.metaCount} />
+      </div>
+
+      <FeedRowSubline feedKey={item.key} date={item.date} />
+      <TimelineAttribution
+        item={item}
+        trailing={
+          item.isActive ? (
+            <ClickDetailsHint isContextOpen={isContextOpen} />
+          ) : undefined
+        }
+      />
+    </div>
   );
 }
 
@@ -324,24 +331,19 @@ function ContextAccessModal({
         <DialogHeader className="text-left">
           <div className="flex items-center gap-3">
             <Avatar className="size-10">
-              <AvatarImage
-                src={item.actor.avatarSrc}
-                alt={item.actor.name}
-              />
+              <AvatarImage src={item.actor.avatarSrc} alt={item.actor.name} />
               <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-xs font-semibold text-primary-foreground">
                 {item.actor.initials}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <DialogTitle className="text-base">
+              <DialogTitle className="text-base">{item.label}</DialogTitle>
+              <DialogDescription className="text-[10px]">
                 {t(`${prefix}.${activityI18nKey}`)}
-                <span className="mx-1 text-foreground/40" aria-hidden>
+                <span className="mx-1 text-muted-foreground/50" aria-hidden>
                   ·
                 </span>
                 {item.date}
-              </DialogTitle>
-              <DialogDescription className="text-[10px]">
-                {item.label}
               </DialogDescription>
             </div>
           </div>
@@ -370,7 +372,7 @@ function TimelineEntry({
           onClick={onActivateContext}
           className="-mx-2 w-[calc(100%+1rem)] cursor-pointer rounded-lg bg-primary/5 px-2 py-2 text-left ring-1 ring-inset ring-primary/15"
         >
-          <TimelineEntryBody item={item} isContextOpen={isContextOpen} />
+          <TimelineEntryContent item={item} isContextOpen={isContextOpen} />
 
           <div
             className={`grid transition-[grid-template-rows] duration-300 ease-in-out lg:hidden ${
@@ -391,7 +393,7 @@ function TimelineEntry({
   return (
     <li className="relative pb-4 pl-6 last:pb-0">
       <TimelineNode feedKey={item.key} />
-      <TimelineEntryBody item={item} />
+      <TimelineEntryContent item={item} />
     </li>
   );
 }

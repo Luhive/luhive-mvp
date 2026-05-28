@@ -83,21 +83,13 @@ function FooterSocialsColumn() {
 
 function FooterLogoWordmark() {
   return (
-    <div className="flex min-w-0 items-center gap-3">
-      <img
-        src="/landing/LogoLuhive.svg"
-        alt=""
-        className="h-9 w-9 shrink-0 object-contain"
-        width={36}
-        height={36}
-      />
-      <span
-        className="text-[1.375rem] font-bold leading-none tracking-tight text-foreground"
-        style={{ fontFamily: 'var(--font-nunito), sans-serif' }}
-      >
-        Luhive
-      </span>
-    </div>
+    <img
+      src="/landing/DesktopLogo.svg"
+      alt="Luhive"
+      className="h-5 w-auto shrink-0 object-contain"
+      width={94}
+      height={19}
+    />
   );
 }
 

@@ -327,13 +327,13 @@ export function FeatureVisualEventIntelligence() {
         </CardFooter>
       </Card>
 
-      <Card className="absolute right-3 top-3 hidden w-[15.5rem] gap-3 overflow-visible rotate-[3deg] border-primary/20 bg-card/60 py-4 shadow-md shadow-black/10 backdrop-blur-sm backdrop-saturate-50 lg:block md:right-6 md:top-6">
+      <Card className="absolute right-3 top-3 hidden w-[12rem] gap-2 overflow-visible rotate-[3deg] border-primary/20 bg-card/60 py-3 shadow-md shadow-black/10 backdrop-blur-sm backdrop-saturate-50 lg:block md:right-4 md:top-4">
         <span
           aria-hidden
-          className="absolute -left-[7px] top-27 size-3 rotate-45 border-b border-l border-primary/20 bg-card/60 backdrop-blur-sm backdrop-saturate-50"
+          className="absolute -left-[7px] top-24 size-3 rotate-45 border-b border-l border-primary/20 bg-card/60 backdrop-blur-sm backdrop-saturate-50"
         />
 
-        <CardHeader className="px-4">
+        <CardHeader className="px-3">
           <div className="flex items-center gap-2">
             <FormatTile format={ACTIVE_EVENT.format} />
             <div className="min-w-0 flex-1">
@@ -347,29 +347,31 @@ export function FeatureVisualEventIntelligence() {
           </div>
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-3 px-4 pb-1">
+        <CardContent className="flex flex-col gap-2 px-3 pb-1">
           <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col gap-0.5">
-              <span className="text-lg font-semibold text-foreground">89%</span>
+              <span className="text-base font-semibold text-foreground">
+                89%
+              </span>
               <span className="text-[10px] text-muted-foreground">
                 {t(`${prefix}.showRate`)}
               </span>
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-lg font-semibold text-foreground">14</span>
+              <span className="text-base font-semibold text-foreground">14</span>
               <span className="text-[10px] text-muted-foreground">
                 {t(`${prefix}.returning`)}
               </span>
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-lg font-semibold text-foreground">27</span>
+              <span className="text-base font-semibold text-foreground">27</span>
               <span className="text-[10px] text-muted-foreground">
                 {t(`${prefix}.newAttendees`)}
               </span>
             </div>
           </div>
 
-          <div className="rounded-lg bg-primary/5 p-2.5 ring-1 ring-inset ring-primary/15">
+          <div className="rounded-lg bg-primary/5 p-2 ring-1 ring-inset ring-primary/15">
             <div className="mb-1 flex items-center gap-1">
               <Sparkles className="size-3 shrink-0 text-primary" aria-hidden />
               <span className="text-[9px] font-semibold uppercase tracking-wide text-primary">
@@ -382,7 +384,7 @@ export function FeatureVisualEventIntelligence() {
           </div>
         </CardContent>
 
-        <CardFooter className="px-4 pt-3">
+        <CardFooter className="px-3 pt-2">
           <div className="flex items-center gap-1.5">
             <TrendingUp className="size-3 shrink-0 text-primary" aria-hidden />
             <span className="text-[10px] font-medium text-primary">

@@ -182,17 +182,16 @@ export function LandingNavbar() {
           <Link
             to="/"
             aria-label="Luhive home"
-            className="flex items-center gap-2 shrink-0 select-none rounded-full px-2 py-1 hover:bg-black/[0.04] transition-colors"
+            className="flex shrink-0 select-none rounded-full px-2 py-1 hover:bg-black/[0.04] transition-colors"
           >
             <img
-              src="/landing/LogoLuhive.svg"
+              src="/landing/DesktopLogo.svg"
               alt=""
               aria-hidden
-              className="h-[1.25rem] w-[1.25rem] shrink-0 object-contain"
+              className="h-[1.1rem] w-auto shrink-0 object-contain"
+              width={94}
+              height={19}
             />
-            <span className="font-sans text-lg font-bold leading-none tracking-tight text-foreground">
-              Luhive
-            </span>
           </Link>
 
           {/* Desktop nav links */}

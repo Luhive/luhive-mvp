@@ -77,7 +77,7 @@
   },
   "featuresShowcase": {
     "badge": "Features",
-    "heading": "Discover our exceptional features",
+    "heading": "Built for the community intelligence",
     "visualAria": "Feature illustration placeholder",
     "clickDetails": "Click details",
     "items": {
@@ -209,7 +209,8 @@
     "copyright": "© 2025 Luhive. All rights reserved."
   },
   "pricingV2": {
-    "title": "Choose your plan",
+    "title": "Start free. Scale smart.",
+    "subtitle": "Start free. Upgrade when your community means business.",
     "free": {
       "title": "Free",
       "description": "For organizers building something they believe in.",

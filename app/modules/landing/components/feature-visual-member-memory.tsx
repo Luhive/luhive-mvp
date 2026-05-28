@@ -150,14 +150,16 @@ const TIMELINE = [
   { stepKey: "stepReturned", event: "Demo Day", state: "active" },
 ] as const;
 
-function MemberDetailPanel() {
+function MemberDetailPanel({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation("landing");
   const prefix = "featuresShowcase.items.memberMemory.visual";
 
   return (
     <>
-      <div className="mb-3 flex items-center gap-2">
-        <Avatar className="size-7">
+      <div
+        className={`flex items-center gap-2 ${compact ? "mb-2" : "mb-3"}`}
+      >
+        <Avatar className={compact ? "size-6" : "size-7"}>
           <AvatarImage
             src={ACTIVE_MEMBER.avatarSrc}
             alt={ACTIVE_MEMBER.name}
@@ -176,7 +178,11 @@ function MemberDetailPanel() {
         </div>
       </div>
 
-      <ol className="relative ml-1 flex flex-col gap-3 border-l border-dashed border-primary/30 pl-4">
+      <ol
+        className={`relative ml-1 flex flex-col border-l border-dashed border-primary/30 ${
+          compact ? "gap-2 pl-3" : "gap-3 pl-4"
+        }`}
+      >
         {TIMELINE.map((step) => (
           <li key={step.stepKey} className="relative">
             <span
@@ -185,10 +191,20 @@ function MemberDetailPanel() {
                 step.state === "done" ? "bg-primary" : "bg-primary/40"
               }`}
             />
-            <p className="text-[11px] font-medium text-foreground">
+            <p
+              className={`font-medium text-foreground ${
+                compact ? "text-[10px]" : "text-[11px]"
+              }`}
+            >
               {t(`${prefix}.${step.stepKey}`)}
             </p>
-            <p className="text-[10px] text-muted-foreground">{step.event}</p>
+            <p
+              className={`text-muted-foreground ${
+                compact ? "text-[9px]" : "text-[10px]"
+              }`}
+            >
+              {step.event}
+            </p>
           </li>
         ))}
       </ol>
@@ -353,13 +369,13 @@ export function FeatureVisualMemberMemory() {
         </CardFooter>
       </Card>
 
-      <Card className="absolute right-3 top-3 hidden w-[15.5rem] gap-3 overflow-visible rotate-[3deg] border-primary/20 bg-card/60 py-4 shadow-md shadow-black/10 backdrop-blur-sm backdrop-saturate-50 lg:block md:right-6 md:top-6">
+      <Card className="absolute right-3 top-3 hidden w-[12rem] gap-2 overflow-visible rotate-[3deg] border-primary/20 bg-card/60 py-3 shadow-md shadow-black/10 backdrop-blur-sm backdrop-saturate-50 lg:block md:right-4 md:top-4">
         <span
           aria-hidden
-          className="absolute -left-[7px] top-25 size-3 rotate-45 border-b border-l border-primary/20 bg-card/60 backdrop-blur-sm backdrop-saturate-50"
+          className="absolute -left-[7px] top-22 size-3 rotate-45 border-b border-l border-primary/20 bg-card/60 backdrop-blur-sm backdrop-saturate-50"
         />
-        <CardContent className="px-4 pb-1">
-          <MemberDetailPanel />
+        <CardContent className="px-3 pb-1">
+          <MemberDetailPanel compact />
         </CardContent>
       </Card>
     </div>

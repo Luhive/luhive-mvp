@@ -11,7 +11,7 @@
     "about": "Haqqımızda",
     "features": "Xüsusiyyətlər",
     "pricing": "Qiymətləndirmə",
-    "faqs": "Tez-tez verilən suallar",
+    "faqs": "FAQ",
     "contact": "Əlaqə",
     "tryForFree": "İcmanızı Başladın"
   },
@@ -77,7 +77,7 @@
   },
   "featuresShowcase": {
     "badge": "Xüsusiyyətlər",
-    "heading": "Möhtəşəm xüsusiyyətlərimizi kəşf edin",
+    "heading": "İcma intellekti üçün qurulub",
     "visualAria": "Xüsusiyyət illüstrasiyasının yer tutucusu",
     "clickDetails": "Ətraflı bax",
     "items": {
@@ -209,7 +209,8 @@
     "copyright": "© 2025 Luhive. Bütün hüquqlar qorunur."
   },
   "pricingV2": {
-    "title": "Planınızı seçin",
+    "title": "Pulsuz başlayın. Ağıllı böyüyün.",
+    "subtitle": "Pulsuz başlayın. İcmanız biznesə çevriləndə yüksəltin.",
     "free": {
       "title": "Pulsuz",
       "description": "İnandıqları bir şey qurmaq üçün təşkilatçılar üçün.",
