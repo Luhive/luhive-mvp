@@ -84,7 +84,7 @@ export function LandingFAQ() {
               asChild
             >
               <a
-                href="https://cal.com/luhive"
+                href="https://cal.com/luhive/30min?user=luhive"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -105,7 +105,7 @@ export function LandingFAQ() {
               asChild
             >
               <a
-                href="https://cal.com/luhive"
+                href="https://cal.com/luhive/30min?user=luhive"
                 target="_blank"
                 rel="noopener noreferrer"
               >

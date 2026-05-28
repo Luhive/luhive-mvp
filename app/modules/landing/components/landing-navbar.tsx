@@ -12,6 +12,7 @@ import {
 import { createClient } from '~/shared/lib/supabase/client';
 import { AnalyticsEvents } from "~/shared/lib/analytics";
 import { cn } from "~/shared/lib/utils/cn";
+import { LUHIVE_CREATE_COMMUNITY_BOOKING_URL } from "~/shared/lib/utils/url";
 interface UserData {
   id: string;
   full_name: string | null;
@@ -214,9 +215,11 @@ export function LandingNavbar() {
 
           {/* CTA — same Book a Call on mobile + desktop */}
           <div className="flex items-center gap-1 shrink-0">
-            <Link
-              to="/signup"
-              onClick={() => AnalyticsEvents.startCommunityClick("Header V2")}
+            <a
+              href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => AnalyticsEvents.bookDemoClick("Header V2")}
               className={cn(
                 "inline-flex items-center gap-1.5 font-medium py-2 px-3 md:ml-1 rounded-full border border-foreground/6 hover:bg-foreground/5 transition-colors text-sm whitespace-nowrap select-none text-foreground",
                 scrolled &&
@@ -235,7 +238,7 @@ export function LandingNavbar() {
                 </AvatarFallback>
               </Avatar>
               Book a Call
-            </Link>
+            </a>
 
             {/* Hamburger — disabled for now (Book a Call is enough on mobile)
             <button
@@ -318,15 +321,17 @@ export function LandingNavbar() {
                 className="flex min-w-max items-center rounded-full bg-[#FF7A1A] px-6 py-6 text-base font-semibold text-white shadow-sm hover:bg-[#ff8e3a]"
                 asChild
               >
-                <Link
-                  to="/signup"
+                <a
+                  href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => {
-                    AnalyticsEvents.startCommunityClick("Mobile Menu V2");
+                    AnalyticsEvents.bookDemoClick("Mobile Menu V2");
                     setIsMobileMenuOpen(false);
                   }}
                 >
                   Get Started
-                </Link>
+                </a>
               </Button>
             </div>
 
