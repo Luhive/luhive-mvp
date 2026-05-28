@@ -16,9 +16,9 @@
     "tryForFree": "Start Your Community"
   },
   "hero": {
-    "title": "One Platform",
-    "titleHighlight": "Engaged",
-    "subtitle": "Unify your data, events, and announcements. Finally, a single source of truth for your community.",
+    "title": "You're running a community",
+    "titleHighlight": "You should be running a",
+    "subtitle": "Your community data disappears after every event. Luhive captures it automatically, building member history, engagement data, and sponsor proof",
     "ctaDiscover": "Discover Communities",
     "ctaCreate": "Create community",
     "tagline": "Build communities that matter"
@@ -26,7 +26,7 @@
   "about": {
     "badge": "About",
     "title": "The Future of Community Management",
-    "communities": "Communities",
+    "communities": "business",
     "startYourCommunity": "Start Your Community",
     "description": "We're building the ultimate community platform for verified organizations. Starting in Azerbaijan, scaling globally.",
     "problem": {
@@ -75,50 +75,115 @@
       "description": "Your community's data is safe with us. Enterprise-grade security meets user-friendly design."
     }
   },
-  "featuresV2": {
-    "headingLine1": "Discover our",
-    "headingLine2": "exceptional features",
-    "buildIntegrations": {
-      "title": "Built-in Integrations",
-      "description": "Built-in integrations for whenever you want."
-    },
-    "gamification": {
-      "title": "Gamification & Badges",
-      "description": "Stay active, earn badges, and make the most of your experience.",
-      "firstAdopter": "First Adopter",
-      "verifiedByLuhive": "Verified by Luhive",
-      "moreBadges": "+3"
-    },
-    "analytics": {
-      "title": "AI Powered Analytics",
-      "description": "Get smarter growth insights.",
-      "membersLabel": "Members",
-      "membersCount": "+2350",
-      "growthLabel": "+180.1% from last month",
-      "barChartAlt": "Bar chart showing community growth over time"
-    },
-    "manageCommunity": {
-      "title": "Manage Your Community Quickly",
-      "description": "Simplify your workflow by centralizing your most important public links and feedback channels.",
-      "quickActionsTitle": "Quick Actions",
-      "viewAnalytics": "View Analytics",
-      "createEvent": "Create an Event",
-      "copyPublicLink": "Copy Public Link"
-    },
-    "magicBox": {
-      "title": "Magic Box",
-      "description": "AI creates events and announcements you want only in seconds.",
-      "sampleText": "Oh yeah, almost forgot about the new software training thing. Need to tell people it's next week right on Tuesday morning at eleven am—I think. Just tell them...",
-      "announcement": "Announcement",
-      "event": "Event"
+  "featuresShowcase": {
+    "badge": "Features",
+    "heading": "Built for the community intelligence",
+    "visualAria": "Feature illustration placeholder",
+    "clickDetails": "Click details",
+    "items": {
+      "memberMemory": {
+        "title": "Member Memory",
+        "description": "Every registration, every attendance, every return — saved automatically. Your member list grows itself.",
+        "visual": {
+          "title": "Members",
+          "autoSynced": "Auto-synced from your events",
+          "weeklyGrowth": "+12 this week",
+          "tapForInsights": "Tap for insights",
+          "savedAutomatically": "Saved automatically",
+          "stepRegistered": "Registered",
+          "stepAttended": "Attended",
+          "stepReturned": "Returned",
+          "joinedEvents": "Joined {{count}} events",
+          "firstEventToday": "First event today",
+          "affinityHackathon": "Loves hackathons",
+          "affinityWebinar": "Often joins webinars",
+          "affinityWorkshop": "Prefers workshops",
+          "affinityAi": "Into AI events",
+          "affinityTips": "Tips & tricks fan",
+          "affinityCareer": "Career-focused events"
+        }
+      },
+      "eventIntelligence": {
+        "title": "Event Intelligence",
+        "description": "See which events actually worked, who showed up, and who keeps coming back. No spreadsheet needed.",
+        "visual": {
+          "title": "Recent Events",
+          "autoTracked": "Auto-tracked from check-ins",
+          "eventInsight": "Event insight",
+          "showRate": "Show rate",
+          "returning": "Returning",
+          "newAttendees": "New",
+          "monthlyTrend": "+8% attendance this month",
+          "avgShowRate": "Avg show rate · 78%",
+          "tapForInsights": "Tap for insights",
+          "aiSuggestionLabel": "AI insight",
+          "aiSuggestion": "Your AI hackathons outperform other formats by 40%. Consider running more.",
+          "formatHackathon": "Hackathon",
+          "formatWebinar": "Webinar",
+          "formatWorkshop": "Workshop",
+          "formatMixer": "Mixer"
+        }
+      },
+      "reachTheRightPeople": {
+        "title": "Reach the Right People",
+        "description": "Send announcements to your full community or filter by interest or attendance. No more blasting everyone with everything.",
+        "visual": {
+          "title": "Audiences",
+          "filteredByHistory": "Filtered from event history",
+          "segmentAll": "All members",
+          "segmentHackathon": "Hackathon fans",
+          "segmentWebinar": "Webinar regulars",
+          "segmentRecent": "New this month",
+          "filterAll": "Everyone in your community",
+          "filterHackathon": "Attended 2+ hackathons",
+          "filterWebinar": "Often joins webinars",
+          "filterRecent": "Joined in the last 30 days",
+          "memberCount": "{{count}} members",
+          "tapForPreview": "Tap for preview",
+          "announcementPreview": "Announcement preview",
+          "sendingTo": "Sending to {{count}} members",
+          "readyToSend": "Ready to send",
+          "sendButton": "Send",
+          "sentButton": "Sent!",
+          "sendAnnouncement": "Send announcement",
+          "lastSent": "Last announcement · 3 days ago"
+        }
+      },
+      "communityMemory": {
+        "title": "Community Memory",
+        "description": "New co-organizer joins and sees everything from day one. You step back and nothing disappears.",
+        "visual": {
+          "title": "Community History",
+          "autoPreserved": "Auto-preserved · never lost",
+          "activityEvent": "Event hosted",
+          "activityAnnouncement": "Announcement sent",
+          "activityMember": "Member joined",
+          "activityCoOrg": "Co-organizer added",
+          "metaAttended": "{{count}} attended",
+          "metaSentTo": "{{count}} members",
+          "metaMemberNumber": "Member #{{count}}",
+          "coOrgRole": "Co-organizer",
+          "tapForContext": "Tap for context",
+          "viewContext": "View context",
+          "contextAccess": "Context access",
+          "checkHistory": "Full event history",
+          "checkHistoryMeta": "6 events",
+          "checkMembers": "All members visible",
+          "checkMembersMeta": "248 members",
+          "checkAnnouncements": "Past announcements",
+          "checkAnnouncementsMeta": "12 sent",
+          "readyFromDayOne": "Ready from day one",
+          "preservedSince": "Context preserved since Oct '24"
+        }
+      }
     }
   },
   "partners": {
-    "badge": "Partners",
-    "title": "They trust us",
-    "supVcAlt": "SUP.VC logo",
-    "gdgBakuAlt": "GDG Baku logo",
-    "aimAzAlt": "AIM Azerbaijan logo"
+    "subtitle": "Trusted by communities around the world"
+  },
+  "acknowledgement": {
+    "problem": "Your communities want to grow, but <strong>your data disappears after every event.</strong> No member history, no engagement record, no way to prove your value to a sponsor, so you <strong>start from zero, every single time.</strong>",
+    "solution": "<strong>Luhive</strong> is the operating system for <strong>community-as-a-startup</strong> — so you can finally <strong>grow, delegate,</strong> and <strong>monetize</strong> without losing everything you've\u00a0built."
   },
   "contact": {
     "badge": "Join Our Community",
@@ -144,43 +209,30 @@
     "copyright": "© 2025 Luhive. All rights reserved."
   },
   "pricingV2": {
-    "badge": "Pricing",
-    "title": "Choose your plan",
-    "ribbon": "Last 15 founding communities!",
-    "planName": "Premium Community",
-    "price": "39.99",
-    "currency": "USD / month",
-    "premiumCommunity": "Premium Community",
-    "free": "Free",
-    "bookDemo": "Claim Your Founding Spot",
-    "features": {
-      "feature1": "Full platform access",
-      "feature2": "All integrations & AI features",
-      "feature3": "Priority support & feature requests",
-      "feature4": "Grandfathered pricing when we launch",
-      "feature5": "Shape the product roadmap"
-    },
-    "cta": {
-      "title": "Create your own community",
-      "description": "Build the Digital Network of you to scale your connections & reach, infinitely.",
-      "button": "Get started"
-    },
-    "benefits": {
-      "benefit1": {
-        "number": "01",
-        "title": "Centralized Power",
-        "description": "Manage members, analytics, communication, and growth from a single dashboard. End tool juggling now."
+    "title": "Start free. Scale smart.",
+    "subtitle": "Start free. Upgrade when your community means business.",
+    "free": {
+      "title": "Free",
+      "description": "For organizers building something they believe in.",
+      "features": {
+        "feature1": "Run events.",
+        "feature2": "Grow your member base.",
+        "feature3": "Start capturing data up to 300 members."
       },
-      "benefit2": {
-        "number": "02",
-        "title": "Effortless Workflow",
-        "description": "Stop feeling drained by admin. Spend less time managing and more time connecting."
+      "price": "$0",
+      "period": "/month",
+      "cta": "Get Started"
+    },
+    "business": {
+      "brand": "Luhive",
+      "badge": "Business",
+      "description": "For communities that run like a business.",
+      "features": {
+        "feature1": "White label your platform.",
+        "feature2": "Connect your own tools.",
+        "feature3": "Request custom features."
       },
-      "benefit3": {
-        "number": "03",
-        "title": "Connected & Growing",
-        "description": "Integration with major platforms drives cross‑platform discovery. Get seen everywhere."
-      }
+      "cta": "Let's Talk"
     }
   },
   "blogsV2": {
@@ -206,24 +258,28 @@
     }
   },
   "faqV2": {
-    "badge": "FAQ's",
-    "title": "You ask and we answer",
+    "badge": "FAQ",
+    "title": "Got questions?",
     "items": {
-      "what-is-luhive": {
-        "question": "What is Luhive?",
-        "answer": "Luhive is the all-in-one \"Operating System\" built specifically for community managers and organizers. We eliminate the scattered tools by giving you a unified hub to manage, analyze, and scale your community faster than ever before."
+      "members-new-account": {
+        "question": "Do my members need to create a new account?",
+        "answer": "No. Members sign up for events using Google or their email — the same way they already do. Nothing changes on their end."
       },
-      "who-is-luhive-built-for": {
-        "question": "Who is Luhive built for?",
-        "answer": "We are focused on Community Admins and Organizers. If you manage an organization, a group, or a community, Luhive is your essential tool for making management easy and effective."
+      "replace-existing-tools": {
+        "question": "Will this replace the tools I'm already using?",
+        "answer": "It replaces your event registration flow. You can keep using Telegram or WhatsApp for community chat — Luhive handles the data layer those tools never could."
       },
-      "what-problem-does-luhive-solve": {
-        "question": "What problem does Luhive solve?",
-        "answer": "We solve the fragmented ecosystem problem. Instead of using 4-5 different external tools for forms, events, announcements, and tracking, you use one, single platform. This cuts down on time waste and complexity. Luhive praises simplicity"
+      "data-if-cancel": {
+        "question": "What happens to my data if I cancel?",
+        "answer": "Your member history, event records, and analytics are yours. We don't hold your data hostage."
       },
-      "how-does-luhive-provide-deep-analytics": {
-        "question": "How does Luhive provide \"Deep Analytics\"?",
-        "answer": "Our platform tracks member activity history, event attendance, and engagement. It's a Member CRM with rich data. We give you the actionable intelligence needed to understand what works, who your most active members are, and how to improve your next event with our AI solutions."
+      "only-large-communities": {
+        "question": "Is Luhive only for large communities?",
+        "answer": "The free plan supports up to 300 members — built for communities just getting started. Pro unlocks everything once you're ready to grow."
+      },
+      "different-from-luma-circle": {
+        "question": "How is Luhive different from Luma or Circle?",
+        "answer": "Luma is an event tool. Circle is built for course creators. Luhive is built specifically for tech and startup community organizers who need member data, not just event pages."
       }
     },
     "cta": {

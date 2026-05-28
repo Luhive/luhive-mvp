@@ -1,9 +1,19 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion, type Transition } from 'motion/react';
 
-import { Button } from '~/shared/components/ui/button';
+const FAQ_ITEM_IDS = [
+  'members-new-account',
+  'replace-existing-tools',
+  'data-if-cancel',
+  'only-large-communities',
+  'different-from-luma-circle',
+];
 
-const FAQ_ITEM_IDS = ['what-is-luhive', 'who-is-luhive-built-for', 'what-problem-does-luhive-solve', 'how-does-luhive-provide-deep-analytics'];
+const FAQ_TRANSITION: Transition = {
+  duration: 0.25,
+  ease: [0.4, 0, 0.2, 1],
+};
 
 export function LandingFAQ() {
   const { t } = useTranslation('landing');
@@ -16,15 +26,11 @@ export function LandingFAQ() {
   return (
     <section
       id="faqs"
-      className="bg-[#F6F4F1] py-25 lg:py-38"
+      className="bg-[#F6F4F1] py-16 md:py-24"
     >
       <div className="mx-auto w-[90vw] 2xl:w-[90rem]">
-        <div className="mb-10 text-center">
-          <div className="mb-3 flex items-center justify-center gap-2 text-md font-medium text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#FF7A1A]" />
-            <span>{t('faqV2.badge')}</span>
-          </div>
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+        <div className="mb-12 text-center md:mb-20">
+          <h2 className="text-3xl font-medium leading-tight tracking-tight text-[#141414] md:text-[3rem]">
             {t('faqV2.title')}
           </h2>
         </div>
@@ -37,27 +43,30 @@ export function LandingFAQ() {
                 key={itemId}
                 type="button"
                 onClick={() => toggleItem(itemId)}
-                className="flex w-full flex-col items-stretch px-0 md:px-5 py-5 text-left text-lg text-foreground sm:px-7 sm:py-6 transition-colors hover:bg-muted/30 rounded-lg"
+                className="flex w-full items-start gap-4 px-0 py-5 text-left text-lg text-foreground sm:px-7 sm:py-6 md:px-5 transition-colors hover:bg-muted/30 rounded-lg"
               >
-                <div className="flex items-center justify-between gap-4">
-                  <span className="font-medium">{t(`faqV2.items.${itemId}.question`)}</span>
-                  <span 
-                    className={`text-3xl text-muted-foreground transition-transform duration-300 ease-in-out ${
-                      isOpen ? 'rotate-0' : 'rotate-0'
-                    }`}
+                <div className="min-w-0 flex-1">
+                  <span className="block font-medium">{t(`faqV2.items.${itemId}.question`)}</span>
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      height: isOpen ? 'auto' : 0,
+                      opacity: isOpen ? 1 : 0,
+                    }}
+                    transition={FAQ_TRANSITION}
+                    className="overflow-hidden"
                   >
-                    {isOpen ? '−' : '+'}
-                  </span>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-md">
+                      {t(`faqV2.items.${itemId}.answer`)}
+                    </p>
+                  </motion.div>
                 </div>
-                <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-                  }`}
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center text-3xl leading-none text-muted-foreground transition-opacity duration-200"
+                  aria-hidden
                 >
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground md:text-md">
-                    {t(`faqV2.items.${itemId}.answer`)}
-                  </p>
-                </div>
+                  {isOpen ? '−' : '+'}
+                </span>
               </button>
             );
           })}

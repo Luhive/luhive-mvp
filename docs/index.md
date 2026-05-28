@@ -95,3 +95,7 @@ Practical guideline:
 - Repos should stay data-focused (no route redirects or UI state)
 - Route files orchestrate: call repos, handle redirect/error strategy, shape page data
 - Shared stays generic; modules stay domain-scoped
+
+## 7) Landing / marketing UI
+
+- [Landing feature visuals wiki](landing-feature-visuals.md) — patterns for Features section right-panel mocks (Member Memory reference, tokens, i18n, storyboards for remaining tabs)

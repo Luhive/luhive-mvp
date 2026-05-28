@@ -11,14 +11,14 @@
     "about": "Haqqımızda",
     "features": "Xüsusiyyətlər",
     "pricing": "Qiymətləndirmə",
-    "faqs": "Tez-tez verilən suallar",
+    "faqs": "FAQ",
     "contact": "Əlaqə",
     "tryForFree": "İcmanızı Başladın"
   },
   "hero": {
-    "title": "Vahid Platforma",
-    "titleHighlight": "Aktiv",
-    "subtitle": "Məlumatlarınızı, tədbirlərinizi və elanlarınızı birləşdirin. Nəhayət, icmanız üçün vahid həqiqət mənbəyi.",
+    "title": "Siz bir icmanı idarə edirsiniz",
+    "titleHighlight": "Əslində bir",
+    "subtitle": "Hər tədbirdən sonra icma məlumatlarınız itir. Luhive bunu avtomatik qeydə alır və üzv tarixçəsi, fəallıq məlumatları və sponsor sübutunu formalaşdırır",
     "ctaDiscover": "İcmaları Kəşf Et",
     "ctaCreate": "İcmanızı Yaradın",
     "tagline": "Əhəmiyyətli icmalar qurun"
@@ -26,7 +26,7 @@
   "about": {
     "badge": "Luhive Haqqında",
     "title": "İcma İdarəetməsinin Gələcəyi",
-    "communities": "İcmalar",
+    "communities": "biznes qurmalısınız",
     "startYourCommunity": "İcmanızı Yaradın",
     "description": "Biz təsdiqlənmiş təşkilatlar üçün mükəmməl icma platforması qururuq. Azərbaycandan başlayaraq, qlobal miqyasda böyüyürük.",
     "problem": {
@@ -75,50 +75,115 @@
       "description": "İcmanızın məlumatları bizimlə təhlükəsizlikdədir. Korporativ səviyyəli təhlükəsizlik istifadəçi dostu dizaynla birləşir."
     }
   },
-  "featuresV2": {
-    "headingLine1": "Möhtəşəm",
-    "headingLine2": "xüsusiyyətlərimizi kəşf edin",
-    "buildIntegrations": {
-      "title": "Daxili İnteqrasiyalar",
-      "description": "İstədiyiniz zaman istifadə edə biləcəyiniz daxili inteqrasiyalar."
-    },
-    "gamification": {
-      "title": "Gamifikasiya və Nişanlar",
-      "description": "Aktiv olun, nişanlar qazanın və təcrübənizdən maksimum yararlanın.",
-      "firstAdopter": "İlk İstifadəçi",
-      "verifiedByLuhive": "Luhive təsdiq edib",
-      "moreBadges": "+3"
-    },
-    "analytics": {
-      "title": "Süni İntellekt Analitikası",
-      "description": "Daha ağıllı böyümə anlayışları əldə edin.",
-      "membersLabel": "Üzvlər",
-      "membersCount": "+2350",
-      "growthLabel": "Keçən ayla müqayisədə +180.1%",
-      "barChartAlt": "Zaman üzrə icma böyüməsini göstərən sütun qrafiki"
-    },
-    "manageCommunity": {
-      "title": "İcmanızı Sürətlə İdarə Edin",
-      "description": "Ən vacib açıq link və rəy kanallarınızı mərkəzləşdirərək iş axınınızı sadələşdirin.",
-      "quickActionsTitle": "Sürətli Fəaliyyətlər",
-      "viewAnalytics": "Analitikanı Görüntülə",
-      "createEvent": "Tədbir Yarat",
-      "copyPublicLink": "İctimai Linki Köçür"
-    },
-    "magicBox": {
-      "title": "Sehrli Qutu",
-      "description": "Süni intellekt bir neçə saniyəyə tədbirlər və elanlar yaradır.",
-      "sampleText": "Hə, demək olar ki, yeni proqram təlimi barədə deməyi unutmuşdum. Gərək insanlara deyək ki, gələn həftə, çərşənbə axşamı səhər saat on birdə olacaq—sadəcə onlara bunu çatdır...",
-      "announcement": "Elan",
-      "event": "Tədbir"
+  "featuresShowcase": {
+    "badge": "Xüsusiyyətlər",
+    "heading": "İcma intellekti üçün qurulub",
+    "visualAria": "Xüsusiyyət illüstrasiyasının yer tutucusu",
+    "clickDetails": "Ətraflı bax",
+    "items": {
+      "memberMemory": {
+        "title": "Üzv yaddaşı",
+        "description": "Hər qeydiyyat, hər iştirak, hər qayıdış — avtomatik saxlanılır. Üzv siyahınız özü böyüyür.",
+        "visual": {
+          "title": "Üzvlər",
+          "autoSynced": "Tədbirlərinizdən avtomatik sinxronlaşır",
+          "weeklyGrowth": "Bu həftə +12",
+          "tapForInsights": "Məlumatları görmək üçün toxunun",
+          "savedAutomatically": "Avtomatik saxlanıldı",
+          "stepRegistered": "Qeydiyyatdan keçdi",
+          "stepAttended": "İştirak etdi",
+          "stepReturned": "Yenidən qayıtdı",
+          "joinedEvents": "{{count}} tədbirə qoşuldu",
+          "firstEventToday": "İlk tədbiri bu gün",
+          "affinityHackathon": "Hakatonları sevir",
+          "affinityWebinar": "Tez-tez vebinarlara qoşulur",
+          "affinityWorkshop": "Workshopları üstün tutur",
+          "affinityAi": "Süni intellekt tədbirləri",
+          "affinityTips": "Məsləhət və fəndlər",
+          "affinityCareer": "Karyera yönümlü tədbirlər"
+        }
+      },
+      "eventIntelligence": {
+        "title": "Tədbir intellekti",
+        "description": "Hansı tədbirlərin həqiqətən işlədiyini, kimlərin gəldiyini və kimin təkrar qayıtdığını görün. Cədvələ ehtiyac yoxdur.",
+        "visual": {
+          "title": "Son Tədbirlər",
+          "autoTracked": "Qeydiyyatdan avtomatik izlənilir",
+          "eventInsight": "Tədbir məlumatı",
+          "showRate": "İştirak faizi",
+          "returning": "Qayıdan",
+          "newAttendees": "Yeni",
+          "monthlyTrend": "Bu ay +8% iştirak artımı",
+          "avgShowRate": "Ort. iştirak faizi · 78%",
+          "tapForInsights": "Məlumatları görmək üçün toxunun",
+          "aiSuggestionLabel": "AI tövsiyəsi",
+          "aiSuggestion": "AI hakatonlarınız digər formatlardan 40% daha yaxşı nəticə göstərir. Daha çoxunu planlaşdırın.",
+          "formatHackathon": "Hakaton",
+          "formatWebinar": "Vebinar",
+          "formatWorkshop": "Workshop",
+          "formatMixer": "Mikser"
+        }
+      },
+      "reachTheRightPeople": {
+        "title": "Düzgün insanlara çatın",
+        "description": "Elanları bütün icmanıza göndərin və ya maraq və ya iştiraka görə süzün. Artıq hər şeyi hamıya atmayın.",
+        "visual": {
+          "title": "Auditoriyalar",
+          "filteredByHistory": "Tədbir tarixçəsindən süzülür",
+          "segmentAll": "Bütün üzvlər",
+          "segmentHackathon": "Hakaton pərəstişkarları",
+          "segmentWebinar": "Vebinar iştirakçıları",
+          "segmentRecent": "Bu ay yenilər",
+          "filterAll": "İcmanızdakı hər kəs",
+          "filterHackathon": "2+ hakaton iştirak etmiş",
+          "filterWebinar": "Tez-tez vebinarlara qoşulur",
+          "filterRecent": "Son 30 gündə qoşulub",
+          "memberCount": "{{count}} üzv",
+          "tapForPreview": "Önizləmə üçün toxunun",
+          "announcementPreview": "Elan önizləməsi",
+          "sendingTo": "{{count}} üzvə göndərilir",
+          "readyToSend": "Göndərməyə hazırdır",
+          "sendButton": "Göndər",
+          "sentButton": "Göndərildi!",
+          "sendAnnouncement": "Elanı göndər",
+          "lastSent": "Son elan · 3 gün əvvəl"
+        }
+      },
+      "communityMemory": {
+        "title": "İcma yaddaşı",
+        "description": "Yeni həmtəşkilatçı qoşulur və birinci gündən hər şeyi görür. Siz çəkiləndə heç nə itmir.",
+        "visual": {
+          "title": "İcma tarixi",
+          "autoPreserved": "Avtomatik saxlanılır · itmir",
+          "activityEvent": "Tədbir keçirilib",
+          "activityAnnouncement": "Elan göndərildi",
+          "activityMember": "Üzv qoşuldu",
+          "activityCoOrg": "Həmtəşkilatçı əlavə edildi",
+          "metaAttended": "{{count}} iştirak etdi",
+          "metaSentTo": "{{count}} üzv",
+          "metaMemberNumber": "Üzv #{{count}}",
+          "coOrgRole": "Həmtəşkilatçı",
+          "tapForContext": "Kontekstə baxmaq üçün toxunun",
+          "viewContext": "Kontekstə bax",
+          "contextAccess": "Kontekst giriş",
+          "checkHistory": "Tam tədbir tarixi",
+          "checkHistoryMeta": "6 tədbir",
+          "checkMembers": "Bütün üzvlər görünür",
+          "checkMembersMeta": "248 üzv",
+          "checkAnnouncements": "Keçmiş elanlar",
+          "checkAnnouncementsMeta": "12 göndərilib",
+          "readyFromDayOne": "Birinci gündən hazırdır",
+          "preservedSince": "Kontekst Okt '24-dən saxlanılır"
+        }
+      }
     }
   },
   "partners": {
-    "badge": "Partnyorlar",
-    "title": "Bizə güvənirlər",
-    "supVcAlt": "SUP.VC loqosu",
-    "gdgBakuAlt": "GDG Baku loqosu",
-    "aimAzAlt": "AIM Azərbaycan loqosu"
+    "subtitle": "Dünyanın hər yerindən icmalar tərəfindən etibar edilir"
+  },
+  "acknowledgement": {
+    "problem": "İcmalarınız böyümək istəyir, amma <strong>hər tədbirdən sonra məlumatlarınız yox olur.</strong> Üzv tarixçəsi yoxdur, fəallıq qeydi yoxdur, sponsor üçün dəyərinizi sübut etmək üçün heç bir yol yoxdur, ona görə də <strong>hər dəfə sıfırdan başlayırsınız.</strong>",
+    "solution": "<strong>Luhive</strong> <strong>icma-kimi-startap</strong> üçün əməliyyat sistemidir — nəhayət qurduğunuz hər şeyi itirmədən <strong>böyüyə, tapşırıq verə</strong> və <strong>monetizasiya edə</strong> bilərsiniz."
   },
   "contact": {
     "badge": "İcmamıza Qoşulun",
@@ -144,42 +209,30 @@
     "copyright": "© 2025 Luhive. Bütün hüquqlar qorunur."
   },
   "pricingV2": {
-    "badge": "Qiymətləndirmə",
-    "title": "Planınızı seçin",
-    "ribbon": "Son 20 icma!",
-    "planName": "Premium İcma",
-    "price": "39.99",
-    "currency": "USD / ay",
-    "premiumCommunity": "Premium İcma",
-    "free": "Pulsuz",
-    "bookDemo": "Icmanızı başladın",
-    "features": {
-      "feature1": "Əsas planın hər şeyini əhatə edir",
-      "feature2": "Ətraflı mətbəx və vanna otağı təmizliyi",
-      "feature3": "Pəncərələrin və güzgülərin içərisi",
-      "feature4": "Döşəmə lövhələri, künclər və yüksək səthlər"
-    },
-    "cta": {
-      "title": "Öz icmanızı yaradın",
-      "description": "Əlaqələrinizi və çatdırılmasınızı sonsuz dərəcədə artırmaq üçün öz Rəqəmsal Şəbəkənizi qurun.",
-      "button": "Başlayın"
-    },
-    "benefits": {
-      "benefit1": {
-        "number": "01",
-        "title": "Mərkəzləşdirilmiş Güc",
-        "description": "Üzvləri, analitikanı, ünsiyyəti və böyüməni vahid idarəetmə panelindən idarə edin. Artıq alətlər arasında keçid etməyin."
+    "title": "Pulsuz başlayın. Ağıllı böyüyün.",
+    "subtitle": "Pulsuz başlayın. İcmanız biznesə çevriləndə yüksəltin.",
+    "free": {
+      "title": "Pulsuz",
+      "description": "İnandıqları bir şey qurmaq üçün təşkilatçılar üçün.",
+      "features": {
+        "feature1": "Tədbirlər keçirin.",
+        "feature2": "Üzv bazanızı böyüdün.",
+        "feature3": "300 üzvə qədər məlumat toplamağa başlayın."
       },
-      "benefit2": {
-        "number": "02",
-        "title": "Asan İş Axını",
-        "description": "İdarəetmədən yorulmağı dayandırın. Daha az idarəetmə, daha çox əlaqə vaxtı sərf edin."
+      "price": "$0",
+      "period": "/ay",
+      "cta": "Başlayın"
+    },
+    "business": {
+      "brand": "Luhive",
+      "badge": "Biznes",
+      "description": "Biznes kimi fəaliyyət göstərən icmalar üçün.",
+      "features": {
+        "feature1": "Platformanızı white label edin.",
+        "feature2": "Öz alətlərinizi qoşun.",
+        "feature3": "Fərdi funksiyalar tələb edin."
       },
-      "benefit3": {
-        "number": "03",
-        "title": "Bağlı və Böyüyən",
-        "description": "Əsas platformalarla inteqrasiya platformalar arası kəşfiyyatı təmin edir. Hər yerdə görünün."
-      }
+      "cta": "Danışaq"
     }
   },
   "blogsV2": {
@@ -206,23 +259,27 @@
   },
   "faqV2": {
     "badge": "Tez-tez verilən suallar",
-    "title": "Siz soruşursunuz, biz cavab veririk",
+    "title": "Sualınız var?",
     "items": {
-      "what-is-luhive": {
-        "question": "Luhive nədir?",
-        "answer": "Luhive icma menecerləri və təşkilatçılar üçün xüsusi olaraq qurulmuş hərtərəfli \"Əməliyyat Sistemi\"dir. Biz səpələnmiş alətləri aradan qaldıraraq, icmanızı idarə etmək, təhlil etmək və əvvəlkindən daha sürətlə genişləndirmək üçün vahid mərkəz təqdim edirik."
+      "members-new-account": {
+        "question": "Üzvlərim yeni hesab yaratmalıdırmı?",
+        "answer": "Xeyr. Üzvlər tədbirlərə Google və ya e-poçtları ilə qeydiyyatdan keçirlər — əvvəlki kimi. Onların tərəfində heç nə dəyişmir."
       },
-      "who-is-luhive-built-for": {
-        "question": "Luhive kimlər üçün yaradılıb?",
-        "answer": "Biz İcma Administratorları və Təşkilatçılarına yönəldik. Əgər təşkilat, qrup və ya icma idarə edirsinizsə, Luhive idarəetməni asan və effektiv etmək üçün vacib alətinizdir."
+      "replace-existing-tools": {
+        "question": "Bu, artıq istifadə etdiyim alətləri əvəz edəcəkmi?",
+        "answer": "Tədbir qeydiyyat axınınızı əvəz edir. İcma söhbəti üçün Telegram və ya WhatsApp-dan istifadə etməyə davam edə bilərsiniz — Luhive həmin alətlərin heç vaxt idarə edə bilmədiyi məlumat qatını idarə edir."
       },
-      "what-problem-does-luhive-solve": {
-        "question": "Luhive hansı problemi həll edir?",
-        "answer": "Biz parçalanmış ekosistem problemini həll edirik. Formalar, tədbirlər, elanlar və izləmə üçün 4-5 fərqli xarici alət istifadə etmək əvəzinə, siz bir, vahid platformadan istifadə edirsiniz. Bu vaxt itkisini və mürəkkəbliyi azaldır. Luhive sadəliyi tərifləyir"
+      "data-if-cancel": {
+        "question": "Ləğv etsəm məlumatlarıma nə olur?",
+        "answer": "Üzv tarixçəniz, tədbir qeydləriniz və analitikanız sizindir. Məlumatlarınızı girov kimi saxlamırıq."
       },
-      "how-does-luhive-provide-deep-analytics": {
-        "question": "Luhive \"Dərin Analitika\"nı necə təmin edir?",
-        "answer": "Platformamız üzv aktivliyi tarixçəsini, tədbir iştirakını və fəallığı izləyir. Bu zəngin məlumatlarla Üzv CRM sistemidir. Biz sizə nəyin işlədiyini, ən aktiv üzvlərinizin kim olduğunu və AI həllərimizlə növbəti tədbirinizi necə təkmilləşdirmək lazım olduğunu başa düşmək üçün lazım olan fəaliyyətə yönəldilmiş kəşfiyyatı veririk."
+      "only-large-communities": {
+        "question": "Luhive yalnız böyük icmalar üçündürmü?",
+        "answer": "Pulsuz plan 300 üzvə qədər dəstəkləyir — yeni başlayan icmalar üçün qurulub. Pro böyüməyə hazır olanda hər şeyi açır."
+      },
+      "different-from-luma-circle": {
+        "question": "Luhive Luma və ya Circle-dan nə ilə fərqlənir?",
+        "answer": "Luma tədbir alətidir. Circle kurs yaradıcıları üçündür. Luhive xüsusi olaraq üzv məlumatına ehtiyacı olan texnologiya və startap icma təşkilatçıları üçün qurulub, yalnız tədbir səhifələri deyil."
       }
     },
     "cta": {
