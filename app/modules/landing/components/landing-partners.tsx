@@ -23,8 +23,8 @@ export function LandingPartners() {
         </p>
 
         <div className="relative w-full flex-1 overflow-hidden">
-         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#F6F4F1] to-transparent hidden md:block" />
-         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#F6F4F1] to-transparent hidden md:block" />
+         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#F6F4F1] to-transparent opacity-50 md:w-16 md:opacity-100" />
+         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#F6F4F1] to-transparent opacity-50 md:w-16 md:opacity-100" />
 
           <div
             className="flex w-max items-center opacity-60 gap-12 hover:[animation-play-state:paused]"
