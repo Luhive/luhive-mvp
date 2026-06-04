@@ -86,6 +86,27 @@ export async function getUserProfile(
     : { id: userId };
 }
 
+export async function getAdminCommunityIds(
+  supabase: SupabaseClient<Database>,
+  userId: string
+): Promise<string[]> {
+  const [createdResult, membershipResult] = await Promise.all([
+    supabase.from("communities").select("id").eq("created_by", userId),
+    supabase
+      .from("community_members")
+      .select("community_id")
+      .eq("user_id", userId)
+      .in("role", ["admin", "owner"]),
+  ]);
+
+  const ids = new Set<string>();
+  (createdResult.data || []).forEach((c) => ids.add(c.id));
+  (membershipResult.data || []).forEach((m) => {
+    if (m.community_id) ids.add(m.community_id);
+  });
+  return Array.from(ids);
+}
+
 export function withCounts(
   communities: BaseCommunity[],
   memberCounts: Map<string, number>,

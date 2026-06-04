@@ -5,6 +5,7 @@ import {
   getCommunityCounts,
   getUserProfile,
   withCounts,
+  getAdminCommunityIds,
 } from "~/modules/hub/data/hub-repo.server";
 
 export async function loader({ request }: { request: Request }) {
@@ -39,12 +40,23 @@ export async function loader({ request }: { request: Request }) {
     const communitiesWithCounts = withCounts(communities, memberCounts, eventCounts);
 
     let userProfile: HubData["user"] = null;
+    let adminIds = new Set<string>();
     if (user) {
-      userProfile = await getUserProfile(supabase, user.id);
+      const [profile, adminCommunityIds] = await Promise.all([
+        getUserProfile(supabase, user.id),
+        getAdminCommunityIds(supabase, user.id),
+      ]);
+      userProfile = profile;
+      adminIds = new Set(adminCommunityIds);
     }
 
+    const communitiesWithAdmin = communitiesWithCounts.map((c) => ({
+      ...c,
+      isAdmin: adminIds.has(c.id),
+    }));
+
     return {
-      communities: communitiesWithCounts,
+      communities: communitiesWithAdmin,
       user: userProfile,
     };
   })();

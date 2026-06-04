@@ -1,6 +1,6 @@
 import type { Community } from "~/shared/models/entity.types";
 import { createClient } from "~/shared/lib/supabase/client";
-import { DashboardStatsData, Member } from "../model/dashboard-types";
+import { DashboardStatsData, Member, CommunityMemberRole } from "../model/dashboard-types";
 
 export type CommunityVisit = {
   visited_at: string;
@@ -60,7 +60,7 @@ export async function getMembersForCommunityClient(communityId: string) {
           full_name: profile?.full_name || "Unknown User",
           avatar_url: profile?.avatar_url ?? null,
           joined_at: member.joined_at ?? "",
-          role: member.role || "member",
+          role: (member.role as CommunityMemberRole) || "member",
         };
       },
     ) || [];

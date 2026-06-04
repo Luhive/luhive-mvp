@@ -14,8 +14,12 @@ import type {
 import type { Community } from "~/shared/models/entity.types";
 import { createClient } from "~/shared/lib/supabase/client";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
+import { getCommunityCollaborationInvitesClient } from "~/modules/events/data/events-repo.client";
 import { AppSidebar } from "~/modules/dashboard/components/app-sidebar";
-import { SiteHeader } from "~/modules/dashboard/components/site-header";
+import {
+  DashboardHeaderActionsProvider,
+  DashboardSiteHeader,
+} from "~/modules/dashboard/components/dashboard-header-actions";
 import {
   SidebarInset,
   SidebarProvider,
@@ -54,11 +58,15 @@ async function clientLoader({
     navigationState?.role &&
     navigationState?.profile
   ) {
+    const { invites } = await getCommunityCollaborationInvitesClient(
+      navigationState.community.id,
+    );
     return {
       community: navigationState.community,
       user: navigationState.profile,
       userEmail: navigationState.userEmail ?? "",
       role: navigationState.role,
+      collabRequestCount: invites?.length ?? 0,
     } satisfies DashboardCommunityData;
   }
 
@@ -113,11 +121,13 @@ async function clientLoader({
 
   const userEmail = authUser.email || "user@example.com";
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", authUser.id)
-    .single();
+  const [{ data: profile, error: profileError }, { invites }] =
+    await Promise.all([
+      supabase.from("profiles").select("*").eq("id", authUser.id).single(),
+      getCommunityCollaborationInvitesClient(community.id),
+    ]);
+
+  const collabRequestCount = invites?.length ?? 0;
 
   if (profileError || !profile) {
     const defaultProfile: Profile = {
@@ -137,6 +147,7 @@ async function clientLoader({
       user: defaultProfile,
       userEmail,
       role,
+      collabRequestCount,
     };
   }
 
@@ -145,6 +156,7 @@ async function clientLoader({
     user: profile,
     userEmail,
     role,
+    collabRequestCount,
   };
 }
 clientLoader.hydrate = true as const;
@@ -166,6 +178,7 @@ export function shouldRevalidate({
 
 function getHeaderTitle(pathname: string): string {
   if (pathname.includes("/profile")) return "Edit Community Profile";
+  if (pathname.includes("/collab-requests")) return "Collab Requests";
   if (pathname.includes("/events")) return "Events Management";
   if (pathname.includes("/announcements")) return "Announcements";
   if (pathname.includes("/forms")) return "Google Forms";
@@ -184,6 +197,9 @@ function getTabSkeleton(pathname: string): React.ReactNode {
   }
   if (pathname.includes("/profile")) {
     return <DashboardEditSkeleton />;
+  }
+  if (pathname.includes("/collab-requests")) {
+    return <DashboardEventsListSkeleton />;
   }
   if (pathname.includes("/events")) {
     return <DashboardEventsListSkeleton />;
@@ -231,7 +247,7 @@ export default function DashboardLayoutPage() {
     return <DashboardLayoutSkeleton />;
   }
 
-  const { community, user, userEmail, role } = data;
+  const { community, user, userEmail, role, collabRequestCount } = data;
 
   return (
     <SidebarProvider
@@ -248,22 +264,25 @@ export default function DashboardLayoutPage() {
         user={user}
         userEmail={userEmail}
         role={role}
+        collabRequestCount={collabRequestCount}
       />
       <SidebarInset>
-        <SiteHeader
-          title={getHeaderTitle(isLoading ? targetPathname : location.pathname)}
-        />
-        <div className="flex flex-1 flex-col">
-          {isLoading ? (
-            <div className="@container/main flex flex-1 flex-col gap-2">
-              {getTabSkeleton(targetPathname)}
-            </div>
-          ) : (
-            <div className="@container/main flex flex-1 flex-col gap-2">
-              <Outlet context={{ dashboardData: data }} />
-            </div>
-          )}
-        </div>
+        <DashboardHeaderActionsProvider>
+          <DashboardSiteHeader
+            title={getHeaderTitle(isLoading ? targetPathname : location.pathname)}
+          />
+          <div className="flex flex-1 flex-col">
+            {isLoading ? (
+              <div className="@container/main flex flex-1 flex-col gap-2">
+                {getTabSkeleton(targetPathname)}
+              </div>
+            ) : (
+              <div className="@container/main flex flex-1 flex-col gap-2">
+                <Outlet context={{ dashboardData: data }} />
+              </div>
+            )}
+          </div>
+        </DashboardHeaderActionsProvider>
       </SidebarInset>
     </SidebarProvider>
   );

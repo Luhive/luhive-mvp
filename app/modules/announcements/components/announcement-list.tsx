@@ -1,7 +1,47 @@
 import { Link } from "react-router";
-import { Card, CardContent, CardHeader, CardTitle } from "~/shared/components/ui/card";
 import { Badge } from "~/shared/components/ui/badge";
-import type { Announcement } from "~/modules/announcements/model/announcement-types";
+import type {
+  Announcement,
+  AnnouncementImage,
+} from "~/modules/announcements/model/announcement-types";
+
+const imageBaseClass =
+  "rounded-md border border-border object-contain bg-muted/30";
+
+function AnnouncementListImages({ images }: { images: AnnouncementImage[] }) {
+  if (images.length === 1) {
+    return (
+      <div className="pt-1">
+        <img
+          src={images[0].image_url}
+          alt=""
+          className={`max-h-56 w-full max-w-md ${imageBaseClass}`}
+        />
+      </div>
+    );
+  }
+
+  const visible = images.slice(0, 4);
+  const overflow = images.length - visible.length;
+
+  return (
+    <div className="flex flex-wrap gap-2 pt-1">
+      {visible.map((image) => (
+        <img
+          key={image.id}
+          src={image.image_url}
+          alt=""
+          className={`max-h-40 max-w-[10rem] ${imageBaseClass}`}
+        />
+      ))}
+      {overflow > 0 ? (
+        <span className="flex max-h-40 min-w-[4rem] max-w-[10rem] items-center justify-center rounded-md border border-border bg-muted text-sm text-muted-foreground">
+          +{overflow}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 type AnnouncementListProps = {
   announcements: Announcement[];
@@ -11,53 +51,51 @@ type AnnouncementListProps = {
 export function AnnouncementList({ announcements, communitySlug }: AnnouncementListProps) {
   if (announcements.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          No announcements yet.
-        </CardContent>
-      </Card>
+      <p className="border-b py-10 text-center text-sm text-muted-foreground">
+        No announcements yet.
+      </p>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="divide-y divide-border border-t border-border">
       {announcements.map((announcement) => (
-        <Card key={announcement.id}>
-          <CardHeader>
-            <div className="flex items-start justify-between gap-4">
-              <CardTitle className="text-lg">{announcement.title}</CardTitle>
-              <Badge variant={announcement.published ? "default" : "secondary"}>
+        <article
+          key={announcement.id}
+          className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6"
+        >
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <h3 className="text-sm font-medium leading-snug">{announcement.title}</h3>
+              <Badge
+                variant={announcement.published ? "secondary" : "outline"}
+                className="h-5 px-1.5 text-[10px] font-normal"
+              >
                 {announcement.published ? "Published" : "Draft"}
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <time
+              dateTime={announcement.created_at}
+              className="block text-xs text-muted-foreground"
+            >
               {new Date(announcement.created_at).toLocaleString()}
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{announcement.description}</p>
-            {announcement.images && announcement.images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {announcement.images.map((image) => (
-                  <img
-                    key={image.id}
-                    src={image.image_url}
-                    alt={announcement.title}
-                    className="h-28 w-full rounded-md object-cover border"
-                  />
-                ))}
-              </div>
-            )}
-            <div>
-              <Link
-                to={`/dashboard/${communitySlug}/announcements/${announcement.id}/edit`}
-                className="text-sm underline text-primary"
-              >
-                Edit announcement
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+            </time>
+            {announcement.description ? (
+              <p className="line-clamp-2 text-sm text-muted-foreground">
+                {announcement.description}
+              </p>
+            ) : null}
+            {announcement.images && announcement.images.length > 0 ? (
+              <AnnouncementListImages images={announcement.images} />
+            ) : null}
+          </div>
+          <Link
+            to={`/dashboard/${communitySlug}/announcements/${announcement.id}/edit`}
+            className="shrink-0 text-sm text-primary hover:underline"
+          >
+            Edit
+          </Link>
+        </article>
       ))}
     </div>
   );

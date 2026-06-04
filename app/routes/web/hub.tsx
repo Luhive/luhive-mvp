@@ -15,7 +15,8 @@ export default function HubPage() {
   const navigation = useNavigation();
   const isCommunityTransitionLoading =
     navigation.state === "loading" &&
-    navigation.location?.pathname.startsWith("/c/");
+    (navigation.location?.pathname.startsWith("/c/") ||
+      navigation.location?.pathname.startsWith("/dashboard/"));
 
   return (
     <>

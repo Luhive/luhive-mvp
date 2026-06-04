@@ -77,7 +77,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .single();
 
     if (community && !communityError) {
-      return redirect(`/c/${community.slug}`, { headers });
+      return redirect(`/dashboard/${community.slug}`, { headers });
     }
   }
 
