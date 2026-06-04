@@ -56,8 +56,9 @@ export default [
     index("routes/dashboard/overview.tsx"),
     route("profile", "routes/dashboard/edit-profile.tsx"),
     route("events", "routes/dashboard/events.tsx"),
+    route("collab-requests", "routes/dashboard/collab-requests.tsx"),
     route("announcements", "routes/dashboard/announcements.tsx"),
-    route("announcements/create", "routes/dashboard/announcements-create.tsx"),
+    route("announcements/new", "routes/dashboard/announcements-new.tsx"),
     route(
       "announcements/:announcementId/edit",
       "routes/dashboard/announcements-edit.tsx",
@@ -106,6 +107,10 @@ export default [
   route("api/events/email-debug", "routes/api/events/email-debug.tsx"),
   route("api/events/send-reminders", "routes/api/events/send-reminders.tsx"),
   route("api/join-community", "routes/api/join-community.tsx"),
+  route(
+    "api/community/update-member-role",
+    "routes/api/community/update-member-role.tsx",
+  ),
   route(
     "api/events/new-event-notification",
     "routes/api/events/new-event-notification.tsx",

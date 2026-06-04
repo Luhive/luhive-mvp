@@ -1,5 +1,5 @@
 import {
-  CircleCheckIcon,
+  CheckCircle2,
   InfoIcon,
   Loader2Icon,
   OctagonXIcon,
@@ -8,15 +8,18 @@ import {
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
-const Toaster = ({ ...props }: ToasterProps) => {
+const Toaster = ({ position = "bottom-center", ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
 
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
+      position={position}
       className="toaster group"
       icons={{
-        success: <CircleCheckIcon className="size-4" />,
+        success: (
+          <CheckCircle2 className="size-4 shrink-0 text-green-600 dark:text-green-500" />
+        ),
         info: <InfoIcon className="size-4" />,
         warning: <TriangleAlertIcon className="size-4" />,
         error: <OctagonXIcon className="size-4" />,

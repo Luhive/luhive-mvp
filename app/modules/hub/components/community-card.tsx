@@ -16,7 +16,7 @@ export function CommunityCard({ community }: CommunityCardProps) {
 
   return (
     <NavLink
-      to={`/c/${community.slug}`}
+      to={community.isAdmin ? `/dashboard/${community.slug}` : `/c/${community.slug}`}
       prefetch="intent"
       viewTransition
       className="group"

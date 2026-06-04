@@ -12,6 +12,8 @@ import {
   type CommunityVisit,
 } from "~/modules/dashboard/data/dashboard-repo.client";
 import type { Member, DashboardStatsData } from "~/modules/dashboard/model/dashboard-types";
+import { useDashboardContext } from "~/modules/dashboard/hooks/use-dashboard-context";
+import { useMemberRoleActions } from "~/modules/dashboard/hooks/use-member-role-actions";
 
 type OverviewLoaderData = {
   members: Member[];
@@ -61,6 +63,10 @@ export { clientLoader };
 
 export default function DashboardOverviewPage() {
   const { members, visits, stats } = useLoaderData<OverviewLoaderData>();
+  const { community, role } = useDashboardContext();
+  const { promoteMember, demoteMember, updatingMemberId } = useMemberRoleActions(
+    community.id,
+  );
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -69,7 +75,13 @@ export default function DashboardOverviewPage() {
         <JoinedUsersChart members={members} visits={visits} />
       </div>
       <div className="px-4 lg:px-6">
-        <DataTable data={members} />
+        <DataTable
+          data={members}
+          canManageRoles={role === "owner"}
+          updatingMemberId={updatingMemberId}
+          onPromote={promoteMember}
+          onDemote={demoteMember}
+        />
       </div>
     </div>
   );

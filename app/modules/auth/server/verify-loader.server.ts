@@ -247,9 +247,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       if (community) {
         logVerify("redirect creator community", {
-          destination: `/c/${community.slug}`,
+          destination: `/dashboard/${community.slug}`,
         });
-        return redirect(`/c/${community.slug}`, { headers });
+        return redirect(`/dashboard/${community.slug}`, { headers });
       }
 
       logVerify("redirect default hub", { destination: "/hub" });

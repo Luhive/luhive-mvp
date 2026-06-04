@@ -3,6 +3,7 @@ import type { Community as BaseCommunity } from "~/shared/models/entity.types";
 export type Community = BaseCommunity & {
   memberCount: number;
   eventCount: number;
+  isAdmin?: boolean;
 };
 
 export type UserData = {

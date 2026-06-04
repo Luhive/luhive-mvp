@@ -18,7 +18,7 @@ import manrope400Url from "./assets/fonts/manrope-v20-latin_latin-ext-regular.wo
 import manrope500Url from "./assets/fonts/manrope-v20-latin_latin-ext-500.woff2?url";
 import manrope600Url from "./assets/fonts/manrope-v20-latin_latin-ext-600.woff2?url";
 import manrope700Url from "./assets/fonts/manrope-v20-latin_latin-ext-700.woff2?url";
-import { Toaster } from "sonner";
+import { Toaster } from "~/shared/components/ui/sonner";
 import ErrorComponent from "./routes/error";
 
 

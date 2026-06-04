@@ -17,7 +17,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .single();
 
     if (community) {
-      return redirect(`/c/${community.slug}`, { headers });
+      return redirect(`/dashboard/${community.slug}`, { headers });
     }
     return redirect("/hub", { headers });
   }

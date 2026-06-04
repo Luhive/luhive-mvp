@@ -7,18 +7,21 @@ export type DashboardCommunityData = {
   user: Profile;
   userEmail: string;
   role: "owner" | "admin";
+  collabRequestCount: number;
 };
 
 export type DashboardLoaderData = {
   slug: string;
 };
 
+export type CommunityMemberRole = "member" | "admin" | "owner";
+
 export type Member = {
   id: string;
   full_name: string;
   avatar_url: string | null;
   joined_at: string;
-  role: string;
+  role: CommunityMemberRole;
 };
 
 export type DashboardStatsData = {
