@@ -217,7 +217,7 @@
       "features": {
         "feature1": "Tədbirlər keçirin.",
         "feature2": "Üzv bazanızı böyüdün.",
-        "feature3": "300 üzvə qədər məlumat toplamağa başlayın."
+        "feature3": "100 üzvə qədər məlumat toplamağa başlayın."
       },
       "price": "$0",
       "period": "/ay",
@@ -275,7 +275,7 @@
       },
       "only-large-communities": {
         "question": "Luhive yalnız böyük icmalar üçündürmü?",
-        "answer": "Pulsuz plan 300 üzvə qədər dəstəkləyir — yeni başlayan icmalar üçün qurulub. Pro böyüməyə hazır olanda hər şeyi açır."
+        "answer": "Pulsuz plan 100 üzvə qədər dəstəkləyir — yeni başlayan icmalar üçün qurulub. Pro böyüməyə hazır olanda hər şeyi açır."
       },
       "different-from-luma-circle": {
         "question": "Luhive Luma və ya Circle-dan nə ilə fərqlənir?",
