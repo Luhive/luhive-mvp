@@ -39,6 +39,8 @@ import {
 import type { Event, EventStatus, EventType } from '~/shared/models/entity.types';
 import type { ExternalPlatform } from '~/modules/events/model/event.types';
 import dayjs from 'dayjs';
+import { Routes } from '~/shared/lib/routing/routes';
+import { publicEventSlug } from '~/modules/events/utils/event-slug';
 import { cn } from '~/shared/lib/utils';
 import {
   getExternalPlatformName,
@@ -627,7 +629,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                         title="View Event Page"
                                         asChild
                                       >
-                                        <Link to={`/c/${communitySlug}/events/${event.id}`}>
+                                        <Link to={Routes.community.event(communitySlug, publicEventSlug(event))}>
                                           <ExternalLink className="w-4 h-4" />
                                         </Link>
                                       </Button>
@@ -659,7 +661,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                             title="View Event"
                                             asChild
                                           >
-                                            <Link to={`/c/${communitySlug}/events/${event.id}`}>
+                                            <Link to={Routes.community.event(communitySlug, publicEventSlug(event))}>
                                               <Eye className="w-4 h-4" />
                                             </Link>
                                           </Button>

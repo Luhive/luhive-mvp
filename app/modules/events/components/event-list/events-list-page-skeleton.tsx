@@ -10,6 +10,8 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import type { Community, Event } from '~/shared/models/entity.types';
+import { Routes } from '~/shared/lib/routing/routes';
+import { publicEventSlug } from '~/modules/events/utils/event-slug';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -31,7 +33,7 @@ export function EventsListPageSkeleton({ events, communitySlug, community, user,
 	const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
 	const handleBack = () => {
-		navigate(`/c/${communitySlug}`, { replace: true });
+		navigate(Routes.community.detail(communitySlug), { replace: true });
 	};
 
 	return (
@@ -170,7 +172,7 @@ function EventGridCardPreview({
 
 	return (
 		<Link 
-			to={`/c/${communitySlug}/events/${event.id}`}
+			to={Routes.community.event(communitySlug, publicEventSlug(event))}
 			state={{ event }}
 			onClick={() => onEventClick?.(event)}
 			className="group block"

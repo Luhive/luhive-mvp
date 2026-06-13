@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { useIsMobile } from "~/shared/hooks/use-mobile";
+import { Routes } from "~/shared/lib/routing/routes";
 import { Button } from "~/shared/components/ui/button";
 import { Input } from "~/shared/components/ui/input";
 import { Label } from "~/shared/components/ui/label";
@@ -57,6 +58,7 @@ export interface EventRsvpModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventId: string;
+  eventSlug: string;
   communitySlug: string;
   communityId: string;
   communityName: string;
@@ -71,6 +73,7 @@ export function EventRsvpModal({
   open,
   onOpenChange,
   eventId,
+  eventSlug,
   communitySlug,
   communityId,
   communityName,
@@ -110,7 +113,7 @@ export function EventRsvpModal({
   const isSubmittingQuestions =
     questionsFetcher.state === "submitting" || questionsFetcher.state === "loading";
 
-  const pathname = `/c/${communitySlug}/events/${eventId}`;
+  const pathname = Routes.community.event(communitySlug, eventSlug);
   const eventActionUrl = pathname;
   const resolvedTrackingContext = React.useMemo(
     () => trackingContext ?? getEventTrackingContext(eventId),

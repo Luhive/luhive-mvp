@@ -10,6 +10,8 @@ import {
   getExternalPlatformName,
   getExternalPlatformIcon,
 } from '~/modules/events/utils/external-platform';
+import { Routes } from '~/shared/lib/routing/routes';
+import { publicEventSlug } from '~/modules/events/utils/event-slug';
 
 interface EventCardProps {
   event: Event & { registration_count?: number };
@@ -51,7 +53,7 @@ export function EventCard({ event, communitySlug, onDelete }: EventCardProps) {
   const PlatformIcon = platform ? getExternalPlatformIcon(platform) : null;
 
   return (
-    <Link to={`/c/${communitySlug}/events/${event.id}`} className="block">
+    <Link to={Routes.community.event(communitySlug, publicEventSlug(event))} className="block">
       <Card
         className={cn(
           'overflow-hidden pt-0 shadow-sm border-0',

@@ -12,6 +12,8 @@ import { Skeleton } from '~/shared/components/ui/skeleton';
 import { cn } from '~/shared/lib/utils';
 import { getExternalPlatformName, getExternalPlatformIcon } from '~/modules/events/utils/external-platform';
 import { getEventsByCommunityClient } from '~/modules/events/data/events-repo.client';
+import { Routes } from '~/shared/lib/routing/routes';
+import { publicEventSlug } from '~/modules/events/utils/event-slug';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -123,7 +125,7 @@ function EventCard({ event, communitySlug, onEventClick }: {
 
   return (
     <Link
-			to={`/c/${communitySlug}/events/${event.id}`}
+			to={Routes.community.event(communitySlug, publicEventSlug(event))}
 			state={{ event }}
 			className="block p-4 rounded-lg border bg-card hover:border-accent/50 hover:shadow-md hover:shadow-accent/20 active:shadow-none transition-all duration-400 group"
 		>

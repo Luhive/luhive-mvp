@@ -9,6 +9,7 @@ import { createClient } from "~/shared/lib/supabase/client";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
 import { createAnnouncementClient } from "~/modules/announcements/data/announcements-repo.client";
 import { AnnouncementCompose } from "~/modules/announcements/components/announcement-compose";
+import { Routes } from "~/shared/lib/routing/routes";
 
 
 export default function AnnouncementNewPage() {
@@ -75,7 +76,7 @@ export default function AnnouncementNewPage() {
       }
 
       toast.success("Announcement published");
-      navigate(`/c/${community.slug}?published=1`);
+      navigate(`${Routes.community.detail(community.slug)}?published=1`);
 
     } catch (err) {
       console.error("Failed to publish announcement", err);
@@ -85,7 +86,7 @@ export default function AnnouncementNewPage() {
     }
   };
 
-  const backTo = slug ? `/c/${slug}` : "/";
+  const backTo = slug ? Routes.community.detail(slug) : "/";
 
   return (
     <div className="flex flex-col min-h-screen">

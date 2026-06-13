@@ -3,6 +3,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import {
   Calendar,
   MapPin,
@@ -125,6 +127,9 @@ export function EventPreviewSidebar({
       return;
     }
 
+    const currentEvent = event;
+    const currentCommunity = community;
+
     async function fetchHostingCommunities() {
       try {
         const supabase = createClient();
@@ -133,17 +138,17 @@ export function EventPreviewSidebar({
         const { data: hostCommunityData, error: hostError } = await supabase
           .from("communities")
           .select("id, name, slug, logo_url")
-          .eq("id", event.community_id)
+          .eq("id", currentEvent.community_id)
           .single();
 
         if (hostError || !hostCommunityData) {
           console.error("Error fetching host community:", hostError);
           // Fall back to just the community
           setHostingCommunities([{
-            id: community.id,
-            name: community.name,
-            slug: community.slug,
-            logo_url: community.logo_url,
+            id: currentCommunity.id,
+            name: currentCommunity.name,
+            slug: currentCommunity.slug,
+            logo_url: currentCommunity.logo_url,
             role: "host",
           }]);
           return;
@@ -161,7 +166,7 @@ export function EventPreviewSidebar({
               logo_url
             )
           `)
-          .eq("event_id", event.id)
+          .eq("event_id", currentEvent.id)
           .order("created_at", { ascending: true });
 
         if (error) {
@@ -219,10 +224,10 @@ export function EventPreviewSidebar({
         console.error("Error fetching hosting communities:", error);
         // Fall back to just the community
         setHostingCommunities([{
-          id: community.id,
-          name: community.name,
-          slug: community.slug,
-          logo_url: community.logo_url,
+          id: currentCommunity.id,
+          name: currentCommunity.name,
+          slug: currentCommunity.slug,
+          logo_url: currentCommunity.logo_url,
           role: "host",
         }]);
       }
@@ -387,7 +392,7 @@ export function EventPreviewSidebar({
       if (trackingContext.referrerUrl) formData.append("referrerUrl", trackingContext.referrerUrl);
       if (trackingContext.referrerDomain) formData.append("referrerDomain", trackingContext.referrerDomain);
 
-      fetch(`/c/${community.slug}/events/${event.id}`, {
+      fetch(Routes.community.event(community.slug, publicEventSlug(event)), {
         method: "POST",
         body: formData,
       }).catch((error) => {
@@ -495,7 +500,7 @@ export function EventPreviewSidebar({
       ? (userProfile.metadata as any).phone
       : null;
 
-  const eventUrl = `${window.location.origin}/c/${community.slug}/events/${event.id}`;
+  const eventUrl = `${window.location.origin}${Routes.community.event(community.slug, publicEventSlug(event))}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(eventUrl);
@@ -512,7 +517,7 @@ export function EventPreviewSidebar({
     }
 
     // Navigate to the event page with event data in state
-    navigate(`/c/${community.slug}/events/${event.id}`, {
+    navigate(Routes.community.event(community.slug, publicEventSlug(event)), {
       state: { event },
     });
   };
@@ -578,7 +583,7 @@ export function EventPreviewSidebar({
 
     fetcher.submit(formData, {
       method: "POST",
-      action: `/c/${community.slug}/events/${event.id}`,
+      action: Routes.community.event(community.slug, publicEventSlug(event)),
     });
   };
 
@@ -820,7 +825,7 @@ export function EventPreviewSidebar({
                 localIsRegistered ? (
                   <fetcher.Form
                     method="post"
-                    action={`/c/${community.slug}/events/${event.id}`}
+                    action={Routes.community.event(community.slug, publicEventSlug(event))}
                     onSubmit={() => {
                       lastSubmittedIntentRef.current = "unregister";
                     }}
@@ -849,7 +854,7 @@ export function EventPreviewSidebar({
                 ) : (
                   <fetcher.Form
                     method="post"
-                    action={`/c/${community.slug}/events/${event.id}`}
+                    action={Routes.community.event(community.slug, publicEventSlug(event))}
                     onSubmit={() => {
                       lastSubmittedIntentRef.current = "register";
                     }}
@@ -893,6 +898,7 @@ export function EventPreviewSidebar({
         open={showRsvpModal}
         onOpenChange={setShowRsvpModal}
         eventId={event.id}
+        eventSlug={publicEventSlug(event)}
         communitySlug={community.slug}
         communityId={community.id}
         communityName={community.name}

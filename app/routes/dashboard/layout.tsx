@@ -15,6 +15,7 @@ import type { Community } from "~/shared/models/entity.types";
 import { createClient } from "~/shared/lib/supabase/client";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
 import { getCommunityCollaborationInvitesClient } from "~/modules/events/data/events-repo.client";
+import { Routes } from "~/shared/lib/routing/routes";
 import { AppSidebar } from "~/modules/dashboard/components/app-sidebar";
 import {
   DashboardHeaderActionsProvider,
@@ -91,7 +92,7 @@ async function clientLoader({
     await getCommunityBySlugClient(slug);
 
   if (communityError || !community) {
-    throw redirect(slug ? `/c/${slug}` : "/");
+    throw redirect(slug ? Routes.community.detail(slug) : "/");
   }
 
   const isOwner = community.created_by === authUser.id;
@@ -116,7 +117,7 @@ async function clientLoader({
   }
 
   if (!role) {
-    throw redirect(`/c/${slug}`);
+    throw redirect(Routes.community.detail(slug));
   }
 
   const userEmail = authUser.email || "user@example.com";

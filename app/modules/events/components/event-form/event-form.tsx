@@ -3,6 +3,7 @@ import { useNavigate, useFetcher } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '~/shared/components/ui/card';
 import { Button } from '~/shared/components/ui/button';
 import { Separator } from '~/shared/components/ui/separator';
+import { Routes } from '~/shared/lib/routing/routes';
 import { Spinner } from '~/shared/components/ui/spinner';
 import { Badge } from '~/shared/components/ui/badge';
 import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle, Users2, Bell } from 'lucide-react';
@@ -57,6 +58,7 @@ interface EventFormProps {
   communitySlug: string;
   communityId: string;
   eventId?: string;
+  eventSlug?: string;
   mode: 'create' | 'edit';
   initialData?: Partial<EventFormData>;
 }
@@ -65,6 +67,7 @@ export function EventForm({
   communitySlug,
   communityId,
   eventId,
+  eventSlug,
   mode,
   initialData,
 }: EventFormProps) {
@@ -214,7 +217,7 @@ export function EventForm({
       return;
     }
 
-    const { eventId: newEventId, communitySlug: slug } = data as EventCreateResult;
+    const { eventId: newEventId, eventSlug: newEventSlug, communitySlug: slug } = data as EventCreateResult;
     const currentInvites = pendingInvitesRef.current;
     const isDraft = submitIsDraftRef.current;
 
@@ -227,7 +230,7 @@ export function EventForm({
               form.append('intent', 'invite-collaboration');
               form.append('coHostCommunityId', p.id);
 
-              const res = await fetch(`/c/${slug}/events/${newEventId}/collaboration`, {
+              const res = await fetch(Routes.community.eventCollaboration(slug, newEventSlug), {
                 method: 'POST',
                 body: form,
                 credentials: 'same-origin',
@@ -792,7 +795,7 @@ export function EventForm({
                         formData.append('intent', 'remove-collaboration');
                         formData.append('collaborationId', collaborationId);
                         
-                        const response = await fetch(`/c/${communitySlug}/events/${eventId}/collaboration`, {
+                        const response = await fetch(Routes.community.eventCollaboration(communitySlug, eventSlug!), {
                           method: 'POST',
                           body: formData,
                         });
@@ -843,6 +846,7 @@ export function EventForm({
                     open={showInviteDialog}
                     onOpenChange={setShowInviteDialog}
                     eventId={mode === 'edit' ? eventId : undefined}
+                    eventSlug={mode === 'edit' ? eventSlug : undefined}
                     hostCommunityId={communityId}
                     communitySlug={communitySlug}
                     excludedIds={[...pendingInvites.map((p) => p.id), ...collaborations.map((c) => c.community.id)]}

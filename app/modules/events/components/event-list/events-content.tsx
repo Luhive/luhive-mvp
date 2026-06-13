@@ -9,6 +9,8 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { cn } from '~/shared/lib/utils';
 import { getEventsByCommunityClient } from '~/modules/events/data/events-repo.client';
+import { Routes } from '~/shared/lib/routing/routes';
+import { publicEventSlug } from '~/modules/events/utils/event-slug';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -189,7 +191,7 @@ function EventGridCard({
 
 	return (
 		<Link 
-			to={`/c/${communitySlug}/events/${event.id}`}
+			to={Routes.community.event(communitySlug, publicEventSlug(event))}
 			state={{ event }}
 			className="group block">
 			<EventGridCardContent 

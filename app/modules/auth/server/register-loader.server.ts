@@ -1,6 +1,7 @@
 import { redirect } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
 import type { LoaderFunctionArgs } from "react-router";
+import { Routes } from "~/shared/lib/routing/routes";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { supabase, headers } = createClient(request);
@@ -17,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .single();
 
     if (community) {
-      return redirect(`/c/${community.slug}`, { headers });
+      return redirect(Routes.community.detail(community.slug), { headers });
     }
     return redirect("/hub", { headers });
   }

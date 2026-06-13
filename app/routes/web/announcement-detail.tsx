@@ -12,6 +12,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/thumbs';
+import { Routes } from '~/shared/lib/routing/routes';
 
 export default function AnnouncementDetail() {
   const { announcement, community } = useLoaderData<AnnouncementDetailLoaderData>();
@@ -23,7 +24,7 @@ export default function AnnouncementDetail() {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Announcement not found</h1>
           <Button asChild variant="outline">
-            <Link to={`/c/${community?.slug || ''}`}>
+            <Link to={Routes.community.detail(community?.slug || '')}>
               Back to community
             </Link>
           </Button>
@@ -41,7 +42,7 @@ export default function AnnouncementDetail() {
   });
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/c/${community.slug}/announcements/${announcement.id}`;
+    const url = `${window.location.origin}${Routes.community.announcement(community.slug, announcement.id)}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -64,7 +65,7 @@ export default function AnnouncementDetail() {
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b">
         <div className="container mx-auto px-4 sm:px-8 py-3 flex items-center gap-3">
           <Button asChild variant="ghost" size="icon">
-            <Link to={`/c/${community.slug}`}>
+            <Link to={Routes.community.detail(community.slug)}>
               <ChevronLeft className="h-5 w-5" />
             </Link>
           </Button>
@@ -165,7 +166,7 @@ export default function AnnouncementDetail() {
                 asChild
                 variant="outline"
               >
-                <Link to={`/c/${community.slug}`}>
+                <Link to={Routes.community.detail(community.slug)}>
                   View Community
                 </Link>
               </Button>

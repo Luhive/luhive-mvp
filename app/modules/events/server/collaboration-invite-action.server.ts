@@ -1,6 +1,8 @@
 import { redirect } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import {
   getCollaborationById,
   acceptCollaboration,
@@ -106,7 +108,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         })
       : "TBD";
 
-    const eventLink = `${new URL(request.url).origin}/c/${hostCommunity.slug}/events/${eventData.id}`;
+    const eventLink = Routes.absolute(new URL(request.url).origin, Routes.community.event(hostCommunity.slug, publicEventSlug(eventData)));
 
     console.log("=== Collaboration Notification Debug ===");
     console.log("isNewEvent:", isNewEvent);
@@ -150,7 +152,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       console.error("Failed to trigger community notifications:", notifyError);
     }
 
-    return redirect(`/c/${hostCommunity.slug}/events/${eventData.id}`);
+    return redirect(Routes.community.event(hostCommunity.slug, publicEventSlug(eventData)));
   }
 
   if (intent === "reject") {
@@ -166,7 +168,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       };
     }
 
-    return redirect(`/c/${slug}`);
+    return redirect(Routes.community.detail(slug ?? communityData.slug));
   }
 
   return { success: false, error: "Invalid intent" };

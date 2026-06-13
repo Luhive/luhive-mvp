@@ -1,6 +1,8 @@
 import { Link, Form } from "react-router";
 import { Activity } from "react";
 import { Hourglass, CalendarClock } from "lucide-react";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import { Button } from "~/shared/components/ui/button";
 import { Avatar, AvatarFallback } from "~/shared/components/ui/avatar";
 import type { Community, Event } from "~/shared/models/entity.types";
@@ -142,7 +144,7 @@ export function NativeCanRegisterView({
 							onClick={() => {
 								window.localStorage.setItem(
 									"post_login_return_to",
-									`/c/${community.slug}/events/${event.id}`
+									Routes.community.event(community.slug, publicEventSlug(event))
 								);
 							}}
 							className="underline hover:text-foreground font-medium"

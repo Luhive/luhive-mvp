@@ -9,6 +9,7 @@ import { EventPageSkeleton } from "~/modules/events/components/event-list/event-
 import { EventPreviewSidebar } from "~/modules/events/components/event-list/event-preview-sidebar";
 import type { Community, Event } from "~/shared/models/entity.types";
 import type { CommunityLoaderData } from "~/modules/community/server/community-loader.server";
+import { Routes } from "~/shared/lib/routing/routes";
 
 export default function EventsLayout() {
   const { slug } = useParams<{ slug: string }>();
@@ -27,7 +28,8 @@ export default function EventsLayout() {
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
 
-  const isEventsListPage = location.pathname === `/c/${slug}/events`;
+  const isEventsListPage =
+    location.pathname === Routes.community.events(slug ?? "");
 
   useEffect(() => {
     if (navigation.state === "idle") {
@@ -71,7 +73,7 @@ export default function EventsLayout() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild className="h-9 w-9">
-              <Link to={slug ? `/c/${slug}` : "#"}>
+              <Link to={slug ? Routes.community.detail(slug) : "#"}>
                 <ArrowLeft className="h-5 w-5" />
               </Link>
             </Button>
@@ -87,14 +89,19 @@ export default function EventsLayout() {
               ) : community ? (
                 <>
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={community.logo_url || ""} alt={community.name} />
+                    <AvatarImage
+                      src={community.logo_url || ""}
+                      alt={community.name}
+                    />
                     <AvatarFallback className="bg-primary/10 text-primary text-sm">
                       {community.name.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <h1 className="text-xl font-bold">Events</h1>
-                    <p className="text-sm text-muted-foreground">{community.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {community.name}
+                    </p>
                   </div>
                 </>
               ) : (

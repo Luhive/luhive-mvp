@@ -131,6 +131,7 @@ export default function EditEventPage() {
           communitySlug={dashboardData.community.slug}
           communityId={dashboardData.community.id}
           eventId={event.id}
+          eventSlug={event.slug ?? undefined}
           mode="edit"
           initialData={initialData}
         />

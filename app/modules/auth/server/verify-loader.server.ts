@@ -1,6 +1,7 @@
 import { redirect } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
 import type { LoaderFunctionArgs } from "react-router";
+import { Routes } from "~/shared/lib/routing/routes";
 
 function logVerify(message: string, payload?: Record<string, unknown>) {
   if (payload) {
@@ -142,7 +143,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             }
 
             if (community) {
-              const destination = pendingReturnTo ?? `/c/${community.slug}`;
+              const destination = pendingReturnTo ?? Routes.community.detail(community.slug);
               logVerify("redirect after join (new user)", { destination });
               return redirect(`${destination}?joined=true`, { headers });
             }
@@ -209,7 +210,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             }
 
             if (community) {
-              const destination = pendingReturnTo ?? `/c/${community.slug}`;
+              const destination = pendingReturnTo ?? Routes.community.detail(community.slug);
               logVerify("redirect after join (existing user)", { destination });
               return redirect(`${destination}?joined=true`, { headers });
             }
@@ -322,7 +323,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           }
 
           if (community) {
-            const destination = returnTo ?? `/c/${community.slug}`;
+            const destination = returnTo ?? Routes.community.detail(community.slug);
             logVerify("redirect after join (verifyOtp)", { destination });
             return redirect(`${destination}?joined=true`, { headers });
           }

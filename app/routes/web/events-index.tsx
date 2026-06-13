@@ -2,6 +2,7 @@ import { useOutletContext, useLocation } from "react-router";
 import { useEffect, useRef } from "react";
 import { EventsContent } from "~/modules/events/components/event-list/events-content";
 import type { Database } from "~/shared/models/database.types";
+import { Routes } from "~/shared/lib/routing/routes";
 
 type Community = Database["public"]["Tables"]["communities"]["Row"];
 type Event = Database["public"]["Tables"]["events"]["Row"];
@@ -36,7 +37,7 @@ export function meta({ params }: { params: { slug: string } }) {
         "@type": "CollectionPage",
         "name": `Events - ${slug} Community`,
         "description": `Discover upcoming events and activities in the ${slug} community. Join engaging meetups, workshops, and networking opportunities.`,
-        "url": `https://luhive.com/c/${slug}/events`,
+        "url": `https://luhive.com${Routes.community.events(slug)}`,
         "isPartOf": { "@type": "WebSite", "name": "Community Platform", "url": "https://luhive.com" },
         "about": { "@type": "Organization", "name": `${slug} Community`, "description": `Community events and activities for ${slug}` },
       },

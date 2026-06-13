@@ -3,6 +3,8 @@ import { createClient } from "~/shared/lib/supabase/server";
 import { sendEventStatusUpdateEmail } from "~/shared/lib/email.server";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import timezone from "dayjs/plugin/timezone";
 
 dayjs.extend(utc);
@@ -139,7 +141,9 @@ export async function action({ request }: ActionFunctionArgs) {
 				.eq("id", event.community_id)
 				.single();
 			const url = new URL(request.url);
-			const finalEventLink = communityData ? `${url.origin}/c/${communityData.slug}/events/${eventId}` : `${url.origin}/c/community/events/${eventId}`;
+			const finalEventLink = communityData
+				? Routes.absolute(url.origin, Routes.community.event(communityData.slug, publicEventSlug(event)))
+				: Routes.absolute(url.origin, Routes.community.event("community", publicEventSlug(event)));
 			const eventDate = dayjs(event.start_time).tz(event.timezone);
 
 			await sendEventStatusUpdateEmail({

@@ -11,6 +11,7 @@ import { Card, CardContent } from "~/shared/components/ui/card";
 import { Skeleton } from "~/shared/components/ui/skeleton";
 import { AttendersAvatarsSkeleton } from "~/modules/events/components/attenders/attender-avatars-skeleton";
 import type { Community, Event } from "~/shared/models/entity.types";
+import { Routes } from "~/shared/lib/routing/routes";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -68,9 +69,9 @@ export function EventPageSkeleton({ event, community }: EventPageSkeletonProps) 
 								<h3 className="text-sm font-semibold text-muted-foreground">
 									Hosted By
 								</h3>
-								{community?.name ? (
+								{community?.name && community.slug ? (
 									<Link
-										to={`/c/${community.slug}`}
+										to={Routes.community.detail(community.slug)}
 										className="flex items-center gap-2 bg-card transition-colors"
 									>
 										<Avatar className="h-8 w-8">
