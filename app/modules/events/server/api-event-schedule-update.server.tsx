@@ -3,6 +3,8 @@ import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/ser
 import { sendEventScheduleUpdateEmail } from "~/shared/lib/email.server";
 import { getCoHostCommunities } from "~/modules/events/data/collaborations-repo.server";
 import dayjs from "dayjs";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 
@@ -86,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		}
 
 		const url = new URL(request.url);
-		const eventLink = `${url.origin}/c/${community.slug}/events/${eventId}`;
+		const eventLink = Routes.absolute(url.origin, Routes.community.event(community.slug, publicEventSlug(event)));
 		const eventDateTime = dayjs(event.start_time).tz(event.timezone);
 		const eventDateFormatted = eventDateTime.format("dddd, MMMM D, YYYY");
 		const eventTimeFormatted = eventDateTime.format("h:mm A z");

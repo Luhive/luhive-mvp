@@ -2,6 +2,9 @@ import type { ActionFunctionArgs } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
 import { notifyNewEvent } from "~/modules/events/server/notify-new-event.server";
 import type { Database, Json } from "~/shared/models/database.types";
+import { Routes } from "~/shared/lib/routing/routes";
+import { ensureUniqueEventSlug } from "~/modules/events/server/ensure-event-slug.server";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 
 type EventType = Database["public"]["Enums"]["event_type"];
 type EventStatus = Database["public"]["Enums"]["event_status"];
@@ -35,6 +38,7 @@ export interface EventCreatePayload {
 export interface EventCreateResult {
   success: true;
   eventId: string;
+  eventSlug: string;
   communitySlug: string;
 }
 
@@ -88,12 +92,15 @@ export async function eventCreateAction({
     eventLinkBase,
   } = payload;
 
+  const eventSlug = await ensureUniqueEventSlug(supabase, communityId, title);
+
   const { data: newEvent, error: eventError } = await supabase
     .from("events")
     .insert({
       community_id: communityId,
       created_by: user.id,
       title,
+      slug: eventSlug,
       description: description || null,
       start_time: startTime,
       end_time: endTime || null,
@@ -109,7 +116,7 @@ export async function eventCreateAction({
       is_approve_required: isApproveRequired,
       custom_questions: (customQuestions ?? null) as Json | null,
     })
-    .select("id")
+    .select("id, slug")
     .single();
 
   if (eventError || !newEvent) {
@@ -151,7 +158,10 @@ export async function eventCreateAction({
         eventTitle: title,
         eventDate,
         eventTime,
-        eventLink: `${eventLinkBase}/c/${communitySlug}/events/${newEvent.id}`,
+        eventLink: Routes.absolute(
+          eventLinkBase,
+          Routes.community.event(communitySlug, publicEventSlug(newEvent)),
+        ),
         locationAddress: locationAddress || undefined,
         onlineMeetingLink: onlineMeetingLink || undefined,
       });
@@ -160,5 +170,10 @@ export async function eventCreateAction({
     }
   }
 
-  return { success: true, eventId: newEvent.id, communitySlug };
+  return {
+    success: true,
+    eventId: newEvent.id,
+    eventSlug: publicEventSlug(newEvent),
+    communitySlug,
+  };
 }

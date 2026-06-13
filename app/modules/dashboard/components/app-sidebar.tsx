@@ -32,8 +32,8 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar"
 import type { Community, Profile } from "~/shared/models/entity.types"
-
 import { Link } from "react-router"
+import { Routes } from "~/shared/lib/routing/routes"
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   community?: Community
@@ -52,7 +52,7 @@ export function AppSidebar({ community, user, userEmail, role, collabRequestCoun
   const communitySlug = community?.slug || "/"
 
   function handleCopy() {
-    const url = `${window.location.origin}/c/${communitySlug}`;
+    const url = `${window.location.origin}${Routes.community.detail(communitySlug)}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -126,7 +126,7 @@ export function AppSidebar({ community, user, userEmail, role, collabRequestCoun
               asChild
               className="data-[slot=sidebar-menu-button]:!p-0"
             >
-              <Link to={`/c/${communitySlug}`} className="min-w-0">
+              <Link to={Routes.community.detail(communitySlug)} className="min-w-0">
                 <Avatar className="!size-7 shrink-0">
                   <AvatarImage src={communityLogo || ""} alt={communityName} />
                   <AvatarFallback className="text-sm font-semibold">
@@ -148,7 +148,7 @@ export function AppSidebar({ community, user, userEmail, role, collabRequestCoun
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <a
-                href={`/c/${communitySlug}`}
+                href={Routes.community.detail(communitySlug)}
                 target="_blank"
                 rel="noopener noreferrer"
               >

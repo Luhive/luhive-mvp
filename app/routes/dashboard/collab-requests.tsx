@@ -2,6 +2,7 @@ import { useLoaderData } from "react-router";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
 import { getCommunityCollaborationInvitesClient } from "~/modules/events/data/events-repo.client";
 import type { Database } from "~/shared/models/database.types";
+import { Routes } from "~/shared/lib/routing/routes";
 
 type Community = Database["public"]["Tables"]["communities"]["Row"];
 
@@ -98,7 +99,10 @@ export default function CollabRequestsPage() {
                     </p>
                   </div>
                   <a
-                    href={`/c/${community.slug}/collaboration-invite/${invite.id}`}
+                    href={Routes.community.collaborationInvite(
+                      community.slug,
+                      invite.id,
+                    )}
                     className="text-orange-500 underline"
                   >
                     Respond

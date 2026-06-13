@@ -9,14 +9,15 @@ import type { HubLoaderData } from "~/modules/hub/model/hub-types";
 import { CommunityGrid } from "~/modules/hub/components/community-grid";
 import { HubEmptyState } from "~/modules/hub/components/hub-empty-state";
 import { HubHeader } from "~/modules/hub/components/hub-header";
+import { Routes } from "~/shared/lib/routing/routes";
 
 export default function HubPage() {
   const { data } = useLoaderData<HubLoaderData>();
   const navigation = useNavigation();
   const isCommunityTransitionLoading =
     navigation.state === "loading" &&
-    (navigation.location?.pathname.startsWith("/c/") ||
-      navigation.location?.pathname.startsWith("/dashboard/"));
+    (navigation.location?.pathname.startsWith(`${Routes.community.base}/`) ||
+      navigation.location?.pathname.startsWith(`${Routes.dashboard.base}/`));
 
   return (
     <>

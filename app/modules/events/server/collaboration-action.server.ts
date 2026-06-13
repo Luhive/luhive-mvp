@@ -1,5 +1,6 @@
 import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
 import type { ActionFunctionArgs } from "react-router";
+import { Routes } from "~/shared/lib/routing/routes";
 import {
   inviteCollaboration,
   acceptCollaboration,
@@ -10,6 +11,8 @@ import {
   getHostCommunity,
 } from "~/modules/events/data/collaborations-repo.server";
 import { sendCollaborationInviteEmail, sendCollaborationAcceptedEmail } from "~/shared/lib/email.server";
+import { resolvePublicEvent } from "~/modules/events/server/resolve-public-event.server";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 
 export type CollaborationActionData = {
   success?: boolean;
@@ -61,23 +64,23 @@ export async function collaborationAction({
     return { success: false, error: "Authentication required" };
   }
 
-  const eventId = (params as { eventId?: string }).eventId;
+  const eventSlug = (params as { eventSlug?: string }).eventSlug;
   const slug = (params as { slug?: string }).slug;
 
-  if (!eventId) {
-    return { success: false, error: "Event ID required" };
+  if (!eventSlug || !slug) {
+    return { success: false, error: "Event slug required" };
   }
 
-  // Get event and verify it exists
-  const { data: event, error: eventError } = await supabase
-    .from("events")
-    .select("id, title, community_id, created_by, start_time, timezone, location_address, online_meeting_link, created_at")
-    .eq("id", eventId)
-    .single();
+  const resolved = await resolvePublicEvent(supabase, slug, eventSlug, {
+    publishedOnly: false,
+  });
 
-  if (eventError || !event) {
+  if (!resolved) {
     return { success: false, error: "Event not found" };
   }
+
+  const event = resolved.event;
+  const eventId = event.id;
 
   // Get host community
   const { community: hostCommunity, error: hostError } = await getHostCommunity(
@@ -160,8 +163,13 @@ export async function collaborationAction({
           .eq("id", user.id)
           .single();
 
-        const inviteLink = `${new URL(request.url).origin}/c/${coHostCommunity.slug}/collaboration-invite/${collaboration.id}`;
-        const eventLink = `${new URL(request.url).origin}/c/${slug || hostCommunityData?.slug}/events/${eventId}`;
+        const linkCommunitySlug = slug ?? hostCommunityData?.slug;
+        if (!linkCommunitySlug) {
+          throw new Response("Community slug required", { status: 400 });
+        }
+
+        const inviteLink = Routes.absolute(new URL(request.url).origin, Routes.community.collaborationInvite(coHostCommunity.slug, collaboration.id));
+        const eventLink = Routes.absolute(new URL(request.url).origin, Routes.community.event(linkCommunitySlug, publicEventSlug(event)));
 
         await sendCollaborationInviteEmail({
           eventTitle: event.title,
@@ -225,7 +233,13 @@ export async function collaborationAction({
     // Send acceptance email to host community owner
     try {
       const serviceClient = createServiceRoleClient();
-      const eventData = collaboration.event as { id: string; title: string; community_id: string; created_by: string };
+      const eventData = collaboration.event as {
+        id: string;
+        slug: string | null;
+        title: string;
+        community_id: string;
+        created_by: string;
+      };
       const { data: hostCommunityData } = await supabase
         .from("communities")
         .select("name, slug, created_by")
@@ -239,7 +253,10 @@ export async function collaborationAction({
 
         if (ownerData?.user?.email) {
           const communityData = collaboration.community as { name: string; slug: string };
-          const eventLink = `${new URL(request.url).origin}/c/${hostCommunityData.slug}/events/${eventData.id}`;
+          const eventLink = Routes.absolute(
+            new URL(request.url).origin,
+            Routes.community.event(hostCommunityData.slug, publicEventSlug(eventData)),
+          );
 
           await sendCollaborationAcceptedEmail({
             eventTitle: eventData.title,
@@ -257,7 +274,9 @@ export async function collaborationAction({
 
     // Notify community members based on whether this is a new or existing event
     // Check if this is a new event by comparing event created_at with collaboration invited_at
-    const collaborationCreatedAt = new Date(collaboration.created_at);
+    const collaborationCreatedAt = collaboration.created_at
+      ? new Date(collaboration.created_at)
+      : null;
     const eventCreatedAt = event.created_at ? new Date(event.created_at) : null;
     
     // If event was created around the same time as collaboration (within 5 minutes), it's a new event
@@ -282,7 +301,7 @@ export async function collaborationAction({
       ? eventDateTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })
       : 'TBD';
 
-    const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
+    const eventLink = Routes.absolute(new URL(request.url).origin, Routes.community.event(slug, publicEventSlug(event)));
 
     // Trigger community member notifications
     console.log("=== Collaboration Notification Debug ===");

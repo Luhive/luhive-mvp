@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
+import { redirect } from "react-router";
 import {
   createClient,
   createServiceRoleClient,
@@ -8,6 +9,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import { Community, Event, Profile } from "~/shared/models/entity.types";
 import { getEventCollaborations } from "~/modules/events/data/collaborations-repo.server";
+import { resolvePublicEvent } from "~/modules/events/server/resolve-public-event.server";
+import { Routes } from "~/shared/lib/routing/routes";
+import { isUuid } from "~/modules/events/utils/event-slug";
 
 dayjs.extend(timezone);
 
@@ -58,63 +62,25 @@ export async function loader({
 }: LoaderFunctionArgs): Promise<EventDetailLoaderData> {
   const { supabase } = createClient(request);
 
-  const slug = (params as { slug?: string }).slug;
-  const eventId = (params as { eventId?: string }).eventId;
+  const communitySlug = (params as { slug?: string }).slug;
+  const eventSlug = (params as { eventSlug?: string }).eventSlug;
 
-  if (!slug || !eventId) {
+  if (!communitySlug || !eventSlug) {
     throw new Response("Not Found", { status: 404 });
   }
 
-  const { data: community, error: communityError } = await supabase
-    .from("communities")
-    .select("*")
-    .eq("slug", slug)
-    .single();
+  const resolved = await resolvePublicEvent(supabase, communitySlug, eventSlug, {
+    publishedOnly: true,
+  });
 
-  if (communityError || !community) {
-    throw new Response("Community not found", { status: 404 });
+  if (!resolved) {
+    throw new Response("Event not found", { status: 404 });
   }
 
-  // First try to find event in this community
-  let { data: event, error: eventError } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", eventId)
-    .eq("community_id", community.id)
-    .single();
+  const { event, community } = resolved;
 
-  // If not found, check if this community is a co-host
-  if (eventError || !event) {
-    const { data: collaboration } = await supabase
-      .from("event_collaborations")
-      .select("event_id")
-      .eq("event_id", eventId)
-      .eq("community_id", community.id)
-      .eq("role", "co-host")
-      .eq("status", "accepted")
-      .single();
-
-    if (collaboration) {
-      // Fetch the event (it belongs to host community)
-      const { data: eventData, error: eventDataError } = await supabase
-        .from("events")
-        .select("*")
-        .eq("id", eventId)
-        .single();
-
-      if (eventDataError || !eventData) {
-        throw new Response("Event not found", { status: 404 });
-      }
-
-      event = eventData;
-      eventError = null;
-    } else {
-      throw new Response("Event not found", { status: 404 });
-    }
-  }
-
-  if (event.status !== "published") {
-    throw new Response("Event not available", { status: 404 });
+  if (isUuid(eventSlug) && event.slug) {
+    throw redirect(Routes.community.event(communitySlug, event.slug), 301);
   }
 
   const url = new URL(request.url);
@@ -226,10 +192,8 @@ export async function loader({
       : dayjs(event.start_time).tz(tz)
   ).format("h:mm A z");
 
-  // Fetch all collaborations (host + co-hosts)
-  const { collaborations } = await getEventCollaborations(supabase, eventId);
-  
-  // Get the actual host community from the event (not from URL slug)
+  const { collaborations } = await getEventCollaborations(supabase, event.id);
+
   const { data: hostCommunity, error: hostCommunityError } = await supabase
     .from("communities")
     .select("id, name, slug, logo_url")
@@ -240,7 +204,6 @@ export async function loader({
     throw new Response("Host community not found", { status: 404 });
   }
 
-  // Get all hosting communities (host + accepted co-hosts)
   let hostingCommunities: Array<{
     id: string;
     name: string;
@@ -250,7 +213,6 @@ export async function loader({
     isMember: boolean;
   }> = [];
 
-  // Add host community first (always show host)
   hostingCommunities.push({
     id: hostCommunity.id,
     name: hostCommunity.name,
@@ -260,7 +222,6 @@ export async function loader({
     isMember: false,
   });
 
-  // Add all accepted co-hosts (including the current community if it's a co-host)
   for (const collab of collaborations) {
     if (collab.role === "co-host" && collab.status === "accepted") {
       const coHostCommunity = Array.isArray(collab.community)

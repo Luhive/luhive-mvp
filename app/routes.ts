@@ -22,11 +22,13 @@ export default [
       route("events", "routes/web/events-layout.tsx", [
         index("routes/web/events-index.tsx"),
       ]),
-      route("events/:eventId", "routes/web/event-detail.tsx"),
+      route("events/:eventId", "routes/web/event-legacy-redirect.tsx"),
       route(
         "events/:eventId/collaboration",
-        "routes/web/event-collaboration.tsx",
+        "routes/web/event-collaboration-legacy-redirect.tsx",
       ),
+      route(":eventSlug/collaboration", "routes/web/event-collaboration.tsx"),
+      route(":eventSlug", "routes/web/event-detail.tsx"),
     ]),
     route(
       "c/:slug/collaboration-invite/:collaborationId",

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSubmit, useNavigation } from "react-router";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import { EventRsvpModal } from "~/modules/events/components/registration/event-rsvp-modal";
 import { AnonymousSubscriptionDialog } from "~/modules/events/components/registration/anonymous-subscription-dialog";
 import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
@@ -187,7 +189,7 @@ export function EventDetail({
 			if (trackingContext.referrerUrl) formData.append("referrerUrl", trackingContext.referrerUrl);
 			if (trackingContext.referrerDomain) formData.append("referrerDomain", trackingContext.referrerDomain);
 
-			fetch(`/c/${community.slug}/events/${event.id}`, {
+			fetch(Routes.community.event(community.slug, publicEventSlug(event)), {
 				method: "POST",
 				body: formData,
 			}).catch((error) => {
@@ -234,6 +236,7 @@ export function EventDetail({
 				open={showRsvpModal}
 				onOpenChange={setShowRsvpModal}
 				eventId={event.id}
+				eventSlug={publicEventSlug(event)}
 				communitySlug={community.slug}
 				communityId={community.id}
 				communityName={community.name}

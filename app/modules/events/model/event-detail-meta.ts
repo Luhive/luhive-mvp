@@ -1,5 +1,7 @@
 import dayjs from "dayjs";
 import type { EventDetailLoaderData } from "~/modules/events/server/event-detail-loader.server";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 
 export function meta({ data }: { data?: EventDetailLoaderData }) {
   if (!data) {
@@ -12,7 +14,7 @@ export function meta({ data }: { data?: EventDetailLoaderData }) {
   const { event, community, origin } = data;
   const eventDate = dayjs(event.start_time).format("MMMM D, YYYY");
 
-  const canonicalUrl = `${origin}/c/${community.slug}/events/${event.id}`;
+  const canonicalUrl = Routes.absolute(origin, Routes.community.event(community.slug, publicEventSlug(event)));
 
   const getAbsoluteImageUrl = (url: string | null | undefined): string => {
     if (!url) return "";

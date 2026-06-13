@@ -3,6 +3,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { createClient } from "~/shared/lib/supabase/server";
 import { sendSubscriptionConfirmationEmail } from "~/shared/lib/email.server";
+import { Routes } from "~/shared/lib/routing/routes";
 import { getExternalPlatformName } from "~/modules/events/utils/external-platform";
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import { sanitizeDuplicateError } from "~/modules/events/utils/sanitize-error";
@@ -11,6 +12,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { getIpLocation } from "~/shared/lib/ip-location.server";
 import { getUserAgent } from "~/modules/community/utils/user-agent";
 import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
+import { resolvePublicEvent } from "~/modules/events/server/resolve-public-event.server";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -116,33 +119,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const slug = (params as { slug?: string }).slug;
-  const eventId = (params as { eventId?: string }).eventId;
-  if (!eventId || !slug) {
-    return { success: false, error: "Event ID and slug required" };
+  const communitySlug = (params as { slug?: string }).slug;
+  const eventSlug = (params as { eventSlug?: string }).eventSlug;
+  if (!eventSlug || !communitySlug) {
+    return { success: false, error: "Event slug and community slug required" };
   }
 
-  const { data: event, error: eventError } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", eventId)
-    .single();
+  const resolved = await resolvePublicEvent(supabase, communitySlug, eventSlug, {
+    publishedOnly: false,
+  });
 
-  if (eventError || !event) {
-    console.error("Error fetching event:", eventError);
+  if (!resolved) {
     return { success: false, error: "Event not found" };
   }
 
-  const { data: community, error: communityError } = await supabase
-    .from("communities")
-    .select("*")
-    .eq("id", event.community_id)
-    .single();
-
-  if (communityError || !community) {
-    console.error("Community not found for event:", eventId, communityError);
-    return { success: false, error: "Community not found" };
-  }
+  const { event, community } = resolved;
+  const eventId = event.id;
+  const slug = communitySlug;
 
   if (intent === "anonymous-subscribe") {
     if (event.registration_type !== "external") {
@@ -228,7 +221,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const eventDate = dayjs(event.start_time).tz(event.timezone);
-    const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
+    const eventLink = Routes.absolute(
+      new URL(request.url).origin,
+      Routes.community.event(slug, publicEventSlug(event)),
+    );
     const registerAccountLink = `${new URL(request.url).origin}/signup`;
 
     try {
@@ -490,7 +486,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .single();
 
     const eventDate = dayjs(event.start_time).tz(event.timezone);
-    const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
+    const eventLink = Routes.absolute(
+      new URL(request.url).origin,
+      Routes.community.event(slug, publicEventSlug(event)),
+    );
     const origin = new URL(request.url).origin;
 
     try {
@@ -657,7 +656,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .single();
 
     const eventDate = dayjs(event.start_time).tz(event.timezone);
-    const eventLink = `${new URL(request.url).origin}/c/${slug}/events/${eventId}`;
+    const eventLink = Routes.absolute(
+      new URL(request.url).origin,
+      Routes.community.event(slug, publicEventSlug(event)),
+    );
     const registerAccountLink = `${new URL(request.url).origin}/signup`;
 
     try {

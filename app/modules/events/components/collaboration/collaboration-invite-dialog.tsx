@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
+import { Routes } from "~/shared/lib/routing/routes";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ interface CollaborationInviteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventId?: string;
+  eventSlug?: string;
   hostCommunityId: string;
   communitySlug: string;
   excludedIds?: string[];
@@ -41,6 +43,7 @@ export function CollaborationInviteDialog({
   open,
   onOpenChange,
   eventId,
+  eventSlug,
   hostCommunityId,
   communitySlug,
   excludedIds,
@@ -141,8 +144,8 @@ export function CollaborationInviteDialog({
       return;
     }
 
-    if (!eventId) {
-      toast.error("Event ID is missing");
+    if (!eventSlug) {
+      toast.error("Event slug is missing");
       return;
     }
 
@@ -159,9 +162,14 @@ export function CollaborationInviteDialog({
     formData.append("intent", "invite-collaboration");
     formData.append("coHostCommunityId", selected.id);
 
+    if (!eventSlug) {
+      toast.error("Event slug is required to send invites");
+      return;
+    }
+
     fetcher.submit(formData, {
       method: "POST",
-      action: `/c/${communitySlug}/events/${eventId}/collaboration`,
+      action: Routes.community.eventCollaboration(communitySlug, eventSlug),
     });
   };
 

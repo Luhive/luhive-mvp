@@ -4,6 +4,8 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { createServiceRoleClient } from "~/shared/lib/supabase/server";
 import { notifyNewEvent } from "~/modules/events/server/notify-new-event.server";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -31,6 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("events")
       .select(`
         id,
+        slug,
         title,
         start_time,
         timezone,
@@ -55,7 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
       eventTitle: event.title,
       eventDate: eventStart.format("dddd, MMMM D, YYYY"),
       eventTime: eventStart.format("h:mm A z"),
-      eventLink: `https://luhive.com/c/${communitySlug}/events/${event.id}`,
+      eventLink: `https://luhive.com${Routes.community.event(communitySlug, publicEventSlug(event))}`,
       locationAddress: event.location_address ?? undefined,
       onlineMeetingLink: event.online_meeting_link ?? undefined,
     });

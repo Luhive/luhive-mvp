@@ -96,10 +96,15 @@ export async function getCollaborationById(
       *,
       event:events!event_collaborations_event_id_fkey (
         id,
+        slug,
         title,
         start_time,
+        end_time,
+        location_address,
+        online_meeting_link,
         community_id,
-        created_by
+        created_by,
+        created_at
       ),
       community:communities!event_collaborations_community_id_fkey (
         id,

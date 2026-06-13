@@ -13,6 +13,7 @@ type CommunityCard = Pick<
 export type CollaborationInviteEventPreview = Pick<
   Database["public"]["Tables"]["events"]["Row"],
   | "id"
+  | "slug"
   | "title"
   | "start_time"
   | "end_time"

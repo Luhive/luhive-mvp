@@ -4,6 +4,7 @@ import type {
   EventStatus,
 } from "~/shared/models/entity.types";
 import { createClient as createBrowserClient } from "~/shared/lib/supabase/client";
+import { slugifyEventTitle } from "~/modules/events/utils/event-slug";
 
 export async function getEventsByCommunityClient(
   communityId: string,
@@ -373,4 +374,37 @@ export async function canUpdateEventClient(
     .single();
 
   return !!data;
+}
+
+export async function ensureUniqueEventSlugClient(
+  communityId: string,
+  title: string,
+  excludeEventId?: string,
+): Promise<string> {
+  const supabase = createBrowserClient();
+  let base = slugifyEventTitle(title);
+  if (!base) {
+    base = `event-${crypto.randomUUID().slice(0, 8)}`;
+  }
+
+  let candidate = base;
+  let counter = 2;
+
+  while (true) {
+    let query = supabase
+      .from("events")
+      .select("id")
+      .eq("community_id", communityId)
+      .eq("slug", candidate);
+
+    if (excludeEventId) {
+      query = query.neq("id", excludeEventId);
+    }
+
+    const { data } = await query.maybeSingle();
+    if (!data) return candidate;
+
+    candidate = `${base}-${counter}`;
+    counter += 1;
+  }
 }

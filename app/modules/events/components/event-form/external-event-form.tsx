@@ -33,6 +33,7 @@ import { EventDateTime } from '~/modules/events/components/event-form/fields/eve
 import { EventLocation } from '~/modules/events/components/event-form/fields/event-location';
 import { EventDiscussion } from '~/modules/events/components/event-form/fields/event-discussion';
 import { createClient } from '~/shared/lib/supabase/client';
+import { ensureUniqueEventSlugClient } from '~/modules/events/data/events-repo.client';
 import { toast } from 'sonner';
 import type { Database } from '~/shared/models/database.types';
 import type { ExternalPlatform } from '~/modules/events/model/event.types';
@@ -219,10 +220,12 @@ export function ExternalEventForm({
       };
 
       if (mode === 'create') {
+        const slug = await ensureUniqueEventSlugClient(communityId, title);
+
         // Insert new event
         const { data: newEvent, error } = await supabase
           .from('events')
-          .insert(eventData)
+          .insert({ ...eventData, slug })
           .select('id')
           .single();
 

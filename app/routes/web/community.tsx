@@ -28,6 +28,7 @@ import {
   Outlet,
 } from "react-router";
 import { createClient as createClientBrowser } from "~/shared/lib/supabase/client";
+import { Routes } from "~/shared/lib/routing/routes";
 import type { Database } from "~/shared/models/database.types";
 import { useEffect, useState, Suspense, lazy } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
@@ -299,9 +300,9 @@ export default function CommunityPage() {
     trackView();
   }, [selectedAnnouncement?.id]);
 
-  const isChildRoute =
-    location.pathname.includes("/announcements") ||
-    location.pathname.includes("/events");
+  const isChildRoute = community?.slug
+    ? Routes.community.isCommunityChildPath(community.slug, location.pathname)
+    : false;
 
   useEffect(() => {
     if (location.search.includes("published")) {
@@ -678,7 +679,7 @@ export default function CommunityPage() {
                         </div>
                       ) : (
                         <Link
-                          to={`/c/${community.slug}/events`}
+                          to={Routes.community.events(community.slug)}
                           prefetch="intent"
                           state={{ community, events: loadedEvents }}
                           className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -733,7 +734,7 @@ export default function CommunityPage() {
                   </CardTitle>
                   {isOwner && announcementItems.length > 0 && (
                     <Link
-                      to={`/c/${community?.slug}/announcements/new`}
+                      to={Routes.community.announcementNew(community?.slug ?? "")}
                       prefetch="render"
                       className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
                       title="Add announcement"
@@ -758,7 +759,7 @@ export default function CommunityPage() {
                     </div>
                     {isOwner && (
                       <Link
-                        to={`/c/${community?.slug}/announcements/new`}
+                        to={Routes.community.announcementNew(community?.slug ?? "")}
                         prefetch="render"
                         className="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 mt-3 bg-primary hover:bg-primary/90 text-primary-foreground"
                       >

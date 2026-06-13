@@ -16,6 +16,7 @@ import { Spinner } from "~/shared/components/ui/spinner";
 import { ProfilePictureUpload } from "~/modules/profile/components/profile-picture-upload";
 import { toast } from "sonner";
 import { Instagram, Linkedin, Globe, Save, Check, MessageCircle } from "lucide-react";
+import { Routes } from "~/shared/lib/routing/routes";
 
 export function meta() {
   return [
@@ -78,13 +79,13 @@ export default function CommunityEdit() {
                 <div className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-sm border border-green-200 animate-pulse">
                   <Check className="h-4 w-4" />
                   <span className="text-sm font-medium">Changes saved!</span>
-                  <span className="text-sm text-green-600">{host}/c/{community.slug}</span>
+                  <span className="text-sm text-green-600">{host}{Routes.community.detail(community.slug)}</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 px-3 py-2 bg-muted text-foreground rounded-sm border">
                   <Globe className="h-4 w-4" />
                   <span className="text-sm font-medium">Public Url:</span>
-                  <span className="text-sm text-foreground/60">{host}/c/{community.slug}</span>
+                  <span className="text-sm text-foreground/60">{host}{Routes.community.detail(community.slug)}</span>
                 </div>
               )}
             </div>

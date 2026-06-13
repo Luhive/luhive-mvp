@@ -3,6 +3,8 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { redirect } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
 import { getIpLocation } from "~/shared/lib/ip-location.server";
 import { sendCommunityJoinNotification } from "~/shared/lib/email.server";
@@ -193,7 +195,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const { data: event } = await supabase
       .from("events")
-      .select("id, community_id, title, start_time, end_time, timezone, custom_questions, is_approve_required, location_address, online_meeting_link")
+      .select("id, community_id, title, start_time, end_time, timezone, custom_questions, is_approve_required, location_address, online_meeting_link, slug")
       .eq("id", eventId)
       .single();
 
@@ -329,7 +331,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const tz = (event.timezone as string) ?? "UTC";
         const eventDate = dayjs(event.start_time).tz(tz);
         const origin = new URL(request.url).origin;
-        const eventLink = `${origin}/c/${hostCommunity?.slug ?? "unknown"}/events/${eventId}`;
+        const eventLink = Routes.absolute(origin, Routes.community.event(hostCommunity?.slug ?? "unknown", publicEventSlug(event)));
 
         // Block 1 — notify host and co-host community admins
         try {
@@ -490,7 +492,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const destination = resolvedReturnTo ?? `/c/${community.slug}`;
+      const destination = resolvedReturnTo ?? Routes.community.detail(community.slug);
       return redirect(withJoinedQuery(destination), { headers });
     }
   }
@@ -513,7 +515,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .single();
 
   if (ownedCommunity) {
-    return redirect(`/c/${ownedCommunity.slug}`, { headers });
+    return redirect(Routes.community.detail(ownedCommunity.slug), { headers });
   }
 
   return redirect("/hub", { headers });

@@ -5,6 +5,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import type { ActionFunctionArgs } from "react-router";
+import { Routes } from "~/shared/lib/routing/routes";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -45,6 +47,7 @@ function getRemindersToSend(reminderTime: "1-hour" | "3-hours" | "1-day") {
 
 interface EventWithReminders {
   id: string;
+  slug: string | null;
   title: string;
   start_time: string;
   end_time: string | null;
@@ -58,7 +61,8 @@ interface EventWithReminders {
   } | null;
   communities: {
     name: string;
-    logo_url: string | null; // ✅ ADDED
+    slug: string;
+    logo_url: string | null;
   } | null;
 }
 
@@ -94,6 +98,7 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
         .select(
           `
           id,
+          slug,
           title,
           start_time,
           end_time,
@@ -102,7 +107,7 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
           online_meeting_link,
           community_id,
           event_reminders(reminder_times, custom_message),
-          communities(name, logo_url)
+          communities(name, slug, logo_url)
         `
         )
         .eq("status", "published")
@@ -217,7 +222,13 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
                   event.communities?.logo_url || null, // ✅ PASS LOGO HERE
                 eventDate,
                 eventTime,
-                eventLink: `https://luhive.com/events/${event.id}`,
+                eventLink: Routes.absolute(
+                  "https://luhive.com",
+                  Routes.community.event(
+                    event.communities?.slug ?? "community",
+                    publicEventSlug(event),
+                  ),
+                ),
                 recipientName: participantName,
                 locationAddress:
                   event.location_address || undefined,

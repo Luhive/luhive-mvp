@@ -3,8 +3,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avat
 import { Card, CardContent, CardHeader, CardTitle } from "~/shared/components/ui/card";
 import { Badge } from "~/shared/components/ui/badge";
 import { Users, Calendar, BadgeCheck, Heart } from "lucide-react";
-
 import type { Community } from "~/modules/hub/model/hub-types";
+import { Routes } from "~/shared/lib/routing/routes";
 
 interface CommunityCardProps {
   community: Community;
@@ -16,7 +16,7 @@ export function CommunityCard({ community }: CommunityCardProps) {
 
   return (
     <NavLink
-      to={community.isAdmin ? `/dashboard/${community.slug}` : `/c/${community.slug}`}
+      to={community.isAdmin ? Routes.dashboard.overview(community.slug) : Routes.community.detail(community.slug)}
       prefetch="intent"
       viewTransition
       className="group"

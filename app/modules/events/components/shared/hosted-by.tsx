@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avat
 import { Button } from "~/shared/components/ui/button";
 import { JoinCommunityForm } from "~/modules/community/components/join-community-form";
 import type { Community } from "~/shared/models/entity.types";
+import { Routes } from "~/shared/lib/routing/routes";
 import React from "react";
 import { UserCheck, UserRoundPlus } from "lucide-react";
 
@@ -57,10 +58,10 @@ export function HostedBy({
         {resolvedHosts.map((host) => (
           <div key={host.id} className="flex items-center gap-3">
             <a
-              href={`/c/${host.slug}`}
+              href={Routes.community.detail(host.slug)}
               onClick={(e) => {
                 e.preventDefault();
-                navigate(`/c/${host.slug}`);
+                navigate(Routes.community.detail(host.slug));
               }}
               className="flex items-center gap-3 min-w-0 flex-1"
             >

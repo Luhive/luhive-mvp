@@ -48,7 +48,7 @@
     Note: Dynamic routes should be generated server-side:
     - /c/:slug (community pages)
     - /c/:slug/events (event listing pages)
-    - /c/:slug/events/:eventId (individual event pages)
+    - /c/:slug/:eventSlug (individual event pages)
     
     These routes require database queries to generate URLs dynamically.
     Consider implementing a server-side sitemap generation endpoint.
