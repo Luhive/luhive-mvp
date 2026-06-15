@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, type MutableRefObject } from "react";
 import { useActionData, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import type { EventDetailActionData } from "~/modules/events/model/event-detail-view.types";
 
 export interface UseEventDetailToastsOptions {
 	onSubscribeSuccess?: () => void;
+	onRegisterSuccess?: () => void;
+	submittedIntentRef?: MutableRefObject<string | null>;
 }
 
 /**
@@ -18,9 +20,20 @@ export function useEventDetailToasts(options?: UseEventDetailToastsOptions) {
 		if (!actionData) return;
 		if (actionData.success && actionData.message) {
 			toast.success(actionData.message);
-			options?.onSubscribeSuccess?.();
+			const intent = options?.submittedIntentRef?.current;
+			if (intent === "register") {
+				options?.onRegisterSuccess?.();
+				if (options?.submittedIntentRef) {
+					options.submittedIntentRef.current = null;
+				}
+			} else {
+				options?.onSubscribeSuccess?.();
+			}
 		} else if (actionData.error) {
 			toast.error(actionData.error);
+			if (options?.submittedIntentRef) {
+				options.submittedIntentRef.current = null;
+			}
 		}
 	}, [actionData]);
 

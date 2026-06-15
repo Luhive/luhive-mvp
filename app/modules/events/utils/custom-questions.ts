@@ -1,18 +1,67 @@
-import type { CustomQuestion, CustomQuestionJson, CustomAnswerJson } from '~/modules/events/model/event.types';
+import type {
+  CustomQuestion,
+  CustomQuestionJson,
+  CustomAnswerJson,
+  DropdownOption,
+} from '~/modules/events/model/event.types';
 import type { Database } from '~/shared/models/database.types';
 import { MAX_ANSWER_LENGTH } from './custom-questions-constants';
 
 type EventRegistration = Database['public']['Tables']['event_registrations']['Row'];
 
-/**
- * Creates a new custom question with a generated UUID
- */
+function isDropdownOption(value: unknown): value is DropdownOption {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'id' in value &&
+    'label' in value &&
+    typeof (value as DropdownOption).id === 'string' &&
+    typeof (value as DropdownOption).label === 'string'
+  );
+}
+
+function getDropdownSelections(answer: unknown): DropdownOption[] {
+  if (Array.isArray(answer)) {
+    return answer.filter(isDropdownOption);
+  }
+  return isDropdownOption(answer) ? [answer] : [];
+}
+
+export function formatAnswerForDisplay(answer: unknown): string {
+  if (Array.isArray(answer)) {
+    return answer
+      .map((v) => (isDropdownOption(v) ? v.label : String(v)))
+      .join(', ');
+  }
+  if (isDropdownOption(answer)) {
+    return answer.label;
+  }
+  return typeof answer === 'string' ? answer : '-';
+}
+
+export function createNewDropdownOption(): DropdownOption {
+  return { id: crypto.randomUUID(), label: '' };
+}
+
 export function createNewCustomQuestion(order: number): CustomQuestion {
   return {
     id: crypto.randomUUID(),
     label: '',
     required: false,
     order,
+    type: 'text',
+  };
+}
+
+export function createNewDropdownQuestion(order: number): CustomQuestion {
+  return {
+    id: crypto.randomUUID(),
+    label: '',
+    required: false,
+    order,
+    type: 'dropdown',
+    options: [],
+    allowMultiple: false,
   };
 }
 
@@ -81,15 +130,34 @@ export function validateCustomAnswers(
   if (config.custom && config.custom.length > 0) {
     for (const question of config.custom) {
       const answer = answers[question.id];
+      const questionType = question.type ?? 'text';
 
-      if (question.required) {
-        if (!answer || !answer.trim()) {
+      if (questionType === 'dropdown') {
+        const selected = getDropdownSelections(answer);
+        const validIds = (question.options ?? []).map((o) => o.id);
+
+        if (question.required && selected.length === 0) {
           errors[question.id] = 'This field is required';
-        } else if (answer.length > MAX_ANSWER_LENGTH) {
+        } else if (selected.some((v) => !validIds.includes(v.id))) {
+          errors[question.id] = 'Invalid option selected';
+        }
+      } else {
+        const textAnswer =
+          typeof answer === 'string'
+            ? answer
+            : Array.isArray(answer)
+              ? undefined
+              : undefined;
+
+        if (question.required) {
+          if (!textAnswer || !textAnswer.trim()) {
+            errors[question.id] = 'This field is required';
+          } else if (textAnswer.length > MAX_ANSWER_LENGTH) {
+            errors[question.id] = `Answer must be ${MAX_ANSWER_LENGTH} characters or less`;
+          }
+        } else if (textAnswer && textAnswer.length > MAX_ANSWER_LENGTH) {
           errors[question.id] = `Answer must be ${MAX_ANSWER_LENGTH} characters or less`;
         }
-      } else if (answer && answer.length > MAX_ANSWER_LENGTH) {
-        errors[question.id] = `Answer must be ${MAX_ANSWER_LENGTH} characters or less`;
       }
     }
   }
@@ -147,11 +215,11 @@ export function flattenCustomAnswers(
   }
 
   if (questions.custom && questions.custom.length > 0) {
-    // Sort by order to maintain consistent column order
     const sortedQuestions = [...questions.custom].sort((a, b) => a.order - b.order);
     for (const question of sortedQuestions) {
       const answer = answers[question.id];
-      flattened[question.label] = answer || '-';
+      const formatted = formatAnswerForDisplay(answer);
+      flattened[question.label] = formatted || '-';
     }
   }
 

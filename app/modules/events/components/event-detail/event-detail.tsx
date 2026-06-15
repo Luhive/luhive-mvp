@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSubmit, useNavigation } from "react-router";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
@@ -147,10 +147,13 @@ export function EventDetail({
 	const [showRsvpModal, setShowRsvpModal] = useState(false);
 	const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
 	const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
+	const lastSubmittedIntentRef = useRef<string | null>(null);
 
 	const timeRemaining = useRegistrationTimer(event.registration_deadline, event.timezone);
 	useEventDetailToasts({
+		submittedIntentRef: lastSubmittedIntentRef,
 		onSubscribeSuccess: () => setShowSubscribeDialog(false),
+		onRegisterSuccess: () => setShowCustomQuestionsForm(false),
 	});
 
 	const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
@@ -215,6 +218,8 @@ export function EventDetail({
 	]);
 
 	const handleCustomQuestionsSubmit = (answers: Record<string, unknown>) => {
+		lastSubmittedIntentRef.current = "register";
+
 		const formData = new FormData();
 		formData.append("intent", "register");
 		formData.append("custom_answers", JSON.stringify(answers));

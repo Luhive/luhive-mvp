@@ -12,11 +12,23 @@ import { Button } from '~/shared/components/ui/button';
 import { Input } from '~/shared/components/ui/input';
 import { Label } from '~/shared/components/ui/label';
 import { Textarea } from '~/shared/components/ui/textarea';
+import { Checkbox } from '~/shared/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/shared/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '~/shared/components/ui/avatar';
 import { Separator } from '~/shared/components/ui/separator';
 import { Spinner } from '~/shared/components/ui/spinner';
 import { Phone, User, Mail } from 'lucide-react';
-import type { CustomQuestionJson, CustomAnswerJson } from '~/modules/events/model/event.types';
+import type {
+  CustomQuestionJson,
+  CustomAnswerJson,
+  DropdownOption,
+} from '~/modules/events/model/event.types';
 import {
   isValidPhoneNumber,
   formatPhoneNumber,
@@ -69,7 +81,9 @@ export function CustomQuestionsForm({
 
   // Form state
   const [phone, setPhone] = useState('');
-  const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
+  const [customAnswers, setCustomAnswers] = useState<
+    Record<string, string | DropdownOption | DropdownOption[]>
+  >({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Initialize phone from user profile if authenticated
@@ -118,13 +132,15 @@ export function CustomQuestionsForm({
     }
   };
 
-  const handleCustomAnswerChange = (questionId: string, value: string) => {
+  const handleCustomAnswerChange = (
+    questionId: string,
+    value: string | DropdownOption | DropdownOption[]
+  ) => {
     setCustomAnswers((prev) => ({
       ...prev,
       [questionId]: value,
     }));
 
-    // Clear error when user starts typing
     if (errors[questionId]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -132,6 +148,19 @@ export function CustomQuestionsForm({
         return newErrors;
       });
     }
+  };
+
+  const handleMultiCheckboxChange = (
+    questionId: string,
+    option: DropdownOption,
+    checked: boolean
+  ) => {
+    const current = customAnswers[questionId];
+    const currentArray = Array.isArray(current) ? current : [];
+    const updated = checked
+      ? [...currentArray, option]
+      : currentArray.filter((v) => v.id !== option.id);
+    handleCustomAnswerChange(questionId, updated);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -153,7 +182,20 @@ export function CustomQuestionsForm({
     if (customQuestions.custom && customQuestions.custom.length > 0) {
       for (const question of customQuestions.custom) {
         const answer = customAnswers[question.id];
-        if (answer && answer.trim()) {
+        const questionType = question.type ?? 'text';
+
+        if (questionType === 'dropdown') {
+          if (Array.isArray(answer) && answer.length > 0) {
+            answers[question.id] = answer;
+          } else if (
+            answer &&
+            typeof answer === 'object' &&
+            !Array.isArray(answer) &&
+            'id' in answer
+          ) {
+            answers[question.id] = answer;
+          }
+        } else if (typeof answer === 'string' && answer.trim()) {
           answers[question.id] = answer.trim();
         }
       }
@@ -253,48 +295,143 @@ export function CustomQuestionsForm({
               </div>
             )}
 
-            {/* Custom Text Questions */}
+            {/* Custom Questions */}
             {customQuestions.custom &&
               customQuestions.custom.length > 0 &&
               customQuestions.custom
                 .sort((a, b) => a.order - b.order)
-                .map((question) => (
-                  <div key={question.id} className="space-y-2">
-                    <Label htmlFor={`question-${question.id}`}>
-                      {question.label}
-                      {question.required && (
-                        <span className="text-destructive ml-1">*</span>
+                .map((question) => {
+                  const questionType = question.type ?? 'text';
+
+                  if (questionType === 'dropdown' && question.allowMultiple) {
+                    const selectedValues = Array.isArray(customAnswers[question.id])
+                      ? (customAnswers[question.id] as DropdownOption[])
+                      : [];
+                    return (
+                      <div key={question.id} className="space-y-2">
+                        <Label>
+                          {question.label}
+                          {question.required && (
+                            <span className="text-destructive ml-1">*</span>
+                          )}
+                        </Label>
+                        <div className="space-y-2">
+                          {(question.options ?? []).map((option) => (
+                            <div key={option.id} className="flex items-center gap-2">
+                              <Checkbox
+                                id={`${question.id}-${option.id}`}
+                                checked={selectedValues.some((v) => v.id === option.id)}
+                                onCheckedChange={(checked) =>
+                                  handleMultiCheckboxChange(
+                                    question.id,
+                                    option,
+                                    checked === true
+                                  )
+                                }
+                                disabled={isSubmitting}
+                              />
+                              <Label
+                                htmlFor={`${question.id}-${option.id}`}
+                                className="text-sm font-normal cursor-pointer"
+                              >
+                                {option.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                        {errors[question.id] && (
+                          <p className="text-xs text-destructive">{errors[question.id]}</p>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (questionType === 'dropdown') {
+                    const selectedOption =
+                      customAnswers[question.id] &&
+                      typeof customAnswers[question.id] === 'object' &&
+                      !Array.isArray(customAnswers[question.id])
+                        ? (customAnswers[question.id] as DropdownOption)
+                        : null;
+                    return (
+                      <div key={question.id} className="space-y-2">
+                        <Label htmlFor={`question-${question.id}`}>
+                          {question.label}
+                          {question.required && (
+                            <span className="text-destructive ml-1">*</span>
+                          )}
+                        </Label>
+                        <Select
+                          value={selectedOption?.id ?? ''}
+                          onValueChange={(optionId) => {
+                            const option = (question.options ?? []).find(
+                              (o) => o.id === optionId
+                            );
+                            if (option) {
+                              handleCustomAnswerChange(question.id, option);
+                            }
+                          }}
+                          disabled={isSubmitting}
+                        >
+                          <SelectTrigger
+                            id={`question-${question.id}`}
+                            className={`w-full ${errors[question.id] ? 'border-destructive' : ''}`}
+                          >
+                            <SelectValue placeholder="Select an option" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(question.options ?? []).map((option) => (
+                              <SelectItem key={option.id} value={option.id}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors[question.id] && (
+                          <p className="text-xs text-destructive">{errors[question.id]}</p>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Default: text question
+                  const textValue =
+                    typeof customAnswers[question.id] === 'string'
+                      ? (customAnswers[question.id] as string)
+                      : '';
+                  return (
+                    <div key={question.id} className="space-y-2">
+                      <Label htmlFor={`question-${question.id}`}>
+                        {question.label}
+                        {question.required && (
+                          <span className="text-destructive ml-1">*</span>
+                        )}
+                      </Label>
+                      <Textarea
+                        id={`question-${question.id}`}
+                        name={`question-${question.id}`}
+                        value={textValue}
+                        onChange={(e) =>
+                          handleCustomAnswerChange(question.id, e.target.value)
+                        }
+                        placeholder="Your answer..."
+                        required={question.required}
+                        disabled={isSubmitting}
+                        maxLength={MAX_ANSWER_LENGTH}
+                        rows={2}
+                        className={errors[question.id] ? 'border-destructive' : ''}
+                      />
+                      {errors[question.id] && (
+                        <p className="text-xs text-destructive">{errors[question.id]}</p>
                       )}
-                    </Label>
-                    <Textarea
-                      id={`question-${question.id}`}
-                      name={`question-${question.id}`}
-                      value={customAnswers[question.id] || ""}
-                      onChange={(e) =>
-                        handleCustomAnswerChange(question.id, e.target.value)
-                      }
-                      placeholder="Your answer..."
-                      required={question.required}
-                      disabled={isSubmitting}
-                      maxLength={MAX_ANSWER_LENGTH}
-                      rows={2}
-                      className={
-                        errors[question.id] ? "border-destructive" : ""
-                      }
-                    />
-                    {errors[question.id] && (
-                      <p className="text-xs text-destructive">
-                        {errors[question.id]}
-                      </p>
-                    )}
-                    {customAnswers[question.id] && (
-                      <p className="text-xs text-muted-foreground">
-                        {customAnswers[question.id].length}/{MAX_ANSWER_LENGTH}{" "}
-                        characters
-                      </p>
-                    )}
-                  </div>
-                ))}
+                      {textValue && (
+                        <p className="text-xs text-muted-foreground">
+                          {textValue.length}/{MAX_ANSWER_LENGTH} characters
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
           </div>
         </>
       )}
