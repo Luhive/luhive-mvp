@@ -4,6 +4,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { createServiceRoleClient } from "~/shared/lib/supabase/server";
 import { notifyNewEvent } from "~/modules/events/server/notify-new-event.server";
+import { GoogleMaps } from "~/modules/events/utils/google-maps";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
 
@@ -39,6 +40,8 @@ export async function action({ request }: ActionFunctionArgs) {
         timezone,
         community_id,
         location_address,
+        location_name,
+        location_place_id,
         online_meeting_link,
         communities!inner ( slug )
       `)
@@ -60,6 +63,13 @@ export async function action({ request }: ActionFunctionArgs) {
       eventTime: eventStart.format("h:mm A z"),
       eventLink: `https://luhive.com${Routes.community.event(communitySlug, publicEventSlug(event))}`,
       locationAddress: event.location_address ?? undefined,
+      locationMapUrl: event.location_address
+        ? GoogleMaps.mapsSearchUrl({
+            name: event.location_name,
+            address: event.location_address,
+            placeId: event.location_place_id,
+          })
+        : undefined,
       onlineMeetingLink: event.online_meeting_link ?? undefined,
     });
 

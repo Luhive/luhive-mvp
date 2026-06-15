@@ -6,6 +6,7 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import type { Database } from '~/shared/models/database.types';
 import type { CustomQuestionJson } from '~/modules/events/model/event.types';
+import { toLocationValue } from '~/modules/events/utils/event-location';
 import { useDashboardContext } from '~/modules/dashboard/hooks/use-dashboard-context';
 import { DashboardEventFormSkeleton } from '~/modules/dashboard/components/dashboard-event-form-skeleton';
 import { EventForm } from '~/modules/events/components/event-form/event-form';
@@ -101,6 +102,8 @@ export default function EditEventPage() {
   const reminderTimes = eventReminders?.reminder_times ?? [];
   const reminderMessage = eventReminders?.custom_message ?? null;
 
+  const location = toLocationValue(event);
+
   const initialData = {
     title: event.title ?? '',
     description: event.description ?? '',
@@ -109,6 +112,7 @@ export default function EditEventPage() {
     endTime,
     timezone: event.timezone,
     eventType: event.event_type,
+    location,
     locationAddress: event.location_address ?? '',
     onlineMeetingLink: event.online_meeting_link ?? '',
     discussionLink: event.discussion_link ?? '',

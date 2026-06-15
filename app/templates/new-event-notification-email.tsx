@@ -23,6 +23,7 @@ interface NewEventNotificationEmailProps {
 	eventLink: string;
 	recipientName: string;
 	locationAddress?: string;
+	locationMapUrl?: string;
 	onlineMeetingLink?: string;
 }
 
@@ -34,6 +35,7 @@ export const NewEventNotificationEmail = ({
 	eventLink = "https://luhive.com/events/123",
 	recipientName = "there",
 	locationAddress,
+	locationMapUrl,
 	onlineMeetingLink,
 }: NewEventNotificationEmailProps) => (
 	<Html>
@@ -77,16 +79,21 @@ export const NewEventNotificationEmail = ({
 							</Text>
 						</Section>
 
-						{locationAddress && (
-							<Section className="mb-3">
-								<Text className="text-sm font-semibold mb-1 mt-0" style={{ color: '#242424' }}>
-									📍 Location
-								</Text>
-								<Text className="text-sm m-0" style={{ color: '#6B6B6B' }}>
-									{locationAddress}
-								</Text>
-							</Section>
-						)}
+					{locationAddress && (
+						<Section className="mb-3">
+							<Text className="text-sm font-semibold mb-1 mt-0" style={{ color: '#242424' }}>
+								📍 Location
+							</Text>
+							<Text className="text-sm m-0" style={{ color: '#6B6B6B' }}>
+								{locationAddress}
+							</Text>
+							{locationMapUrl && (
+								<Link href={locationMapUrl} className="text-xs" style={{ color: '#ff8040' }}>
+									View on Google Maps →
+								</Link>
+							)}
+						</Section>
+					)}
 
 						{onlineMeetingLink && (
 							<Section className="mb-3">

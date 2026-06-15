@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "~/shared/lib/supabase/server";
 import { EventReminderEmail } from "~/templates/event-reminder-email";
+import { GoogleMaps } from "~/modules/events/utils/google-maps";
 import { Resend } from "resend";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -53,6 +54,8 @@ interface EventWithReminders {
   end_time: string | null;
   timezone: string;
   location_address: string | null;
+  location_name: string | null;
+  location_place_id: string | null;
   online_meeting_link: string | null;
   community_id: string;
   event_reminders: {
@@ -104,6 +107,8 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
           end_time,
           timezone,
           location_address,
+          location_name,
+          location_place_id,
           online_meeting_link,
           community_id,
           event_reminders(reminder_times, custom_message),
@@ -219,7 +224,7 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
                 communityName:
                   event.communities?.name || "Community",
                 communityLogoUrl:
-                  event.communities?.logo_url || null, // ✅ PASS LOGO HERE
+                  event.communities?.logo_url || null,
                 eventDate,
                 eventTime,
                 eventLink: Routes.absolute(
@@ -232,6 +237,13 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
                 recipientName: participantName,
                 locationAddress:
                   event.location_address || undefined,
+                locationMapUrl: event.location_address
+                  ? GoogleMaps.mapsSearchUrl({
+                      name: event.location_name,
+                      address: event.location_address,
+                      placeId: event.location_place_id,
+                    })
+                  : undefined,
                 reminderTime,
               }),
             });

@@ -14,6 +14,7 @@ import { getUserAgent } from "~/modules/community/utils/user-agent";
 import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
 import { resolvePublicEvent } from "~/modules/events/server/resolve-public-event.server";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
+import { GoogleMaps } from "~/modules/events/utils/google-maps";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -248,6 +249,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         startTimeISO: event.start_time,
         endTimeISO: event.end_time || event.start_time,
       });
+      // Note: SubscriptionEmailData doesn't carry locationMapUrl yet (external events only)
     } catch (error) {
       console.error("Failed to send subscription confirmation email:", error);
     }
@@ -509,6 +511,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
           startTimeISO: event.start_time,
           endTimeISO: event.end_time || event.start_time,
           locationAddress: event.location_address || undefined,
+          locationMapUrl: event.location_address
+            ? GoogleMaps.mapsSearchUrl({
+                name: event.location_name,
+                address: event.location_address,
+                placeId: event.location_place_id,
+              })
+            : undefined,
           onlineMeetingLink: event.online_meeting_link || undefined,
           checkinToken,
         }),
@@ -683,6 +692,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         startTimeISO: event.start_time,
         endTimeISO: event.end_time || event.start_time,
       });
+      // Note: SubscriptionEmailData doesn't carry locationMapUrl yet (external events only)
     } catch (error) {
       console.error("Failed to send subscription email:", error);
     }

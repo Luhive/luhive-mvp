@@ -493,6 +493,7 @@ interface ConfirmationEmailData {
   recipientEmail: string;
   registerAccountLink: string;
   locationAddress?: string;
+  locationMapUrl?: string;
   onlineMeetingLink?: string;
   startTimeISO: string;
   endTimeISO: string;
@@ -524,6 +525,7 @@ interface EventScheduleUpdateEmailData {
   recipientName: string;
   recipientEmail: string;
   locationAddress?: string;
+  locationMapUrl?: string;
   onlineMeetingLink?: string;
 }
 
@@ -599,6 +601,7 @@ interface NewEventNotificationEmailData {
   recipientEmail: string;
   recipientName: string;
   locationAddress?: string;
+  locationMapUrl?: string;
   onlineMeetingLink?: string;
 }
 
@@ -891,6 +894,7 @@ export async function sendEventScheduleUpdateEmail(
     recipientName,
     recipientEmail,
     locationAddress,
+    locationMapUrl,
     onlineMeetingLink,
   } = data;
 
@@ -914,6 +918,7 @@ export async function sendEventScheduleUpdateEmail(
       eventLink,
       recipientName,
       locationAddress,
+      locationMapUrl,
       onlineMeetingLink,
     }),
     metadata: {
@@ -957,6 +962,7 @@ export async function sendEventReminderEmail(data: {
   recipientEmail: string;
   message?: string;
   locationAddress?: string;
+  locationMapUrl?: string;
   reminderTime?: "1-hour" | "3-hours" | "1-day";
 }) {
   const {
@@ -970,6 +976,7 @@ export async function sendEventReminderEmail(data: {
     recipientEmail,
     message,
     locationAddress,
+    locationMapUrl,
     reminderTime = "1-hour",
   } = data;
 
@@ -994,6 +1001,7 @@ export async function sendEventReminderEmail(data: {
       eventLink,
       recipientName,
       locationAddress,
+      locationMapUrl,
       reminderTime,
     }),
     metadata: {
@@ -1039,6 +1047,7 @@ export async function sendRegistrationConfirmationEmail(
     recipientEmail,
     registerAccountLink,
     locationAddress,
+    locationMapUrl,
     onlineMeetingLink,
     startTimeISO,
     endTimeISO,
@@ -1099,6 +1108,7 @@ export async function sendRegistrationConfirmationEmail(
     recipientName,
     registerAccountLink,
     locationAddress,
+    locationMapUrl,
     onlineMeetingLink,
     hasQrCode,
   };
@@ -1503,6 +1513,7 @@ export async function sendNewEventNotificationEmail(
       recipientEmail,
       recipientName,
       locationAddress,
+      locationMapUrl,
       onlineMeetingLink,
     }) => ({
       to: recipientEmail,
@@ -1517,7 +1528,7 @@ export async function sendNewEventNotificationEmail(
             <h3 style="margin: 0 0 10px 0;">${eventTitle}</h3>
             <p style="margin: 5px 0;"><strong>📅 Date:</strong> ${eventDate}</p>
             <p style="margin: 5px 0;"><strong>⏰ Time:</strong> ${eventTime}</p>
-            ${locationAddress ? `<p style="margin: 5px 0;"><strong>📍 Location:</strong> ${locationAddress}</p>` : ''}
+            ${locationAddress ? `<p style="margin: 5px 0;"><strong>📍 Location:</strong> ${locationAddress}${locationMapUrl ? ` &mdash; <a href="${locationMapUrl}" style="color: #ff8040;">View on Google Maps</a>` : ''}</p>` : ''}
             ${onlineMeetingLink ? `<p style="margin: 5px 0;"><strong>🔗 Online:</strong> <a href="${onlineMeetingLink}" style="color: #ff8040;">Join Meeting</a></p>` : ''}
           </div>
           <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event Details</a></p>

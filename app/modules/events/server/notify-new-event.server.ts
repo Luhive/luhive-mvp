@@ -10,6 +10,7 @@ export interface NotifyNewEventParams {
   eventTime: string;
   eventLink: string;
   locationAddress?: string;
+  locationMapUrl?: string;
   onlineMeetingLink?: string;
 }
 
@@ -22,6 +23,7 @@ export async function notifyNewEvent(params: NotifyNewEventParams): Promise<void
     eventTime,
     eventLink,
     locationAddress,
+    locationMapUrl,
     onlineMeetingLink,
   } = params;
 
@@ -51,6 +53,7 @@ export async function notifyNewEvent(params: NotifyNewEventParams): Promise<void
     recipientEmail: email,
     recipientName: email.split("@")[0],
     locationAddress,
+    locationMapUrl,
     onlineMeetingLink,
   }));
 

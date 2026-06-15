@@ -23,6 +23,7 @@ interface EventUpdateEmailProps {
   eventLink: string;
   recipientName: string;
   locationAddress?: string;
+  locationMapUrl?: string;
   onlineMeetingLink?: string;
 }
 
@@ -34,6 +35,7 @@ export const EventUpdateEmail = ({
   eventLink = "https://luhive.com/events/123",
   recipientName = "there",
   locationAddress,
+  locationMapUrl,
   onlineMeetingLink,
 }: EventUpdateEmailProps) => (
   <Html>
@@ -125,6 +127,11 @@ export const EventUpdateEmail = ({
                 >
                   {locationAddress}
                 </Text>
+                {locationMapUrl && (
+                  <Link href={locationMapUrl} style={{ fontSize: "12px", color: "#ff8040" }}>
+                    View on Google Maps →
+                  </Link>
+                )}
               </Section>
             )}
 

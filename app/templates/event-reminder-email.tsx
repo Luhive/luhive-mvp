@@ -24,6 +24,7 @@ interface EventReminderEmailProps {
   eventLink: string;
   recipientName: string;
   locationAddress?: string;
+  locationMapUrl?: string;
   reminderTime: "1-hour" | "3-hours" | "1-day";
 }
 
@@ -48,6 +49,7 @@ export const EventReminderEmail = ({
   eventLink = "#",
   recipientName = "Ziiiko",
   locationAddress = "Test",
+  locationMapUrl,
   reminderTime = "1-hour",
 }: EventReminderEmailProps) => {
   const reminderText = getReminderText(reminderTime);
@@ -209,6 +211,11 @@ export const EventReminderEmail = ({
                     >
                       {locationAddress}
                     </Text>
+                    {locationMapUrl && (
+                      <Link href={locationMapUrl} style={{ fontSize: "12px", color: "#ff8040" }}>
+                        View on Google Maps →
+                      </Link>
+                    )}
                   </td>
                 </tr>
 

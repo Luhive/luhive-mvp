@@ -439,11 +439,11 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                             const registrationCount = getRegistrationCount(event);
                             const capacity = event.capacity;
                             const location =
-                              event.event_type === 'in-person'
-                                ? event.location_address
-                                : event.event_type === 'online'
-                                  ? 'Online Event'
-                                  : event.location_address || 'Hybrid Event';
+                              event.event_type === "in-person"
+                                ? event.location_name || event.location_address
+                                : event.event_type === "online"
+                                  ? "Online Event"
+                                  : event.location_address || "Hybrid Event";
                             const isExternal = isExternalEvent(event);
                             const platform = event.external_platform as ExternalPlatform | null;
                             const PlatformIcon = platform
