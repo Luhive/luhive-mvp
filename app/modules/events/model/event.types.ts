@@ -7,6 +7,13 @@ export type ExternalPlatform =
   | "eventbrite"
   | "other";
 
+export type CustomQuestionType = 'text' | 'dropdown';
+
+export interface DropdownOption {
+  id: string;
+  label: string;
+}
+
 export interface PhoneQuestionConfig {
   enabled: boolean;
   required: boolean;
@@ -17,6 +24,9 @@ export interface CustomQuestion {
   label: string;
   required: boolean;
   order: number;
+  type?: CustomQuestionType;  // undefined treated as 'text' for backward compat
+  options?: DropdownOption[]; // dropdown only
+  allowMultiple?: boolean;    // dropdown only: false = Single, true = Multiple
 }
 
 export interface CustomQuestionJson {
@@ -26,7 +36,7 @@ export interface CustomQuestionJson {
 
 export interface CustomAnswerJson {
   phone?: string; // E.164 format: +994501234567
-  [questionId: string]: string | undefined; // Dynamic keys for custom questions
+  [questionId: string]: string | DropdownOption | DropdownOption[] | undefined;
 }
 
 // Type aliases for convenience

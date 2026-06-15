@@ -1,19 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from '~/shared/components/ui/label';
 import { Switch } from '~/shared/components/ui/switch';
 import { Button } from '~/shared/components/ui/button';
 import { Input } from '~/shared/components/ui/input';
 import { Checkbox } from '~/shared/components/ui/checkbox';
-import { Card, CardContent } from '~/shared/components/ui/card';
+import { Card } from '~/shared/components/ui/card';
 import { Separator } from '~/shared/components/ui/separator';
-import { Phone, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { Phone, Plus, Trash2, AlertCircle, CircleDot, AlignLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import type { CustomQuestionJson, PhoneQuestionConfig, CustomQuestion } from '~/modules/events/model/event.types';
-import { createNewCustomQuestion } from '~/modules/events/utils/custom-questions';
+import { cn } from '~/shared/lib/utils/cn';
+import type {
+  CustomQuestionJson,
+  PhoneQuestionConfig,
+  CustomQuestion,
+  CustomQuestionType,
+} from '~/modules/events/model/event.types';
+import {
+  createNewCustomQuestion,
+  createNewDropdownQuestion,
+  createNewDropdownOption,
+} from '~/modules/events/utils/custom-questions';
 import {
   MAX_CUSTOM_QUESTIONS,
   MIN_QUESTION_LABEL_LENGTH,
   MAX_QUESTION_LABEL_LENGTH,
+  MIN_DROPDOWN_OPTIONS,
+  MAX_DROPDOWN_OPTIONS,
+  MAX_OPTION_LENGTH,
 } from '~/modules/events/utils/custom-questions-constants';
 
 interface CustomQuestionsBuilderProps {
@@ -31,6 +44,7 @@ export function CustomQuestionsBuilder({
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(
     value?.custom || []
   );
+  const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
 
   const handlePhoneEnabledChange = (enabled: boolean) => {
     const newConfig: PhoneQuestionConfig = {
@@ -42,25 +56,41 @@ export function CustomQuestionsBuilder({
   };
 
   const handlePhoneRequiredChange = (required: boolean) => {
-    const newConfig: PhoneQuestionConfig = {
-      ...phoneConfig,
-      required,
-    };
+    const newConfig: PhoneQuestionConfig = { ...phoneConfig, required };
     setPhoneConfig(newConfig);
     updateValue(newConfig, customQuestions);
   };
 
-  const handleAddQuestion = () => {
+  const handleAddQuestion = (type: CustomQuestionType = 'text') => {
     if (customQuestions.length >= MAX_CUSTOM_QUESTIONS) {
       toast.error(`Maximum ${MAX_CUSTOM_QUESTIONS} custom questions allowed`);
       return;
     }
-
-    const newQuestion = createNewCustomQuestion(customQuestions.length);
+    const newQuestion =
+      type === 'dropdown'
+        ? createNewDropdownQuestion(customQuestions.length)
+        : createNewCustomQuestion(customQuestions.length);
     const updatedQuestions = [...customQuestions, newQuestion];
     setCustomQuestions(updatedQuestions);
     updateValue(phoneConfig, updatedQuestions);
+    setHighlightedQuestionId(newQuestion.id);
   };
+
+  useEffect(() => {
+    if (!highlightedQuestionId) return;
+
+    const card = document.getElementById(`question-card-${highlightedQuestionId}`);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const input = card.querySelector('input');
+      if (input instanceof HTMLInputElement) {
+        input.focus({ preventScroll: true });
+      }
+    }
+
+    const timer = setTimeout(() => setHighlightedQuestionId(null), 2000);
+    return () => clearTimeout(timer);
+  }, [highlightedQuestionId]);
 
   const handleDeleteQuestion = (questionId: string) => {
     const updatedQuestions = customQuestions
@@ -70,49 +100,64 @@ export function CustomQuestionsBuilder({
     updateValue(phoneConfig, updatedQuestions);
   };
 
-  const handleQuestionLabelChange = (questionId: string, label: string) => {
+  const updateQuestion = (questionId: string, patch: Partial<CustomQuestion>) => {
     const updatedQuestions = customQuestions.map((q) =>
-      q.id === questionId ? { ...q, label } : q
+      q.id === questionId ? { ...q, ...patch } : q
     );
     setCustomQuestions(updatedQuestions);
     updateValue(phoneConfig, updatedQuestions);
   };
 
-  const handleQuestionRequiredChange = (questionId: string, required: boolean) => {
-    const updatedQuestions = customQuestions.map((q) =>
-      q.id === questionId ? { ...q, required } : q
-    );
-    setCustomQuestions(updatedQuestions);
-    updateValue(phoneConfig, updatedQuestions);
+  const handleOptionChange = (questionId: string, optionIndex: number, value: string) => {
+    const question = customQuestions.find((q) => q.id === questionId);
+    if (!question || !question.options) return;
+    const newOptions = [...question.options];
+    newOptions[optionIndex] = { ...newOptions[optionIndex], label: value };
+    updateQuestion(questionId, { options: newOptions });
   };
 
-  const updateValue = (
-    phone: PhoneQuestionConfig,
-    custom: CustomQuestion[]
-  ) => {
+  const handleAddOption = (questionId: string) => {
+    const question = customQuestions.find((q) => q.id === questionId);
+    if (!question) return;
+    const currentOptions = question.options ?? [];
+    if (currentOptions.length >= MAX_DROPDOWN_OPTIONS) {
+      toast.error(`Maximum ${MAX_DROPDOWN_OPTIONS} options allowed`);
+      return;
+    }
+    updateQuestion(questionId, { options: [...currentOptions, createNewDropdownOption()] });
+  };
+
+  const handleRemoveOption = (questionId: string, optionIndex: number) => {
+    const question = customQuestions.find((q) => q.id === questionId);
+    if (!question || !question.options) return;
+    const newOptions = question.options.filter((_, i) => i !== optionIndex);
+    updateQuestion(questionId, { options: newOptions });
+  };
+
+  const updateValue = (phone: PhoneQuestionConfig, custom: CustomQuestion[]) => {
     if (!phone.enabled && custom.length === 0) {
       onChange(null);
     } else {
-      onChange({
-        phone,
-        custom,
-      });
+      onChange({ phone, custom });
     }
   };
 
   const validateQuestionLabel = (label: string): string | null => {
-    if (label.trim().length < MIN_QUESTION_LABEL_LENGTH) {
+    if (label.trim().length < MIN_QUESTION_LABEL_LENGTH)
       return `Question must be at least ${MIN_QUESTION_LABEL_LENGTH} characters`;
-    }
-    if (label.trim().length > MAX_QUESTION_LABEL_LENGTH) {
+    if (label.trim().length > MAX_QUESTION_LABEL_LENGTH)
       return `Question must be no more than ${MAX_QUESTION_LABEL_LENGTH} characters`;
-    }
     return null;
   };
 
-  const hasInvalidQuestions = customQuestions.some(
-    (q) => q.label.trim() && validateQuestionLabel(q.label) !== null
-  );
+  const hasInvalidQuestions = customQuestions.some((q) => {
+    if (q.label.trim() && validateQuestionLabel(q.label) !== null) return true;
+    if ((q.type ?? 'text') === 'dropdown') {
+      const validOptions = (q.options ?? []).filter((o) => o.label.trim().length > 0);
+      return validOptions.length < MIN_DROPDOWN_OPTIONS;
+    }
+    return false;
+  });
 
   return (
     <div className="space-y-6">
@@ -162,43 +207,79 @@ export function CustomQuestionsBuilder({
           <div className="space-y-0.5">
             <Label>Custom Questions</Label>
             <p className="text-sm text-muted-foreground">
-              Add up to {MAX_CUSTOM_QUESTIONS} custom text questions
+              Add up to {MAX_CUSTOM_QUESTIONS} custom questions
             </p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddQuestion}
-            disabled={customQuestions.length >= MAX_CUSTOM_QUESTIONS}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Question
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleAddQuestion('text')}
+              disabled={customQuestions.length >= MAX_CUSTOM_QUESTIONS}
+            >
+              <AlignLeft className="h-4 w-4 mr-2" />
+              Text
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleAddQuestion('dropdown')}
+              disabled={customQuestions.length >= MAX_CUSTOM_QUESTIONS}
+            >
+              <CircleDot className="h-4 w-4 mr-2" />
+              Options
+            </Button>
+          </div>
         </div>
 
         {customQuestions.length === 0 && (
           <div className="text-center py-8 text-sm text-muted-foreground border border-dashed rounded-lg">
-            No custom questions added yet. Click "Add Question" to get started.
+            No custom questions added yet. Click "Text" or "Options" to get started.
           </div>
         )}
 
         {customQuestions.length > 0 && (
           <div className="space-y-3">
             {customQuestions.map((question, index) => {
+              const questionType = question.type ?? 'text';
               const validationError = validateQuestionLabel(question.label);
-              const showError = question.label.trim() && validationError;
+              const showLabelError = question.label.trim() && validationError;
 
               return (
-                <Card key={question.id} className="p-4">
-                  <div className="space-y-3">
+                <div
+                  key={question.id}
+                  id={`question-card-${question.id}`}
+                  className={cn(
+                    'rounded-xl transition-[box-shadow,ring] duration-500',
+                    highlightedQuestionId === question.id &&
+                      'ring-2 ring-primary/60 shadow-md'
+                  )}
+                >
+                <Card className="p-4">
+                  <div className="space-y-4">
+                    {/* Header row: type badge + question label + delete */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
                           <Label htmlFor={`question-${question.id}`}>
                             Question {index + 1}
                           </Label>
-                          {showError && (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {questionType === 'dropdown' ? (
+                              <>
+                                <CircleDot className="h-3 w-3" />
+                                Options
+                              </>
+                            ) : (
+                              <>
+                                <AlignLeft className="h-3 w-3" />
+                                Text
+                              </>
+                            )}
+                          </span>
+                          {showLabelError && (
                             <div className="flex items-center gap-1 text-xs text-destructive">
                               <AlertCircle className="h-3 w-3" />
                               {validationError}
@@ -209,11 +290,11 @@ export function CustomQuestionsBuilder({
                           id={`question-${question.id}`}
                           value={question.label}
                           onChange={(e) =>
-                            handleQuestionLabelChange(question.id, e.target.value)
+                            updateQuestion(question.id, { label: e.target.value })
                           }
                           placeholder="Enter your question (5-200 characters)"
                           maxLength={MAX_QUESTION_LABEL_LENGTH}
-                          className={showError ? 'border-destructive' : ''}
+                          className={showLabelError ? 'border-destructive' : ''}
                         />
                         <p className="text-xs text-muted-foreground">
                           {question.label.length}/{MAX_QUESTION_LABEL_LENGTH} characters
@@ -237,15 +318,88 @@ export function CustomQuestionsBuilder({
                       </Button>
                     </div>
 
+                    {/* Dropdown-specific controls */}
+                    {questionType === 'dropdown' && (
+                      <div className="space-y-3 pl-0">
+                        {/* Options list */}
+                        <div className="space-y-2">
+                          <Label className="text-sm">Options</Label>
+                          {(question.options ?? []).map((option, optionIndex) => (
+                            <div key={option.id} className="flex items-center gap-2">
+                              <Input
+                                value={option.label}
+                                onChange={(e) =>
+                                  handleOptionChange(question.id, optionIndex, e.target.value)
+                                }
+                                placeholder={`Option ${optionIndex + 1}`}
+                                maxLength={MAX_OPTION_LENGTH}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveOption(question.id, optionIndex)}
+                                className="text-muted-foreground hover:text-destructive shrink-0"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Remove option</span>
+                              </Button>
+                            </div>
+                          ))}
+                          {(question.options ?? []).length === 0 && (
+                            <p className="text-xs text-destructive flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              Add at least one option
+                            </p>
+                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAddOption(question.id)}
+                            disabled={(question.options ?? []).length >= MAX_DROPDOWN_OPTIONS}
+                            className="w-full"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add option
+                          </Button>
+                        </div>
+
+                        {/* Selection type: Single / Multiple */}
+                        <div className="space-y-1.5">
+                          <Label className="text-sm">Selection Type</Label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              type="button"
+                              variant={!question.allowMultiple ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => updateQuestion(question.id, { allowMultiple: false })}
+                              className="w-full"
+                            >
+                              Single
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={question.allowMultiple ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => updateQuestion(question.id, { allowMultiple: true })}
+                              className="w-full"
+                            >
+                              Multiple
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Required toggle */}
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id={`required-${question.id}`}
                         checked={question.required}
                         onCheckedChange={(checked) =>
-                          handleQuestionRequiredChange(
-                            question.id,
-                            checked === true
-                          )
+                          updateQuestion(question.id, { required: checked === true })
                         }
                       />
                       <Label
@@ -257,6 +411,7 @@ export function CustomQuestionsBuilder({
                     </div>
                   </div>
                 </Card>
+                </div>
               );
             })}
           </div>
@@ -272,4 +427,3 @@ export function CustomQuestionsBuilder({
     </div>
   );
 }
-

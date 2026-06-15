@@ -1,6 +1,9 @@
 import { Phone, MessageSquare } from 'lucide-react';
 import type { CustomQuestionJson, CustomAnswerJson } from '~/modules/events/model/event.types';
-import { formatPhoneNumber } from '~/modules/events/utils/custom-questions';
+import {
+  formatPhoneNumber,
+  formatAnswerForDisplay,
+} from '~/modules/events/utils/custom-questions';
 
 interface RegistrationAnswersDisplayProps {
   answers: CustomAnswerJson | null;
@@ -63,7 +66,9 @@ export function RegistrationAnswersDisplay({
           .sort((a, b) => a.order - b.order)
           .map((question) => {
             const answer = answers[question.id];
-            if (!answer) return null;
+            if (!answer || (Array.isArray(answer) && answer.length === 0)) return null;
+
+            const displayValue = formatAnswerForDisplay(answer);
 
             return (
               <div key={question.id} className="space-y-2">
@@ -72,7 +77,7 @@ export function RegistrationAnswersDisplay({
                   {question.label}
                 </div>
                 <div className="pl-6 text-sm text-muted-foreground whitespace-pre-wrap">
-                  {answer || '-'}
+                  {displayValue || '-'}
                 </div>
               </div>
             );

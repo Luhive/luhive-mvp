@@ -2,3 +2,6 @@ export const MAX_CUSTOM_QUESTIONS = 10;
 export const MAX_ANSWER_LENGTH = 500;
 export const MIN_QUESTION_LABEL_LENGTH = 5;
 export const MAX_QUESTION_LABEL_LENGTH = 200;
+export const MIN_DROPDOWN_OPTIONS = 1;
+export const MAX_DROPDOWN_OPTIONS = 20;
+export const MAX_OPTION_LENGTH = 100;
