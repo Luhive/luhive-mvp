@@ -13,7 +13,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 interface SendRemindersRequest {
-  reminderTime: "1-hour" | "3-hours" | "1-day";
+  reminderTime: "1-hour" | "3-hours" | "5-hours" | "1-day";
   secret?: string;
 }
 
@@ -24,7 +24,7 @@ const FROM_EMAIL = process.env.EMAIL_SENDER?.includes("<")
   ? process.env.EMAIL_SENDER
   : `Luhive <${EMAIL_SENDER}>`;
 
-function getRemindersToSend(reminderTime: "1-hour" | "3-hours" | "1-day") {
+function getRemindersToSend(reminderTime: "1-hour" | "3-hours" | "5-hours" | "1-day") {
   const now = dayjs.utc();
 
   switch (reminderTime) {
@@ -37,6 +37,11 @@ function getRemindersToSend(reminderTime: "1-hour" | "3-hours" | "1-day") {
       return {
         start: now.clone().add(3, "hours").subtract(15, "minutes"),
         end: now.clone().add(3, "hours").add(15, "minutes"),
+      };
+    case "5-hours":
+      return {
+        start: now.clone().add(5, "hours").subtract(15, "minutes"),
+        end: now.clone().add(5, "hours").add(15, "minutes"),
       };
     case "1-day":
       return {
@@ -59,7 +64,7 @@ interface EventWithReminders {
   online_meeting_link: string | null;
   community_id: string;
   event_reminders: {
-    reminder_times: ("1-hour" | "3-hours" | "1-day")[];
+    reminder_times: ("1-hour" | "3-hours" | "5-hours" | "1-day")[];
     custom_message: string | null;
   } | null;
   communities: {
@@ -84,7 +89,7 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!["1-hour", "3-hours", "1-day"].includes(reminderTime)) {
+  if (!["1-hour", "3-hours", "5-hours", "1-day"].includes(reminderTime)) {
     return Response.json(
       { error: "Invalid reminderTime parameter" },
       { status: 400 }
@@ -215,6 +220,8 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
               subject: `Reminder: ${event.title} is ${
                 reminderTime === "1-day"
                   ? "tomorrow"
+                  : reminderTime === "5-hours"
+                  ? "starting in 5 hours"
                   : reminderTime === "3-hours"
                   ? "starting in 3 hours"
                   : "starting in 1 hour"
