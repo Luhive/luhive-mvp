@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs } from "react-router";
 import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
 import { sendEventScheduleUpdateEmail } from "~/shared/lib/email.server";
+import { GoogleMaps } from "~/modules/events/utils/google-maps";
 import { getCoHostCommunities } from "~/modules/events/data/collaborations-repo.server";
 import dayjs from "dayjs";
 import { Routes } from "~/shared/lib/routing/routes";
@@ -127,17 +128,24 @@ export async function action({ request }: ActionFunctionArgs) {
 			}
 			if (!recipientEmail) continue;
 
-			await sendEventScheduleUpdateEmail({
-				eventTitle: event.title,
-				communityName: community.name,
-				eventDate: eventDateFormatted,
-				eventTime: eventTimeFormatted,
-				eventLink,
-				recipientName,
-				recipientEmail,
-				locationAddress: event.location_address || undefined,
-				onlineMeetingLink: event.online_meeting_link || undefined,
-			});
+		await sendEventScheduleUpdateEmail({
+			eventTitle: event.title,
+			communityName: community.name,
+			eventDate: eventDateFormatted,
+			eventTime: eventTimeFormatted,
+			eventLink,
+			recipientName,
+			recipientEmail,
+			locationAddress: event.location_address || undefined,
+			locationMapUrl: event.location_address
+				? GoogleMaps.mapsSearchUrl({
+						name: event.location_name,
+						address: event.location_address,
+						placeId: event.location_place_id,
+					})
+				: undefined,
+			onlineMeetingLink: event.online_meeting_link || undefined,
+		});
 		}
 
         // notify co-host community owners/admins as well
@@ -192,6 +200,13 @@ export async function action({ request }: ActionFunctionArgs) {
                 recipientName,
                 recipientEmail: email,
                 locationAddress: event.location_address || undefined,
+                locationMapUrl: event.location_address
+                  ? GoogleMaps.mapsSearchUrl({
+                      name: event.location_name,
+                      address: event.location_address,
+                      placeId: event.location_place_id,
+                    })
+                  : undefined,
                 onlineMeetingLink: event.online_meeting_link || undefined,
               });
             }

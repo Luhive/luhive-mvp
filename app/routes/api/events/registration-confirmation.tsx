@@ -24,6 +24,7 @@ export async function action({ request }: ActionFunctionArgs) {
       startTimeISO,
       endTimeISO,
       locationAddress,
+      locationMapUrl,
       onlineMeetingLink,
       checkinToken,
     } = body;
@@ -67,6 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
         recipientEmail,
         registerAccountLink,
         locationAddress: locationAddress ?? undefined,
+        locationMapUrl: locationMapUrl ?? undefined,
         onlineMeetingLink: onlineMeetingLink ?? undefined,
         startTimeISO,
         endTimeISO,

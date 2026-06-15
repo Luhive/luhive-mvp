@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import type { Database } from '~/shared/models/database.types';
 import type { EventCreateResult, EventCreateError } from '~/modules/events/server/event-create-action.server';
 import type { CustomQuestionJson } from '~/modules/events/model/event.types';
+import type { LocationValue } from '~/modules/events/model/event-location.types';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -41,6 +42,9 @@ interface EventFormData {
   endTime?: string;
   timezone: string;
   eventType: EventType;
+  /** Structured Google Places location (preferred) */
+  location?: LocationValue | null;
+  /** Legacy plain-text address for events without a place_id */
   locationAddress?: string;
   onlineMeetingLink?: string;
   discussionLink?: string;
@@ -89,7 +93,7 @@ export function EventForm({
   const [endTime, setEndTime] = useState(initialData?.endTime || '10:00');
   const [timezone, setTimezone] = useState(initialData?.timezone || 'Asia/Baku');
   const [eventType, setEventType] = useState<EventType>(initialData?.eventType || 'in-person');
-  const [locationAddress, setLocationAddress] = useState(initialData?.locationAddress || '');
+  const [location, setLocation] = useState<LocationValue | null>(initialData?.location ?? null);
   const [onlineMeetingLink, setOnlineMeetingLink] = useState(initialData?.onlineMeetingLink || '');
   const [discussionLink, setDiscussionLink] = useState(initialData?.discussionLink || '');
   const [capacity, setCapacity] = useState<number | undefined>(initialData?.capacity);
@@ -125,9 +129,10 @@ export function EventForm({
     if (!startTime) return false;
     
     // Check event type specific validations
-    if (eventType === 'in-person' && !locationAddress.trim()) return false;
+    const hasPhysicalLocation = !!location || !!initialData?.locationAddress;
+    if (eventType === 'in-person' && !hasPhysicalLocation) return false;
     if (eventType === 'online' && !onlineMeetingLink.trim()) return false;
-    if (eventType === 'hybrid' && (!locationAddress.trim() || !onlineMeetingLink.trim())) return false;
+    if (eventType === 'hybrid' && (!hasPhysicalLocation || !onlineMeetingLink.trim())) return false;
     
     // Validate discussion link if provided (must be valid URL)
     if (discussionLink.trim()) {
@@ -308,7 +313,8 @@ export function EventForm({
       !sameDate(initial.startDate, startDate) ||
       !sameOrDefault(initial.startTime, startTime, '09:00') ||
       !sameOrDefault(initial.endTime, endTime, '10:00') ||
-      (initial.locationAddress || '') !== locationAddress ||
+      (initial.location?.placeId ?? initial.locationAddress ?? '') !==
+        (location?.placeId ?? initial.locationAddress ?? '') ||
       (initial.onlineMeetingLink || '') !== onlineMeetingLink;
 
     return scheduleChanged;
@@ -356,7 +362,11 @@ export function EventForm({
             endTime: endDateTime,
             timezone,
             eventType,
-            locationAddress: locationAddress || null,
+            locationAddress: location?.address || null,
+            locationName: location?.name || null,
+            locationLat: location?.lat ?? null,
+            locationLng: location?.lng ?? null,
+            locationPlaceId: location?.placeId || null,
             onlineMeetingLink: onlineMeetingLink || null,
             discussionLink: discussionLink.trim() || null,
             capacity: capacity || null,
@@ -408,7 +418,11 @@ export function EventForm({
           end_time: endDateTime,
           timezone,
           event_type: eventType,
-          location_address: locationAddress || null,
+          location_address: location?.address || initialData?.locationAddress || null,
+          location_name: location?.name || null,
+          location_lat: location?.lat ?? null,
+          location_lng: location?.lng ?? null,
+          location_place_id: location?.placeId || null,
           online_meeting_link: onlineMeetingLink || null,
           discussion_link: discussionLink.trim() || null,
           capacity: capacity || null,
@@ -672,10 +686,11 @@ export function EventForm({
             <CardContent>
               <EventLocation
                 eventType={eventType}
-                locationAddress={locationAddress}
+                location={location}
+                legacyAddress={!location ? (initialData?.locationAddress || undefined) : undefined}
                 onlineMeetingLink={onlineMeetingLink}
                 onEventTypeChange={setEventType}
-                onLocationAddressChange={setLocationAddress}
+                onLocationChange={setLocation}
                 onOnlineMeetingLinkChange={setOnlineMeetingLink}
               />
             </CardContent>

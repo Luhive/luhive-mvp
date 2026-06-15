@@ -488,6 +488,10 @@ export type Database = {
           id: string
           is_approve_required: boolean
           location_address: string | null
+          location_lat: number | null
+          location_lng: number | null
+          location_name: string | null
+          location_place_id: string | null
           online_meeting_link: string | null
           registration_deadline: string | null
           registration_type: string | null
@@ -515,6 +519,10 @@ export type Database = {
           id?: string
           is_approve_required?: boolean
           location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          location_place_id?: string | null
           online_meeting_link?: string | null
           registration_deadline?: string | null
           registration_type?: string | null
@@ -542,6 +550,10 @@ export type Database = {
           id?: string
           is_approve_required?: boolean
           location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          location_name?: string | null
+          location_place_id?: string | null
           online_meeting_link?: string | null
           registration_deadline?: string | null
           registration_type?: string | null

@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
 import { notifyNewEvent } from "~/modules/events/server/notify-new-event.server";
+import { GoogleMaps } from "~/modules/events/utils/google-maps";
 import type { Database, Json } from "~/shared/models/database.types";
 import { Routes } from "~/shared/lib/routing/routes";
 import { ensureUniqueEventSlug } from "~/modules/events/server/ensure-event-slug.server";
@@ -20,6 +21,10 @@ export interface EventCreatePayload {
   timezone: string;
   eventType: EventType;
   locationAddress?: string | null;
+  locationName?: string | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  locationPlaceId?: string | null;
   onlineMeetingLink?: string | null;
   discussionLink?: string | null;
   capacity?: number | null;
@@ -77,6 +82,10 @@ export async function eventCreateAction({
     timezone,
     eventType,
     locationAddress,
+    locationName,
+    locationLat,
+    locationLng,
+    locationPlaceId,
     onlineMeetingLink,
     discussionLink,
     capacity,
@@ -107,6 +116,10 @@ export async function eventCreateAction({
       timezone,
       event_type: eventType,
       location_address: locationAddress || null,
+      location_name: locationName || null,
+      location_lat: locationLat ?? null,
+      location_lng: locationLng ?? null,
+      location_place_id: locationPlaceId || null,
       online_meeting_link: onlineMeetingLink || null,
       discussion_link: discussionLink?.trim() || null,
       capacity: capacity || null,
@@ -163,6 +176,13 @@ export async function eventCreateAction({
           Routes.community.event(communitySlug, publicEventSlug(newEvent)),
         ),
         locationAddress: locationAddress || undefined,
+        locationMapUrl: locationAddress
+          ? GoogleMaps.mapsSearchUrl({
+              name: locationName,
+              address: locationAddress,
+              placeId: locationPlaceId,
+            })
+          : undefined,
         onlineMeetingLink: onlineMeetingLink || undefined,
       });
     } catch (notifyError) {
