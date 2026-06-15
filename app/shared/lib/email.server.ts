@@ -963,7 +963,7 @@ export async function sendEventReminderEmail(data: {
   message?: string;
   locationAddress?: string;
   locationMapUrl?: string;
-  reminderTime?: "1-hour" | "3-hours" | "1-day";
+  reminderTime?: "1-hour" | "3-hours" | "5-hours" | "1-day";
 }) {
   const {
     eventTitle,

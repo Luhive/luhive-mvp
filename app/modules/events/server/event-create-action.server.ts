@@ -9,7 +9,7 @@ import { publicEventSlug } from "~/modules/events/utils/event-slug";
 
 type EventType = Database["public"]["Enums"]["event_type"];
 type EventStatus = Database["public"]["Enums"]["event_status"];
-type ReminderTime = "1-hour" | "3-hours" | "1-day";
+type ReminderTime = Database["public"]["Enums"]["reminder_time"];
 
 export interface EventCreatePayload {
   communityId: string;
