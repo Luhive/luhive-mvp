@@ -767,6 +767,7 @@ export function EventPreviewSidebar({
                     eventId={event.id}
                     maxVisible={3}
                     isExternalEvent={isExternalEvent}
+                    canViewList={isExternalEvent || localIsRegistered || isOwnerOrAdmin}
                   />
                 </div>
               </div>

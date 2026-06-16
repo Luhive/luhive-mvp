@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '~/shared/components/ui/avatar'
 import { Skeleton } from '~/shared/components/ui/skeleton'
 import { AttendersListModal } from './attenders-list-modal'
+import { AttendersLockedModal } from './attenders-locked-modal'
 import { cn } from '~/shared/lib/utils'
 import { AttendersAvatarsSkeleton } from './attender-avatars-skeleton'
 
@@ -16,6 +17,7 @@ interface AttendersAvatarsProps {
   maxVisible?: number
   isExternalEvent?: boolean
   refreshKey?: number
+  canViewList?: boolean
 }
 
 const AttendersAvatars = ({
@@ -23,10 +25,12 @@ const AttendersAvatars = ({
   maxVisible = 3,
   isExternalEvent = false,
   refreshKey,
+  canViewList = true,
 }: AttendersAvatarsProps) => {
   const [attendees, setAttendees] = useState<AttenderAvatar[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isLockedModalOpen, setIsLockedModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchAttendees = async () => {
@@ -87,7 +91,7 @@ const AttendersAvatars = ({
       <div className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => canViewList ? setIsModalOpen(true) : setIsLockedModalOpen(true)}
           className={cn(
             "bg-background flex items-center w-fit",
             "hover:border-primary/50 transition-transform cursor-pointer",
@@ -140,6 +144,11 @@ const AttendersAvatars = ({
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         eventId={eventId}
+        isExternalEvent={isExternalEvent}
+      />
+      <AttendersLockedModal
+        open={isLockedModalOpen}
+        onOpenChange={setIsLockedModalOpen}
         isExternalEvent={isExternalEvent}
       />
     </>
