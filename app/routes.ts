@@ -96,6 +96,8 @@ export default [
   route("auth/verify/reset-password", "routes/auth/verify-reset-password.tsx"),
 
   // Events API routes
+  route("api/events/create", "routes/api/events/create.tsx"),
+  route("api/events/update", "routes/api/events/update.tsx"),
   route(
     "api/events/attenders-emails",
     "routes/api/events/attenders-emails.tsx",

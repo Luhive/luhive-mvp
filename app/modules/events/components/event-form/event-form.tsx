@@ -22,6 +22,7 @@ import { createClient } from '~/shared/lib/supabase/client';
 import { toast } from 'sonner';
 import type { Database } from '~/shared/models/database.types';
 import type { EventCreateResult, EventCreateError } from '~/modules/events/server/event-create-action.server';
+import type { EventUpdateResult, EventUpdateError } from '~/modules/events/server/event-update-action.server';
 import type { CustomQuestionJson } from '~/modules/events/model/event.types';
 import type { LocationValue } from '~/modules/events/model/event-location.types';
 import dayjs from 'dayjs';
@@ -76,14 +77,14 @@ export function EventForm({
   initialData,
 }: EventFormProps) {
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const initialRef = useRef<Partial<EventFormData> | undefined>(initialData);
   const createFetcher = useFetcher<EventCreateResult | EventCreateError>();
+  const updateFetcher = useFetcher<EventUpdateResult | EventUpdateError>();
   const submitIsDraftRef = useRef(false);
   const pendingInvitesRef = useRef<{ id: string; name: string; slug: string; logo_url?: string | null }[]>([]);
 
-  // For create mode the loading state comes from the fetcher; edit uses the local state
-  const isBusy = mode === 'create' ? createFetcher.state !== 'idle' : isSubmitting;
+  // For create mode the loading state comes from the fetcher; edit mirrors it
+  const isBusy = mode === 'create' ? createFetcher.state !== 'idle' : updateFetcher.state !== 'idle';
 
   // Form state
   const [title, setTitle] = useState(initialData?.title || '');
@@ -218,7 +219,6 @@ export function EventForm({
 
     if (!data.success) {
       toast.error((data as EventCreateError).error || 'Failed to create event');
-      setIsSubmitting(false);
       return;
     }
 
@@ -269,6 +269,40 @@ export function EventForm({
     finishCreate();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createFetcher.state, createFetcher.data]);
+
+  // Handle server action response for event update
+  useEffect(() => {
+    if (updateFetcher.state !== 'idle' || !updateFetcher.data) return;
+
+    const data = updateFetcher.data;
+
+    if (!data.success) {
+      toast.error((data as EventUpdateError).error || 'Failed to update event');
+      return;
+    }
+
+    const { eventId: updatedEventId, communitySlug: slug, status: updatedStatus } = data as EventUpdateResult;
+
+    async function finishUpdate() {
+      if (updatedStatus === 'published' && hasOnlyScheduleOrLocationChanges()) {
+        try {
+          await fetch('/api/events/schedule-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eventId: updatedEventId }),
+          });
+        } catch (notifyError) {
+          console.error('Failed to trigger schedule update emails:', notifyError);
+        }
+      }
+
+      toast.success('Event updated successfully!');
+      navigate(`/dashboard/${slug}/events`);
+    }
+
+    finishUpdate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updateFetcher.state, updateFetcher.data]);
 
   const hasOnlyScheduleOrLocationChanges = () => {
     if (!initialRef.current || mode !== 'edit') {
@@ -326,192 +360,110 @@ export function EventForm({
       return;
     }
 
-    setIsSubmitting(true);
+    if (mode === 'create') {
+      const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
 
-    try {
-      if (mode === 'create') {
-        const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
+      const startDateTime = dayjs.tz(
+        `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
+        timezone
+      ).toISOString();
 
-        const startDateTime = dayjs.tz(
-          `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
-          timezone
-        ).toISOString();
+      const endDateTime = endTime
+        ? dayjs.tz(
+            `${dayjs(startDate).format('YYYY-MM-DD')}T${endTime}`,
+            timezone
+          ).toISOString()
+        : null;
 
-        const endDateTime = endTime
-          ? dayjs.tz(
-              `${dayjs(startDate).format('YYYY-MM-DD')}T${endTime}`,
-              timezone
-            ).toISOString()
-          : null;
+      const eventStartDateTime = dayjs.tz(
+        `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
+        timezone
+      );
 
-        const eventStartDateTime = dayjs.tz(
-          `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
-          timezone
-        );
+      submitIsDraftRef.current = isDraft;
 
-        submitIsDraftRef.current = isDraft;
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        createFetcher.submit(
-          {
-            communityId,
-            communitySlug,
-            title,
-            description: description || null,
-            startTime: startDateTime,
-            endTime: endDateTime,
-            timezone,
-            eventType,
-            locationAddress: location?.address || null,
-            locationName: location?.name || null,
-            locationLat: location?.lat ?? null,
-            locationLng: location?.lng ?? null,
-            locationPlaceId: location?.placeId || null,
-            onlineMeetingLink: onlineMeetingLink || null,
-            discussionLink: discussionLink.trim() || null,
-            capacity: capacity || null,
-            registrationDeadline: registrationDeadline ? registrationDeadline.toISOString() : null,
-            coverUrl: coverUrl || null,
-            status: submitStatus,
-            isApproveRequired,
-            customQuestions: customQuestions ?? null,
-            reminderTimes,
-            reminderMessage: reminderMessage || null,
-            eventDate: eventStartDateTime.format('dddd, MMMM D, YYYY'),
-            eventTime: eventStartDateTime.format('h:mm A z'),
-            eventLinkBase: window.location.origin,
-          } as any,
-          { method: 'POST', encType: 'application/json' }
-        );
-
-        // Navigation and toasts are handled in the createFetcher useEffect
-        return;
-      } else if (mode === 'edit' && eventId) {
-        const supabase = createClient();
-
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          toast.error('You must be logged in');
-          return;
-        }
-
-        const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
-
-        const startDateTime = dayjs.tz(
-          `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
-          timezone
-        ).toISOString();
-
-        const endDateTime = endTime
-          ? dayjs.tz(
-              `${dayjs(startDate).format('YYYY-MM-DD')}T${endTime}`,
-              timezone
-            ).toISOString()
-          : null;
-
-        const eventData = {
-          community_id: communityId,
-          created_by: user.id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      createFetcher.submit(
+        {
+          communityId,
+          communitySlug,
           title,
           description: description || null,
-          start_time: startDateTime,
-          end_time: endDateTime,
+          startTime: startDateTime,
+          endTime: endDateTime,
           timezone,
-          event_type: eventType,
-          location_address: location?.address || initialData?.locationAddress || null,
-          location_name: location?.name || null,
-          location_lat: location?.lat ?? null,
-          location_lng: location?.lng ?? null,
-          location_place_id: location?.placeId || null,
-          online_meeting_link: onlineMeetingLink || null,
-          discussion_link: discussionLink.trim() || null,
+          eventType,
+          locationAddress: location?.address || null,
+          locationName: location?.name || null,
+          locationLat: location?.lat ?? null,
+          locationLng: location?.lng ?? null,
+          locationPlaceId: location?.placeId || null,
+          onlineMeetingLink: onlineMeetingLink || null,
+          discussionLink: discussionLink.trim() || null,
           capacity: capacity || null,
-          registration_deadline: registrationDeadline ? registrationDeadline.toISOString() : null,
-          cover_url: coverUrl || null,
+          registrationDeadline: registrationDeadline ? registrationDeadline.toISOString() : null,
+          coverUrl: coverUrl || null,
           status: submitStatus,
-          is_approve_required: isApproveRequired,
-          custom_questions: customQuestions as any,
-        };
+          isApproveRequired,
+          customQuestions: customQuestions ?? null,
+          reminderTimes,
+          reminderMessage: reminderMessage || null,
+          eventDate: eventStartDateTime.format('dddd, MMMM D, YYYY'),
+          eventTime: eventStartDateTime.format('h:mm A z'),
+          eventLinkBase: window.location.origin,
+        } as any,
+        { method: 'POST', encType: 'application/json', action: '/api/events/create' }
+      );
 
-        // Check if community is host (only host can update)
-        const { data: collaboration } = await supabase
-          .from('event_collaborations')
-          .select('role')
-          .eq('event_id', eventId)
-          .eq('community_id', communityId)
-          .eq('role', 'host')
-          .eq('status', 'accepted')
-          .single();
+      // Navigation and toasts are handled in the createFetcher useEffect
+      return;
+    } else if (mode === 'edit' && eventId) {
+      const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
 
-        if (!collaboration) {
-          toast.error('Only host community can update event details');
-          return;
-        }
+      const startDateTime = dayjs.tz(
+        `${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`,
+        timezone
+      ).toISOString();
 
-        // Update existing event
-        const { error } = await supabase
-          .from('events')
-          .update(eventData)
-          .eq('id', eventId);
+      const endDateTime = endTime
+        ? dayjs.tz(
+            `${dayjs(startDate).format('YYYY-MM-DD')}T${endTime}`,
+            timezone
+          ).toISOString()
+        : null;
 
-        if (error) {
-          console.error('Error updating event:', error);
-          toast.error(error.message || 'Failed to update event');
-          return;
-        }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      updateFetcher.submit(
+        {
+          eventId,
+          communityId,
+          communitySlug,
+          title,
+          description: description || null,
+          startTime: startDateTime,
+          endTime: endDateTime,
+          timezone,
+          eventType,
+          locationAddress: location?.address || initialData?.locationAddress || null,
+          locationName: location?.name || null,
+          locationLat: location?.lat ?? null,
+          locationLng: location?.lng ?? null,
+          locationPlaceId: location?.placeId || null,
+          onlineMeetingLink: onlineMeetingLink || null,
+          discussionLink: discussionLink.trim() || null,
+          capacity: capacity || null,
+          registrationDeadline: registrationDeadline ? registrationDeadline.toISOString() : null,
+          coverUrl: coverUrl || null,
+          status: submitStatus,
+          isApproveRequired,
+          customQuestions: customQuestions ?? null,
+          reminderTimes,
+          reminderMessage: reminderMessage || null,
+        } as any,
+        { method: 'POST', encType: 'application/json', action: '/api/events/update' }
+      );
 
-        // Update or create reminders
-        if (reminderTimes.length > 0) {
-          const { error: reminderError } = await supabase
-            .from('event_reminders')
-            .upsert(
-              {
-                event_id: eventId,
-                reminder_times: reminderTimes,
-                custom_message: reminderMessage,
-              },
-              { onConflict: 'event_id' }
-            );
-
-          if (reminderError) {
-            console.error('Error updating event reminders:', reminderError);
-            // Don't fail the event update, just log the error
-          }
-        } else {
-          // If no reminders selected, delete the reminder record if it exists
-          const { error: deleteError } = await supabase
-            .from('event_reminders')
-            .delete()
-            .eq('event_id', eventId);
-
-          if (deleteError) {
-            console.error('Error deleting event reminders:', deleteError);
-            // Don't fail the event update, just log the error
-          }
-        }
-
-        if (submitStatus === 'published' && hasOnlyScheduleOrLocationChanges()) {
-          try {
-            await fetch('/api/events/schedule-update', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ eventId }),
-            });
-          } catch (notifyError) {
-            console.error('Failed to trigger schedule update emails:', notifyError);
-          }
-        }
-
-        toast.success('Event updated successfully!');
-        navigate(`/dashboard/${communitySlug}/events`);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('An unexpected error occurred');
-    } finally {
-      setIsSubmitting(false);
+      // Navigation, toasts, and schedule-update are handled in the updateFetcher useEffect
     }
   };
 

@@ -1,18 +1,14 @@
 import type { ActionFunctionArgs } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
-import { notifyNewEvent } from "~/modules/events/server/notify-new-event.server";
 import { saveEventReminders } from "~/modules/events/server/event-reminders.server";
-import { GoogleMaps } from "~/modules/events/utils/google-maps";
 import type { Database, Json } from "~/shared/models/database.types";
-import { Routes } from "~/shared/lib/routing/routes";
-import { ensureUniqueEventSlug } from "~/modules/events/server/ensure-event-slug.server";
-import { publicEventSlug } from "~/modules/events/utils/event-slug";
 
 type EventType = Database["public"]["Enums"]["event_type"];
 type EventStatus = Database["public"]["Enums"]["event_status"];
 type ReminderTime = Database["public"]["Enums"]["reminder_time"];
 
-export interface EventCreatePayload {
+export interface EventUpdatePayload {
+  eventId: string;
   communityId: string;
   communitySlug: string;
   title: string;
@@ -36,26 +32,23 @@ export interface EventCreatePayload {
   customQuestions?: Json | null;
   reminderTimes?: ReminderTime[];
   reminderMessage?: string | null;
-  eventDate: string;
-  eventTime: string;
-  eventLinkBase: string;
 }
 
-export interface EventCreateResult {
+export interface EventUpdateResult {
   success: true;
   eventId: string;
-  eventSlug: string;
   communitySlug: string;
+  status: string;
 }
 
-export interface EventCreateError {
+export interface EventUpdateError {
   success: false;
   error: string;
 }
 
-export async function eventCreateAction({
+export async function eventUpdateAction({
   request,
-}: ActionFunctionArgs): Promise<EventCreateResult | EventCreateError | Response> {
+}: ActionFunctionArgs): Promise<EventUpdateResult | EventUpdateError | Response> {
   const { supabase } = createClient(request);
 
   const {
@@ -66,7 +59,7 @@ export async function eventCreateAction({
     return { success: false, error: "You must be logged in" };
   }
 
-  let payload: EventCreatePayload;
+  let payload: EventUpdatePayload;
   try {
     payload = await request.json();
   } catch {
@@ -74,6 +67,7 @@ export async function eventCreateAction({
   }
 
   const {
+    eventId,
     communityId,
     communitySlug,
     title,
@@ -97,20 +91,27 @@ export async function eventCreateAction({
     customQuestions,
     reminderTimes,
     reminderMessage,
-    eventDate,
-    eventTime,
-    eventLinkBase,
   } = payload;
 
-  const eventSlug = await ensureUniqueEventSlug(supabase, communityId, title);
+  // Verify caller is host community
+  const { data: collaboration } = await supabase
+    .from("event_collaborations")
+    .select("role")
+    .eq("event_id", eventId)
+    .eq("community_id", communityId)
+    .eq("role", "host")
+    .eq("status", "accepted")
+    .single();
 
-  const { data: newEvent, error: eventError } = await supabase
+  if (!collaboration) {
+    return { success: false, error: "Only host community can update event details" };
+  }
+
+  const { error: eventError } = await supabase
     .from("events")
-    .insert({
+    .update({
       community_id: communityId,
-      created_by: user.id,
       title,
-      slug: eventSlug,
       description: description || null,
       start_time: startTime,
       end_time: endTime || null,
@@ -130,63 +131,14 @@ export async function eventCreateAction({
       is_approve_required: isApproveRequired,
       custom_questions: (customQuestions ?? null) as Json | null,
     })
-    .select("id, slug")
-    .single();
+    .eq("id", eventId);
 
-  if (eventError || !newEvent) {
-    console.error("Error creating event:", eventError);
-    return { success: false, error: eventError?.message || "Failed to create event" };
+  if (eventError) {
+    console.error("Error updating event:", eventError);
+    return { success: false, error: eventError.message || "Failed to update event" };
   }
 
-  const { error: collabError } = await supabase.from("event_collaborations").insert({
-    event_id: newEvent.id,
-    community_id: communityId,
-    role: "host",
-    status: "accepted",
-    invited_by: user.id,
-    invited_at: new Date().toISOString(),
-    accepted_at: new Date().toISOString(),
-  });
+  await saveEventReminders(eventId, reminderTimes ?? [], reminderMessage ?? null);
 
-  if (collabError) {
-    console.error("Error creating host collaboration:", collabError);
-  }
-
-  if (reminderTimes && reminderTimes.length > 0) {
-    await saveEventReminders(newEvent.id, reminderTimes, reminderMessage || null);
-  }
-
-  if (status === "published") {
-    try {
-      await notifyNewEvent({
-        eventId: newEvent.id,
-        communityId,
-        eventTitle: title,
-        eventDate,
-        eventTime,
-        eventLink: Routes.absolute(
-          eventLinkBase,
-          Routes.community.event(communitySlug, publicEventSlug(newEvent)),
-        ),
-        locationAddress: locationAddress || undefined,
-        locationMapUrl: locationAddress
-          ? GoogleMaps.mapsSearchUrl({
-              name: locationName,
-              address: locationAddress,
-              placeId: locationPlaceId,
-            })
-          : undefined,
-        onlineMeetingLink: onlineMeetingLink || undefined,
-      });
-    } catch (notifyError) {
-      console.error("Failed to send new event notification emails:", notifyError);
-    }
-  }
-
-  return {
-    success: true,
-    eventId: newEvent.id,
-    eventSlug: publicEventSlug(newEvent),
-    communitySlug,
-  };
+  return { success: true, eventId, communitySlug, status };
 }
