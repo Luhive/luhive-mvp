@@ -111,6 +111,7 @@ export function EventSidebarPanel({
             maxVisible={5}
             isExternalEvent={isExternalEvent}
             refreshKey={registrationCount}
+            canViewList={isExternalEvent || userData.isUserRegistered || userData.isOwnerOrAdmin}
           />
         </div>
 
