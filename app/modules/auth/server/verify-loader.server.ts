@@ -2,6 +2,7 @@ import { redirect } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
 import type { LoaderFunctionArgs } from "react-router";
 import { Routes } from "~/shared/lib/routing/routes";
+import { notifyCommunityJoin } from "~/modules/community/server/notify-community-join.server";
 
 function logVerify(message: string, payload?: Record<string, unknown>) {
   if (payload) {
@@ -129,6 +130,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
           }
 
           if (!memberError) {
+            await notifyCommunityJoin({
+              supabase,
+              communityId: pendingCommunityId,
+              memberUserId: data.user.id,
+              memberEmail: data.user.email ?? null,
+              memberName: fullName,
+            });
+
             const { data: community, error: communityError } = await supabase
               .from("communities")
               .select("slug")
@@ -196,6 +205,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
           }
 
           if (!memberError) {
+            const { data: memberProfile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", data.user.id)
+              .maybeSingle();
+
+            await notifyCommunityJoin({
+              supabase,
+              communityId: pendingCommunityId,
+              memberUserId: data.user.id,
+              memberEmail: data.user.email ?? null,
+              memberName:
+                memberProfile?.full_name ||
+                data.user.email?.split("@")[0] ||
+                "A new member",
+            });
+
             const { data: community, error: communityError } = await supabase
               .from("communities")
               .select("slug")
@@ -309,6 +335,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
         }
 
         if (!memberError) {
+          const { data: memberProfile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", data.user.id)
+            .maybeSingle();
+
+          await notifyCommunityJoin({
+            supabase,
+            communityId: referralCommunityId,
+            memberUserId: data.user.id,
+            memberEmail: data.user.email ?? null,
+            memberName:
+              memberProfile?.full_name ||
+              data.user.email?.split("@")[0] ||
+              "A new member",
+          });
+
           const { data: community, error: communityError } = await supabase
             .from("communities")
             .select("slug")
