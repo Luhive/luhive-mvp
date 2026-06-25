@@ -5,9 +5,9 @@ import { redirect } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
-import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
+import { createClient } from "~/shared/lib/supabase/server";
 import { getIpLocation } from "~/shared/lib/ip-location.server";
-import { sendCommunityJoinNotification } from "~/shared/lib/email.server";
+import { notifyCommunityJoin } from "~/modules/community/server/notify-community-join.server";
 import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
 
 dayjs.extend(utc);
@@ -417,61 +417,24 @@ export async function action({ request }: ActionFunctionArgs) {
         registeredEvent && registeredEventCommunityId === referralCommunityId;
 
       // Notify community owner/admins about new member
-      if (!skipCommunityNotify) try {
-        const { data: communityData } = await supabase
-          .from("communities")
-          .select("name, slug")
-          .eq("id", referralCommunityId)
-          .single();
+      if (!skipCommunityNotify) {
+        const { data: memberProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", data.user.id)
+          .maybeSingle();
 
-        if (communityData) {
-          const { data: memberProfile } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", data.user.id)
-            .maybeSingle();
-
-          const serviceClient = createServiceRoleClient();
-          const { data: admins } = await serviceClient
-            .from("community_members")
-            .select("user_id")
-            .eq("community_id", referralCommunityId)
-            .in("role", ["owner", "admin"]);
-
-          const adminIds = admins?.map((a) => a.user_id).filter((id): id is string => !!id) ?? [];
-          const memberName =
+        await notifyCommunityJoin({
+          supabase,
+          communityId: referralCommunityId,
+          memberUserId: data.user.id,
+          memberEmail: data.user.email ?? null,
+          memberName:
             memberProfile?.full_name ||
             (name && surname ? `${name} ${surname}`.trim() : null) ||
             data.user.email?.split("@")[0] ||
-            "A new member";
-
-          for (const adminId of adminIds) {
-            try {
-              const { data: adminData } =
-                await serviceClient.auth.admin.getUserById(adminId);
-              if (adminData?.user?.email) {
-                await sendCommunityJoinNotification({
-                  communityName: communityData.name,
-                  communitySlug: communityData.slug,
-                  memberName,
-                  memberEmail: data.user.email ?? "unknown",
-                  ownerEmail: adminData.user.email,
-                  joinedAt: new Date().toLocaleString(),
-                });
-                await new Promise((resolve) => setTimeout(resolve, 600));
-              }
-            } catch (emailError) {
-              console.error(
-                "Failed to send community join notification to admin:",
-                adminId,
-                emailError
-              );
-              await new Promise((resolve) => setTimeout(resolve, 600));
-            }
-          }
-        }
-      } catch (emailError) {
-        console.error("Error sending community join notification:", emailError);
+            "A new member",
+        });
       }
     }
 
