@@ -27,18 +27,28 @@ export function useEventStatistics(
   const [range, setRange] = useState<EventStatisticsTimeRange>("7d");
 
   const rangeStart = useMemo(() => {
+    const days = getDays(range);
+    if (days === null) return null;
     const d = new Date();
-    d.setDate(d.getDate() - (getDays(range) - 1));
+    d.setDate(d.getDate() - (days - 1));
     return startOfDay(d);
   }, [range]);
 
   const filteredVisits = useMemo(
-    () => visits.filter((row) => inRange(row.visited_at, rangeStart)),
+    () =>
+      rangeStart === null
+        ? visits
+        : visits.filter((row) => inRange(row.visited_at, rangeStart)),
     [rangeStart, visits],
   );
 
   const filteredRegistrations = useMemo(
-    () => registrations.filter((row) => inRange(row.registered_at, rangeStart)),
+    () =>
+      rangeStart === null
+        ? registrations
+        : registrations.filter((row) =>
+            inRange(row.registered_at, rangeStart),
+          ),
     [rangeStart, registrations],
   );
 

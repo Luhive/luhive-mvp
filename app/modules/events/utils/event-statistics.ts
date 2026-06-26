@@ -19,11 +19,12 @@ export function toDayKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function getDays(range: EventStatisticsTimeRange): number {
+export function getDays(range: EventStatisticsTimeRange): number | null {
   if (range === "1d") return 1;
   if (range === "3d") return 3;
   if (range === "7d") return 7;
-  return 30;
+  if (range === "30d") return 30;
+  return null;
 }
 
 export function inRange(
@@ -86,6 +87,28 @@ function buildHourlyChartData(
   return buckets;
 }
 
+function computeDayCount(
+  range: EventStatisticsTimeRange,
+  visits: EventVisitStatRow[],
+  registrations: EventRegistrationStatRow[],
+): number {
+  const days = getDays(range);
+  if (days !== null) return days;
+
+  let earliest = Date.now();
+  for (const row of visits) {
+    const t = new Date(row.visited_at).getTime();
+    if (!Number.isNaN(t) && t < earliest) earliest = t;
+  }
+  for (const row of registrations) {
+    const t = new Date(row.registered_at || "").getTime();
+    if (!Number.isNaN(t) && t < earliest) earliest = t;
+  }
+
+  const diffMs = Date.now() - earliest;
+  return Math.max(Math.ceil(diffMs / (1000 * 60 * 60 * 24)), 7);
+}
+
 export function buildChartData(
   range: EventStatisticsTimeRange,
   visits: EventVisitStatRow[],
@@ -95,7 +118,7 @@ export function buildChartData(
     return buildHourlyChartData(visits, registrations);
   }
 
-  const days = getDays(range);
+  const days = computeDayCount(range, visits, registrations);
   const today = startOfDay(new Date());
 
   const buckets: EventStatisticsChartPoint[] = Array.from(
