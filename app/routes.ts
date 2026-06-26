@@ -103,6 +103,7 @@ export default [
     "routes/api/events/attenders-emails.tsx",
   ),
   route("api/events/attenders-list", "routes/api/events/attenders-list.tsx"),
+  route("api/events/event-statistics", "routes/api/events/event-statistics.tsx"),
   route(
     "api/events/update-registration-status",
     "routes/api/events/update-registration-status.tsx",

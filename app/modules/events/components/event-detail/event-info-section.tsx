@@ -2,14 +2,7 @@ import { Activity } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import {
-  Calendar,
-  MapPin,
-  Video,
-  ExternalLink,
-  BarChart3,
-  Navigation,
-} from "lucide-react";
+import { Calendar, MapPin, Video, ExternalLink, BarChart3 } from "lucide-react";
 import { Button } from "~/shared/components/ui/button";
 import { Separator } from "~/shared/components/ui/separator";
 import type { Community, Event } from "~/shared/models/entity.types";
@@ -18,7 +11,7 @@ import type { UserData } from "~/modules/events/server/event-detail-loader.serve
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import type { EventTrackingContext } from "~/modules/events/utils/event-session-tracker";
 import { EventRegistrationCard } from "./event-registration-card";
-import { LocationMapPreview } from "~/modules/events/components/shared/location-map-preview";
+import { EventLocationMapSection } from "~/modules/events/components/shared/event-location-map-section";
 import {
   toLocationValue,
   deriveLocality,
@@ -120,7 +113,7 @@ export function EventInfoSection({
           {(() => {
             const venueName =
               location?.name || event.location_address?.split(",")[0] || "";
-            const city = deriveLocality(event.location_address);
+            // const city = deriveLocality(event.location_address);
             const href = location
               ? GoogleMaps.mapsLink(location)
               : GoogleMaps.mapsSearchUrl({ address: event.location_address });
@@ -139,8 +132,10 @@ export function EventInfoSection({
                     {venueName}
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   </p>
-                  {city && (
-                    <p className="text-sm text-muted-foreground">{city}</p>
+                  {event.location_address && (
+                    <p className="text-sm text-muted-foreground">
+                      {event.location_address}
+                    </p>
                   )}
                 </div>
               </a>
@@ -222,73 +217,7 @@ export function EventInfoSection({
           </div>
         </Activity>
 
-        {/* Full location section — Luma-style, at the bottom */}
-        <Activity mode={event.location_address ? "visible" : "hidden"}>
-          <div className="space-y-4 pt-4 border-t">
-            <h2 className="text-xl font-semibold">Location</h2>
-
-            {location ? (
-              <div className="space-y-3">
-                <LocationMapPreview location={location} mapHeight={220} />
-                <div className="flex gap-2">
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                  >
-                    <a
-                      href={GoogleMaps.mapsLink(location)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MapPin className="h-4 w-4 mr-1.5" />
-                      Open in Maps
-                    </a>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                  >
-                    <a
-                      href={GoogleMaps.directionsLink(location)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Navigation className="h-4 w-4 mr-1.5" />
-                      Get Directions
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <p className="font-semibold text-base">
-                  {event.location_address?.split(",")[0] || ""}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {event.location_address
-                    ?.split(",")
-                    .slice(1)
-                    .join(",")
-                    .trim() || ""}
-                </p>
-                <a
-                  href={GoogleMaps.mapsSearchUrl({
-                    address: event.location_address,
-                  })}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground underline inline-block hover:text-foreground"
-                >
-                  View on Google Maps
-                </a>
-              </div>
-            )}
-          </div>
-        </Activity>
+        <EventLocationMapSection event={event} mapHeight={220} />
       </div>
     </div>
   );
