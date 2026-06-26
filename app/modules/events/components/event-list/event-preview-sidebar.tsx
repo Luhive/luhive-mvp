@@ -47,6 +47,9 @@ import {
   getEventTrackingContext,
   shouldTrackEventVisit,
 } from "~/modules/events/utils/event-session-tracker";
+import { EventLocationMapSection } from "~/modules/events/components/shared/event-location-map-section";
+import { toLocationValue } from "~/modules/events/utils/event-location";
+import { GoogleMaps } from "~/modules/events/utils/google-maps";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -621,7 +624,9 @@ export function EventPreviewSidebar({
 
               {isOwnerOrAdmin && (
                 <Button asChild variant="outline" size="sm" className="gap-1.5">
-                  <a href={`/dashboard/${community.slug}/events/${event.id}/statistics`}>
+                  <a
+                    href={`/dashboard/${community.slug}/events/${event.id}/statistics`}
+                  >
                     Insight
                     <BarChart3 className="h-3.5 w-3.5" />
                   </a>
@@ -724,18 +729,37 @@ export function EventPreviewSidebar({
                     </span>
                   </div>
                   {event.location_address ? (
-                    <>
-                      <p className="text-sm font-semibold truncate">
-                        {event.location_address.split(",")[0]}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {event.location_address
-                          .split(",")
-                          .slice(1)
-                          .join(",")
-                          .trim() || "View on map"}
-                      </p>
-                    </>
+                    (() => {
+                      const location = toLocationValue(event);
+                      const venueName =
+                        location?.name ||
+                        event.location_name ||
+                        event.location_address.split(",")[0];
+                      const mapsHref = location
+                        ? GoogleMaps.mapsLink(location)
+                        : GoogleMaps.mapsSearchUrl({
+                            name: event.location_name,
+                            address: event.location_address,
+                            placeId: event.location_place_id,
+                          });
+
+                      return (
+                        <a
+                          href={mapsHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block min-w-0 group"
+                        >
+                          <p className="text-sm font-semibold truncate flex items-center gap-1 group-hover:underline">
+                            {venueName}
+                            <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {event.location_address}
+                          </p>
+                        </a>
+                      );
+                    })()
                   ) : (
                     <>
                       <p className="text-sm font-semibold">
@@ -755,7 +779,10 @@ export function EventPreviewSidebar({
               <div className="grid grid-cols-2 gap-3">
                 {/* Hosted by */}
                 <div className="rounded-lg bg-card p-3">
-                  <HostedBy hosts={hostingCommunities} fallbackCommunity={community} />
+                  <HostedBy
+                    hosts={hostingCommunities}
+                    fallbackCommunity={community}
+                  />
                 </div>
 
                 {/* Attenders */}
@@ -767,7 +794,9 @@ export function EventPreviewSidebar({
                     eventId={event.id}
                     maxVisible={3}
                     isExternalEvent={isExternalEvent}
-                    canViewList={isExternalEvent || localIsRegistered || isOwnerOrAdmin}
+                    canViewList={
+                      isExternalEvent || localIsRegistered || isOwnerOrAdmin
+                    }
                   />
                 </div>
               </div>
@@ -783,6 +812,12 @@ export function EventPreviewSidebar({
                   </p>
                 </div>
               )}
+
+              <EventLocationMapSection
+                event={event}
+                mapHeight={200}
+                headingClassName="text-base font-semibold"
+              />
             </div>
           </div>
 
@@ -793,11 +828,7 @@ export function EventPreviewSidebar({
                 <p className="text-lg font-bold">Free</p>
               </div>
               {isOwnerOrAdmin ? (
-                <Button
-                  asChild
-                  className="w-[20rem]"
-                  size="lg"
-                >
+                <Button asChild className="w-[20rem]" size="lg">
                   <a href={`/dashboard/${community.slug}/events`}>
                     Manage Event
                   </a>
@@ -826,7 +857,10 @@ export function EventPreviewSidebar({
                 localIsRegistered ? (
                   <fetcher.Form
                     method="post"
-                    action={Routes.community.event(community.slug, publicEventSlug(event))}
+                    action={Routes.community.event(
+                      community.slug,
+                      publicEventSlug(event),
+                    )}
                     onSubmit={() => {
                       lastSubmittedIntentRef.current = "unregister";
                     }}
@@ -855,19 +889,50 @@ export function EventPreviewSidebar({
                 ) : (
                   <fetcher.Form
                     method="post"
-                    action={Routes.community.event(community.slug, publicEventSlug(event))}
+                    action={Routes.community.event(
+                      community.slug,
+                      publicEventSlug(event),
+                    )}
                     onSubmit={() => {
                       lastSubmittedIntentRef.current = "register";
                     }}
                   >
                     <input type="hidden" name="intent" value="register" />
-                    <input type="hidden" name="eventSessionId" value={trackingContext?.sessionId ?? ""} />
-                    <input type="hidden" name="eventUtmSource" value={trackingContext?.utmSource ?? "direct"} />
-                    <input type="hidden" name="eventUtmMedium" value={trackingContext?.utmMedium ?? ""} />
-                    <input type="hidden" name="eventUtmCampaign" value={trackingContext?.utmCampaign ?? ""} />
-                    <input type="hidden" name="eventUtmContent" value={trackingContext?.utmContent ?? ""} />
-                    <input type="hidden" name="eventUtmTerm" value={trackingContext?.utmTerm ?? ""} />
-                    <input type="hidden" name="eventFirstVisitStartedAt" value={trackingContext?.firstVisitStartedAt ?? ""} />
+                    <input
+                      type="hidden"
+                      name="eventSessionId"
+                      value={trackingContext?.sessionId ?? ""}
+                    />
+                    <input
+                      type="hidden"
+                      name="eventUtmSource"
+                      value={trackingContext?.utmSource ?? "direct"}
+                    />
+                    <input
+                      type="hidden"
+                      name="eventUtmMedium"
+                      value={trackingContext?.utmMedium ?? ""}
+                    />
+                    <input
+                      type="hidden"
+                      name="eventUtmCampaign"
+                      value={trackingContext?.utmCampaign ?? ""}
+                    />
+                    <input
+                      type="hidden"
+                      name="eventUtmContent"
+                      value={trackingContext?.utmContent ?? ""}
+                    />
+                    <input
+                      type="hidden"
+                      name="eventUtmTerm"
+                      value={trackingContext?.utmTerm ?? ""}
+                    />
+                    <input
+                      type="hidden"
+                      name="eventFirstVisitStartedAt"
+                      value={trackingContext?.firstVisitStartedAt ?? ""}
+                    />
                     <Button
                       type="submit"
                       className="w-[20rem]"
