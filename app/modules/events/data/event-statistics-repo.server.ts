@@ -26,15 +26,11 @@ export async function getEventStatisticsPayload(
     };
   }
 
-  const rangeStart = new Date();
-  rangeStart.setDate(rangeStart.getDate() - 30);
-
   const [visitsResult, registrationsResult] = await Promise.all([
     (serviceClient as unknown as { from: (table: string) => ReturnType<StatisticsSupabase["from"]> })
       .from("event_visits")
       .select("visited_at, session_id, utm_source, country, city")
       .eq("event_id", eventId)
-      .gte("visited_at", rangeStart.toISOString())
       .order("visited_at", { ascending: true }),
     (serviceClient as unknown as { from: (table: string) => ReturnType<StatisticsSupabase["from"]> })
       .from("event_registrations")
@@ -44,7 +40,6 @@ export async function getEventStatisticsPayload(
       .eq("event_id", eventId)
       .eq("is_verified", true)
       .eq("rsvp_status", "going")
-      .gte("registered_at", rangeStart.toISOString())
       .order("registered_at", { ascending: true }),
   ]);
 

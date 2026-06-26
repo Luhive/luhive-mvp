@@ -88,7 +88,7 @@ export function StatisticsBreakdowns({
 }: StatisticsBreakdownsProps) {
   return (
     <Card>
-      <CardContent className="grid grid-cols-1 gap-x-10 gap-y-6 py-5 md:grid-cols-3">
+      <CardContent className="grid grid-cols-1 gap-x-10 gap-y-6 md:grid-cols-3">
         <BreakdownList
           title="Top Sources"
           rows={sources}

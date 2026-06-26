@@ -26,7 +26,7 @@ export type EventStatisticsPayload = {
   registrations: EventRegistrationStatRow[];
 };
 
-export type EventStatisticsTimeRange = "1d" | "3d" | "7d" | "30d";
+export type EventStatisticsTimeRange = "1d" | "3d" | "7d" | "30d" | "all";
 
 export type EventStatisticsChartPoint = {
   key: string;

@@ -36,6 +36,7 @@ const RANGE_OPTIONS: { value: EventStatisticsTimeRange; label: string }[] = [
   { value: "3d", label: "Last 3 days" },
   { value: "7d", label: "Last 7 days" },
   { value: "30d", label: "Last 30 days" },
+  { value: "all", label: "All time" },
 ];
 
 function Stat({
