@@ -25,7 +25,7 @@ interface EventReminderEmailProps {
   recipientName: string;
   locationAddress?: string;
   locationMapUrl?: string;
-  reminderTime: "1-hour" | "3-hours" | "5-hours" | "1-day";
+  reminderTime: "1-hour" | "3-hours" | "5-hours" | "1-day" | "3-days" | "5-days";
 }
 
 const getReminderText = (reminderTime: string): string => {
@@ -38,6 +38,10 @@ const getReminderText = (reminderTime: string): string => {
       return "in 5 hours";
     case "1-day":
       return "in 1 day";
+    case "3-days":
+      return "in 3 days";
+    case "5-days":
+      return "in 5 days";
     default:
       return "soon";
   }

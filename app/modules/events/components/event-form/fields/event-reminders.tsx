@@ -10,7 +10,7 @@ import {
 } from "~/shared/components/ui/accordion";
 import { SquareDashedMousePointer } from "lucide-react";
 
-export type ReminderTime = "1-hour" | "3-hours" | "5-hours" | "1-day";
+export type ReminderTime = "1-hour" | "3-hours" | "5-hours" | "1-day" | "3-days" | "5-days";
 
 export interface EventRemindersConfig {
   reminderTimes: ReminderTime[];
@@ -30,14 +30,19 @@ const REMINDER_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: "1-hour",
-    label: "1 Hour Before",
-    description: "Send reminder 1 hour before the event starts",
+    value: "5-days",
+    label: "5 Days Before",
+    description: "Send reminder 5 days before the event starts",
   },
   {
-    value: "3-hours",
-    label: "3 Hours Before",
-    description: "Send reminder 3 hours before the event starts",
+    value: "3-days",
+    label: "3 Days Before",
+    description: "Send reminder 3 days before the event starts",
+  },
+  {
+    value: "1-day",
+    label: "1 Day Before",
+    description: "Send reminder 1 day before the event starts",
   },
   {
     value: "5-hours",
@@ -45,9 +50,14 @@ const REMINDER_OPTIONS: {
     description: "Send reminder 5 hours before the event starts",
   },
   {
-    value: "1-day",
-    label: "1 Day Before",
-    description: "Send reminder 1 day before the event starts",
+    value: "3-hours",
+    label: "3 Hours Before",
+    description: "Send reminder 3 hours before the event starts",
+  },
+  {
+    value: "1-hour",
+    label: "1 Hour Before",
+    description: "Send reminder 1 hour before the event starts",
   },
 ];
 

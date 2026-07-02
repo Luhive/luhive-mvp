@@ -8,12 +8,28 @@ import timezone from "dayjs/plugin/timezone";
 import type { ActionFunctionArgs } from "react-router";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
+import type { Database } from "~/shared/models/database.types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+type ReminderTime = Database["public"]["Enums"]["reminder_time"];
+
+const REMINDER_TIMES: ReminderTime[] = [
+  "1-hour",
+  "3-hours",
+  "5-hours",
+  "1-day",
+  "3-days",
+  "5-days",
+];
+
+/**
+ * External cron must POST to /api/events/send-reminders once per offset, e.g. every 30 minutes:
+ * { "reminderTime": "5-days" | "3-days" | "1-day" | "5-hours" | "3-hours" | "1-hour", "secret": CRON_SECRET }
+ */
 interface SendRemindersRequest {
-  reminderTime: "1-hour" | "3-hours" | "5-hours" | "1-day";
+  reminderTime: ReminderTime;
   secret?: string;
 }
 
@@ -24,7 +40,7 @@ const FROM_EMAIL = process.env.EMAIL_SENDER?.includes("<")
   ? process.env.EMAIL_SENDER
   : `Luhive <${EMAIL_SENDER}>`;
 
-function getRemindersToSend(reminderTime: "1-hour" | "3-hours" | "5-hours" | "1-day") {
+function getRemindersToSend(reminderTime: ReminderTime) {
   const now = dayjs.utc();
 
   switch (reminderTime) {
@@ -48,6 +64,33 @@ function getRemindersToSend(reminderTime: "1-hour" | "3-hours" | "5-hours" | "1-
         start: now.clone().add(1, "day").subtract(30, "minutes"),
         end: now.clone().add(1, "day").add(30, "minutes"),
       };
+    case "3-days":
+      return {
+        start: now.clone().add(3, "day").subtract(30, "minutes"),
+        end: now.clone().add(3, "day").add(30, "minutes"),
+      };
+    case "5-days":
+      return {
+        start: now.clone().add(5, "day").subtract(30, "minutes"),
+        end: now.clone().add(5, "day").add(30, "minutes"),
+      };
+  }
+}
+
+function getReminderSubjectSuffix(reminderTime: ReminderTime): string {
+  switch (reminderTime) {
+    case "5-days":
+      return "in 5 days";
+    case "3-days":
+      return "in 3 days";
+    case "1-day":
+      return "tomorrow";
+    case "5-hours":
+      return "starting in 5 hours";
+    case "3-hours":
+      return "starting in 3 hours";
+    case "1-hour":
+      return "starting in 1 hour";
   }
 }
 
@@ -64,7 +107,7 @@ interface EventWithReminders {
   online_meeting_link: string | null;
   community_id: string;
   event_reminders: {
-    reminder_times: ("1-hour" | "3-hours" | "5-hours" | "1-day")[];
+    reminder_times: ReminderTime[];
     custom_message: string | null;
   } | null;
   communities: {
@@ -89,7 +132,7 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!["1-hour", "3-hours", "5-hours", "1-day"].includes(reminderTime)) {
+  if (!REMINDER_TIMES.includes(reminderTime)) {
     return Response.json(
       { error: "Invalid reminderTime parameter" },
       { status: 400 }
@@ -217,15 +260,7 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
             await resend.emails.send({
               from: FROM_EMAIL,
               to: [participantEmail],
-              subject: `Reminder: ${event.title} is ${
-                reminderTime === "1-day"
-                  ? "tomorrow"
-                  : reminderTime === "5-hours"
-                  ? "starting in 5 hours"
-                  : reminderTime === "3-hours"
-                  ? "starting in 3 hours"
-                  : "starting in 1 hour"
-              }!`,
+              subject: `Reminder: ${event.title} is ${getReminderSubjectSuffix(reminderTime)}!`,
               react: EventReminderEmail({
                 eventTitle: event.title,
                 communityName:

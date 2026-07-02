@@ -734,7 +734,7 @@ export type Database = {
       event_approval_statuses: "pending" | "approved" | "rejected"
       event_status: "draft" | "published" | "cancelled"
       event_type: "in-person" | "online" | "hybrid"
-      reminder_time: "1-hour" | "3-hours" | "5-hours" | "1-day"
+      reminder_time: "1-hour" | "3-hours" | "5-hours" | "1-day" | "3-days" | "5-days"
       rsvp_status: "going" | "not_going" | "maybe"
     }
     CompositeTypes: {
@@ -866,7 +866,7 @@ export const Constants = {
       event_approval_statuses: ["pending", "approved", "rejected"],
       event_status: ["draft", "published", "cancelled"],
       event_type: ["in-person", "online", "hybrid"],
-      reminder_time: ["1-hour", "3-hours", "5-hours", "1-day"],
+      reminder_time: ["1-hour", "3-hours", "5-hours", "1-day", "3-days", "5-days"],
       rsvp_status: ["going", "not_going", "maybe"],
     },
   },
