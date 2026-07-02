@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '~/shared/components/ui/card';
 import { Button } from '~/shared/components/ui/button';
@@ -7,42 +7,19 @@ import { Spinner } from '~/shared/components/ui/spinner';
 import { Badge } from '~/shared/components/ui/badge';
 import { Input } from '~/shared/components/ui/input';
 import { Label } from '~/shared/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/shared/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '~/shared/components/ui/alert';
-import {
-  Save,
-  FileText,
-  Calendar,
-  MapPin,
-  Eye,
-  MessageCircle,
-  ExternalLink,
-  Lightbulb,
-  Link as LinkIcon,
-  X,
-} from 'lucide-react';
+import { Save, FileText, Calendar, Eye, ExternalLink, Link as LinkIcon, Users } from 'lucide-react';
 import { EventCoverUpload } from '~/modules/events/components/event-form/event-cover-upload';
-import { EventBasicInfo } from '~/modules/events/components/event-form/fields/event-basic-info';
 import { EventDateTime } from '~/modules/events/components/event-form/fields/event-datetime';
-import { EventLocation } from '~/modules/events/components/event-form/fields/event-location';
-import { EventDiscussion } from '~/modules/events/components/event-form/fields/event-discussion';
+import { PhysicalLocationField } from '~/modules/events/components/event-form/fields/physical-location-field';
 import { createClient } from '~/shared/lib/supabase/client';
 import { ensureUniqueEventSlugClient } from '~/modules/events/data/events-repo.client';
 import { toast } from 'sonner';
 import type { Database } from '~/shared/models/database.types';
 import type { ExternalPlatform } from '~/modules/events/model/event.types';
+import type { LocationValue } from '~/modules/events/model/event-location.types';
 import {
   detectExternalPlatform,
-  getExternalPlatformName,
-  getExternalPlatformIcon,
   isValidExternalUrl,
-  externalPlatformOptions,
 } from '~/modules/events/utils/external-platform';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -51,28 +28,24 @@ import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-type EventType = Database['public']['Enums']['event_type'];
 type EventStatus = Database['public']['Enums']['event_status'];
 
 interface ExternalEventFormProps {
   communitySlug: string;
   communityId: string;
+  communityName: string;
   eventId?: string;
   mode: 'create' | 'edit';
   initialData?: {
     title?: string;
-    description?: string;
     startDate?: Date;
     startTime?: string;
     endTime?: string;
     timezone?: string;
-    eventType?: EventType;
+    location?: LocationValue | null;
     locationAddress?: string;
-    onlineMeetingLink?: string;
-    discussionLink?: string;
     coverUrl?: string;
     status?: EventStatus;
-    externalPlatform?: ExternalPlatform;
     externalRegistrationUrl?: string;
   };
 }
@@ -80,49 +53,33 @@ interface ExternalEventFormProps {
 export function ExternalEventForm({
   communitySlug,
   communityId,
+  communityName,
   eventId,
   mode,
   initialData,
 }: ExternalEventFormProps) {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showNudge, setShowNudge] = useState(true);
-  const initialRef = useRef(initialData);
 
-  // Form state
   const [title, setTitle] = useState(initialData?.title || '');
-  const [description, setDescription] = useState(initialData?.description || '');
   const [startDate, setStartDate] = useState<Date | undefined>(initialData?.startDate);
   const [startTime, setStartTime] = useState(initialData?.startTime || '09:00');
   const [endTime, setEndTime] = useState(initialData?.endTime || '10:00');
   const [timezoneValue, setTimezoneValue] = useState(initialData?.timezone || 'Asia/Baku');
-  const [eventType, setEventType] = useState<EventType>(initialData?.eventType || 'in-person');
-  const [locationAddress, setLocationAddress] = useState(initialData?.locationAddress || '');
-  const [onlineMeetingLink, setOnlineMeetingLink] = useState(initialData?.onlineMeetingLink || '');
-  const [discussionLink, setDiscussionLink] = useState(initialData?.discussionLink || '');
+  const [location, setLocation] = useState<LocationValue | null>(initialData?.location ?? null);
   const [coverUrl, setCoverUrl] = useState(initialData?.coverUrl || '');
-  const [status, setStatus] = useState<EventStatus>(initialData?.status || 'draft');
-
-  // External registration state
-  const [externalPlatform, setExternalPlatform] = useState<ExternalPlatform>(
-    initialData?.externalPlatform || 'google_forms'
-  );
   const [externalRegistrationUrl, setExternalRegistrationUrl] = useState(
-    initialData?.externalRegistrationUrl || ''
+    initialData?.externalRegistrationUrl || '',
   );
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [externalPlatform, setExternalPlatform] = useState<ExternalPlatform>('other');
 
-  // Auto-detect platform when URL changes
   useEffect(() => {
     if (externalRegistrationUrl) {
-      const detected = detectExternalPlatform(externalRegistrationUrl);
-      if (detected !== 'other') {
-        setExternalPlatform(detected);
-      }
+      setExternalPlatform(detectExternalPlatform(externalRegistrationUrl));
     }
   }, [externalRegistrationUrl]);
 
-  // Validate URL
   useEffect(() => {
     if (externalRegistrationUrl && !isValidExternalUrl(externalRegistrationUrl)) {
       setUrlError('Please enter a valid URL (starting with http:// or https://)');
@@ -131,31 +88,12 @@ export function ExternalEventForm({
     }
   }, [externalRegistrationUrl]);
 
-  // Get platform icon component
-  const PlatformIcon = getExternalPlatformIcon(externalPlatform);
-
-  // Validation
   const isValid = () => {
     if (!title.trim()) return false;
     if (!startDate) return false;
     if (!startTime) return false;
     if (!externalRegistrationUrl.trim()) return false;
     if (!isValidExternalUrl(externalRegistrationUrl)) return false;
-
-    // Check event type specific validations
-    if (eventType === 'in-person' && !locationAddress.trim()) return false;
-    if (eventType === 'online' && !onlineMeetingLink.trim()) return false;
-    if (eventType === 'hybrid' && (!locationAddress.trim() || !onlineMeetingLink.trim())) return false;
-
-    // Validate discussion link if provided (must be valid URL)
-    if (discussionLink.trim()) {
-      try {
-        new URL(discussionLink.trim());
-      } catch {
-        return false;
-      }
-    }
-
     return true;
   };
 
@@ -168,10 +106,7 @@ export function ExternalEventForm({
     setIsSubmitting(true);
 
     try {
-      // Initialize Supabase client (client-side only)
       const supabase = createClient();
-
-      // Get current user
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -182,7 +117,6 @@ export function ExternalEventForm({
 
       const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
 
-      // Combine date and time into ISO timestamp with timezone
       const startDateTime = dayjs
         .tz(`${dayjs(startDate).format('YYYY-MM-DD')}T${startTime}`, timezoneValue)
         .toISOString();
@@ -193,26 +127,27 @@ export function ExternalEventForm({
             .toISOString()
         : null;
 
-      // Prepare event data
       const eventData = {
         community_id: communityId,
         created_by: user.id,
         title,
-        description: description || null,
+        description: null,
         start_time: startDateTime,
         end_time: endDateTime,
         timezone: timezoneValue,
-        event_type: eventType,
-        location_address: locationAddress || null,
-        online_meeting_link: onlineMeetingLink || null,
-        discussion_link: discussionLink.trim() || null,
+        event_type: 'in-person' as const,
+        location_address: location?.address || initialData?.locationAddress?.trim() || null,
+        location_name: location?.name ?? null,
+        location_lat: location?.lat ?? null,
+        location_lng: location?.lng ?? null,
+        location_place_id: location?.placeId ?? null,
+        online_meeting_link: null,
+        discussion_link: null,
         cover_url: coverUrl || null,
         status: submitStatus,
-        // External registration fields
         registration_type: 'external',
         external_platform: externalPlatform,
         external_registration_url: externalRegistrationUrl.trim(),
-        // Set these to null for external events
         capacity: null,
         registration_deadline: null,
         is_approve_required: false,
@@ -222,7 +157,6 @@ export function ExternalEventForm({
       if (mode === 'create') {
         const slug = await ensureUniqueEventSlugClient(communityId, title);
 
-        // Insert new event
         const { data: newEvent, error } = await supabase
           .from('events')
           .insert({ ...eventData, slug })
@@ -235,28 +169,23 @@ export function ExternalEventForm({
           return;
         }
 
-        // Create host collaboration record
-        const { error: collabError } = await supabase
-          .from('event_collaborations')
-          .insert({
-            event_id: newEvent.id,
-            community_id: communityId,
-            role: 'host',
-            status: 'accepted',
-            invited_by: user.id,
-            invited_at: new Date().toISOString(),
-            accepted_at: new Date().toISOString(),
-          });
+        const { error: collabError } = await supabase.from('event_collaborations').insert({
+          event_id: newEvent.id,
+          community_id: communityId,
+          role: 'host',
+          status: 'accepted',
+          invited_by: user.id,
+          invited_at: new Date().toISOString(),
+          accepted_at: new Date().toISOString(),
+        });
 
         if (collabError) {
           console.error('Error creating host collaboration:', collabError);
-          // Don't fail the event creation, just log the error
         }
 
-        toast.success(`External event ${isDraft ? 'saved as draft' : 'published'} successfully!`);
+        toast.success(`Link event ${isDraft ? 'saved as draft' : 'published'} successfully!`);
         navigate(`/dashboard/${communitySlug}/events`);
       } else if (mode === 'edit' && eventId) {
-        // Check if community is host (only host can update)
         const { data: collaboration } = await supabase
           .from('event_collaborations')
           .select('role')
@@ -271,57 +200,12 @@ export function ExternalEventForm({
           return;
         }
 
-        // Update existing event
         const { error } = await supabase.from('events').update(eventData).eq('id', eventId);
 
         if (error) {
           console.error('Error updating event:', error);
           toast.error(error.message || 'Failed to update event');
           return;
-        }
-
-        // For external events, also notify attendees if only schedule/location changed
-        const submitStatus: EventStatus = isDraft ? 'draft' : 'published';
-        const initial = initialRef.current;
-
-        if (submitStatus === 'published' && initial) {
-          const sameDate = (a?: Date, b?: Date) => {
-            if (!a && !b) return true;
-            if (!a || !b) return false;
-            return dayjs(a).isSame(dayjs(b), 'day');
-          };
-
-          const sameOrDefault = (a: string | undefined, b: string | undefined, fallback: string) =>
-            (a || fallback) === (b || fallback);
-
-          const nonScheduleChanged =
-            (initial.title || '') !== title ||
-            (initial.description || '') !== description ||
-            (initial.eventType || 'in-person') !== eventType ||
-            (initial.discussionLink || '') !== discussionLink ||
-            (initial.coverUrl || '') !== coverUrl ||
-            (initial.timezone || 'Asia/Baku') !== timezoneValue;
-
-          const scheduleChanged =
-            !sameDate(initial.startDate, startDate) ||
-            !sameOrDefault(initial.startTime, startTime, '09:00') ||
-            !sameOrDefault(initial.endTime, endTime, '10:00') ||
-            (initial.locationAddress || '') !== locationAddress ||
-            (initial.onlineMeetingLink || '') !== onlineMeetingLink;
-
-          if (!nonScheduleChanged && scheduleChanged) {
-            try {
-              await fetch('/api/events/schedule-update', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ eventId }),
-              });
-            } catch (notifyError) {
-              console.error('Failed to trigger schedule update emails:', notifyError);
-            }
-          }
         }
 
         toast.success('Event updated successfully!');
@@ -337,27 +221,24 @@ export function ExternalEventForm({
 
   return (
     <div className="space-y-6">
-      {/* Header with Actions */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">
-                {mode === 'create' ? 'Create External Event' : 'Edit External Event'}
-              </h1>
-              <Badge variant="outline" className="border-primary/50 bg-primary/5 text-primary">
-                <ExternalLink className="h-3 w-3 mr-1" />
-                External Registration
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {mode === 'create'
-                ? 'Create an event with registration on an external platform'
-                : 'Update external event information'}
-            </p>
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">
+              {mode === 'create' ? 'Create Link Event' : 'Edit Link Event'}
+            </h1>
+            <Badge variant="outline" className="border-primary/50 bg-primary/5 text-primary">
+              <ExternalLink className="h-3 w-3 mr-1" />
+              Link event
+            </Badge>
           </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {mode === 'create'
+              ? 'Add a simple event card that links to an external event page'
+              : 'Update link event information'}
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="hidden lg:flex gap-2">
           <Button
             type="button"
             variant="outline"
@@ -389,7 +270,7 @@ export function ExternalEventForm({
             ) : (
               <>
                 <Eye className="h-4 w-4 mr-2" />
-                Publish External Event
+                Publish
               </>
             )}
           </Button>
@@ -398,38 +279,8 @@ export function ExternalEventForm({
 
       <Separator />
 
-      {/* Conversion Nudge */}
-      {showNudge && (
-        <Alert className="bg-primary/5 border-primary/20">
-          <Lightbulb className="h-4 w-4 text-primary" />
-          <AlertTitle className="text-primary text-md">Tip: Get more from Luhive</AlertTitle>
-          <AlertDescription className="text-muted-foreground">
-            Switch to Luhive registration to get automatic analytics, email reminders, and attendee
-            management.{' '}
-            <Button
-              variant="link"
-              className="h-auto p-0 text-primary"
-              onClick={() => navigate(`/dashboard/${communitySlug}/events/create`)}
-            >
-              Create with Luhive Registration →
-            </Button>
-          </AlertDescription>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-2 right-2 h-6 w-6"
-            onClick={() => setShowNudge(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </Alert>
-      )}
-
-      {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Cover and Preview */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Event Cover */}
+        <div className="lg:col-span-1">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Event Cover</CardTitle>
@@ -444,77 +295,72 @@ export function ExternalEventForm({
               />
             </CardContent>
           </Card>
-
-          {/* Quick Preview */}
-          <Card className="bg-muted/30">
-            <CardHeader>
-              <CardTitle className="text-base">Preview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex items-start gap-2">
-                <FileText className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{title || 'Event Title'}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-muted-foreground">
-                    {startDate ? dayjs(startDate).format('MMM D, YYYY') : 'No date set'}
-                    {startTime && ` at ${startTime}`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1">
-                  <Badge variant="secondary" className="text-xs">
-                    {eventType === 'in-person' && 'In-person'}
-                    {eventType === 'online' && 'Online'}
-                    {eventType === 'hybrid' && 'Hybrid'}
-                  </Badge>
-                </div>
-              </div>
-              <Separator />
-              <div className="flex items-start gap-2">
-                <PlatformIcon className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
-                <div className="flex-1">
-                  <p className="text-muted-foreground text-xs">
-                    Registration on {getExternalPlatformName(externalPlatform)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Right Column - Form Fields */}
-        <div className="lg:col-span-2 space-y-6 max-h-[75svh] overflow-y-scroll">
-          {/* Basic Information */}
+        <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Basic Information
+                <LinkIcon className="h-4 w-4" />
+                Event Details
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <EventBasicInfo
-                title={title}
-                description={description}
-                onTitleChange={setTitle}
-                onDescriptionChange={setDescription}
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="event-page-url">Event Page URL *</Label>
+                <Input
+                  id="event-page-url"
+                  type="url"
+                  placeholder="https://eventbrite.com/e/some-event"
+                  value={externalRegistrationUrl}
+                  onChange={(e) => setExternalRegistrationUrl(e.target.value)}
+                  className={urlError ? 'border-red-500' : ''}
+                />
+                {urlError ? (
+                  <p className="text-xs text-red-500">{urlError}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Where visitors go when they click &quot;Go to event&quot;
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="event-name">Event Name *</Label>
+                <Input
+                  id="event-name"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Happy Hour Drinks"
+                  maxLength={200}
+                />
+              </div>
+
+              <PhysicalLocationField
+                location={location}
+                legacyAddress={
+                  !location && initialData?.locationAddress
+                    ? initialData.locationAddress
+                    : undefined
+                }
+                onLocationChange={setLocation}
               />
+
+              <div className="space-y-2">
+                <Label>Host</Label>
+                <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+                  <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span>{communityName}</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Date & Time */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Date & Time
+                Event Time
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -530,142 +376,9 @@ export function ExternalEventForm({
               />
             </CardContent>
           </Card>
-
-          {/* Location */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Location
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventLocation
-                eventType={eventType}
-                locationAddress={locationAddress}
-                onlineMeetingLink={onlineMeetingLink}
-                onEventTypeChange={setEventType}
-                onLocationAddressChange={setLocationAddress}
-                onOnlineMeetingLinkChange={setOnlineMeetingLink}
-              />
-            </CardContent>
-          </Card>
-
-          {/* External Registration */}
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <LinkIcon className="h-4 w-4" />
-                External Registration
-                <Badge
-                  variant="outline"
-                  className="ml-2 border-primary/50 bg-primary/5 text-primary"
-                >
-                  Required
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Users will be redirected to your external form to register for this event.
-              </p>
-
-              {/* Platform Selector */}
-              <div className="space-y-2">
-                <Label htmlFor="external-platform">Registration Platform</Label>
-                <Select
-                  value={externalPlatform}
-                  onValueChange={(value) => setExternalPlatform(value as ExternalPlatform)}
-                >
-                  <SelectTrigger id="external-platform">
-                    <SelectValue placeholder="Select platform" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {externalPlatformOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* URL Input */}
-              <div className="space-y-2">
-                <Label htmlFor="external-url">Registration Form URL</Label>
-                <Input
-                  id="external-url"
-                  type="url"
-                  placeholder="https://forms.gle/xxxxx or https://forms.office.com/xxxxx"
-                  value={externalRegistrationUrl}
-                  onChange={(e) => setExternalRegistrationUrl(e.target.value)}
-                  className={urlError ? 'border-red-500' : ''}
-                />
-                {urlError ? (
-                  <p className="text-xs text-red-500">{urlError}</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Paste the link where people can register for this event
-                  </p>
-                )}
-              </div>
-
-              {/* URL Preview */}
-              {externalRegistrationUrl && isValidExternalUrl(externalRegistrationUrl) && (
-                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
-                  <PlatformIcon className="h-5 w-5 text-primary" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">
-                      {getExternalPlatformName(externalPlatform)}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {externalRegistrationUrl}
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <a
-                      href={externalRegistrationUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      Test
-                    </a>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Discussion Channel */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                Discussion Channel
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventDiscussion
-                discussionLink={discussionLink}
-                onDiscussionLinkChange={setDiscussionLink}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Info Box */}
-          <Alert>
-            <ExternalLink className="h-4 w-4" />
-            <AlertTitle>External Registration Note</AlertTitle>
-            <AlertDescription>
-              This event uses external registration. Registration counts must be updated manually if
-              you want to display them on the event page.
-            </AlertDescription>
-          </Alert>
         </div>
       </div>
 
-      {/* Mobile Submit Buttons */}
       <div className="lg:hidden sticky bottom-0 bg-background border-t p-4 -mx-4 flex gap-2">
         <Button
           type="button"
@@ -688,4 +401,3 @@ export function ExternalEventForm({
     </div>
   );
 }
-

@@ -6,7 +6,6 @@ import { EventStatusUpdateEmail } from "~/templates/event-status-update-email";
 import { EventUpdateEmail } from "~/templates/event-update-email";
 import { EventReminderEmail } from "~/templates/event-reminder-email";
 import { EventRegistrationRequestEmail } from "~/templates/event-registration-request-email";
-import { EventSubscriptionEmail } from "~/templates/event-subscription-email";
 import { CommunityWaitlistNotification } from "~/templates/community-waitlist-notification";
 import { CommunityJoinNotification } from "~/templates/community-join-notification";
 import { CommunityAnnouncementEmail } from "~/templates/community-announcement-email";
@@ -555,23 +554,6 @@ interface CommunityJoinNotificationData {
   memberEmail: string;
   ownerEmail: string;
   joinedAt: string;
-}
-
-interface SubscriptionEmailData {
-  eventTitle: string;
-  communityName: string;
-  eventDate: string;
-  eventTime: string;
-  eventLink: string;
-  externalRegistrationUrl: string;
-  externalPlatformName: string;
-  recipientName: string;
-  recipientEmail: string;
-  registerAccountLink: string;
-  locationAddress?: string;
-  onlineMeetingLink?: string;
-  startTimeISO: string;
-  endTimeISO: string;
 }
 
 interface CollaborationInviteEmailData {
@@ -1267,98 +1249,6 @@ export async function sendCommunityJoinNotification(
     to: ownerEmail,
     communityName,
     memberName,
-  });
-
-  return { success: true, data: { id: result.id } };
-}
-
-export async function sendSubscriptionConfirmationEmail(
-  data: SubscriptionEmailData
-) {
-  const {
-    eventTitle,
-    communityName,
-    eventDate,
-    eventTime,
-    eventLink,
-    externalRegistrationUrl,
-    externalPlatformName,
-    recipientName,
-    recipientEmail,
-    registerAccountLink,
-    locationAddress,
-    onlineMeetingLink,
-    startTimeISO,
-    endTimeISO,
-  } = data;
-
-  console.log(`📧 Attempting to send subscription confirmation email:`, {
-    to: recipientEmail,
-    from: FROM_EMAIL,
-    subject: `You're subscribed for updates about ${eventTitle}!`,
-  });
-
-  // Generate ICS file content
-  console.log(`   Generating ICS attachment...`);
-  const icsContent = generateICS({
-    title: eventTitle,
-    description: `${eventTitle}\n\nHosted by: ${communityName}\n\nView event details: ${eventLink}`,
-    location: locationAddress || onlineMeetingLink || "Online Event",
-    startTime: startTimeISO,
-    endTime: endTimeISO,
-    url: eventLink,
-    organizerName: communityName,
-    organizerEmail: "events@luhive.com",
-  });
-  console.log(`   ICS attachment created`);
-
-  const result = await sendEmail({
-    to: recipientEmail,
-    subject: `You're subscribed for updates about ${eventTitle}!`,
-    react: EventSubscriptionEmail({
-      eventTitle,
-      communityName,
-      eventDate,
-      eventTime,
-      eventLink,
-      externalRegistrationUrl,
-      externalPlatformName,
-      recipientName,
-      registerAccountLink,
-      locationAddress,
-      onlineMeetingLink,
-    }),
-    attachments: [
-      {
-        filename: `${eventTitle.replace(/[^a-z0-9]/gi, "_")}.ics`,
-        content: Buffer.from(icsContent).toString("base64"),
-      },
-    ],
-    metadata: {
-      template: "EventSubscriptionEmail",
-      eventTitle,
-      communityName,
-    },
-  });
-
-  if (!result.success) {
-    console.error("❌ Failed to send subscription email:", {
-      to: recipientEmail,
-      fromEmail: FROM_EMAIL,
-      error: result.error,
-    });
-    throw new Error(
-      `Failed to send subscription email: ${
-        result.error?.message || "Unknown error"
-      }`
-    );
-  }
-
-  console.log(`✅ Subscription confirmation email sent successfully:`, {
-    id: result.id,
-    from: FROM_EMAIL,
-    to: recipientEmail,
-    hasAttachment: true,
   });
 
   return { success: true, data: { id: result.id } };

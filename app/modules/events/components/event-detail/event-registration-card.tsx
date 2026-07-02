@@ -3,12 +3,11 @@ import { ExternalLink } from "lucide-react";
 import { Card, CardContent } from "~/shared/components/ui/card";
 import { Badge } from "~/shared/components/ui/badge";
 import { AdminManagementView } from "./registration-states/admin-management-view";
-import { ExternalSubscribeView } from "./registration-states/external-subscribe-view";
+import { ExternalLinkView } from "./registration-states/external-link-view";
 import { ExternalPastView } from "./registration-states/external-past-view";
 import { NativeRegisteredView } from "./registration-states/native-registered-view";
 import { NativeCanRegisterView } from "./registration-states/native-can-register-view";
 import { NativeClosedView } from "./registration-states/native-closed-view";
-import { getExternalPlatformIcon, getExternalPlatformName } from "~/modules/events/utils/external-platform";
 import type { Community, Event } from "~/shared/models/entity.types";
 import type { TimeRemaining } from "~/modules/events/model/event-detail-view.types";
 import type { UserData } from "~/modules/events/server/event-detail-loader.server";
@@ -32,7 +31,6 @@ interface EventRegistrationCardProps {
 	eventTrackingContext: EventTrackingContext;
 	onShowCustomQuestionsForm: () => void;
 	onShowRsvpModal: () => void;
-	onShowSubscribeDialog: () => void;
 }
 
 export function EventRegistrationCard({
@@ -52,7 +50,6 @@ export function EventRegistrationCard({
 	eventTrackingContext,
 	onShowCustomQuestionsForm,
 	onShowRsvpModal,
-	onShowSubscribeDialog,
 }: EventRegistrationCardProps) {
 	const {
 		registrationCount,
@@ -60,19 +57,18 @@ export function EventRegistrationCard({
 		userRegistrationStatus,
 		canRegister,
 		isOwnerOrAdmin,
-		user,
 	} = userData;
 
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center gap-2">
 				<h2 className="text-xl font-semibold">
-					{isOwnerOrAdmin ? "Event Management" : "Registration"}
+					{isOwnerOrAdmin ? "Event Management" : isExternalEvent ? "Event" : "Registration"}
 				</h2>
 				{isExternalEvent && (
 					<Badge variant="outline" className="border-primary/50 bg-primary/5 text-primary">
 						<ExternalLink className="h-3 w-3 mr-1" />
-						External
+						Link event
 					</Badge>
 				)}
 			</div>
@@ -86,15 +82,11 @@ export function EventRegistrationCard({
 					<Activity
 						mode={!isOwnerOrAdmin && isExternalEvent && !isPastEvent ? "visible" : "hidden"}
 					>
-						<ExternalSubscribeView
+						<ExternalLinkView
 							event={event}
+							community={community}
 							externalPlatform={externalPlatform}
 							externalPlatformName={externalPlatformName}
-							registrationCount={registrationCount}
-							isUserRegistered={isUserRegistered}
-							user={user}
-							isSubmitting={isSubmitting}
-							onShowSubscribeDialog={onShowSubscribeDialog}
 						/>
 					</Activity>
 

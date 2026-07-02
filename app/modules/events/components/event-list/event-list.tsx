@@ -162,7 +162,11 @@ function EventCardContent({
       {/* Event Cover - Small Square */}
       <div className="relative aspect-square w-20 h-20 flex-shrink-0 overflow-hidden rounded-lg border bg-gradient-to-br from-primary/5 via-primary/10 to-background">
         {event.cover_url ? (
-          <img src={event.cover_url} alt={event.title} className="w-full h-full object-cover" />
+          <img
+            src={event.cover_url}
+            alt={event.title}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
             <Calendar className="h-8 w-8 text-primary/30" />
@@ -197,8 +201,8 @@ function EventCardContent({
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
           <span className="truncate">
-            {eventDate.format('MMM D, YYYY')} • {eventDate.format('h:mm A')}
-            {eventEndDate && ` - ${eventEndDate.format('h:mm A')}`}
+            {eventDate.format("MMM D, YYYY")} • {eventDate.format("h:mm A")}
+            {eventEndDate && ` - ${eventEndDate.format("h:mm A")}`}
           </span>
         </div>
 
@@ -206,7 +210,7 @@ function EventCardContent({
         {event.location_address && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="truncate">{event.location_address.split(',')[0]}</span>
+            <span className="truncate">{event.location_name}</span>
           </div>
         )}
 
@@ -216,8 +220,8 @@ function EventCardContent({
             <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
             <span>
               {platform
-                ? `Register on ${getExternalPlatformName(platform)}`
-                : 'External Registration'}
+                ? `View on ${getExternalPlatformName(platform)}`
+                : "Link event"}
             </span>
           </div>
         ) : (
@@ -226,7 +230,7 @@ function EventCardContent({
               <Users className="h-3.5 w-3.5 flex-shrink-0" />
               <span>{event.capacity} spots</span>
             </div>
-            )
+          )
         )}
       </div>
     </div>

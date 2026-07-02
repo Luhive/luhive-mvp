@@ -131,21 +131,41 @@ export default function AttendersPage() {
     );
   }
 
+  if (event.registration_type === "external") {
+    return (
+      <div className="py-4 px-4 md:px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center space-y-4 max-w-md">
+              <h2 className="text-lg font-semibold">Link events don&apos;t track attendees</h2>
+              <p className="text-muted-foreground text-sm">
+                Attendee management is only available for events with Luhive registration.
+                Visitors on link events are redirected to the external event page.
+              </p>
+              {slug ? (
+                <Link
+                  to={`/dashboard/${slug}/events`}
+                  className="inline-flex text-sm font-medium text-primary hover:underline"
+                >
+                  Back to events
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-4 px-4 md:px-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">
-            {event.registration_type === "external"
-              ? "Event Subscribers"
-              : "Event Attenders"}
-          </h1>
+          <h1 className="text-2xl font-semibold">Event Attenders</h1>
           <div className="space-y-1">
             <h2 className="text-lg font-medium">{event.title}</h2>
             <p className="text-sm text-muted-foreground">
-              {event.registration_type === "external"
-                ? "Manage and view all subscribers for this event"
-                : "Manage and view all registered attenders for this event"}
+              Manage and view all registered attenders for this event
             </p>
           </div>
         </div>
@@ -162,10 +182,7 @@ export default function AttendersPage() {
         ) : null}
 
         <Suspense fallback={<AttendersTableSkeleton />}>
-          <AttendersTable
-            eventId={eventId}
-            isExternalEvent={event.registration_type === "external"}
-          />
+          <AttendersTable eventId={eventId} />
         </Suspense>
       </div>
     </div>

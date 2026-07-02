@@ -10,7 +10,6 @@ import {
   MapPin,
   Copy,
   ExternalLink,
-  Bell,
   ChevronRight,
   BarChart3,
 } from "lucide-react";
@@ -40,7 +39,6 @@ import { Badge } from "~/shared/components/ui/badge";
 import AttendersAvatars from "~/modules/events/components/attenders/attenders-avatars";
 import HostedBy from "~/modules/events/components/shared/hosted-by";
 import { EventRsvpModal } from "../registration/event-rsvp-modal";
-import { AnonymousSubscriptionDialog } from "../registration/anonymous-subscription-dialog";
 import { CustomQuestionsForm } from "../registration/custom-questions-form";
 import { createClient } from "~/shared/lib/supabase/client";
 import {
@@ -83,7 +81,6 @@ export function EventPreviewSidebar({
   const navigation = useNavigation();
   const fetcher = useFetcher();
   const [showRsvpModal, setShowRsvpModal] = useState(false);
-  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
   const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
   const [localIsRegistered, setLocalIsRegistered] = useState(isUserRegistered);
   const [hostingCommunities, setHostingCommunities] = useState<Array<{
@@ -537,22 +534,16 @@ export function EventPreviewSidebar({
       return;
     }
 
-    // For external events, handle subscription
+    // For link events, open external URL directly
     if (isExternalEvent) {
-      if (user) {
-        // Logged-in user: navigate to external URL or show subscription dialog
-        if (event.external_registration_url) {
-          window.open(
-            event.external_registration_url,
-            "_blank",
-            "noopener,noreferrer",
-          );
-        } else {
-          setShowSubscribeDialog(true);
-        }
+      if (event.external_registration_url) {
+        window.open(
+          event.external_registration_url,
+          "_blank",
+          "noopener,noreferrer",
+        );
       } else {
-        // Not logged in: show subscription dialog
-        setShowSubscribeDialog(true);
+        handleNavigateToEvent();
       }
       return;
     }
@@ -847,10 +838,9 @@ export function EventPreviewSidebar({
                   onClick={handleRegisterClick}
                   className="w-[20rem]"
                   size="lg"
-                  disabled={isRegistering}
                 >
-                  <Bell className="h-4 w-4 mr-2" />
-                  {isRegistering ? "Processing..." : "Subscribe for Updates"}
+                  Go to event
+                  <ExternalLink className="h-4 w-4 ml-2" />
                 </Button>
               ) : user ? (
                 // Logged-in user: show registration form
@@ -972,12 +962,6 @@ export function EventPreviewSidebar({
         customQuestions={(event.custom_questions as CustomQuestionJson) ?? null}
         userPhone={userPhone ?? undefined}
         trackingContext={trackingContext}
-      />
-      <AnonymousSubscriptionDialog
-        open={showSubscribeDialog}
-        onOpenChange={setShowSubscribeDialog}
-        eventId={event.id}
-        communitySlug={community.slug}
       />
       {hasCustomQuestions && (
         <CustomQuestionsForm

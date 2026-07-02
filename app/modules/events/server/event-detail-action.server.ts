@@ -2,12 +2,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { createClient } from "~/shared/lib/supabase/server";
-import { sendSubscriptionConfirmationEmail } from "~/shared/lib/email.server";
 import { Routes } from "~/shared/lib/routing/routes";
-import { getExternalPlatformName } from "~/modules/events/utils/external-platform";
-import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import { sanitizeDuplicateError } from "~/modules/events/utils/sanitize-error";
-import { redirect } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { getIpLocation } from "~/shared/lib/ip-location.server";
 import { getUserAgent } from "~/modules/community/utils/user-agent";
@@ -138,165 +134,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const eventId = event.id;
   const slug = communitySlug;
 
-  if (intent === "anonymous-subscribe") {
-    if (event.registration_type !== "external") {
-      return {
-        success: false,
-        error: "Subscribe is only available for external events",
-      };
-    }
-
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-
-    if (!name || !email) {
-      return { success: false, error: "Name and email are required" };
-    }
-
-    const { data: existingRegistration, error: existingRegistrationError } =
-      await supabase
-        .from("event_registrations")
-        .select("id, is_verified")
-        .eq("event_id", eventId)
-        .eq("anonymous_email", email)
-        .maybeSingle();
-
-    if (
-      existingRegistrationError &&
-      existingRegistrationError.code !== "PGRST116"
-    ) {
-      console.error("Error checking subscription:", existingRegistrationError);
-      return {
-        success: false,
-        error: "Failed to check existing subscription",
-      };
-    }
-
-    if (existingRegistration) {
-      return {
-        success: false,
-        error: "This email is already subscribed to this event",
-      };
-    }
-
-    // Get community ID from slug to track registration source
-    let registrationSourceCommunityId = community.id;
-    if (slug && slug !== community.slug) {
-      // User is subscribing from a co-host community page
-      const { data: sourceCommunity } = await supabase
-        .from("communities")
-        .select("id")
-        .eq("slug", slug)
-        .single();
-      if (sourceCommunity) {
-        registrationSourceCommunityId = sourceCommunity.id;
-      }
-    }
-
-    const { error: subscribeError } = await supabase
-      .from("event_registrations")
-      .insert({
-        event_id: eventId,
-        anonymous_name: name,
-        anonymous_email: email,
-        rsvp_status: "going",
-        is_verified: true,
-        approval_status: "approved",
-        registration_source_community_id: registrationSourceCommunityId,
-        registration_ip: (await getIpLocation(request)).ip,
-      });
-
-    if (subscribeError) {
-      const duplicateError = sanitizeDuplicateError(subscribeError, {
-        email,
-        isVerified: true,
-      });
-      if (duplicateError) {
-        return { success: false, error: duplicateError };
-      }
-      console.error("Error creating subscription:", subscribeError);
-      return {
-        success: false,
-        error: "Failed to subscribe. Please try again.",
-      };
-    }
-
-    const eventDate = dayjs(event.start_time).tz(event.timezone);
-    const eventLink = Routes.absolute(
-      new URL(request.url).origin,
-      Routes.community.event(slug, publicEventSlug(event)),
-    );
-    const registerAccountLink = `${new URL(request.url).origin}/signup`;
-
-    try {
-      const externalPlatformName = getExternalPlatformName(
-        (event.external_platform as ExternalPlatform) || "other"
-      );
-
-      await sendSubscriptionConfirmationEmail({
-        eventTitle: event.title,
-        communityName: community.name,
-        eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-        eventTime: eventDate.format("h:mm A z"),
-        eventLink,
-        externalRegistrationUrl: event.external_registration_url || "",
-        externalPlatformName,
-        recipientName: name,
-        recipientEmail: email,
-        registerAccountLink,
-        locationAddress: event.location_address || undefined,
-        onlineMeetingLink: event.online_meeting_link || undefined,
-        startTimeISO: event.start_time,
-        endTimeISO: event.end_time || event.start_time,
-      });
-      // Note: SubscriptionEmailData doesn't carry locationMapUrl yet (external events only)
-    } catch (error) {
-      console.error("Failed to send subscription confirmation email:", error);
-    }
-
-    // Notify host and co-host community admins about new subscription
-    try {
-      const hostCommunityName = community.name;
-      const { data: collaborations } = await supabase
-        .from("event_collaborations")
-        .select("community_id, community:communities(name)")
-        .eq("event_id", eventId)
-        .eq("status", "accepted")
-        .neq("role", "host");
-
-      const coHostCommunityNames = collaborations
-        ?.map((c: any) => c.community?.name)
-        .filter(Boolean) as string[] || [];
-
-      await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "registration-notification",
-          eventId,
-          hostCommunityId: event.community_id,
-          hostCommunityName,
-          coHostCommunityNames,
-          eventTitle: event.title,
-          registrantName: name || email?.split("@")[0] || "Someone",
-          registrantEmail: email,
-          eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-          eventTime: eventDate.format("h:mm A z"),
-          eventLink,
-        }),
-      });
-    } catch (notifyError) {
-      console.error("Failed to trigger registration notification:", notifyError);
-    }
-
-    return {
-      success: true,
-      message: "Successfully subscribed for event updates!",
-    };
-  }
-
   const {
     data: { user },
     error: authError,
@@ -310,6 +147,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (intent === "register") {
+    if (event.registration_type === "external") {
+      return { success: false, error: "This event does not support registration on Luhive" };
+    }
+
     const { data: existingRegistration } = await supabase
       .from("event_registrations")
       .select("id")
@@ -580,167 +421,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  if (intent === "subscribe") {
-    if (event.registration_type !== "external") {
-      return {
-        success: false,
-        error: "Subscribe is only available for external events",
-      };
+  if (intent === "unregister") {
+    if (event.registration_type === "external") {
+      return { success: false, error: "This event does not support registration on Luhive" };
     }
 
-    const { data: existingRegistration } = await supabase
-      .from("event_registrations")
-      .select("id")
-      .eq("event_id", eventId)
-      .eq("user_id", user.id)
-      .single();
-
-    if (existingRegistration) {
-      return {
-        success: false,
-        error: "You are already subscribed to this event",
-      };
-    }
-
-    if (user.email) {
-      const { data: existingAnonymousRegistration } = await supabase
-        .from("event_registrations")
-        .select("id, is_verified")
-        .eq("event_id", eventId)
-        .eq("anonymous_email", user.email)
-        .maybeSingle();
-
-      if (existingAnonymousRegistration) {
-        return {
-          success: false,
-          error: "This email is already subscribed to this event",
-        };
-      }
-    }
-
-    // Get community ID from slug to track registration source
-    let registrationSourceCommunityId = community.id;
-    if (slug && slug !== community.slug) {
-      // User is subscribing from a co-host community page
-      const { data: sourceCommunity } = await supabase
-        .from("communities")
-        .select("id")
-        .eq("slug", slug)
-        .single();
-      if (sourceCommunity) {
-        registrationSourceCommunityId = sourceCommunity.id;
-      }
-    }
-
-    const { error: subscribeError } = await supabase
-      .from("event_registrations")
-      .insert({
-        event_id: eventId,
-        user_id: user.id,
-        rsvp_status: "going",
-        is_verified: true,
-        approval_status: "approved",
-        registration_source_community_id: registrationSourceCommunityId,
-        registration_ip: (await getIpLocation(request)).ip,
-      });
-
-    if (subscribeError) {
-      const duplicateError = sanitizeDuplicateError(subscribeError, {
-        email: user.email || undefined,
-      });
-      if (duplicateError) {
-        return { success: false, error: duplicateError };
-      }
-      console.error("Error creating subscription:", subscribeError);
-      return {
-        success: false,
-        error: "Failed to subscribe. Please try again.",
-      };
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
-
-    const eventDate = dayjs(event.start_time).tz(event.timezone);
-    const eventLink = Routes.absolute(
-      new URL(request.url).origin,
-      Routes.community.event(slug, publicEventSlug(event)),
-    );
-    const registerAccountLink = `${new URL(request.url).origin}/signup`;
-
-    try {
-      const externalPlatformName = getExternalPlatformName(
-        (event.external_platform as ExternalPlatform) || "other"
-      );
-
-      await sendSubscriptionConfirmationEmail({
-        eventTitle: event.title,
-        communityName: community.name,
-        eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-        eventTime: eventDate.format("h:mm A z"),
-        eventLink,
-        externalRegistrationUrl: event.external_registration_url || "",
-        externalPlatformName,
-        recipientName: profile?.full_name || "there",
-        recipientEmail: user.email || "",
-        registerAccountLink,
-        locationAddress: event.location_address || undefined,
-        onlineMeetingLink: event.online_meeting_link || undefined,
-        startTimeISO: event.start_time,
-        endTimeISO: event.end_time || event.start_time,
-      });
-      // Note: SubscriptionEmailData doesn't carry locationMapUrl yet (external events only)
-    } catch (error) {
-      console.error("Failed to send subscription email:", error);
-    }
-
-    // Notify host and co-host community admins about new subscription
-    try {
-      const hostCommunityName = community.name;
-      const { data: collaborations } = await supabase
-        .from("event_collaborations")
-        .select("community_id, community:communities(name)")
-        .eq("event_id", eventId)
-        .eq("status", "accepted")
-        .neq("role", "host");
-
-      const coHostCommunityNames = collaborations
-        ?.map((c: any) => c.community?.name)
-        .filter(Boolean) as string[] || [];
-
-      await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "registration-notification",
-          eventId,
-          hostCommunityId: event.community_id,
-          hostCommunityName,
-          coHostCommunityNames,
-          eventTitle: event.title,
-          registrantName: profile?.full_name || user.email?.split("@")[0] || "Someone",
-          registrantEmail: user.email || "",
-          eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-          eventTime: eventDate.format("h:mm A z"),
-          eventLink,
-        }),
-      });
-    } catch (notifyError) {
-      console.error("Failed to trigger registration notification:", notifyError);
-    }
-
-    return {
-      success: true,
-      message: "Successfully subscribed for event updates!",
-    };
-  }
-
-  if (intent === "unregister" || intent === "unsubscribe") {
     const { error: unregisterError } = await supabase
       .from("event_registrations")
       .delete()
@@ -751,12 +436,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return { success: false, error: unregisterError.message };
     }
 
-    const message =
-      event.registration_type === "external"
-        ? "Unsubscribed from event updates"
-        : "Registration cancelled";
-
-    return { success: true, message };
+    return { success: true, message: "Registration cancelled" };
   }
 
   return { success: false, error: "Invalid action" };

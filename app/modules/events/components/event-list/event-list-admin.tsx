@@ -32,7 +32,6 @@ import {
   Clock,
   ChevronDown,
   Link as LinkIcon,
-  Bell,
   Eye,
   FileText,
 } from 'lucide-react';
@@ -177,9 +176,9 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
               >
                 <LinkIcon className="w-4 h-4 mr-2" />
                 <div className="flex flex-col">
-                  <span className="font-medium">External Event</span>
+                  <span className="font-medium">Link Event</span>
                   <span className="text-xs text-muted-foreground">
-                    Link to Google Forms, etc.
+                    Link to external event page
                   </span>
                 </div>
               </Link>
@@ -208,7 +207,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
         </div>
         <div className="bg-muted/50 rounded-lg p-4">
           <div className="text-2xl font-bold">{stats.external}</div>
-          <div className="text-xs text-muted-foreground">External</div>
+          <div className="text-xs text-muted-foreground">Link</div>
         </div>
       </div>
 
@@ -286,7 +285,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
           <SelectContent>
             <SelectItem value="all">All Events</SelectItem>
             <SelectItem value="luhive">Luhive</SelectItem>
-            <SelectItem value="external">External</SelectItem>
+            <SelectItem value="external">Link event</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -333,7 +332,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
           )}
           {registrationTypeFilter !== 'all' && (
             <Badge variant="secondary">
-              Registration: {registrationTypeFilter === 'luhive' ? 'Luhive' : 'External'}
+              Registration: {registrationTypeFilter === 'luhive' ? 'Luhive' : 'Link event'}
               <button
                 onClick={() => setRegistrationTypeFilter('all')}
                 className="ml-1 hover:text-foreground"
@@ -502,7 +501,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                             {PlatformIcon && (
                                               <PlatformIcon className="w-3 h-3 mr-1 text-primary" />
                                             )}
-                                            External
+                                            Link event
                                           </Badge>
                                         ) : (
                                             <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full border border-primary/20">
@@ -514,15 +513,6 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                                 /{capacity || '∞'}
                                               </span>
                                             </div>
-                                        )}
-                                        {isExternal && registrationCount > 0 && (
-                                          <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full border border-primary/20">
-                                            <Bell className="w-3 h-3 text-primary" />
-                                            <span className="text-xs font-bold text-primary">
-                                              {registrationCount}
-                                            </span>
-                                            <span className="text-[10px] text-primary/70">subscribed</span>
-                                          </div>
                                         )}
                                       </div>
                                     </div>
@@ -572,7 +562,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                         )}
                                         {platform
                                           ? getExternalPlatformName(platform)
-                                          : 'External'}
+                                          : 'Link event'}
                                       </Badge>
                                     )}
                                   </div>
@@ -594,9 +584,9 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                   <div className="hidden md:flex items-center gap-3 mt-3">
                                     {isExternal ? (
                                       <div className="flex items-center gap-2 px-2.5 py-1.5 bg-primary/5 rounded-full border border-primary/20 w-fit">
-                                        <Bell className="w-3.5 h-3.5 text-primary" />
+                                        <ExternalLink className="w-3.5 h-3.5 text-primary" />
                                         <span className="text-xs text-primary font-medium">
-                                          {registrationCount} {registrationCount === 1 ? 'subscribed' : 'subscribed'}
+                                          Link event
                                         </span>
                                       </div>
                                     ) : (
@@ -743,7 +733,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                                   rel="noopener noreferrer"
                                                 >
                                                   <ExternalLink className="w-4 h-4 mr-2" />
-                                                  Open Registration Form
+                                                  Go to event page
                                                 </a>
                                               </DropdownMenuItem>
                                             )}
@@ -801,7 +791,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                 <Button variant="outline" asChild>
                   <Link to={`/dashboard/${communitySlug}/events/create-external`}>
                     <LinkIcon className="h-4 w-4 mr-2" />
-                    Create External Event
+                    Create Link Event
                   </Link>
                 </Button>
               </div>

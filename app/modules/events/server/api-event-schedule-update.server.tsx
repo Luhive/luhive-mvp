@@ -46,6 +46,10 @@ export async function action({ request }: ActionFunctionArgs) {
 			return Response.json({ success: false, error: "Event not found" }, { status: 404 });
 		}
 
+		if (event.registration_type === "external") {
+			return Response.json({ success: true, skipped: true });
+		}
+
 		// Check if user's community is the host (only host can update)
 		const { data: collaboration } = await serviceClient
 			.from("event_collaborations")

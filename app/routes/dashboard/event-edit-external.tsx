@@ -10,7 +10,7 @@ import { useDashboardContext } from '~/modules/dashboard/hooks/use-dashboard-con
 import { DashboardEventFormSkeleton } from '~/modules/dashboard/components/dashboard-event-form-skeleton';
 import { ExternalEventForm } from '~/modules/events/components/event-form/external-event-form';
 import { getEventByIdClient } from '~/modules/events/data/events-repo.client';
-import type { ExternalPlatform } from '~/modules/events/model/event.types';
+import { toLocationValue } from '~/modules/events/utils/event-location';
 import type { Event } from '~/shared/models/entity.types';
 
 dayjs.extend(utc);
@@ -18,8 +18,8 @@ dayjs.extend(timezone);
 
 export function meta() {
   return [
-    { title: 'Edit External Event - Dashboard' },
-    { name: 'description', content: 'Edit an existing external community event' },
+    { title: 'Edit Link Event - Dashboard' },
+    { name: 'description', content: 'Edit an existing link event' },
   ];
 }
 
@@ -97,18 +97,14 @@ export default function EditExternalEventPage() {
 
   const initialData = {
     title: event.title ?? '',
-    description: event.description ?? '',
     startDate,
     startTime,
     endTime,
     timezone: event.timezone,
-    eventType: event.event_type,
+    location: toLocationValue(event),
     locationAddress: event.location_address ?? '',
-    onlineMeetingLink: event.online_meeting_link ?? '',
-    discussionLink: event.discussion_link ?? '',
     coverUrl: event.cover_url ?? '',
     status: event.status,
-    externalPlatform: (event.external_platform as ExternalPlatform | null) ?? 'google_forms',
     externalRegistrationUrl: event.external_registration_url ?? '',
   };
 
@@ -118,6 +114,7 @@ export default function EditExternalEventPage() {
         <ExternalEventForm
           communitySlug={dashboardData.community.slug}
           communityId={dashboardData.community.id}
+          communityName={dashboardData.community.name}
           eventId={event.id}
           mode="edit"
           initialData={initialData}
