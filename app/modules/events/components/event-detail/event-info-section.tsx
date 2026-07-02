@@ -38,7 +38,6 @@ interface EventInfoSectionProps {
 	eventTrackingContext: EventTrackingContext;
 	onShowCustomQuestionsForm: () => void;
 	onShowRsvpModal: () => void;
-	onShowSubscribeDialog: () => void;
 }
 
 export function EventInfoSection({
@@ -58,7 +57,6 @@ export function EventInfoSection({
 	eventTrackingContext,
 	onShowCustomQuestionsForm,
 	onShowRsvpModal,
-	onShowSubscribeDialog,
 }: EventInfoSectionProps) {
  const { isUserRegistered, isOwnerOrAdmin } = userData;
 	const tz = event.timezone ?? "UTC";
@@ -162,7 +160,6 @@ export function EventInfoSection({
           eventTrackingContext={eventTrackingContext}
           onShowCustomQuestionsForm={onShowCustomQuestionsForm}
           onShowRsvpModal={onShowRsvpModal}
-          onShowSubscribeDialog={onShowSubscribeDialog}
         />
 
         <Activity mode={event.description ? "visible" : "hidden"}>

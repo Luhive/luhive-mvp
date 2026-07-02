@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { Card, CardContent } from '~/shared/components/ui/card';
 import { Badge } from '~/shared/components/ui/badge';
-import { Calendar, MapPin, Users, Video, Combine, Infinity, ExternalLink, Bell } from 'lucide-react';
+import { Calendar, MapPin, Users, Video, Combine, Infinity, ExternalLink } from 'lucide-react';
 import type { Event, EventStatus, EventType } from '~/shared/models/entity.types';
 import type { ExternalPlatform } from '~/modules/events/model/event.types';
 import dayjs from 'dayjs';
@@ -135,7 +135,7 @@ export function EventCard({ event, communitySlug, onDelete }: EventCardProps) {
                 ) : (
                   <ExternalLink className="h-3 w-3 mr-1" />
                 )}
-                {platform ? getExternalPlatformName(platform) : 'External'}
+                {platform ? getExternalPlatformName(platform) : 'Link event'}
               </Badge>
             </div>
           )}
@@ -234,7 +234,6 @@ export function EventCard({ event, communitySlug, onDelete }: EventCardProps) {
           {/* Capacity Section - Different display for external vs native events */}
           <div className="space-y-2.5 pt-2 border-t border-border/50">
             {isExternalEvent ? (
-              // External event - show subscription count
               <div className="flex items-center gap-2.5">
                 <div
                   className={cn(
@@ -245,13 +244,9 @@ export function EventCard({ event, communitySlug, onDelete }: EventCardProps) {
                     'group-active:bg-primary/15 group-active:scale-100'
                   )}
                 >
-                  <Bell className="h-4 w-4 text-primary" />
+                  <ExternalLink className="h-4 w-4 text-primary" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-primary">
-                    {registrationCount} {registrationCount === 1 ? 'subscribed' : 'subscribed'}
-                  </span>
-                </div>
+                <span className="text-sm font-semibold text-primary">Link event</span>
               </div>
             ) : event.capacity ? (
               // Native event with capacity

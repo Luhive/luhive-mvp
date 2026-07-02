@@ -3,8 +3,8 @@ import { useDashboardContext } from '~/modules/dashboard/hooks/use-dashboard-con
 
 export function meta() {
   return [
-    { title: "Create External Event - Dashboard" },
-    { name: "description", content: "Create a new event with external registration" },
+    { title: "Create Link Event - Dashboard" },
+    { name: "description", content: "Create a new link event that redirects to an external page" },
   ];
 }
 
@@ -17,6 +17,7 @@ export default function CreateExternalEventPage() {
         <ExternalEventForm
           communitySlug={community.slug}
           communityId={community.id}
+          communityName={community.name}
           mode="create"
         />
       </div>

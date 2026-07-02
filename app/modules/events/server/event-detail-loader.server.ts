@@ -105,16 +105,18 @@ export async function loader({
   let userProfile: Profile | null = null;
 
   if (u) {
-    const { data: registration } = await supabase
-      .from("event_registrations")
-      .select("id, approval_status, checkin_token")
-      .eq("event_id", event.id)
-      .eq("user_id", u.id)
-      .single();
+    if (event.registration_type !== "external") {
+      const { data: registration } = await supabase
+        .from("event_registrations")
+        .select("id, approval_status, checkin_token")
+        .eq("event_id", event.id)
+        .eq("user_id", u.id)
+        .single();
 
-    isUserRegistered = !!registration;
-    userRegistrationStatus = registration?.approval_status || null;
-    userCheckinToken = registration?.checkin_token || null;
+      isUserRegistered = !!registration;
+      userRegistrationStatus = registration?.approval_status || null;
+      userCheckinToken = registration?.checkin_token || null;
+    }
 
     const { data: membership } = await supabase
       .from("community_members")

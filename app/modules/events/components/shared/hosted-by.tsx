@@ -5,7 +5,7 @@ import { JoinCommunityForm } from "~/modules/community/components/join-community
 import type { Community } from "~/shared/models/entity.types";
 import { Routes } from "~/shared/lib/routing/routes";
 import React from "react";
-import { UserCheck, UserRoundPlus } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 type Host = {
   id: string;
@@ -63,7 +63,7 @@ export function HostedBy({
                 e.preventDefault();
                 navigate(Routes.community.detail(host.slug));
               }}
-              className="flex items-center gap-3 min-w-0 flex-1"
+              className="flex items-center gap-3 min-w-0 flex-1 group"
             >
               <Avatar className={avatarSize}>
                 <AvatarImage src={host.logo_url || ""} alt={host.name} />
@@ -71,36 +71,39 @@ export function HostedBy({
                   {host.name?.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm text-foreground truncate">
+              <span className="text-sm font-medium truncate inline-flex items-center gap-0.5 min-w-0 group-hover:underline">
                 {host.name}
+                <ChevronRight className="h-3.5 w-3.5 font-medium shrink-0 opacity-70" />
               </span>
             </a>
             {showJoin && (
-              <JoinCommunityForm
-                communityId={host.id}
-                communityName={host.name}
-                userEmail={userEmail ?? undefined}
-                isLoggedIn={isLoggedIn}
-                isMember={host.isMember ?? false}
-                returnTo={pathname}
-                trigger={
-                  host.isMember ? (
-                    <Button
-                      size="sm"
-                      className="shrink-0 rounded-full py-0 h-8 bg-transparent border border-primary/50 text-primary/90 shadow-none hover:bg-primary/10"
-                    >
-                      Joined
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      className="shrink-0 rounded-full py-0 h-8  bg-primary/15 text-primary/90 shadow-none hover:bg-primary/20"
-                    >
-                      Join
-                    </Button>
-                  )
-                }
-              />
+              <div className="hidden lg:block shrink-0">
+                <JoinCommunityForm
+                  communityId={host.id}
+                  communityName={host.name}
+                  userEmail={userEmail ?? undefined}
+                  isLoggedIn={isLoggedIn}
+                  isMember={host.isMember ?? false}
+                  returnTo={pathname}
+                  trigger={
+                    host.isMember ? (
+                      <Button
+                        size="sm"
+                        className="shrink-0 rounded-full py-0 h-8 bg-transparent border border-primary/50 text-primary/90 shadow-none hover:bg-primary/10"
+                      >
+                        Joined
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="shrink-0 rounded-full py-0 h-8  bg-primary/15 text-primary/90 shadow-none hover:bg-primary/20"
+                      >
+                        Join
+                      </Button>
+                    )
+                  }
+                />
+              </div>
             )}
           </div>
         ))}

@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import type { EventDetailActionData } from "~/modules/events/model/event-detail-view.types";
 
 export interface UseEventDetailToastsOptions {
-	onSubscribeSuccess?: () => void;
 	onRegisterSuccess?: () => void;
 	submittedIntentRef?: MutableRefObject<string | null>;
 }
@@ -26,8 +25,6 @@ export function useEventDetailToasts(options?: UseEventDetailToastsOptions) {
 				if (options?.submittedIntentRef) {
 					options.submittedIntentRef.current = null;
 				}
-			} else {
-				options?.onSubscribeSuccess?.();
 			}
 		} else if (actionData.error) {
 			toast.error(actionData.error);

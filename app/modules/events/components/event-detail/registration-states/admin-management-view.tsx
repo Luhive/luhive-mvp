@@ -45,7 +45,7 @@ export function AdminManagementView({ event, community, isExternalEvent }: Admin
               rel="noopener noreferrer"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              Open Registration Form
+              Go to event page
             </a>
           </Button>
         )}

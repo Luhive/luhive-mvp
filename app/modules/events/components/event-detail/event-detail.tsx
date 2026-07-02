@@ -3,7 +3,6 @@ import { useSubmit, useNavigation } from "react-router";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import { EventRsvpModal } from "~/modules/events/components/registration/event-rsvp-modal";
-import { AnonymousSubscriptionDialog } from "~/modules/events/components/registration/anonymous-subscription-dialog";
 import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
 import { useRegistrationTimer } from "~/modules/events/hooks/use-registration-timer";
 import { useEventDetailToasts } from "~/modules/events/hooks/use-event-detail-toasts";
@@ -145,14 +144,12 @@ export function EventDetail({
 	const submit = useSubmit();
 	const navigation = useNavigation();
 	const [showRsvpModal, setShowRsvpModal] = useState(false);
-	const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
 	const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
 	const lastSubmittedIntentRef = useRef<string | null>(null);
 
 	const timeRemaining = useRegistrationTimer(event.registration_deadline, event.timezone);
 	useEventDetailToasts({
 		submittedIntentRef: lastSubmittedIntentRef,
-		onSubscribeSuccess: () => setShowSubscribeDialog(false),
 		onRegisterSuccess: () => setShowCustomQuestionsForm(false),
 	});
 
@@ -250,12 +247,6 @@ export function EventDetail({
 				userPhone={userPhone ?? undefined}
 				trackingContext={trackingContext}
 			/>
-			<AnonymousSubscriptionDialog
-				open={showSubscribeDialog}
-				onOpenChange={setShowSubscribeDialog}
-				eventId={event.id}
-				communitySlug={community.slug}
-			/>
 			{hasCustomQuestions && (
 				<CustomQuestionsForm
 					open={showCustomQuestionsForm}
@@ -299,7 +290,6 @@ export function EventDetail({
 						eventTrackingContext={trackingContext}
 						onShowCustomQuestionsForm={() => setShowCustomQuestionsForm(true)}
 						onShowRsvpModal={() => setShowRsvpModal(true)}
-						onShowSubscribeDialog={() => setShowSubscribeDialog(true)}
 					/>
 				</div>
 			</main>
