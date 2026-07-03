@@ -34,10 +34,7 @@ interface EventInfoSectionProps {
 	externalPlatformName: string;
 	isRegistering: boolean;
 	isUnregistering: boolean;
-	isSubmitting: boolean;
 	eventTrackingContext: EventTrackingContext;
-	onShowCustomQuestionsForm: () => void;
-	onShowRsvpModal: () => void;
 }
 
 export function EventInfoSection({
@@ -53,10 +50,7 @@ export function EventInfoSection({
 	externalPlatformName,
 	isRegistering,
 	isUnregistering,
-	isSubmitting,
 	eventTrackingContext,
-	onShowCustomQuestionsForm,
-	onShowRsvpModal,
 }: EventInfoSectionProps) {
  const { isUserRegistered, isOwnerOrAdmin } = userData;
 	const tz = event.timezone ?? "UTC";
@@ -156,10 +150,7 @@ export function EventInfoSection({
           externalPlatformName={externalPlatformName}
           isRegistering={isRegistering}
           isUnregistering={isUnregistering}
-          isSubmitting={isSubmitting}
           eventTrackingContext={eventTrackingContext}
-          onShowCustomQuestionsForm={onShowCustomQuestionsForm}
-          onShowRsvpModal={onShowRsvpModal}
         />
 
         <Activity mode={event.description ? "visible" : "hidden"}>

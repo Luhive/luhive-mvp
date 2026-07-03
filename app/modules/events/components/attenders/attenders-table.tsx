@@ -195,7 +195,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
           is_attended,
           registered_at,
           custom_answers,
-          profiles (
+          profiles!event_registrations_user_id_fkey1 (
             id,
             full_name,
             avatar_url

@@ -53,8 +53,10 @@ export default function TopNavigationLayout() {
   const matches = useMatches();
   const location = useLocation();
   const isHubPage = location.pathname === "/hub";
-  const isEditorRoute = matches.some(
-    (m) => typeof m.id === "string" && m.id.includes("announcement-new"),
+  const isFocusedRoute = matches.some(
+    (m) =>
+      typeof m.id === "string" &&
+      (m.id.includes("announcement-new") || m.id.includes("event-register")),
   );
 
   // Set Sentry user context when user is available
@@ -70,14 +72,20 @@ export default function TopNavigationLayout() {
   }, [user]);
 
   return (
-    <div className="min-h-screen container mx-auto px-5 bg-background flex flex-col">
-      {!isEditorRoute && (
+    <div
+      className={
+        isFocusedRoute
+          ? "min-h-screen bg-background flex flex-col"
+          : "min-h-screen container mx-auto px-5 bg-background flex flex-col"
+      }
+    >
+      {!isFocusedRoute && (
         <TopNavigation user={user} showCreateCommunityOnMobile={isHubPage} />
       )}
-      <main className="flex-1 pb-5 lg:pb-0">
+      <main className={isFocusedRoute ? "flex-1" : "flex-1 pb-5 lg:pb-0"}>
         <Outlet />
       </main>
-      {!isEditorRoute && <Footer />}
+      {!isFocusedRoute && <Footer />}
     </div>
   );
 }

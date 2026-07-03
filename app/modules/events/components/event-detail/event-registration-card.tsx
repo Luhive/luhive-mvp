@@ -27,10 +27,7 @@ interface EventRegistrationCardProps {
 	externalPlatformName: string;
 	isRegistering: boolean;
 	isUnregistering: boolean;
-	isSubmitting: boolean;
 	eventTrackingContext: EventTrackingContext;
-	onShowCustomQuestionsForm: () => void;
-	onShowRsvpModal: () => void;
 }
 
 export function EventRegistrationCard({
@@ -46,10 +43,7 @@ export function EventRegistrationCard({
 	externalPlatformName,
 	isRegistering,
 	isUnregistering,
-	isSubmitting,
 	eventTrackingContext,
-	onShowCustomQuestionsForm,
-	onShowRsvpModal,
 }: EventRegistrationCardProps) {
 	const {
 		registrationCount,
@@ -125,10 +119,7 @@ export function EventRegistrationCard({
 							registrationDeadlineFormatted={registrationDeadlineFormatted}
 							hasCustomQuestions={hasCustomQuestions}
 							isRegistering={isRegistering}
-							isSubmitting={isSubmitting}
 							eventTrackingContext={eventTrackingContext}
-							onShowCustomQuestionsForm={onShowCustomQuestionsForm}
-							onShowRsvpModal={onShowRsvpModal}
 						/>
 					</Activity>
 

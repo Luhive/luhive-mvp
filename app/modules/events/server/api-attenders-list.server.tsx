@@ -17,7 +17,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         id,
         user_id,
         anonymous_name,
-        profiles (
+        profiles!event_registrations_user_id_fkey1 (
           id,
           full_name,
           avatar_url

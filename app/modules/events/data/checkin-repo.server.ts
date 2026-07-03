@@ -17,7 +17,7 @@ export async function getRegistrationByCheckinToken(
       is_attended,
       anonymous_name,
       user_id,
-      profiles ( full_name )
+      profiles!event_registrations_user_id_fkey1 ( full_name )
     `
     )
     .eq("checkin_token", token)

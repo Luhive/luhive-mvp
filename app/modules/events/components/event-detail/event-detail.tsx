@@ -1,14 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useSubmit, useNavigation } from "react-router";
+import { useEffect, useMemo, useRef } from "react";
+import { useNavigation } from "react-router";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
-import { EventRsvpModal } from "~/modules/events/components/registration/event-rsvp-modal";
-import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
 import { useRegistrationTimer } from "~/modules/events/hooks/use-registration-timer";
 import { useEventDetailToasts } from "~/modules/events/hooks/use-event-detail-toasts";
 import { EventSidebarPanel } from "./event-sidebar-panel";
 import { EventInfoSection } from "./event-info-section";
-import type { CustomQuestionJson, ExternalPlatform } from "~/modules/events/model/event.types";
+import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import type { EventDetailLoaderData } from "~/modules/events/server/event-detail-loader.server";
 import { handleShare } from "../../utils/share-event";
 import {
@@ -87,7 +85,6 @@ async function getPublicGeoCached(): Promise<PublicGeo | null> {
 			}
 		}
 
-		// Try multiple providers (some block/ratelimit per domain in production)
 		const ipWho = await tryFetchJson(`https://ipwho.is/${encodeURIComponent(ip)}`);
 		const ipApiCo = ipWho
 			? null
@@ -135,28 +132,22 @@ export function EventDetail({
 	isPastEvent,
 	capacityPercentage,
 	hasCustomQuestions,
-	userPhone,
 	isExternalEvent,
 	externalPlatformName,
 	registrationDeadlineFormatted,
 	hostingCommunities,
 }: EventDetailLoaderData) {
-	const submit = useSubmit();
 	const navigation = useNavigation();
-	const [showRsvpModal, setShowRsvpModal] = useState(false);
-	const [showCustomQuestionsForm, setShowCustomQuestionsForm] = useState(false);
 	const lastSubmittedIntentRef = useRef<string | null>(null);
 
 	const timeRemaining = useRegistrationTimer(event.registration_deadline, event.timezone);
 	useEventDetailToasts({
 		submittedIntentRef: lastSubmittedIntentRef,
-		onRegisterSuccess: () => setShowCustomQuestionsForm(false),
 	});
 
-	const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
 	const submittingIntent = navigation.formData?.get("intent") as string | null;
-	const isRegistering = isSubmitting && submittingIntent === "register";
-	const isUnregistering = isSubmitting && submittingIntent === "unregister";
+	const isRegistering = navigation.state === "submitting" && submittingIntent === "register";
+	const isUnregistering = navigation.state === "submitting" && submittingIntent === "unregister";
 
 	const externalPlatform = event.external_platform as ExternalPlatform | null;
 	const trackingContext = useMemo(() => getEventTrackingContext(event.id), [event.id]);
@@ -214,85 +205,35 @@ export function EventDetail({
 		trackingContext.utmTerm,
 	]);
 
-	const handleCustomQuestionsSubmit = (answers: Record<string, unknown>) => {
-		lastSubmittedIntentRef.current = "register";
-
-		const formData = new FormData();
-		formData.append("intent", "register");
-		formData.append("custom_answers", JSON.stringify(answers));
-		formData.append("eventSessionId", trackingContext.sessionId);
-		formData.append("eventUtmSource", trackingContext.utmSource);
-		if (trackingContext.utmMedium) formData.append("eventUtmMedium", trackingContext.utmMedium);
-		if (trackingContext.utmCampaign) formData.append("eventUtmCampaign", trackingContext.utmCampaign);
-		if (trackingContext.utmContent) formData.append("eventUtmContent", trackingContext.utmContent);
-		if (trackingContext.utmTerm) formData.append("eventUtmTerm", trackingContext.utmTerm);
-		formData.append("eventFirstVisitStartedAt", trackingContext.firstVisitStartedAt);
-		submit(formData, { method: "POST" });
-	};
-
-	const { userProfile, user } = userData;
-
 	return (
-		<>
-			<EventRsvpModal
-				open={showRsvpModal}
-				onOpenChange={setShowRsvpModal}
-				eventId={event.id}
-				eventSlug={publicEventSlug(event)}
-				communitySlug={community.slug}
-				communityId={community.id}
-				communityName={community.name}
-				hasCustomQuestions={hasCustomQuestions}
-				customQuestions={event.custom_questions as unknown as CustomQuestionJson}
-				userPhone={userPhone ?? undefined}
-				trackingContext={trackingContext}
-			/>
-			{hasCustomQuestions && (
-				<CustomQuestionsForm
-					open={showCustomQuestionsForm}
-					onOpenChange={setShowCustomQuestionsForm}
-					eventId={event.id}
-					customQuestions={event.custom_questions as unknown as CustomQuestionJson}
-					userName={userProfile?.full_name || undefined}
-					userEmail={user?.email || undefined}
-					userAvatarUrl={userProfile?.avatar_url || undefined}
-					userPhone={userPhone ?? undefined}
-					onSubmit={handleCustomQuestionsSubmit}
-					isSubmitting={isSubmitting}
+		<main className="py-6 md:py-10">
+			<div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-8 lg:gap-12">
+				<EventSidebarPanel
+					event={event}
+					community={community}
+					userData={userData}
+					isPastEvent={isPastEvent}
+					capacityPercentage={capacityPercentage}
+					isExternalEvent={isExternalEvent}
+					onShare={() => handleShare(event)}
+					hostingCommunities={hostingCommunities}
 				/>
-			)}
-			<main className="py-6 md:py-10">
-				<div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-8 lg:gap-12">
-					<EventSidebarPanel
-						event={event}
-						community={community}
-						userData={userData}
-						isPastEvent={isPastEvent}
-						capacityPercentage={capacityPercentage}
-						isExternalEvent={isExternalEvent}
-						onShare={() => handleShare(event)}
-						hostingCommunities={hostingCommunities}
-					/>
-					<EventInfoSection
-						event={event}
-						community={community}
-						userData={userData}
-						timeRemaining={timeRemaining}
-						registrationDeadlineFormatted={registrationDeadlineFormatted}
-						hasCustomQuestions={hasCustomQuestions}
-						isPastEvent={isPastEvent}
-						isExternalEvent={isExternalEvent}
-						externalPlatform={externalPlatform}
-						externalPlatformName={externalPlatformName}
-						isRegistering={isRegistering}
-						isUnregistering={isUnregistering}
-						isSubmitting={isSubmitting}
-						eventTrackingContext={trackingContext}
-						onShowCustomQuestionsForm={() => setShowCustomQuestionsForm(true)}
-						onShowRsvpModal={() => setShowRsvpModal(true)}
-					/>
-				</div>
-			</main>
-		</>
+				<EventInfoSection
+					event={event}
+					community={community}
+					userData={userData}
+					timeRemaining={timeRemaining}
+					registrationDeadlineFormatted={registrationDeadlineFormatted}
+					hasCustomQuestions={hasCustomQuestions}
+					isPastEvent={isPastEvent}
+					isExternalEvent={isExternalEvent}
+					externalPlatform={externalPlatform}
+					externalPlatformName={externalPlatformName}
+					isRegistering={isRegistering}
+					isUnregistering={isUnregistering}
+					eventTrackingContext={trackingContext}
+				/>
+			</div>
+		</main>
 	);
 }

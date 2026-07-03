@@ -36,6 +36,10 @@ import {
 } from '~/modules/events/utils/custom-questions';
 import { MAX_ANSWER_LENGTH } from '~/modules/events/utils/custom-questions-constants';
 import { Form } from 'react-router';
+import { cn } from '~/shared/lib/utils/cn';
+
+const OVERLAY_FIELD_CLASS =
+  'bg-muted/50 border-transparent shadow-none h-11 rounded-lg focus-visible:bg-background';
 
 interface CustomQuestionsFormProps {
   open: boolean;
@@ -44,6 +48,7 @@ interface CustomQuestionsFormProps {
   customQuestions: CustomQuestionJson | null;
   /** When true, renders only the form content without Dialog/Drawer wrapper (for embedding in another modal) */
   inline?: boolean;
+  variant?: 'default' | 'overlay';
   /** Rendered after the last question, before the submit button (e.g. Join Community checkbox) */
   afterQuestionsContent?: React.ReactNode;
   // For authenticated users
@@ -72,10 +77,13 @@ export function CustomQuestionsForm({
   onSubmit,
   isSubmitting = false,
   inline = false,
+  variant = 'default',
   afterQuestionsContent,
 }: CustomQuestionsFormProps) {
   const formId = useId();
   const isMobile = useIsMobile();
+  const isOverlay = variant === 'overlay';
+  const useInlineLayout = inline || isOverlay;
   const isAuthenticated = Boolean(userEmail || userName);
   const authenticatedFallbackName = userEmail?.split('@')[0]?.trim() || 'User';
 
@@ -224,40 +232,52 @@ export function CustomQuestionsForm({
   );
 
   const formBody = (
-    <div className="space-y-6">
-      {/* User Info Section (Read-only) */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+    <div className={isOverlay ? 'space-y-6' : 'space-y-6'}>
+      <div className={isOverlay ? undefined : 'space-y-4'}>
+        <div
+          className={
+            isOverlay
+              ? 'flex items-center gap-3'
+              : 'flex items-center gap-4 p-4 bg-muted/50 rounded-lg'
+          }
+        >
           {displayAvatar ? (
-            <Avatar className="h-12 w-12">
+            <Avatar className={isOverlay ? 'h-10 w-10' : 'h-12 w-12'}>
               <AvatarImage src={displayAvatar} alt={displayName} />
               <AvatarFallback className="bg-primary/10 text-primary">
                 {displayName?.substring(0, 2).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
           ) : (
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-6 w-6 text-primary" />
+            <div
+              className={
+                isOverlay
+                  ? 'h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center'
+                  : 'h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center'
+              }
+            >
+              <User className={isOverlay ? 'h-5 w-5 text-primary' : 'h-6 w-6 text-primary'} />
             </div>
           )}
-          <div className="flex-1 space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">{displayName}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Mail className="h-3.5 w-3.5" />
-              <span>{displayEmail}</span>
-            </div>
+          <div className="flex-1 min-w-0 space-y-0.5">
+            <span className="font-semibold">{displayName}</span>
+            {isOverlay ? (
+              <p className="text-sm text-muted-foreground truncate">{displayEmail}</p>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail className="h-3.5 w-3.5" />
+                <span>{displayEmail}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {hasQuestions && (
         <>
-          <Separator />
+          {!isOverlay && <Separator />}
 
-          {/* Custom Questions Section */}
-          <div className="space-y-4 pb-0">
+          <div className="space-y-5 pb-0">
             {/* Phone Number Field */}
             {customQuestions.phone.enabled && (
               <div className="space-y-2">
@@ -279,9 +299,10 @@ export function CustomQuestionsForm({
                     placeholder="+994501234567"
                     required={customQuestions.phone.required}
                     disabled={isSubmitting}
-                    className={
-                      errors.phone ? "border-destructive pl-10" : "pl-10"
-                    }
+                    className={cn(
+                      errors.phone ? 'border-destructive pl-10' : 'pl-10',
+                      isOverlay && OVERLAY_FIELD_CLASS,
+                    )}
                   />
                 </div>
                 {errors.phone && (
@@ -375,7 +396,11 @@ export function CustomQuestionsForm({
                         >
                           <SelectTrigger
                             id={`question-${question.id}`}
-                            className={`w-full ${errors[question.id] ? 'border-destructive' : ''}`}
+                            className={cn(
+                              'w-full',
+                              errors[question.id] ? 'border-destructive' : '',
+                              isOverlay && OVERLAY_FIELD_CLASS,
+                            )}
                           >
                             <SelectValue placeholder="Select an option" />
                           </SelectTrigger>
@@ -407,24 +432,43 @@ export function CustomQuestionsForm({
                           <span className="text-destructive ml-1">*</span>
                         )}
                       </Label>
-                      <Textarea
-                        id={`question-${question.id}`}
-                        name={`question-${question.id}`}
-                        value={textValue}
-                        onChange={(e) =>
-                          handleCustomAnswerChange(question.id, e.target.value)
-                        }
-                        placeholder="Your answer..."
-                        required={question.required}
-                        disabled={isSubmitting}
-                        maxLength={MAX_ANSWER_LENGTH}
-                        rows={2}
-                        className={errors[question.id] ? 'border-destructive' : ''}
-                      />
+                      {isOverlay ? (
+                        <Input
+                          id={`question-${question.id}`}
+                          name={`question-${question.id}`}
+                          value={textValue}
+                          onChange={(e) =>
+                            handleCustomAnswerChange(question.id, e.target.value)
+                          }
+                          placeholder="Your answer..."
+                          required={question.required}
+                          disabled={isSubmitting}
+                          maxLength={MAX_ANSWER_LENGTH}
+                          className={cn(
+                            errors[question.id] ? 'border-destructive' : '',
+                            OVERLAY_FIELD_CLASS,
+                          )}
+                        />
+                      ) : (
+                        <Textarea
+                          id={`question-${question.id}`}
+                          name={`question-${question.id}`}
+                          value={textValue}
+                          onChange={(e) =>
+                            handleCustomAnswerChange(question.id, e.target.value)
+                          }
+                          placeholder="Your answer..."
+                          required={question.required}
+                          disabled={isSubmitting}
+                          maxLength={MAX_ANSWER_LENGTH}
+                          rows={2}
+                          className={errors[question.id] ? 'border-destructive' : ''}
+                        />
+                      )}
                       {errors[question.id] && (
                         <p className="text-xs text-destructive">{errors[question.id]}</p>
                       )}
-                      {textValue && (
+                      {!isOverlay && textValue && (
                         <p className="text-xs text-muted-foreground">
                           {textValue.length}/{MAX_ANSWER_LENGTH} characters
                         </p>
@@ -451,20 +495,34 @@ export function CustomQuestionsForm({
           <Spinner className="h-4 w-4 mr-2" />
           Submitting...
         </>
+      ) : isOverlay ? (
+        "Register"
       ) : (
         "Complete Registration"
       )}
     </Button>
   );
 
-  if (inline) {
+  if (useInlineLayout) {
     return (
-      <Form id={formId} onSubmit={handleSubmit} className="contents">
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 space-y-2 pb-4">
+      <Form
+        id={formId}
+        onSubmit={handleSubmit}
+        className={isOverlay ? 'flex flex-col gap-8' : 'contents'}
+      >
+        <div
+          className={
+            isOverlay
+              ? 'space-y-6'
+              : 'flex-1 min-h-0 overflow-y-auto px-4 space-y-2 pb-4'
+          }
+        >
           {formBody}
           {afterQuestionsContent}
         </div>
-        <div className="px-4 py-4 shrink-0">{submitButton}</div>
+        <div className={isOverlay ? undefined : 'px-4 py-4 shrink-0'}>
+          {submitButton}
+        </div>
       </Form>
     );
   }

@@ -112,7 +112,7 @@ export async function action({ request }: ActionFunctionArgs) {
         anonymous_name,
         anonymous_email,
         user_id,
-        profiles ( full_name, id )
+        profiles!event_registrations_user_id_fkey1 ( full_name, id )
       `)
 			.eq("id", registrationId)
 			.single();

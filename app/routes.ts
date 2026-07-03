@@ -28,7 +28,9 @@ export default [
         "routes/web/event-collaboration-legacy-redirect.tsx",
       ),
       route(":eventSlug/collaboration", "routes/web/event-collaboration.tsx"),
-      route(":eventSlug", "routes/web/event-detail.tsx"),
+      route(":eventSlug", "routes/web/event-detail.tsx", [
+        route("register", "routes/web/event-register.tsx"),
+      ]),
     ]),
     route(
       "c/:slug/collaboration-invite/:collaborationId",
