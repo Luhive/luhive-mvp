@@ -1,177 +1,242 @@
-import { Form } from "react-router";
 import { Activity } from "react";
-import { Hourglass, AlertTriangle } from "lucide-react";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/shared/components/ui/avatar";
-import { Badge } from "~/shared/components/ui/badge";
 import { CheckinQrDialog } from "~/modules/events/components/registration/checkin-qr-dialog";
 import { InviteSomeoneButton } from "~/modules/events/components/registration/invite-modal";
 import { useEventStartTimer } from "~/modules/events/hooks/use-event-start-timer";
 import type { Event } from "~/shared/models/entity.types";
+import { CancelRegistrationLink } from "./shared/cancel-registration-link";
+import { EventStartCountdownBadge } from "./shared/event-start-countdown-badge";
+import { RegistrationIdentityRow } from "./shared/registration-identity-row";
+import { RegistrationStatusLine } from "./shared/registration-status-line";
+import {
+	getRegistrationAvatarInitials,
+	getRegistrationDisplayName,
+} from "./shared/registration-user-display";
 
 interface NativeRegisteredViewProps {
-  event: Event;
-  userRegistrationStatus: string | null;
-  userCheckinToken: string | null;
-  isPastEvent: boolean;
-  isUnregistering: boolean;
-  user: { id: string; email?: string | null } | null;
-  userProfile: { full_name: string | null; avatar_url: string | null } | null;
+	event: Event;
+	userRegistrationStatus: string | null;
+	userCheckinToken: string | null;
+	isPastEvent: boolean;
+	isUnregistering: boolean;
+	user: { id: string; email?: string | null } | null;
+	userProfile: { full_name: string | null; avatar_url: string | null } | null;
 }
 
-function CancelRegistrationLink({
-  isUnregistering,
+interface RegisteredStateViewProps {
+	event: Event;
+	isPastEvent: boolean;
+	isUnregistering: boolean;
+	user: { id: string; email?: string | null } | null;
+	userProfile: { full_name: string | null; avatar_url: string | null } | null;
+}
+
+function useRegistrationIdentity(
+	user: RegisteredStateViewProps["user"],
+	userProfile: RegisteredStateViewProps["userProfile"],
+) {
+	const displayName = getRegistrationDisplayName(userProfile, user);
+	const avatarInitials = getRegistrationAvatarInitials(userProfile, user);
+	return { displayName, avatarInitials };
+}
+
+function RegisteredAttendeeLayout({
+	displayName,
+	avatarUrl,
+	avatarInitials,
+	timeFormatted,
+	statusLine,
+	actions,
+	isUnregistering,
 }: {
-  isUnregistering: boolean;
+	displayName: string;
+	avatarUrl?: string | null;
+	avatarInitials?: string;
+	timeFormatted?: string | null;
+	statusLine: React.ReactNode;
+	actions?: React.ReactNode;
+	isUnregistering: boolean;
 }) {
-  return (
-    <Form method="post">
-      <input type="hidden" name="intent" value="unregister" />
-      <p className="text-xs text-muted-foreground">
-        Can't attend? Notify the host by{" "}
-        <button
-          type="submit"
-          disabled={isUnregistering}
-          className="text-destructive underline font-medium disabled:opacity-50"
-        >
-          {isUnregistering ? "canceling..." : "canceling"}
-        </button>{" "}
-        your registration.
-      </p>
-    </Form>
-  );
+	return (
+		<div className="space-y-2">
+			<RegistrationIdentityRow
+				displayName={displayName}
+				avatarUrl={avatarUrl}
+				avatarInitials={avatarInitials}
+				trailing={
+					<Activity mode={timeFormatted ? "visible" : "hidden"}>
+						<EventStartCountdownBadge formatted={timeFormatted} />
+					</Activity>
+				}
+			/>
+
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div className="min-w-0 space-y-2 sm:flex-1">
+					{statusLine}
+					<div className="hidden sm:block">
+						<CancelRegistrationLink isUnregistering={isUnregistering} />
+					</div>
+				</div>
+
+				{actions ? (
+					<div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:shrink-0">
+						{actions}
+					</div>
+				) : null}
+
+				<div className="sm:hidden">
+					<CancelRegistrationLink isUnregistering={isUnregistering} />
+				</div>
+			</div>
+		</div>
+	);
 }
 
 function ApprovedRegisteredView({
-  event,
-  userCheckinToken,
-  isPastEvent,
-  isUnregistering,
-  user,
-  userProfile,
-}: Omit<NativeRegisteredViewProps, "userRegistrationStatus">) {
-  const timeUntilStart = useEventStartTimer(
-    event.start_time,
-    event.timezone,
-    isPastEvent,
-  );
+	event,
+	userCheckinToken,
+	isPastEvent,
+	isUnregistering,
+	user,
+	userProfile,
+}: RegisteredStateViewProps & { userCheckinToken: string | null }) {
+	const timeUntilStart = useEventStartTimer(
+		event.start_time,
+		event.timezone,
+		isPastEvent,
+	);
+	const { displayName, avatarInitials } = useRegistrationIdentity(user, userProfile);
 
-  const avatarInitials = userProfile?.full_name
-    ? userProfile.full_name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : user?.email?.charAt(0).toUpperCase();
+	return (
+		<RegisteredAttendeeLayout
+			displayName={displayName}
+			avatarUrl={userProfile?.avatar_url}
+			avatarInitials={avatarInitials}
+			timeFormatted={timeUntilStart?.formatted}
+			isUnregistering={isUnregistering}
+			statusLine={
+				<RegistrationStatusLine variant="green">
+					You&apos;re registered
+				</RegistrationStatusLine>
+			}
+			actions={
+				<>
+					<InviteSomeoneButton
+						eventId={event.id}
+						label="Invite a Friend"
+						size="sm"
+						variant="outline"
+						className="w-full sm:w-auto h-8"
+					/>
+					{userCheckinToken ? (
+						<CheckinQrDialog
+							checkinToken={userCheckinToken}
+							className="w-full sm:w-auto"
+						/>
+					) : null}
+				</>
+			}
+		/>
+	);
+}
 
-  const displayName =
-    userProfile?.full_name?.trim() || user?.email?.split("@")[0] || "You";
+function PendingRegisteredView({
+	event,
+	isPastEvent,
+	isUnregistering,
+	user,
+	userProfile,
+}: RegisteredStateViewProps) {
+	const timeUntilStart = useEventStartTimer(
+		event.start_time,
+		event.timezone,
+		isPastEvent,
+	);
+	const { displayName, avatarInitials } = useRegistrationIdentity(user, userProfile);
 
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="flex-1 min-w-0 space-y-2">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <Avatar className="h-7 w-7 shrink-0">
-              <AvatarImage
-                src={userProfile?.avatar_url || undefined}
-                alt={displayName}
-              />
-              <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
-                {avatarInitials}
-              </AvatarFallback>
-            </Avatar>
-            <p className="text-sm font-semibold text-foreground truncate">
-              {displayName}
-            </p>
-          </div>
-          <p className="text-lg font-semibold text-green-600 dark:text-green-500 my-2.5">
-            You&apos;re registered
-          </p>
-        </div>
-        <CancelRegistrationLink isUnregistering={isUnregistering} />
-      </div>
+	return (
+		<RegisteredAttendeeLayout
+			displayName={displayName}
+			avatarUrl={userProfile?.avatar_url}
+			avatarInitials={avatarInitials}
+			timeFormatted={timeUntilStart?.formatted}
+			isUnregistering={isUnregistering}
+			statusLine={
+				<RegistrationStatusLine variant="amber">
+					Waiting for host approval
+				</RegistrationStatusLine>
+			}
+			actions={
+				<InviteSomeoneButton
+					eventId={event.id}
+					label="Invite a Friend"
+					size="sm"
+					variant="outline"
+					className="w-full sm:w-auto h-8"
+				/>
+			}
+		/>
+	);
+}
 
-      <div className="shrink-0 flex flex-col items-end gap-2">
-        <Activity mode={timeUntilStart ? "visible" : "hidden"}>
-          <Badge
-            variant="secondary"
-            className="shrink-0 border-transparent bg-muted text-muted-foreground font-normal my-2.5"
-          >
-            Starting in{" "}
-            <span className="text-primary font-medium">
-              {timeUntilStart?.formatted}
-            </span>
-          </Badge>
-        </Activity>
-        <div className="flex items-center gap-2">
-          <InviteSomeoneButton
-            eventId={event.id}
-            label="Invite a Friend"
-            size="sm"
-            variant="outline"
-            className="shrink-0 h-8"
-          />
-          {userCheckinToken ? (
-            <CheckinQrDialog checkinToken={userCheckinToken} />
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
+function RejectedRegisteredView({
+	isPastEvent,
+	isUnregistering,
+	user,
+	userProfile,
+	event,
+}: RegisteredStateViewProps) {
+	const timeUntilStart = useEventStartTimer(
+		event.start_time,
+		event.timezone,
+		isPastEvent,
+	);
+	const { displayName, avatarInitials } = useRegistrationIdentity(user, userProfile);
+
+	return (
+		<RegisteredAttendeeLayout
+			displayName={displayName}
+			avatarUrl={userProfile?.avatar_url}
+			avatarInitials={avatarInitials}
+			timeFormatted={timeUntilStart?.formatted}
+			isUnregistering={isUnregistering}
+			statusLine={
+				<RegistrationStatusLine variant="red">
+					Registration rejected
+				</RegistrationStatusLine>
+			}
+		/>
+	);
 }
 
 export function NativeRegisteredView({
-  event,
-  userRegistrationStatus,
-  userCheckinToken,
-  isPastEvent,
-  isUnregistering,
-  user,
-  userProfile,
+	event,
+	userRegistrationStatus,
+	userCheckinToken,
+	isPastEvent,
+	isUnregistering,
+	user,
+	userProfile,
 }: NativeRegisteredViewProps) {
-  if (userRegistrationStatus === "approved") {
-    return (
-      <ApprovedRegisteredView
-        event={event}
-        userCheckinToken={userCheckinToken}
-        isPastEvent={isPastEvent}
-        isUnregistering={isUnregistering}
-        user={user}
-        userProfile={userProfile}
-      />
-    );
-  }
+	const stateProps: RegisteredStateViewProps = {
+		event,
+		isPastEvent,
+		isUnregistering,
+		user,
+		userProfile,
+	};
 
-  return (
-    <div className="space-y-4">
-      {userRegistrationStatus === "pending" ? (
-        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-md border border-amber-200 dark:border-amber-900">
-          <Hourglass className="h-5 w-5 shrink-0" />
-          <div>
-            <p className="font-semibold text-sm">Registration Pending</p>
-            <p className="text-xs opacity-90">
-              Your request is waiting for approval.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 text-red-600 dark:text-red-500 bg-red-50 dark:bg-red-950/30 p-3 rounded-md border border-red-200 dark:border-red-900">
-          <AlertTriangle className="h-5 w-5 shrink-0" />
-          <div>
-            <p className="font-semibold text-sm">Registration Rejected</p>
-            <p className="text-xs opacity-90">
-              Your registration request was declined.
-            </p>
-          </div>
-        </div>
-      )}
+	if (userRegistrationStatus === "approved") {
+		return (
+			<ApprovedRegisteredView
+				{...stateProps}
+				userCheckinToken={userCheckinToken}
+			/>
+		);
+	}
 
-      <CancelRegistrationLink isUnregistering={isUnregistering} />
-    </div>
-  );
+	if (userRegistrationStatus === "pending") {
+		return <PendingRegisteredView {...stateProps} />;
+	}
+
+	return <RejectedRegisteredView {...stateProps} />;
 }

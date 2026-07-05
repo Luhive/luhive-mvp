@@ -1,5 +1,6 @@
 import { Activity } from "react";
 import { ExternalLink } from "lucide-react";
+import { cn } from "~/shared/lib/utils/cn";
 import { Card, CardContent } from "~/shared/components/ui/card";
 import { Badge } from "~/shared/components/ui/badge";
 import { AdminManagementView } from "./registration-states/admin-management-view";
@@ -28,6 +29,7 @@ interface EventRegistrationCardProps {
 	isRegistering: boolean;
 	isUnregistering: boolean;
 	eventTrackingContext: EventTrackingContext;
+	highlighted?: boolean;
 }
 
 export function EventRegistrationCard({
@@ -44,6 +46,7 @@ export function EventRegistrationCard({
 	isRegistering,
 	isUnregistering,
 	eventTrackingContext,
+	highlighted = false,
 }: EventRegistrationCardProps) {
 	const {
 		registrationCount,
@@ -56,7 +59,10 @@ export function EventRegistrationCard({
 	} = userData;
 
 	const hideRegistrationHeading =
-		isUserRegistered && userRegistrationStatus === "approved" && !isOwnerOrAdmin;
+		!isOwnerOrAdmin && !isExternalEvent && (isUserRegistered || canRegister);
+
+	const useNativeAttendeePadding =
+		!isOwnerOrAdmin && !isExternalEvent && (isUserRegistered || canRegister);
 
 	return (
 		<div className="space-y-4">
@@ -74,12 +80,16 @@ export function EventRegistrationCard({
 				</div>
 			</Activity>
 
-			<Card className="bg-card/50 shadow-none transition-all border-primary/20 hover:border-primary/40 py-1.5">
+			<Card
+				data-highlight={highlighted ? "true" : undefined}
+				className={cn(
+					"bg-card/50 shadow-none transition-all border-primary/20 hover:border-primary/40 py-1.5",
+					highlighted && "registration-card-highlight",
+				)}
+			>
 				<CardContent
 					className={
-						isUserRegistered && userRegistrationStatus === "approved" && !isOwnerOrAdmin
-							? "px-3 py-3"
-							: "px-4 pt-3 pb-0 space-y-4"
+						useNativeAttendeePadding ? "px-3 py-3" : "px-4 pt-3 pb-0 space-y-4"
 					}
 				>
 					<Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
@@ -132,6 +142,7 @@ export function EventRegistrationCard({
 							registrationDeadlineFormatted={registrationDeadlineFormatted}
 							hasCustomQuestions={hasCustomQuestions}
 							isRegistering={isRegistering}
+							isPastEvent={isPastEvent}
 							eventTrackingContext={eventTrackingContext}
 						/>
 					</Activity>

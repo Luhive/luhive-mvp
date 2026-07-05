@@ -336,6 +336,12 @@ export function RegistrationFlow({
     if (result.fullName) setExistingUserFullName(result.fullName);
     setExistingUserAvatarUrl(result.avatarUrl ?? null);
     onOtpVerified?.(result);
+
+    if (result.registrationState?.isUserRegistered) {
+      onSuccess(result);
+      return;
+    }
+
     if (hasCustomQuestions) {
       setStep("questions");
     } else {
@@ -479,7 +485,7 @@ export function RegistrationFlow({
         fullName={
           !userExists ? detailsForm.getValues("fullName")?.trim() || undefined : undefined
         }
-        eventId={!userExists || !hasCustomQuestions ? eventId : undefined}
+        eventId={eventId}
         customAnswers={customAnswers ? JSON.stringify(customAnswers) : undefined}
         eventSessionId={resolvedTrackingContext.sessionId}
         eventUtmSource={resolvedTrackingContext.utmSource}

@@ -23,8 +23,9 @@ export function shouldRevalidate({
 	return defaultShouldRevalidate;
 }
 
-import { Outlet, useLoaderData, useMatches } from "react-router";
+import { Outlet, useLoaderData, useMatches, useSearchParams } from "react-router";
 import { HydrationBoundary } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import type { EventDetailLoaderData } from "~/modules/events/server/event-detail-loader.server";
 import { EventDetail } from "~/modules/events/components/event-detail/event-detail";
 import { useEventRegistrationQuery } from "~/modules/events/hooks/use-event-registration-query";
@@ -40,6 +41,23 @@ export default function EventPublicView() {
 }
 
 function EventInner({ loaderData }: { loaderData: EventDetailLoaderData }) {
+	const [searchParams] = useSearchParams();
+	const [highlightRegistrationCard, setHighlightRegistrationCard] = useState(false);
+	const processedRegisteredParamRef = useRef(false);
+
+	useEffect(() => {
+		if (processedRegisteredParamRef.current) return;
+		if (searchParams.get("registered") !== "1") return;
+
+		processedRegisteredParamRef.current = true;
+		setHighlightRegistrationCard(true);
+
+		const url = new URL(window.location.href);
+		url.searchParams.delete("registered");
+		const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+		window.history.replaceState(window.history.state, "", nextUrl);
+	}, [searchParams]);
+
 	const { data: pageUserState } = useEventRegistrationQuery(
 		loaderData.event.id,
 		loaderData.community.id,
@@ -81,7 +99,11 @@ function EventInner({ loaderData }: { loaderData: EventDetailLoaderData }) {
 				className={isRegisterOpen ? "invisible" : undefined}
 				aria-hidden={isRegisterOpen}
 			>
-				<EventDetail {...pageData} />
+				<EventDetail
+					{...pageData}
+					highlightRegistrationCard={highlightRegistrationCard}
+					isRegisterOpen={isRegisterOpen}
+				/>
 			</div>
 			<Outlet />
 		</>

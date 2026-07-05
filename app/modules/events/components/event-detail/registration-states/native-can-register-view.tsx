@@ -4,11 +4,19 @@ import { Hourglass, CalendarClock } from "lucide-react";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import { Button } from "~/shared/components/ui/button";
-import { Avatar, AvatarFallback } from "~/shared/components/ui/avatar";
+import { useEventStartTimer } from "~/modules/events/hooks/use-event-start-timer";
 import type { Community, Event } from "~/shared/models/entity.types";
 import type { UserData } from "~/modules/events/server/event-detail-loader.server";
 import type { TimeRemaining } from "~/modules/events/model/event-detail-view.types";
 import type { EventTrackingContext } from "~/modules/events/utils/event-session-tracker";
+import { EventStartCountdownBadge } from "./shared/event-start-countdown-badge";
+import { RegistrationIdentityRow } from "./shared/registration-identity-row";
+import { RegistrationStatusLine } from "./shared/registration-status-line";
+import { RegistrationTwoColumnLayout } from "./shared/registration-two-column-layout";
+import {
+  getRegistrationAvatarInitials,
+  getRegistrationDisplayName,
+} from "./shared/registration-user-display";
 
 interface NativeCanRegisterViewProps {
   event: Event;
@@ -18,7 +26,101 @@ interface NativeCanRegisterViewProps {
   registrationDeadlineFormatted: string;
   hasCustomQuestions: boolean;
   isRegistering: boolean;
+  isPastEvent: boolean;
   eventTrackingContext: EventTrackingContext;
+}
+
+function CompactRegistrationDeadlineBanner({
+  icon: Icon,
+  iconClassName,
+  title,
+  subtitle,
+}: {
+  icon: typeof Hourglass;
+  iconClassName?: string;
+  title: React.ReactNode;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-2.5">
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background">
+        <Icon className={iconClassName ?? "h-3.5 w-3.5 text-primary"} />
+      </div>
+      <div className="space-y-0.5 min-w-0">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
+function RegisterButton({
+  hasCustomQuestions,
+  registerUrl,
+  isRegistering,
+  eventTrackingContext,
+}: {
+  hasCustomQuestions: boolean;
+  registerUrl: string;
+  isRegistering: boolean;
+  eventTrackingContext: EventTrackingContext;
+}) {
+  if (hasCustomQuestions) {
+    return (
+      <Button asChild className="w-full" size="sm" disabled={isRegistering}>
+        <Link to={registerUrl}>Register</Link>
+      </Button>
+    );
+  }
+
+  return (
+    <Form method="post">
+      <input type="hidden" name="intent" value="register" />
+      <input
+        type="hidden"
+        name="eventSessionId"
+        value={eventTrackingContext.sessionId}
+      />
+      <input
+        type="hidden"
+        name="eventUtmSource"
+        value={eventTrackingContext.utmSource}
+      />
+      <input
+        type="hidden"
+        name="eventUtmMedium"
+        value={eventTrackingContext.utmMedium ?? ""}
+      />
+      <input
+        type="hidden"
+        name="eventUtmCampaign"
+        value={eventTrackingContext.utmCampaign ?? ""}
+      />
+      <input
+        type="hidden"
+        name="eventUtmContent"
+        value={eventTrackingContext.utmContent ?? ""}
+      />
+      <input
+        type="hidden"
+        name="eventUtmTerm"
+        value={eventTrackingContext.utmTerm ?? ""}
+      />
+      <input
+        type="hidden"
+        name="eventFirstVisitStartedAt"
+        value={eventTrackingContext.firstVisitStartedAt}
+      />
+      <Button
+        type="submit"
+        className="w-full"
+        size="sm"
+        disabled={isRegistering}
+      >
+        {isRegistering ? "Registering..." : "Register"}
+      </Button>
+    </Form>
+  );
 }
 
 export function NativeCanRegisterView({
@@ -29,6 +131,7 @@ export function NativeCanRegisterView({
   registrationDeadlineFormatted,
   hasCustomQuestions,
   isRegistering,
+  isPastEvent,
   eventTrackingContext,
 }: NativeCanRegisterViewProps) {
   const { user, userProfile } = userData;
@@ -37,162 +140,96 @@ export function NativeCanRegisterView({
     publicEventSlug(event),
   );
 
-  return (
-    <>
-      <Activity mode={!!timeRemaining ? "visible" : "hidden"}>
-        <div className="mb-4 flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background shadow-sm">
-            <Hourglass className="h-4 w-4 text-primary" />
-          </div>
-          <div className="space-y-0.5">
-            <p className="text-sm font-medium">
-              Registration closes in{" "}
-              <span className="text-primary font-bold">
-                {timeRemaining?.formatted}
-              </span>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Secure your spot before it's too late!
-            </p>
-          </div>
-        </div>
-      </Activity>
+  const timeUntilStart = useEventStartTimer(
+    event.start_time,
+    event.timezone,
+    isPastEvent,
+  );
 
-      <Activity
-        mode={
-          !timeRemaining && event.registration_deadline ? "visible" : "hidden"
-        }
-      >
-        <div className="mb-4 flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background shadow-sm">
-            <CalendarClock className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="space-y-0.5">
-            <p className="text-sm font-medium">
-              Registration closes {registrationDeadlineFormatted}
-            </p>
-            <p className="text-xs text-muted-foreground">Don't miss out!</p>
-          </div>
-        </div>
-      </Activity>
+  const displayName = getRegistrationDisplayName(userProfile, user);
+  const avatarInitials = getRegistrationAvatarInitials(userProfile, user);
 
-      <p className="text-sm text-foreground mb-4">
-        Welcome! To join the event, please register below.
-      </p>
+  if (user) {
+    return (
+      <div className="space-y-3">
+        <RegistrationTwoColumnLayout
+          leftColumn={
+            <>
+              <RegistrationIdentityRow
+                displayName={displayName}
+                avatarUrl={userProfile?.avatar_url}
+                avatarInitials={avatarInitials}
+                trailing={
+                  <Activity mode={timeUntilStart ? "visible" : "hidden"}>
+                    <EventStartCountdownBadge
+                      formatted={timeUntilStart?.formatted}
+                    />
+                  </Activity>
+                }
+              />
+            </>
+          }
+          rightColumn={null}
+        />
 
-      <Activity mode={user ? "visible" : "hidden"}>
-        <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-              {userProfile?.full_name
-                ? userProfile.full_name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2)
-                : user?.email?.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            {userProfile?.full_name ? (
+        <Activity mode={!!timeRemaining ? "visible" : "hidden"}>
+          <CompactRegistrationDeadlineBanner
+            icon={Hourglass}
+            title={
               <>
-                <span className="text-sm font-semibold text-foreground">
-                  {userProfile.full_name}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {user?.email}
+                Registration closes in{" "}
+                <span className="text-primary font-bold">
+                  {timeRemaining?.formatted}
                 </span>
               </>
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                {user?.email}
-              </span>
-            )}
-          </div>
-        </div>
-      </Activity>
+            }
+            subtitle="Secure your spot before it's too late!"
+          />
+        </Activity>
 
-      <Activity mode={user ? "visible" : "hidden"}>
-        {hasCustomQuestions ? (
-          <Button asChild className="w-full" size="sm" disabled={isRegistering}>
-            <Link to={registerUrl}>Register</Link>
-          </Button>
-        ) : (
-          <Form method="post">
-            <input type="hidden" name="intent" value="register" />
-            <input
-              type="hidden"
-              name="eventSessionId"
-              value={eventTrackingContext.sessionId}
-            />
-            <input
-              type="hidden"
-              name="eventUtmSource"
-              value={eventTrackingContext.utmSource}
-            />
-            <input
-              type="hidden"
-              name="eventUtmMedium"
-              value={eventTrackingContext.utmMedium ?? ""}
-            />
-            <input
-              type="hidden"
-              name="eventUtmCampaign"
-              value={eventTrackingContext.utmCampaign ?? ""}
-            />
-            <input
-              type="hidden"
-              name="eventUtmContent"
-              value={eventTrackingContext.utmContent ?? ""}
-            />
-            <input
-              type="hidden"
-              name="eventUtmTerm"
-              value={eventTrackingContext.utmTerm ?? ""}
-            />
-            <input
-              type="hidden"
-              name="eventFirstVisitStartedAt"
-              value={eventTrackingContext.firstVisitStartedAt}
-            />
-            <Button
-              type="submit"
-              className="w-full"
-              size="sm"
-              disabled={isRegistering}
-            >
-              {isRegistering ? "Registering..." : "Register"}
-            </Button>
-          </Form>
-        )}
-      </Activity>
+        <Activity
+          mode={
+            !timeRemaining && event.registration_deadline ? "visible" : "hidden"
+          }
+        >
+          <CompactRegistrationDeadlineBanner
+            icon={CalendarClock}
+            iconClassName="h-3.5 w-3.5 text-muted-foreground"
+            title={<>Registration closes {registrationDeadlineFormatted}</>}
+            subtitle="Don't miss out!"
+          />
+        </Activity>
 
-      <Activity mode={!user ? "visible" : "hidden"}>
-        <div className="space-y-3">
-          <Button asChild className="w-full" size="lg">
-            <Link to={registerUrl}>Register for Event</Link>
-          </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              onClick={() => {
-                window.localStorage.setItem(
-                  "post_login_return_to",
-                  Routes.community.event(
-                    community.slug,
-                    publicEventSlug(event),
-                  ),
-                );
-              }}
-              className="underline hover:text-foreground font-medium"
-            >
-              Login
-            </Link>
-          </p>
-        </div>
-      </Activity>
-    </>
+        <RegisterButton
+          hasCustomQuestions={hasCustomQuestions}
+          registerUrl={registerUrl}
+          isRegistering={isRegistering}
+          eventTrackingContext={eventTrackingContext}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <Button asChild className="w-full" size="lg">
+        <Link to={registerUrl}>Register for Event</Link>
+      </Button>
+      <p className="text-xs text-center text-muted-foreground">
+        Already have an account?{" "}
+        <Link
+          to="/login"
+          onClick={() => {
+            window.localStorage.setItem(
+              "post_login_return_to",
+              Routes.community.event(community.slug, publicEventSlug(event)),
+            );
+          }}
+          className="underline hover:text-foreground font-medium"
+        >
+          Login
+        </Link>
+      </p>
+    </div>
   );
 }

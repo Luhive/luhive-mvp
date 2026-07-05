@@ -1,70 +1,64 @@
-import { Link } from "react-router";
-import { Activity, Suspense, lazy } from "react";
-import { Calendar, Send } from "lucide-react";
+import { Activity } from "react";
+import { Calendar } from "lucide-react";
 import { Button } from "~/shared/components/ui/button";
 import { Badge } from "~/shared/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import HostedBy from "~/modules/events/components/shared/hosted-by";
 import {
-	detectDiscussionPlatform,
-	getPlatformName,
-	getPlatformIcon,
+  detectDiscussionPlatform,
+  getPlatformName,
+  getPlatformIcon,
 } from "~/modules/events/utils/discussion-platform";
-import {AttendersAvatarsSkeleton} from "~/modules/events/components/attenders/attender-avatars-skeleton"
+import { EventAttendeesAvatars } from "./event-attendees-avatars";
 import { cn } from "~/shared/lib/utils";
 import type { Community, Event } from "~/shared/models/entity.types";
 import type { UserData } from "~/modules/events/server/event-detail-loader.server";
 
-const AttendersAvatars = lazy(() =>
-	import("~/modules/events/components/attenders/attenders-avatars").then((m) => ({ default: m.default }))
-);
-
 interface EventSidebarPanelProps {
-	event: Event;
-	community: Community;
-	userData: UserData;
-	isPastEvent: boolean;
-	capacityPercentage: number;
-	isExternalEvent: boolean;
-	onShare: (event: Event) => void;
-	hostingCommunities?: Array<{
-		id: string;
-		name: string;
-		slug: string;
-		logo_url: string | null;
-		role: "host" | "co-host";
-		isMember?: boolean;
-	}>;
+  event: Event;
+  community: Community;
+  userData: UserData;
+  isPastEvent: boolean;
+  capacityPercentage: number;
+  isExternalEvent: boolean;
+  onShare: (event: Event) => void;
+  hostingCommunities?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    logo_url: string | null;
+    role: "host" | "co-host";
+    isMember?: boolean;
+  }>;
 }
 
 export function EventSidebarPanel({
-	event,
-	community,
-	userData,
-	isPastEvent,
-	capacityPercentage,
-	isExternalEvent,
-	onShare,
-	hostingCommunities,
+  event,
+  community,
+  userData,
+  isPastEvent,
+  capacityPercentage,
+  isExternalEvent,
+  onShare,
+  hostingCommunities,
 }: EventSidebarPanelProps) {
-	const { registrationCount, canRegister } = userData;
-	
-	// Use hostingCommunities if provided, otherwise fall back to just the community
-	const hosts =
-		hostingCommunities && hostingCommunities.length > 0
-			? hostingCommunities
-			: [
-					{
-						id: community.id,
-						name: community.name,
-						slug: community.slug,
-						logo_url: community.logo_url,
-						role: "host" as const,
-						isMember: false,
-					},
-				];
+  const { registrationCount, canRegister } = userData;
 
-	return (
+  // Use hostingCommunities if provided, otherwise fall back to just the community
+  const hosts =
+    hostingCommunities && hostingCommunities.length > 0
+      ? hostingCommunities
+      : [
+          {
+            id: community.id,
+            name: community.name,
+            slug: community.slug,
+            logo_url: community.logo_url,
+            role: "host" as const,
+            isMember: false,
+          },
+        ];
+
+  return (
     <div className="contents lg:block lg:space-y-6">
       {/* Event Cover - Mobile Order 1 */}
       <div className="order-1">
@@ -95,27 +89,23 @@ export function EventSidebarPanel({
       </div>
 
       {/* Host Info, Capacity & Share - Mobile Order 3 */}
-      <div className="order-3 space-y-6">
-        <div className="space-y-3">
-          <div className="border-b pb-2">
+      <div className="order-3 space-y-0 lg:space-y-6">
+        <div className="space-y-0 lg:space-y-3">
+          <div className="border-b-0 pb-0 lg:border-b lg:pb-2">
             <HostedBy
               hosts={hosts}
               fallbackCommunity={community}
               isLoggedIn={!!userData.user}
               userEmail={userData.user?.email ?? null}
+              hideLabelOnMobile
             />
           </div>
 
-          <AttendersAvatars
-            eventId={event.id}
-            maxVisible={5}
+          <EventAttendeesAvatars
+            event={event}
+            userData={userData}
             isExternalEvent={isExternalEvent}
-            refreshKey={registrationCount}
-            canViewList={
-              isExternalEvent ||
-              userData.isUserRegistered ||
-              userData.isOwnerOrAdmin
-            }
+            className="hidden lg:block"
           />
         </div>
 

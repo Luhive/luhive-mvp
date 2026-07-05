@@ -68,7 +68,8 @@ export function EventRegisterView({
     navigation.state === "submitting" || navigation.state === "loading";
 
   const navigateAfterRegistration = () => {
-    navigate(eventPageUrl, { replace: true });
+    const separator = eventPageUrl.includes("?") ? "&" : "?";
+    navigate(`${eventPageUrl}${separator}registered=1`, { replace: true });
   };
 
   // Logged-in POST flows: the toasts hook applies the server-returned state.

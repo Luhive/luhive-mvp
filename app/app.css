@@ -420,3 +420,27 @@ select:-webkit-autofill:active {
 .custom-scroll-design::-webkit-scrollbar-thumb:hover {
   background: #fb8b53;
 }
+
+@keyframes registration-highlight-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 0%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+  }
+}
+
+.registration-card-highlight {
+  animation: registration-highlight-pulse 1s cubic-bezier(0.23, 1, 0.32, 1) 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registration-card-highlight {
+    animation: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+  }
+}

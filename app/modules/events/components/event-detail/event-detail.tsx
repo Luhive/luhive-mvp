@@ -136,7 +136,12 @@ export function EventDetail({
 	externalPlatformName,
 	registrationDeadlineFormatted,
 	hostingCommunities,
-}: EventDetailLoaderData) {
+	highlightRegistrationCard = false,
+	isRegisterOpen = false,
+}: EventDetailLoaderData & {
+	highlightRegistrationCard?: boolean;
+	isRegisterOpen?: boolean;
+}) {
 	const navigation = useNavigation();
 	const lastSubmittedIntentRef = useRef<string | null>(null);
 
@@ -208,7 +213,7 @@ export function EventDetail({
 
 	return (
 		<main className="py-6 md:py-10">
-			<div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-8 lg:gap-12">
+			<div className="flex flex-col lg:grid lg:grid-cols-[400px_1fr] gap-4 lg:gap-12">
 				<EventSidebarPanel
 					event={event}
 					community={community}
@@ -233,6 +238,8 @@ export function EventDetail({
 					isRegistering={isRegistering}
 					isUnregistering={isUnregistering}
 					eventTrackingContext={trackingContext}
+					highlightRegistrationCard={highlightRegistrationCard}
+					isRegisterOpen={isRegisterOpen}
 				/>
 			</div>
 		</main>

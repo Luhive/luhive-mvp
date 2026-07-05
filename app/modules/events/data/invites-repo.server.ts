@@ -174,7 +174,7 @@ export async function canUserInviteToEvent(
     .eq("user_id", userId)
     .eq("is_verified", true)
     .eq("rsvp_status", "going")
-    .eq("approval_status", "approved")
+    .in("approval_status", ["approved", "pending"])
     .maybeSingle();
 
   return !!registration;
