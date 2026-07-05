@@ -79,7 +79,7 @@ export function EventRegistrationCard({
 					className={
 						isUserRegistered && userRegistrationStatus === "approved" && !isOwnerOrAdmin
 							? "px-3 py-3"
-							: "px-4 py-0 space-y-4"
+							: "px-4 pt-3 pb-0 space-y-4"
 					}
 				>
 					<Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
