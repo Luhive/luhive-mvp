@@ -1,7 +1,10 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { createClient } from "~/shared/lib/supabase/server";
+import {
+  createClient,
+  createServiceRoleClient,
+} from "~/shared/lib/supabase/server";
 import { Routes } from "~/shared/lib/routing/routes";
 import { sanitizeDuplicateError } from "~/modules/events/utils/sanitize-error";
 import type { ActionFunctionArgs } from "react-router";
@@ -11,6 +14,11 @@ import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
 import { resolvePublicEvent } from "~/modules/events/server/resolve-public-event.server";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import { GoogleMaps } from "~/modules/events/utils/google-maps";
+import { handleAcceptInviteAction } from "~/modules/events/server/event-invite-accept-action.server";
+import { ensureCommunityMembership } from "~/modules/community/server/join-community.server";
+import { getApprovedRegistrationCount } from "~/modules/events/data/registrations-repo.server";
+import { computeCanRegister } from "~/modules/events/server/fetch-event-page-user-state.server";
+import type { EventRegistrationState } from "~/modules/events/model/event-detail-view.types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -138,6 +146,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
+
+  if (intent === "accept-invite") {
+    if (authError || !user || !user.email) {
+      return { success: false, error: "Please log in to accept this invitation." };
+    }
+
+    return handleAcceptInviteAction({
+      request,
+      params,
+      formData,
+      userId: user.id,
+      userEmail: user.email,
+    });
+  }
 
   if (authError || !user) {
     return {
@@ -285,7 +307,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const { error: registerError } = await supabase
+    const { error: registerError } = await (supabase as any)
       .from("event_registrations")
       .insert({
         event_id: eventId,
@@ -322,6 +344,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       };
     }
 
+    const joinCommunity = formData.get("joinCommunity") !== "false";
+
+    if (joinCommunity) {
+      try {
+        await ensureCommunityMembership({
+          supabase,
+          userId: user.id,
+          communityId: community.id,
+          userEmail: user.email,
+          skipNotification: true,
+        });
+      } catch (joinError) {
+        console.error("Failed to join community after event registration:", joinError);
+      }
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")
@@ -335,89 +373,102 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
     const origin = new URL(request.url).origin;
 
-    try {
-      await fetch(`${origin}/api/events/registration-confirmation`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          approvalStatus,
-          recipientEmail: user.email || "",
-          recipientName: profile?.full_name || "there",
-          eventTitle: event.title,
-          communityName: community.name,
-          eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-          eventTime: eventDate.format("h:mm A z"),
-          eventLink,
-          registerAccountLink: `${origin}/signup`,
-          startTimeISO: event.start_time,
-          endTimeISO: event.end_time || event.start_time,
-          locationAddress: event.location_address || undefined,
-          locationMapUrl: event.location_address
-            ? GoogleMaps.mapsSearchUrl({
-                name: event.location_name,
-                address: event.location_address,
-                placeId: event.location_place_id,
-              })
-            : undefined,
-          onlineMeetingLink: event.online_meeting_link || undefined,
-          checkinToken,
-        }),
-      });
-    } catch (error) {
+    const registrationState: EventRegistrationState = {
+      isUserRegistered: true,
+      userRegistrationStatus: approvalStatus,
+      userCheckinToken: checkinToken,
+      registrationCount: await getApprovedRegistrationCount(
+        createServiceRoleClient(),
+        eventId,
+      ),
+    };
+
+    fetch(`${origin}/api/events/registration-confirmation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        approvalStatus,
+        recipientEmail: user.email || "",
+        recipientName: profile?.full_name || "there",
+        eventTitle: event.title,
+        communityName: community.name,
+        eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+        eventTime: eventDate.format("h:mm A z"),
+        eventLink,
+        registerAccountLink: `${origin}/signup`,
+        startTimeISO: event.start_time,
+        endTimeISO: event.end_time || event.start_time,
+        locationAddress: event.location_address || undefined,
+        locationMapUrl: event.location_address
+          ? GoogleMaps.mapsSearchUrl({
+              name: event.location_name,
+              address: event.location_address,
+              placeId: event.location_place_id,
+            })
+          : undefined,
+        onlineMeetingLink: event.online_meeting_link || undefined,
+        checkinToken,
+      }),
+    }).catch((error) => {
       console.error("Failed to trigger registration confirmation email:", error);
-    }
+    });
 
     if (approvalStatus === "pending") {
       return {
         success: true,
         message: "Registration request sent! Waiting for approval.",
+        registrationState,
       };
     }
 
     // Notify host and co-host community admins about new registration
-    try {
-      // Get host community name
-      const hostCommunityName = community.name;
+    void (async () => {
+      try {
+        const hostCommunityName = community.name;
+        const { data: collaborations } = await supabase
+          .from("event_collaborations")
+          .select("community_id, community:communities(name)")
+          .eq("event_id", eventId)
+          .eq("status", "accepted")
+          .neq("role", "host");
 
-      // Get co-host community names
-      const { data: collaborations } = await supabase
-        .from("event_collaborations")
-        .select("community_id, community:communities(name)")
-        .eq("event_id", eventId)
-        .eq("status", "accepted")
-        .neq("role", "host");
+        const coHostCommunityNames =
+          collaborations
+            ?.map((c: { community?: { name?: string } | { name?: string }[] }) => {
+              const collabCommunity = c.community;
+              if (Array.isArray(collabCommunity)) return collabCommunity[0]?.name;
+              return collabCommunity?.name;
+            })
+            .filter(Boolean) as string[] || [];
 
-      const coHostCommunityNames = collaborations
-        ?.map((c: any) => c.community?.name)
-        .filter(Boolean) as string[] || [];
-
-      await fetch(`${new URL(request.url).origin}/api/events/collaboration-notification`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: "registration-notification",
-          eventId,
-          hostCommunityId: event.community_id,
-          hostCommunityName,
-          coHostCommunityNames,
-          eventTitle: event.title,
-          registrantName: profile?.full_name || user.email?.split("@")[0] || "Someone",
-          registrantEmail: user.email || "",
-          eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-          eventTime: eventDate.format("h:mm A z"),
-          eventLink,
-        }),
-      });
-    } catch (notifyError) {
-      console.error("Failed to trigger registration notification:", notifyError);
-      // Don't fail the registration if notification fails
-    }
+        await fetch(`${origin}/api/events/collaboration-notification`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            type: "registration-notification",
+            eventId,
+            hostCommunityId: event.community_id,
+            hostCommunityName,
+            coHostCommunityNames,
+            eventTitle: event.title,
+            registrantName: profile?.full_name || user.email?.split("@")[0] || "Someone",
+            registrantEmail: user.email || "",
+            eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+            eventTime: eventDate.format("h:mm A z"),
+            eventLink,
+          }),
+        });
+      } catch (notifyError) {
+        console.error("Failed to trigger registration notification:", notifyError);
+      }
+    })();
 
     return {
       success: true,
       message: "Successfully registered for the event!",
+      registrationState,
     };
   }
 
@@ -436,7 +487,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return { success: false, error: unregisterError.message };
     }
 
-    return { success: true, message: "Registration cancelled" };
+    const registrationCount = await getApprovedRegistrationCount(
+      createServiceRoleClient(),
+      eventId,
+    );
+
+    const registrationState: EventRegistrationState & { canRegister: boolean } = {
+      isUserRegistered: false,
+      userRegistrationStatus: null,
+      userCheckinToken: null,
+      registrationCount,
+      canRegister: computeCanRegister(event, registrationCount, false),
+    };
+
+    return { success: true, message: "Registration cancelled", registrationState };
   }
 
   return { success: false, error: "Invalid action" };

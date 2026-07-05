@@ -5,10 +5,13 @@ import { redirect } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
-import { createClient } from "~/shared/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
 import { getIpLocation } from "~/shared/lib/ip-location.server";
 import { notifyCommunityJoin } from "~/modules/community/server/notify-community-join.server";
 import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
+import { fetchEventPageUserState } from "~/modules/events/server/fetch-event-page-user-state.server";
+import type { EventPageUserState } from "~/modules/events/model/event-detail-view.types";
+import type { Profile } from "~/shared/models/entity.types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -39,6 +42,56 @@ function getSafeReturnTo(returnTo: string | null): string | null {
 function withJoinedQuery(path: string): string {
   const separator = path.includes("?") ? "&" : "?";
   return `${path}${separator}joined=true`;
+}
+
+async function buildOtpModalSuccessResponse(
+  supabase: ReturnType<typeof createClient>["supabase"],
+  user: { id: string; email?: string | null },
+  opts: {
+    joined: boolean;
+    communitySlug: string | null;
+    registeredEvent: boolean;
+    registeredEventCommunityId: string | null;
+    eventId: string | null;
+    fullName: string | null;
+    avatarUrl: string | null;
+    headers: Headers;
+  },
+) {
+  const serviceClient = createServiceRoleClient();
+  const { data: userProfile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  let registrationState: EventPageUserState | undefined;
+  if (opts.registeredEvent && opts.eventId && opts.registeredEventCommunityId) {
+    registrationState = await fetchEventPageUserState(
+      supabase,
+      serviceClient,
+      opts.eventId,
+      opts.registeredEventCommunityId,
+    );
+  }
+
+  return Response.json(
+    {
+      success: true,
+      joined: opts.joined,
+      communitySlug: opts.communitySlug,
+      registeredEvent: opts.registeredEvent,
+      fullName: opts.fullName ?? userProfile?.full_name ?? null,
+      avatarUrl: opts.avatarUrl ?? userProfile?.avatar_url ?? null,
+      userId: user.id,
+      email: user.email ?? null,
+      userProfile: (userProfile as Profile | null) ?? null,
+      registrationState,
+      isCommunityMember:
+        registrationState?.isCommunityMember ?? opts.joined,
+    },
+    { headers: opts.headers },
+  );
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -144,20 +197,19 @@ export async function action({ request }: ActionFunctionArgs) {
   let joined = false;
   let communitySlug: string | null = null;
 
-  // Event RSVP flow: create profile if name/surname provided and none exists
-  const name = (formData.get("name") as string | null)?.trim();
-  const surname = (formData.get("surname") as string | null)?.trim();
-  if (name && surname) {
+  const submittedFullName = (formData.get("fullName") as string | null)?.trim() || null;
+
+  // Event RSVP flow: create profile if fullName provided and none exists
+  if (submittedFullName) {
     const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
       .eq("id", data.user.id)
       .maybeSingle();
     if (!existingProfile) {
-      const fullName = `${name} ${surname}`.trim();
       await supabase.from("profiles").insert({
         id: data.user.id,
-        full_name: fullName,
+        full_name: submittedFullName,
       });
     }
   }
@@ -319,7 +371,6 @@ export async function action({ request }: ActionFunctionArgs) {
           )
           .filter(Boolean) as string[] | [];
 
-        const fullName = name && surname ? `${name} ${surname}`.trim() : null;
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name")
@@ -327,7 +378,10 @@ export async function action({ request }: ActionFunctionArgs) {
           .maybeSingle();
 
         const registrantName =
-          fullName || profile?.full_name || data.user.email?.split("@")[0] || "Someone";
+          submittedFullName ||
+          profile?.full_name ||
+          data.user.email?.split("@")[0] ||
+          "Someone";
         const tz = (event.timezone as string) ?? "UTC";
         const eventDate = dayjs(event.start_time).tz(tz);
         const origin = new URL(request.url).origin;
@@ -431,7 +485,7 @@ export async function action({ request }: ActionFunctionArgs) {
           memberEmail: data.user.email ?? null,
           memberName:
             memberProfile?.full_name ||
-            (name && surname ? `${name} ${surname}`.trim() : null) ||
+            submittedFullName ||
             data.user.email?.split("@")[0] ||
             "A new member",
         });
@@ -449,10 +503,16 @@ export async function action({ request }: ActionFunctionArgs) {
       communitySlug = community.slug;
 
       if (isModal) {
-        return Response.json(
-          { success: true, joined, communitySlug, registeredEvent, fullName, avatarUrl },
-          { headers }
-        );
+        return buildOtpModalSuccessResponse(supabase, data.user, {
+          joined,
+          communitySlug,
+          registeredEvent,
+          registeredEventCommunityId,
+          eventId: eventId ?? null,
+          fullName,
+          avatarUrl,
+          headers,
+        });
       }
 
       const destination = resolvedReturnTo ?? Routes.community.detail(community.slug);
@@ -461,10 +521,16 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (isModal) {
-    return Response.json(
-      { success: true, joined, communitySlug, registeredEvent, fullName, avatarUrl },
-      { headers }
-    );
+    return buildOtpModalSuccessResponse(supabase, data.user, {
+      joined,
+      communitySlug,
+      registeredEvent,
+      registeredEventCommunityId,
+      eventId: eventId ?? null,
+      fullName,
+      avatarUrl,
+      headers,
+    });
   }
 
   if (resolvedReturnTo) {

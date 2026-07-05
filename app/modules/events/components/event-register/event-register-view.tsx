@@ -9,10 +9,15 @@ import {
   type RegistrationFlowStep,
 } from "~/modules/events/components/registration/registration-flow";
 import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
+import { JoinCommunityCheckbox } from "~/modules/events/components/registration/join-community-checkbox";
 import { useEventDetailToasts } from "~/modules/events/hooks/use-event-detail-toasts";
 import { getEventTrackingContext } from "~/modules/events/utils/event-session-tracker";
 import type { Community, Event, Profile } from "~/shared/models/entity.types";
 import type { CustomQuestionJson } from "~/modules/events/model/event.types";
+import type { EventRegisterInviteLoaderData } from "~/modules/events/server/event-register-loader.server";
+import { useRegistrationCacheUpdate } from "~/modules/events/hooks/use-event-registration-query";
+import { useSetCurrentUserCache } from "~/shared/hooks/use-current-user-query";
+import type { OtpVerifySuccessResult } from "~/modules/auth/model/otp.types";
 
 interface EventRegisterViewProps {
   event: Event;
@@ -22,6 +27,8 @@ interface EventRegisterViewProps {
   userPhone: string | null;
   user: { id: string; email?: string | null } | null;
   userProfile: Profile | null;
+  inviteData?: EventRegisterInviteLoaderData | null;
+  isCommunityMember?: boolean;
 }
 
 export function EventRegisterView({
@@ -32,71 +39,146 @@ export function EventRegisterView({
   userPhone,
   user,
   userProfile,
+  inviteData,
+  isCommunityMember = false,
 }: EventRegisterViewProps) {
   const navigate = useNavigate();
   const submit = useSubmit();
   const navigation = useNavigation();
+  const updateEventPageCache = useRegistrationCacheUpdate(event.id);
+  const setCurrentUserCache = useSetCurrentUserCache();
   const lastSubmittedIntentRef = useRef<string | null>(null);
   const [guestStep, setGuestStep] = useState<RegistrationFlowStep>("email");
+  const [joinCommunity, setJoinCommunity] = useState(true);
+
+  const isInviteMode = Boolean(inviteData?.inviteToken);
 
   const eventSlug = publicEventSlug(event);
   const eventPageUrl = Routes.community.event(community.slug, eventSlug);
-  const registerPageUrl = Routes.community.eventRegister(community.slug, eventSlug);
-  const trackingContext = useMemo(() => getEventTrackingContext(event.id), [event.id]);
+  const registerPageUrl = Routes.community.eventRegister(
+    community.slug,
+    eventSlug,
+  );
+  const trackingContext = useMemo(
+    () => getEventTrackingContext(event.id),
+    [event.id],
+  );
 
-  const isSubmitting = navigation.state === "submitting" || navigation.state === "loading";
+  const isSubmitting =
+    navigation.state === "submitting" || navigation.state === "loading";
 
   const navigateAfterRegistration = () => {
-    navigate(eventPageUrl, { replace: true, state: { justRegistered: true } });
+    navigate(eventPageUrl, { replace: true });
   };
 
+  // Logged-in POST flows: the toasts hook applies the server-returned state.
   useEventDetailToasts({
+    eventId: event.id,
     submittedIntentRef: lastSubmittedIntentRef,
     onRegisterSuccess: navigateAfterRegistration,
   });
 
-  const handleRegistrationSuccess = navigateAfterRegistration;
+  // Guest/OTP flows register outside this route's action, so flip the UI
+  // from what we know; the cache update refetches the rest (count, token).
+  const handleOtpVerified = (result: OtpVerifySuccessResult) => {
+    if (result.userProfile) {
+      setCurrentUserCache(result.userProfile);
+    }
+  };
+
+  const handleRegistrationSuccess = (result?: OtpVerifySuccessResult) => {
+    if (result?.userProfile) {
+      setCurrentUserCache(result.userProfile);
+    }
+
+    if (result?.registrationState) {
+      updateEventPageCache(result.registrationState);
+    } else {
+      updateEventPageCache({
+        isUserRegistered: true,
+        userRegistrationStatus: event.is_approve_required
+          ? "pending"
+          : "approved",
+      });
+    }
+
+    navigateAfterRegistration();
+  };
 
   const handleCustomQuestionsSubmit = (answers: Record<string, unknown>) => {
-    lastSubmittedIntentRef.current = "register";
+    lastSubmittedIntentRef.current = isInviteMode
+      ? "accept-invite"
+      : "register";
 
     const formData = new FormData();
-    formData.append("intent", "register");
+    formData.append("intent", isInviteMode ? "accept-invite" : "register");
     formData.append("custom_answers", JSON.stringify(answers));
-    formData.append("eventSessionId", trackingContext.sessionId);
-    formData.append("eventUtmSource", trackingContext.utmSource);
-    if (trackingContext.utmMedium) formData.append("eventUtmMedium", trackingContext.utmMedium);
-    if (trackingContext.utmCampaign) {
-      formData.append("eventUtmCampaign", trackingContext.utmCampaign);
+
+    if (isInviteMode && inviteData?.inviteToken) {
+      formData.append("inviteToken", inviteData.inviteToken);
+    } else {
+      formData.append("eventSessionId", trackingContext.sessionId);
+      formData.append("eventUtmSource", trackingContext.utmSource);
+      if (trackingContext.utmMedium)
+        formData.append("eventUtmMedium", trackingContext.utmMedium);
+      if (trackingContext.utmCampaign) {
+        formData.append("eventUtmCampaign", trackingContext.utmCampaign);
+      }
+      if (trackingContext.utmContent) {
+        formData.append("eventUtmContent", trackingContext.utmContent);
+      }
+      if (trackingContext.utmTerm)
+        formData.append("eventUtmTerm", trackingContext.utmTerm);
+      formData.append(
+        "eventFirstVisitStartedAt",
+        trackingContext.firstVisitStartedAt,
+      );
     }
-    if (trackingContext.utmContent) {
-      formData.append("eventUtmContent", trackingContext.utmContent);
-    }
-    if (trackingContext.utmTerm) formData.append("eventUtmTerm", trackingContext.utmTerm);
-    formData.append("eventFirstVisitStartedAt", trackingContext.firstVisitStartedAt);
+
+    formData.append("joinCommunity", joinCommunity ? "true" : "false");
+
     submit(formData, { method: "POST" });
   };
 
-  const overlayTitle =
-    user && hasCustomQuestions
+  const overlayTitle = isInviteMode
+    ? "Complete your registration"
+    : user && hasCustomQuestions
       ? "Tell us more"
       : getRegistrationOverlayTitle(guestStep);
 
+  const inviteDisplayName =
+    inviteData?.inviteeName || userProfile?.full_name || undefined;
+  const inviteDisplayEmail =
+    inviteData?.inviteeEmail || user?.email || undefined;
+  const showJoinCommunityCheckbox =
+    !isCommunityMember && (isInviteMode || Boolean(user && hasCustomQuestions));
+
   return (
     <RegistrationOverlayShell title={overlayTitle} onCloseHref={eventPageUrl}>
-      {user && hasCustomQuestions ? (
+      {(user && hasCustomQuestions) || isInviteMode ? (
         <CustomQuestionsForm
           open
           onOpenChange={() => {}}
           eventId={event.id}
           customQuestions={customQuestions}
-          userName={userProfile?.full_name || undefined}
-          userEmail={user.email || undefined}
+          userName={inviteDisplayName}
+          userEmail={inviteDisplayEmail}
           userAvatarUrl={userProfile?.avatar_url || undefined}
           userPhone={userPhone ?? undefined}
           onSubmit={handleCustomQuestionsSubmit}
           isSubmitting={isSubmitting}
           variant="overlay"
+          afterQuestionsContent={
+            showJoinCommunityCheckbox ? (
+              <JoinCommunityCheckbox
+                id="join-community-register"
+                communityName={community.name}
+                checked={joinCommunity}
+                onCheckedChange={setJoinCommunity}
+                disabled={isSubmitting}
+              />
+            ) : null
+          }
         />
       ) : (
         <RegistrationFlow
@@ -112,8 +194,10 @@ export function EventRegisterView({
           trackingContext={trackingContext}
           registerActionUrl={registerPageUrl}
           onSuccess={handleRegistrationSuccess}
+          onOtpVerified={handleOtpVerified}
           onStepChange={setGuestStep}
           variant="overlay"
+          isCommunityMember={isCommunityMember}
         />
       )}
     </RegistrationOverlayShell>

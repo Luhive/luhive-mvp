@@ -6,12 +6,12 @@ import { Routes } from "~/shared/lib/routing/routes";
 import { Button } from "~/shared/components/ui/button";
 import { Input } from "~/shared/components/ui/input";
 import { Label } from "~/shared/components/ui/label";
-import { Checkbox } from "~/shared/components/ui/checkbox";
 import { Spinner } from "~/shared/components/ui/spinner";
 import { useFetcher } from "react-router";
 import { toast } from "sonner";
 import { OtpInputInline } from "~/modules/auth/components/otp-input-inline";
 import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
+import { JoinCommunityCheckbox } from "~/modules/events/components/registration/join-community-checkbox";
 import type { CustomQuestionJson } from "~/modules/events/model/event.types";
 import type { CustomAnswerJson } from "~/modules/events/model/event.types";
 import {
@@ -19,12 +19,14 @@ import {
   type EventTrackingContext,
 } from "~/modules/events/utils/event-session-tracker";
 import { cn } from "~/shared/lib/utils/cn";
+import { createClient } from "~/shared/lib/supabase/client";
+import type { OtpVerifySuccessResult } from "~/modules/auth/model/otp.types";
 
 const OVERLAY_FIELD_CLASS =
   "bg-muted/50 border-transparent shadow-none h-11 rounded-lg focus-visible:bg-background";
 
 type EmailFormValues = { email: string };
-type DetailsFormValues = { name: string; surname: string };
+type DetailsFormValues = { fullName: string };
 
 export type RegistrationFlowStep = "email" | "details" | "questions" | "otp";
 
@@ -54,10 +56,12 @@ export interface RegistrationFlowProps {
   returnTo?: string;
   trackingContext?: EventTrackingContext;
   registerActionUrl?: string;
-  onSuccess: () => void;
+  onSuccess: (result?: OtpVerifySuccessResult) => void;
+  onOtpVerified?: (result: OtpVerifySuccessResult) => void;
   showStepHeader?: boolean;
   onStepChange?: (step: RegistrationFlowStep) => void;
   variant?: "default" | "overlay";
+  isCommunityMember?: boolean;
 }
 
 export function getRegistrationStepLabels(step: RegistrationFlowStep) {
@@ -101,9 +105,11 @@ export function RegistrationFlow({
   trackingContext,
   registerActionUrl,
   onSuccess,
+  onOtpVerified,
   showStepHeader = false,
   onStepChange,
   variant = "default",
+  isCommunityMember: isCommunityMemberProp,
 }: RegistrationFlowProps) {
   const isOverlay = variant === "overlay";
   const checkEmailFetcher = useFetcher<CheckEmailFetcherData>();
@@ -114,16 +120,20 @@ export function RegistrationFlow({
   const [userExists, setUserExists] = React.useState<boolean | null>(null);
   const [otpEmail, setOtpEmail] = React.useState("");
   const [emailStepError, setEmailStepError] = React.useState<string | null>(null);
+  const [detailsStepError, setDetailsStepError] = React.useState<string | null>(null);
   const [joinCommunity, setJoinCommunity] = React.useState(true);
   const [customAnswers, setCustomAnswers] = React.useState<CustomAnswerJson | null>(null);
   const [existingUserFullName, setExistingUserFullName] = React.useState<string | null>(null);
   const [existingUserAvatarUrl, setExistingUserAvatarUrl] = React.useState<string | null>(null);
+  const [resolvedIsCommunityMember, setResolvedIsCommunityMember] = React.useState<
+    boolean | null
+  >(isCommunityMemberProp !== undefined ? isCommunityMemberProp : null);
 
   const emailForm = useForm<EmailFormValues>({
     defaultValues: { email: "" },
   });
   const detailsForm = useForm<DetailsFormValues>({
-    defaultValues: { name: "", surname: "" },
+    defaultValues: { fullName: "" },
   });
 
   const isCheckingEmail =
@@ -139,6 +149,59 @@ export function RegistrationFlow({
     () => trackingContext ?? getEventTrackingContext(eventId),
     [eventId, trackingContext],
   );
+
+  React.useEffect(() => {
+    if (isCommunityMemberProp !== undefined) {
+      setResolvedIsCommunityMember(isCommunityMemberProp);
+      if (isCommunityMemberProp) {
+        setJoinCommunity(false);
+      }
+    }
+  }, [isCommunityMemberProp]);
+
+  React.useEffect(() => {
+    if (isCommunityMemberProp !== undefined) return;
+    if (userExists !== true || step !== "questions") return;
+
+    let cancelled = false;
+
+    (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user || cancelled) return;
+
+      const { data: membership } = await supabase
+        .from("community_members")
+        .select("id")
+        .eq("community_id", communityId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      const isMember = !!membership;
+      setResolvedIsCommunityMember(isMember);
+      if (isMember) {
+        setJoinCommunity(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [communityId, isCommunityMemberProp, step, userExists]);
+
+  const isCheckingExistingMembership =
+    isCommunityMemberProp === undefined &&
+    userExists === true &&
+    step === "questions" &&
+    resolvedIsCommunityMember === null;
+
+  const shouldShowJoinCommunityCheckbox =
+    !isCheckingExistingMembership && resolvedIsCommunityMember !== true;
 
   React.useEffect(() => {
     const data = checkEmailFetcher.data;
@@ -206,9 +269,25 @@ export function RegistrationFlow({
     checkEmailFetcher.submit(formData, { method: "post", action: "/signup" });
   };
 
+  const validateFullName = (): string | null => {
+    const fullName = detailsForm.getValues("fullName")?.trim() || "";
+    if (!fullName || fullName.length < 2) {
+      return "Please enter your full name.";
+    }
+    detailsForm.setValue("fullName", fullName);
+    return null;
+  };
+
   const handleDetailsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const values = detailsForm.getValues();
+    const validationError = validateFullName();
+    if (validationError) {
+      setDetailsStepError(validationError);
+      return;
+    }
+    setDetailsStepError(null);
+
+    const fullName = detailsForm.getValues("fullName").trim();
     const email = emailForm.getValues("email")?.trim() || "";
 
     if (hasCustomQuestions) {
@@ -219,8 +298,7 @@ export function RegistrationFlow({
     const formData = new FormData();
     formData.append("intent", "event-rsvp-signup");
     formData.append("_modal", "true");
-    formData.append("name", values.name);
-    formData.append("surname", values.surname);
+    formData.append("fullName", fullName);
     formData.append("email", email);
     formData.append("eventId", eventId);
     formData.append("communityId", communityId);
@@ -230,13 +308,12 @@ export function RegistrationFlow({
 
   const handleQuestionsSubmitFromDetails = (answers: CustomAnswerJson) => {
     setCustomAnswers(answers);
-    const values = detailsForm.getValues();
+    const fullName = detailsForm.getValues("fullName").trim();
     const email = emailForm.getValues("email")?.trim() || "";
     const formData = new FormData();
     formData.append("intent", "event-rsvp-signup");
     formData.append("_modal", "true");
-    formData.append("name", values.name);
-    formData.append("surname", values.surname);
+    formData.append("fullName", fullName);
     formData.append("email", email);
     formData.append("eventId", eventId);
     formData.append("communityId", communityId);
@@ -248,29 +325,28 @@ export function RegistrationFlow({
     const formData = new FormData();
     formData.append("intent", "register");
     formData.append("custom_answers", JSON.stringify(answers));
+    formData.append("joinCommunity", joinCommunity ? "true" : "false");
     questionsFetcher.submit(formData, {
       method: "post",
       action: resolvedRegisterActionUrl,
     });
   };
 
-  const handleOtpSuccessExistingUser = (userData?: {
-    fullName?: string | null;
-    avatarUrl?: string | null;
-  }) => {
-    if (userData?.fullName) setExistingUserFullName(userData.fullName);
-    setExistingUserAvatarUrl(userData?.avatarUrl ?? null);
+  const handleOtpSuccessExistingUser = (result: OtpVerifySuccessResult) => {
+    if (result.fullName) setExistingUserFullName(result.fullName);
+    setExistingUserAvatarUrl(result.avatarUrl ?? null);
+    onOtpVerified?.(result);
     if (hasCustomQuestions) {
       setStep("questions");
     } else {
       toast.success("Successfully registered for the event!");
-      onSuccess();
+      onSuccess(result);
     }
   };
 
-  const handleOtpSuccessNewUser = () => {
+  const handleOtpSuccessNewUser = (result: OtpVerifySuccessResult) => {
     toast.success("Successfully registered for the event!");
-    onSuccess();
+    onSuccess(result);
   };
 
   const emailStepContent = (
@@ -301,45 +377,44 @@ export function RegistrationFlow({
     </div>
   );
 
+  const joinCommunityCheckbox = shouldShowJoinCommunityCheckbox ? (
+    <JoinCommunityCheckbox
+      id="join-community"
+      communityName={communityName}
+      checked={joinCommunity}
+      onCheckedChange={setJoinCommunity}
+      disabled={isSubmittingSignup || isSubmittingQuestions}
+    />
+  ) : null;
+
   const detailsStepContent = (
     <form onSubmit={handleDetailsSubmit} className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="rsvp-name">Name</Label>
+        <Label htmlFor="rsvp-full-name">Full Name</Label>
         <Input
-          id="rsvp-name"
-          placeholder="John"
-          {...detailsForm.register("name")}
+          id="rsvp-full-name"
+          placeholder="John Doe"
+          {...detailsForm.register("fullName")}
           disabled={isSubmittingSignup}
           className={isOverlay ? OVERLAY_FIELD_CLASS : undefined}
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="rsvp-surname">Surname</Label>
-        <Input
-          id="rsvp-surname"
-          placeholder="Doe"
-          {...detailsForm.register("surname")}
-          disabled={isSubmittingSignup}
-          className={isOverlay ? OVERLAY_FIELD_CLASS : undefined}
-        />
-      </div>
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="join-community"
-          checked={joinCommunity}
-          onCheckedChange={(v) => setJoinCommunity(v === true)}
-        />
-        <label
-          htmlFor="join-community"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          Become a member of {communityName}?
-        </label>
-      </div>
+      {detailsStepError && (
+        <p className="text-sm text-destructive">{detailsStepError}</p>
+      )}
+      {!hasCustomQuestions ? joinCommunityCheckbox : null}
       {hasCustomQuestions ? (
         <Button
           type="button"
-          onClick={() => setStep("questions")}
+          onClick={() => {
+            const validationError = validateFullName();
+            if (validationError) {
+              setDetailsStepError(validationError);
+              return;
+            }
+            setDetailsStepError(null);
+            setStep("questions");
+          }}
           disabled={isSubmittingSignup}
           className="w-full"
           size={isOverlay ? "lg" : "default"}
@@ -375,6 +450,7 @@ export function RegistrationFlow({
         isSubmitting={isSubmittingQuestions}
         inline={!isOverlay}
         variant={isOverlay ? "overlay" : "default"}
+        afterQuestionsContent={joinCommunityCheckbox}
       />
     ) : (
       <CustomQuestionsForm
@@ -382,40 +458,27 @@ export function RegistrationFlow({
         onOpenChange={() => {}}
         eventId={eventId}
         customQuestions={customQuestions}
-        userName={`${detailsForm.getValues("name")} ${detailsForm.getValues("surname")}`.trim()}
+        userName={detailsForm.getValues("fullName")?.trim() || undefined}
         userEmail={emailForm.getValues("email")?.trim()}
         userPhone={userPhone ?? undefined}
         onSubmit={(answers) => handleQuestionsSubmitFromDetails(answers)}
         isSubmitting={isSubmittingSignup}
         inline={!isOverlay}
         variant={isOverlay ? "overlay" : "default"}
+        afterQuestionsContent={joinCommunityCheckbox}
       />
     ));
 
   const otpStepContent = (
     <div className="space-y-4">
-      {!userExists && !hasCustomQuestions && (
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="join-community-otp"
-            checked={joinCommunity}
-            onCheckedChange={(v) => setJoinCommunity(v === true)}
-          />
-          <label
-            htmlFor="join-community-otp"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Become a member of {communityName}?
-          </label>
-        </div>
-      )}
       <OtpInputInline
         email={otpEmail}
         communityId={joinCommunity ? communityId : undefined}
         returnTo={returnTo ?? undefined}
         onSuccess={userExists ? handleOtpSuccessExistingUser : handleOtpSuccessNewUser}
-        name={!userExists ? detailsForm.getValues("name") : undefined}
-        surname={!userExists ? detailsForm.getValues("surname") : undefined}
+        fullName={
+          !userExists ? detailsForm.getValues("fullName")?.trim() || undefined : undefined
+        }
         eventId={!userExists || !hasCustomQuestions ? eventId : undefined}
         customAnswers={customAnswers ? JSON.stringify(customAnswers) : undefined}
         eventSessionId={resolvedTrackingContext.sessionId}
@@ -425,6 +488,7 @@ export function RegistrationFlow({
         eventUtmContent={resolvedTrackingContext.utmContent}
         eventUtmTerm={resolvedTrackingContext.utmTerm}
         eventFirstVisitStartedAt={resolvedTrackingContext.firstVisitStartedAt}
+        joinCommunity={joinCommunity}
       />
     </div>
   );

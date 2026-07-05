@@ -1,17 +1,21 @@
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import { redirect } from "react-router";
+import type { DehydratedState } from "@tanstack/react-query";
 import {
   createClient,
   createServiceRoleClient,
 } from "~/shared/lib/supabase/server";
 import type { LoaderFunctionArgs } from "react-router";
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
+import type { EventPageUserState } from "~/modules/events/model/event-detail-view.types";
 import { Community, Event, Profile } from "~/shared/models/entity.types";
 import { getEventCollaborations } from "~/modules/events/data/collaborations-repo.server";
 import { resolvePublicEvent } from "~/modules/events/server/resolve-public-event.server";
 import { Routes } from "~/shared/lib/routing/routes";
 import { isUuid } from "~/modules/events/utils/event-slug";
+import { dehydrateSeed } from "~/shared/lib/query/dehydrate-loader.server";
+import { eventRegistrationKey } from "~/shared/lib/query/query-keys";
 
 dayjs.extend(timezone);
 
@@ -32,6 +36,7 @@ export interface UserData {
   user: { id: string; email?: string | null } | null;
   userProfile: Profile | null;
   isOwnerOrAdmin: boolean;
+  isCommunityMember: boolean;
 }
 
 export interface EventDetailLoaderData {
@@ -39,6 +44,7 @@ export interface EventDetailLoaderData {
   community: Community;
   origin: string;
   userData: UserData;
+  dehydratedState: DehydratedState;
   isPastEvent: boolean;
   capacityPercentage: number;
   hasCustomQuestions: boolean;
@@ -87,54 +93,75 @@ export async function loader({
   const origin = url.origin;
 
   const serviceClient = createServiceRoleClient();
-  const { count: regCount } = await serviceClient
-    .from("event_registrations")
-    .select("*", { count: "exact", head: true })
-    .eq("event_id", event.id)
-    .eq("is_verified", true)
-    .eq("rsvp_status", "going")
-    .eq("approval_status", "approved");
 
-  const {
-    data: { user: u },
-  } = await supabase.auth.getUser();
+  const [
+    { count: regCount },
+    {
+      data: { user: u },
+    },
+    { collaborations },
+    { data: hostCommunity, error: hostCommunityError },
+  ] = await Promise.all([
+    serviceClient
+      .from("event_registrations")
+      .select("*", { count: "exact", head: true })
+      .eq("event_id", event.id)
+      .eq("is_verified", true)
+      .eq("rsvp_status", "going")
+      .eq("approval_status", "approved"),
+    supabase.auth.getUser(),
+    getEventCollaborations(supabase, event.id),
+    supabase
+      .from("communities")
+      .select("id, name, slug, logo_url")
+      .eq("id", event.community_id)
+      .single(),
+  ]);
+
   let isUserRegistered = false;
   let userRegistrationStatus: string | null = null;
   let userCheckinToken: string | null = null;
   let isOwnerOrAdmin = false;
+  let isCommunityMember = false;
   let userProfile: Profile | null = null;
 
   if (u) {
-    if (event.registration_type !== "external") {
-      const { data: registration } = await supabase
-        .from("event_registrations")
-        .select("id, approval_status, checkin_token")
-        .eq("event_id", event.id)
-        .eq("user_id", u.id)
-        .single();
+    const registrationQuery =
+      event.registration_type !== "external"
+        ? supabase
+            .from("event_registrations")
+            .select("id, approval_status, checkin_token")
+            .eq("event_id", event.id)
+            .eq("user_id", u.id)
+            .single()
+        : Promise.resolve({ data: null });
 
+    const [{ data: registration }, { data: membership }, { data: profile }] =
+      await Promise.all([
+        registrationQuery,
+        supabase
+          .from("community_members")
+          .select("role")
+          .eq("community_id", community.id)
+          .eq("user_id", u.id)
+          .single(),
+        supabase.from("profiles").select("*").eq("id", u.id).single(),
+      ]);
+
+    if (event.registration_type !== "external") {
       isUserRegistered = !!registration;
       userRegistrationStatus = registration?.approval_status || null;
       userCheckinToken = registration?.checkin_token || null;
     }
 
-    const { data: membership } = await supabase
-      .from("community_members")
-      .select("role")
-      .eq("community_id", community.id)
-      .eq("user_id", u.id)
-      .single();
-
     isOwnerOrAdmin =
       membership?.role === "owner" || membership?.role === "admin";
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", u.id)
-      .single();
-
+    isCommunityMember = !!membership;
     userProfile = profile || null;
+  }
+
+  if (hostCommunityError || !hostCommunity) {
+    throw new Response("Host community not found", { status: 404 });
   }
 
   const now = new Date();
@@ -157,7 +184,28 @@ export async function loader({
     user: u || null,
     userProfile,
     isOwnerOrAdmin,
+    isCommunityMember,
   };
+
+  const pageUserState: EventPageUserState = {
+    isUserRegistered: userData.isUserRegistered,
+    userRegistrationStatus: userData.userRegistrationStatus,
+    userCheckinToken: userData.userCheckinToken,
+    registrationCount: userData.registrationCount,
+    user: userData.user,
+    userProfile: userData.userProfile,
+    isCommunityMember: userData.isCommunityMember,
+    canRegister: userData.isUserRegistered
+      ? false
+      : userData.canRegister,
+  };
+
+  const dehydratedState = await dehydrateSeed((queryClient) => {
+    queryClient.setQueryData(
+      eventRegistrationKey(event.id),
+      pageUserState,
+    );
+  });
 
   const regCountNum = regCount || 0;
   const isPastEvent = eventStartTime < now;
@@ -193,18 +241,6 @@ export async function loader({
       ? dayjs(event.registration_deadline).tz(tz)
       : dayjs(event.start_time).tz(tz)
   ).format("h:mm A z");
-
-  const { collaborations } = await getEventCollaborations(supabase, event.id);
-
-  const { data: hostCommunity, error: hostCommunityError } = await supabase
-    .from("communities")
-    .select("id, name, slug, logo_url")
-    .eq("id", event.community_id)
-    .single();
-
-  if (hostCommunityError || !hostCommunity) {
-    throw new Response("Host community not found", { status: 404 });
-  }
 
   let hostingCommunities: Array<{
     id: string;
@@ -261,6 +297,7 @@ export async function loader({
     community,
     origin,
     userData,
+    dehydratedState,
     isPastEvent,
     capacityPercentage,
     hasCustomQuestions,

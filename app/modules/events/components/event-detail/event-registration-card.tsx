@@ -51,24 +51,37 @@ export function EventRegistrationCard({
 		userRegistrationStatus,
 		canRegister,
 		isOwnerOrAdmin,
+		user,
+		userProfile,
 	} = userData;
+
+	const hideRegistrationHeading =
+		isUserRegistered && userRegistrationStatus === "approved" && !isOwnerOrAdmin;
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center gap-2">
-				<h2 className="text-xl font-semibold">
-					{isOwnerOrAdmin ? "Event Management" : isExternalEvent ? "Event" : "Registration"}
-				</h2>
-				{isExternalEvent && (
-					<Badge variant="outline" className="border-primary/50 bg-primary/5 text-primary">
-						<ExternalLink className="h-3 w-3 mr-1" />
-						Link event
-					</Badge>
-				)}
-			</div>
+			<Activity mode={hideRegistrationHeading ? "hidden" : "visible"}>
+				<div className="flex items-center gap-2">
+					<h2 className="text-xl font-semibold">
+						{isOwnerOrAdmin ? "Event Management" : isExternalEvent ? "Event" : "Registration"}
+					</h2>
+					{isExternalEvent && (
+						<Badge variant="outline" className="border-primary/50 bg-primary/5 text-primary">
+							<ExternalLink className="h-3 w-3 mr-1" />
+							Link event
+						</Badge>
+					)}
+				</div>
+			</Activity>
 
-			<Card className="bg-card/50 shadow-none transition-all border-primary/20 hover:border-primary/40">
-				<CardContent className="px-4 py-0 space-y-4">
+			<Card className="bg-card/50 shadow-none transition-all border-primary/20 hover:border-primary/40 py-1.5">
+				<CardContent
+					className={
+						isUserRegistered && userRegistrationStatus === "approved" && !isOwnerOrAdmin
+							? "px-3 py-3"
+							: "px-4 py-0 space-y-4"
+					}
+				>
 					<Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
 						<AdminManagementView event={event} community={community} isExternalEvent={isExternalEvent} />
 					</Activity>
@@ -97,10 +110,10 @@ export function EventRegistrationCard({
 							event={event}
 							userRegistrationStatus={userRegistrationStatus}
 							userCheckinToken={userData.userCheckinToken}
-							registrationCount={registrationCount}
-							canRegister={canRegister}
 							isPastEvent={isPastEvent}
 							isUnregistering={isUnregistering}
+							user={user}
+							userProfile={userProfile}
 						/>
 					</Activity>
 

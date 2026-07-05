@@ -5,6 +5,9 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "~/shared/components/ui/in
 import { Button } from "~/shared/components/ui/button";
 import { Spinner } from "~/shared/components/ui/spinner";
 import { toast } from "sonner";
+import type { OtpVerifySuccessResult } from "~/modules/auth/model/otp.types";
+import type { EventPageUserState } from "~/modules/events/model/event-detail-view.types";
+import type { Profile } from "~/shared/models/entity.types";
 
 type VerifyFetcherData = {
   success?: boolean;
@@ -12,8 +15,14 @@ type VerifyFetcherData = {
   code?: "expired" | "invalid" | "too-many-attempts";
   joined?: boolean;
   communitySlug?: string | null;
+  registeredEvent?: boolean;
   fullName?: string | null;
   avatarUrl?: string | null;
+  userId?: string;
+  email?: string | null;
+  userProfile?: Profile | null;
+  registrationState?: EventPageUserState;
+  isCommunityMember?: boolean;
 };
 
 type ResendFetcherData = {
@@ -26,10 +35,9 @@ interface OtpInputInlineProps {
   email: string;
   communityId?: string | null;
   returnTo?: string | null;
-  onSuccess: (userData?: { fullName?: string | null; avatarUrl?: string | null }) => void;
+  onSuccess: (result: OtpVerifySuccessResult) => void;
   /** Event RSVP flow: pass-through to verify-otp-action */
-  name?: string;
-  surname?: string;
+  fullName?: string;
   eventId?: string;
   customAnswers?: string;
   joinCommunity?: boolean;
@@ -50,8 +58,7 @@ export function OtpInputInline({
   communityId,
   returnTo,
   onSuccess,
-  name,
-  surname,
+  fullName,
   eventId,
   customAnswers,
   joinCommunity,
@@ -143,9 +150,18 @@ export function OtpInputInline({
 
     completedOnceRef.current = true;
     setDisplayError(null);
+    const data = verifyFetcher.data;
     onSuccess({
-      fullName: verifyFetcher.data.fullName ?? null,
-      avatarUrl: verifyFetcher.data.avatarUrl ?? null,
+      userId: data.userId ?? "",
+      email: data.email ?? null,
+      fullName: data.fullName ?? null,
+      avatarUrl: data.avatarUrl ?? null,
+      userProfile: data.userProfile ?? null,
+      registrationState: data.registrationState,
+      isCommunityMember: data.isCommunityMember,
+      registeredEvent: data.registeredEvent,
+      joined: data.joined,
+      communitySlug: data.communitySlug,
     });
   }, [onSuccess, verifyFetcher.data]);
 
@@ -172,8 +188,7 @@ export function OtpInputInline({
     if (returnTo) {
       formData.append("returnTo", returnTo);
     }
-    if (name) formData.append("name", name);
-    if (surname) formData.append("surname", surname);
+    if (fullName) formData.append("fullName", fullName);
     if (eventId) formData.append("eventId", eventId);
     if (customAnswers) formData.append("customAnswers", customAnswers);
     if (eventSessionId) formData.append("eventSessionId", eventSessionId);
@@ -200,10 +215,9 @@ export function OtpInputInline({
     eventFirstVisitStartedAt,
     isVerifying,
     joinCommunity,
-    name,
+    fullName,
     otpValue,
     returnTo,
-    surname,
     verifyFetcher,
   ]);
 
@@ -219,8 +233,7 @@ export function OtpInputInline({
     if (returnTo) {
       formData.append("returnTo", returnTo);
     }
-    if (name) formData.append("name", name);
-    if (surname) formData.append("surname", surname);
+    if (fullName) formData.append("fullName", fullName);
     if (eventId) formData.append("eventId", eventId);
     if (customAnswers) formData.append("customAnswers", customAnswers);
     if (eventSessionId) formData.append("eventSessionId", eventSessionId);

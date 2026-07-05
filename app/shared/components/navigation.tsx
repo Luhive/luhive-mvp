@@ -10,9 +10,14 @@ interface TopNavigationProps {
   user?: { id: string; avatar_url?: string | null; full_name?: string | null } | null;
   /** Show the external "Create Community" CTA below the `sm` breakpoint (hub mobile). */
   showCreateCommunityOnMobile?: boolean;
+  onLogout?: () => void;
 }
 
-export function TopNavigation({ user, showCreateCommunityOnMobile = false }: TopNavigationProps) {
+export function TopNavigation({
+  user,
+  showCreateCommunityOnMobile = false,
+  onLogout,
+}: TopNavigationProps) {
   const submit = useSubmit();
 
   const getAvatarContent = () => {
@@ -70,7 +75,9 @@ export function TopNavigation({ user, showCreateCommunityOnMobile = false }: Top
               </Link>
 
               <Button
+                type="button"
                 onClick={() => {
+                  onLogout?.();
                   const returnTo = window.location.pathname + window.location.search;
                   const formData = new FormData();
                   formData.append("returnTo", returnTo);
@@ -79,7 +86,6 @@ export function TopNavigation({ user, showCreateCommunityOnMobile = false }: Top
                 variant="link"
                 className="hover:shadow-sm hover:scale-110 hover:text-red-500 text-foreground/50 cursor-pointer"
                 size="icon"
-                asChild
               >
                 <LogOut className="h-4 w-4" />
               </Button>

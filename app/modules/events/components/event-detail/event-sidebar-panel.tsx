@@ -111,7 +111,11 @@ export function EventSidebarPanel({
             maxVisible={5}
             isExternalEvent={isExternalEvent}
             refreshKey={registrationCount}
-            canViewList={isExternalEvent || userData.isUserRegistered || userData.isOwnerOrAdmin}
+            canViewList={
+              isExternalEvent ||
+              userData.isUserRegistered ||
+              userData.isOwnerOrAdmin
+            }
           />
         </div>
 
@@ -149,17 +153,17 @@ export function EventSidebarPanel({
         </Activity>
 
         <div className="space-y-3">
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Button
               onClick={() => onShare(event)}
-              variant="outline"
-              className="w-full"
-              size="lg"
+              variant="link"
+              className=""
+              size="sm"
             >
               <Send className="h-4 w-4 mr-2" />
               Share Event
             </Button>
-          </div>
+          </div> */}
 
           <Activity mode={event.discussion_link ? "visible" : "hidden"}>
             <div>

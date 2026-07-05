@@ -87,6 +87,13 @@ import { getCSVHeaders, flattenCustomAnswers } from "~/modules/events/utils/cust
 
 import ExcelIcon from "~/assets/images/ExcelLogo.png";
 
+import type {
+  EventInviteRegistrationType,
+  InviteSuccessResult,
+} from "~/modules/events/model/invite.types";
+
+type InviteStatus = "self" | "pending_acceptance" | "accepted";
+
 // Schema for attenders
 export const attenderSchema = z.object({
   id: z.string(),
@@ -95,11 +102,19 @@ export const attenderSchema = z.object({
   phone: z.string().nullable(),
   avatar_url: z.string().nullable(),
   rsvp_status: z.enum(["going", "not_going", "maybe"]),
-  approval_status: z.enum(["pending", "approved", "rejected"]).nullable().optional(),
+  approval_status: z
+    .enum(["pending", "approved", "rejected"])
+    .nullable()
+    .optional(),
   is_attended: z.boolean(),
   registered_at: z.string().nullable(),
   is_anonymous: z.boolean(),
   custom_answers: z.any().nullable().optional(),
+  registration_type: z.enum(["self", "invited"]).default("self"),
+  is_verified: z.boolean(),
+  invited_by_user_id: z.string().nullable(),
+  invited_by_name: z.string().nullable(),
+  invite_status: z.enum(["self", "pending_acceptance", "accepted"]),
 });
 
 type Attender = z.infer<typeof attenderSchema>;
@@ -129,20 +144,103 @@ const approvalStatusConfig: Record<
   pending: { label: "Pending", variant: "secondary", className: "bg-amber-500 hover:bg-amber-600 text-white" },
 };
 
+function deriveInviteStatus(
+  registrationType: EventInviteRegistrationType | string | null | undefined,
+  isVerified: boolean | null | undefined,
+): InviteStatus {
+  if (registrationType !== "invited") {
+    return "self";
+  }
+  return isVerified ? "accepted" : "pending_acceptance";
+}
+
+function getRegistrationSourceExportLabel(row: Attender): string {
+  return row.registration_type === "invited" ? "Invited" : "Self";
+}
+
+function getInviteStatusExportLabel(row: Attender): string {
+  if (row.invite_status === "self") return "-";
+  if (row.invite_status === "pending_acceptance") return "Pending acceptance";
+  return "Accepted";
+}
+
+function AttenderInviteDetails({ attender }: { attender: Attender }) {
+  if (attender.invite_status === "self" || !attender.invited_by_name) {
+    return null;
+  }
+
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-muted-foreground">Invited By</span>
+      <span className="text-sm font-medium">{attender.invited_by_name}</span>
+    </div>
+  );
+}
+
+function renderAttenderRsvpBadge(attender: Attender) {
+  if (attender.invite_status === "pending_acceptance") {
+    return (
+      <Badge
+        variant="secondary"
+        className="bg-amber-100 text-amber-700 hover:bg-amber-100"
+      >
+        Invite Pending
+      </Badge>
+    );
+  }
+
+  const config = rsvpStatusConfig[attender.rsvp_status];
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+}
+
+function buildPendingInviteAttender(invite: InviteSuccessResult): Attender {
+  return {
+    id: invite.registrationId,
+    name: invite.inviteeName,
+    email: invite.inviteeEmail,
+    phone: null,
+    avatar_url: null,
+    rsvp_status: "going",
+    approval_status: null,
+    is_attended: false,
+    registered_at: new Date().toISOString(),
+    is_anonymous: true,
+    custom_answers: null,
+    registration_type: "invited",
+    is_verified: false,
+    invited_by_user_id: invite.invitedByUserId,
+    invited_by_name: invite.invitedByName,
+    invite_status: "pending_acceptance",
+  };
+}
+
+export type AttendersTableHandle = {
+  applyInviteResult: (invite: InviteSuccessResult) => void;
+};
+
 interface AttendersTableProps {
   eventId: string;
   isExternalEvent?: boolean;
 }
 
-export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTableProps) {
+export const AttendersTable = React.forwardRef<
+  AttendersTableHandle,
+  AttendersTableProps
+>(function AttendersTable({ eventId, isExternalEvent = false }, ref) {
   const [data, setData] = useState<Attender[]>([]);
   const [loading, setLoading] = useState(true);
-  const [customQuestions, setCustomQuestions] = useState<CustomQuestionJson | null>(null);
-  const [selectedAttender, setSelectedAttender] = useState<Attender | null>(null);
+  const [customQuestions, setCustomQuestions] =
+    useState<CustomQuestionJson | null>(null);
+  const [selectedAttender, setSelectedAttender] = useState<Attender | null>(
+    null,
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
@@ -178,13 +276,16 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         .single();
 
       if (eventData?.custom_questions) {
-        setCustomQuestions(eventData.custom_questions as CustomQuestionJson);
+        setCustomQuestions(
+          eventData.custom_questions as unknown as CustomQuestionJson,
+        );
       }
 
       // Fetch event registrations with user profiles
       const { data: registrations, error } = await supabase
         .from("event_registrations")
-        .select(`
+        .select(
+          `
           id,
           user_id,
           anonymous_name,
@@ -195,18 +296,31 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
           is_attended,
           registered_at,
           custom_answers,
+          registration_type,
+          is_verified,
+          invited_by_user_id,
           profiles!event_registrations_user_id_fkey1 (
             id,
             full_name,
             avatar_url
+          ),
+          inviter:profiles!event_registrations_invited_by_user_id_fkey (
+            id,
+            full_name,
+            avatar_url
           )
-        `)
+        `,
+        )
         .eq("event_id", eventId)
         .order("registered_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching registrations:", error);
-        toast.error(isExternalEvent ? "Failed to load subscribers" : "Failed to load attenders");
+        toast.error(
+          isExternalEvent
+            ? "Failed to load subscribers"
+            : "Failed to load attenders",
+        );
         setData([]);
         setLoading(false);
         return;
@@ -221,7 +335,9 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
       const userEmailsMap = new Map<string, string>();
       if (authenticatedUserIds.length > 0) {
         try {
-          const response = await fetch(`/api/events/attenders-emails?userIds=${encodeURIComponent(JSON.stringify(authenticatedUserIds))}`);
+          const response = await fetch(
+            `/api/events/attenders-emails?userIds=${encodeURIComponent(JSON.stringify(authenticatedUserIds))}`,
+          );
           if (response.ok) {
             const { emails } = await response.json();
             // emails is an object: { userId: "email" }
@@ -234,28 +350,51 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         }
       }
 
-      const formattedData: Attender[] = (registrations || []).map((reg: any) => {
-        const isAnonymous = !reg.user_id;
-        // Get phone from custom_answers if available, otherwise use anonymous_phone
-        const phoneFromAnswers = (reg.custom_answers as CustomAnswerJson)?.phone;
-        return {
-          id: reg.id,
-          name: isAnonymous
-            ? reg.anonymous_name || "Anonymous"
-            : reg.profiles?.full_name || "Unknown User",
-          email: isAnonymous
-            ? reg.anonymous_email
-            : reg.user_id ? userEmailsMap.get(reg.user_id) : null,
-          phone: phoneFromAnswers || reg.anonymous_phone,
-          avatar_url: reg.profiles?.avatar_url,
-          rsvp_status: reg.rsvp_status,
-          approval_status: reg.approval_status || "approved", // Default to approved if null (legacy)
-          is_attended: reg.is_attended ?? false,
-          registered_at: reg.registered_at,
-          is_anonymous: isAnonymous,
-          custom_answers: reg.custom_answers,
-        };
-      });
+      const formattedData: Attender[] = (registrations || []).map(
+        (reg: any) => {
+          const isAnonymous = !reg.user_id;
+          const registrationType = (reg.registration_type ||
+            "self") as EventInviteRegistrationType;
+          const isVerified = reg.is_verified ?? false;
+          const inviteStatus = deriveInviteStatus(registrationType, isVerified);
+          const inviterProfile = Array.isArray(reg.inviter)
+            ? reg.inviter[0]
+            : reg.inviter;
+          const attendeeProfile = Array.isArray(reg.profiles)
+            ? reg.profiles[0]
+            : reg.profiles;
+          const phoneFromAnswers = (reg.custom_answers as CustomAnswerJson)
+            ?.phone;
+
+          return {
+            id: reg.id,
+            name: isAnonymous
+              ? reg.anonymous_name || "Anonymous"
+              : attendeeProfile?.full_name || "Unknown User",
+            email: isAnonymous
+              ? reg.anonymous_email
+              : reg.user_id
+                ? (userEmailsMap.get(reg.user_id) ?? null)
+                : null,
+            phone: phoneFromAnswers || reg.anonymous_phone,
+            avatar_url: attendeeProfile?.avatar_url ?? null,
+            rsvp_status: reg.rsvp_status,
+            approval_status:
+              inviteStatus === "pending_acceptance"
+                ? reg.approval_status
+                : reg.approval_status || "approved",
+            is_attended: reg.is_attended ?? false,
+            registered_at: reg.registered_at,
+            is_anonymous: isAnonymous,
+            custom_answers: reg.custom_answers,
+            registration_type: registrationType,
+            is_verified: isVerified,
+            invited_by_user_id: reg.invited_by_user_id ?? null,
+            invited_by_name: inviterProfile?.full_name ?? null,
+            invite_status: inviteStatus,
+          };
+        },
+      );
 
       setData(formattedData);
       setLoading(false);
@@ -268,6 +407,24 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
   useEffect(() => {
     fetchAttenders();
   }, [fetchAttenders]);
+
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      applyInviteResult: (invite: InviteSuccessResult) => {
+        const normalizedEmail = invite.inviteeEmail.toLowerCase();
+        const pendingRow = buildPendingInviteAttender(invite);
+
+        setData((prev) => {
+          const withoutDuplicate = prev.filter(
+            (row) => row.email?.toLowerCase() !== normalizedEmail,
+          );
+          return [pendingRow, ...withoutDuplicate];
+        });
+      },
+    }),
+    [],
+  );
 
   const handleDeleteClick = (id: string, name: string) => {
     setAttenderToDelete({ id, name });
@@ -312,7 +469,10 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
     }
   };
 
-  const handleStatusUpdate = async (id: string, status: "approved" | "rejected") => {
+  const handleStatusUpdate = async (
+    id: string,
+    status: "approved" | "rejected",
+  ) => {
     const formData = new FormData();
     formData.append("registrationId", id);
     formData.append("eventId", eventId);
@@ -320,13 +480,15 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
 
     fetcher.submit(formData, {
       method: "POST",
-      action: "/api/events/update-registration-status"
+      action: "/api/events/update-registration-status",
     });
 
     // Optimistic update
-    setData(prev => prev.map(item =>
-      item.id === id ? { ...item, approval_status: status } : item
-    ));
+    setData((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, approval_status: status } : item,
+      ),
+    );
 
     // toast.info(`Updating status to ${status}...`);
   };
@@ -365,8 +527,17 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         Type: row.is_anonymous ? "Anonymous" : "Member",
         Email: row.email || "-",
         Phone: row.phone || "-",
-        "RSVP Status": rsvpStatusConfig[row.rsvp_status]?.label || row.rsvp_status,
-        "Approval Status": row.approval_status ? approvalStatusConfig[row.approval_status as EventApprovalStatus]?.label : "Approved",
+        "Registration Source": getRegistrationSourceExportLabel(row),
+        "Invite Status": getInviteStatusExportLabel(row),
+        "Invited By": row.invited_by_name || "-",
+        "RSVP Status":
+          rsvpStatusConfig[row.rsvp_status]?.label || row.rsvp_status,
+        "Approval Status": row.approval_status
+          ? approvalStatusConfig[row.approval_status as EventApprovalStatus]
+              ?.label
+          : row.invite_status === "pending_acceptance"
+            ? "Not accepted yet"
+            : "Approved",
         "Checked In": row.is_attended ? "Yes" : "No",
         "Registered At": row.registered_at
           ? new Date(row.registered_at).toLocaleString()
@@ -375,7 +546,10 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
 
       // Add custom question answers if available
       if (registration && customQuestions) {
-        const flattened = flattenCustomAnswers(registration as EventRegistration, customQuestions);
+        const flattened = flattenCustomAnswers(
+          registration as EventRegistration,
+          customQuestions,
+        );
         Object.assign(baseData, flattened);
       }
 
@@ -384,7 +558,11 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
 
     const ws = utils.json_to_sheet(exportData);
     const wb = utils.book_new();
-    utils.book_append_sheet(wb, ws, isExternalEvent ? "Subscribers" : "Attenders");
+    utils.book_append_sheet(
+      wb,
+      ws,
+      isExternalEvent ? "Subscribers" : "Attenders",
+    );
     writeFile(wb, "event-attenders.xlsx");
   }, [data, eventId, customQuestions]);
 
@@ -398,7 +576,9 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             aria-label="Select all"
           />
         ),
@@ -431,9 +611,17 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
             </Avatar>
             <div className="flex flex-col">
               <div className="font-medium">{row.original.name}</div>
-              {row.original.is_anonymous && (
-                <span className="text-xs text-muted-foreground">Anonymous</span>
+              {row.original.registration_type === "invited" && (
+                <span className="text-xs text-muted-foreground">
+                  Invited by {row.original.invited_by_name || "Unknown"}
+                </span>
               )}
+              {row.original.is_anonymous &&
+                row.original.invite_status === "self" && (
+                  <span className="text-xs text-muted-foreground">
+                    Anonymous
+                  </span>
+                )}
             </div>
           </button>
         ),
@@ -446,17 +634,23 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
             {row.original.email && (
               <div className="flex items-center gap-2 text-sm">
                 <IconMail className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">{row.original.email}</span>
+                <span className="text-muted-foreground">
+                  {row.original.email}
+                </span>
               </div>
             )}
             {row.original.phone && (
               <div className="flex items-center gap-2 text-sm">
                 <IconPhone className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">{row.original.phone}</span>
+                <span className="text-muted-foreground">
+                  {row.original.phone}
+                </span>
               </div>
             )}
             {!row.original.email && !row.original.phone && (
-              <span className="text-sm text-muted-foreground">No contact info</span>
+              <span className="text-sm text-muted-foreground">
+                No contact info
+              </span>
             )}
           </div>
         ),
@@ -465,12 +659,26 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         accessorKey: "approval_status",
         header: "Approved",
         cell: ({ row }) => {
-          const status = (row.original.approval_status || "approved") as EventApprovalStatus;
+          if (row.original.invite_status === "pending_acceptance") {
+            return (
+              <Badge variant="outline" className="text-muted-foreground">
+                Not accepted
+              </Badge>
+            );
+          }
+
+          const status = (row.original.approval_status ||
+            "approved") as EventApprovalStatus;
           const config = approvalStatusConfig[status];
           return (
             <Badge
               variant="outline"
-              className={cn("border-transparent font-medium", config?.className, status === 'approved' && "bg-green-100 text-green-700 hover:bg-green-200 border-green-200")}
+              className={cn(
+                "border-transparent font-medium",
+                config?.className,
+                status === "approved" &&
+                  "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
+              )}
             >
               {config?.label || status}
             </Badge>
@@ -483,11 +691,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
       {
         accessorKey: "rsvp_status",
         header: "RSVP",
-        cell: ({ row }) => {
-          const status = row.original.rsvp_status;
-          const config = rsvpStatusConfig[status];
-          return <Badge variant={config.variant}>{config.label}</Badge>;
-        },
+        cell: ({ row }) => renderAttenderRsvpBadge(row.original),
       },
       {
         accessorKey: "is_attended",
@@ -521,7 +725,11 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         enableHiding: false,
         cell: ({ row }) => {
           const attender = row.original;
-          const isPending = attender.approval_status === 'pending';
+          const isPending =
+            attender.approval_status === "pending" &&
+            attender.invite_status !== "pending_acceptance";
+          const isPendingInvite =
+            attender.invite_status === "pending_acceptance";
 
           return (
             <div className="flex items-center gap-2">
@@ -531,7 +739,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                     size="sm"
                     variant="outline"
                     className="h-8 w-8 p-0 text-green-600 border-green-200 hover:bg-green-50"
-                    onClick={() => handleStatusUpdate(attender.id, 'approved')}
+                    onClick={() => handleStatusUpdate(attender.id, "approved")}
                     title="Approve"
                   >
                     <IconCheck className="h-4 w-4" />
@@ -541,7 +749,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                     size="sm"
                     variant="outline"
                     className="h-8 w-8 p-0 text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => handleStatusUpdate(attender.id, 'rejected')}
+                    onClick={() => handleStatusUpdate(attender.id, "rejected")}
                     title="Reject"
                   >
                     <IconX className="h-4 w-4" />
@@ -580,25 +788,35 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                     Show Answers
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuSeparator />
-                  {!isPending && attender.approval_status !== 'approved' && (
-                    <DropdownMenuCheckboxItem
-                      onClick={() => handleStatusUpdate(attender.id, 'approved')}
-                      className="text-green-600"
-                    >
-                      Approve Registration
-                    </DropdownMenuCheckboxItem>
-                  )}
-                  {!isPending && attender.approval_status !== 'rejected' && (
-                    <DropdownMenuCheckboxItem
-                      onClick={() => handleStatusUpdate(attender.id, 'rejected')}
-                      className="text-red-600"
-                    >
-                      Reject Registration
-                    </DropdownMenuCheckboxItem>
-                  )}
+                  {!isPendingInvite &&
+                    !isPending &&
+                    attender.approval_status !== "approved" && (
+                      <DropdownMenuCheckboxItem
+                        onClick={() =>
+                          handleStatusUpdate(attender.id, "approved")
+                        }
+                        className="text-green-600"
+                      >
+                        Approve Registration
+                      </DropdownMenuCheckboxItem>
+                    )}
+                  {!isPendingInvite &&
+                    !isPending &&
+                    attender.approval_status !== "rejected" && (
+                      <DropdownMenuCheckboxItem
+                        onClick={() =>
+                          handleStatusUpdate(attender.id, "rejected")
+                        }
+                        className="text-red-600"
+                      >
+                        Reject Registration
+                      </DropdownMenuCheckboxItem>
+                    )}
                   <DropdownMenuCheckboxItem
                     className="text-destructive focus:text-destructive"
-                    onClick={() => handleDeleteClick(attender.id, attender.name)}
+                    onClick={() =>
+                      handleDeleteClick(attender.id, attender.name)
+                    }
                   >
                     <IconTrash className="mr-2 h-4 w-4" />
                     Remove
@@ -610,7 +828,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         },
       },
     ],
-    [handleDeleteClick]
+    [handleDeleteClick],
   );
 
   const table = useReactTable({
@@ -651,8 +869,14 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
               <Search className="h-4 w-4 text-muted-foreground" />
             </InputGroupAddon>
             <InputGroupInput
-              placeholder={isExternalEvent ? "Filter subscribers..." : "Filter attenders..."}
-              value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+              placeholder={
+                isExternalEvent
+                  ? "Filter subscribers..."
+                  : "Filter attenders..."
+              }
+              value={
+                (table.getColumn("name")?.getFilterValue() as string) ?? ""
+              }
               onChange={(event) =>
                 table.getColumn("name")?.setFilterValue(event.target.value)
               }
@@ -661,7 +885,11 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
 
           {/* Status Filter */}
           <Select
-            value={(table.getColumn("approval_status")?.getFilterValue() as string[])?.[0] || "all"}
+            value={
+              (
+                table.getColumn("approval_status")?.getFilterValue() as string[]
+              )?.[0] || "all"
+            }
             onValueChange={(value) => {
               if (value === "all") {
                 table.getColumn("approval_status")?.setFilterValue(undefined);
@@ -716,10 +944,14 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
         {/* Right Side: Actions */}
         <div className="flex items-center gap-2">
           {Object.keys(rowSelection).length > 0 && (
-            <Button variant="destructive" size="sm" onClick={() => {
-              // Bulk delete not implemented yet
-              toast.info("Bulk actions coming soon");
-            }}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                // Bulk delete not implemented yet
+                toast.info("Bulk actions coming soon");
+              }}
+            >
               Delete Selected ({Object.keys(rowSelection).length})
             </Button>
           )}
@@ -744,7 +976,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -763,7 +995,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -773,9 +1005,9 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                    className="h-24 text-center"
+                  className="h-24 text-center"
                 >
-                    No results.
+                  No results.
                 </TableCell>
               </TableRow>
             )}
@@ -844,8 +1076,8 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
       </Dialog>
 
       {/* Attender Details Drawer/Dialog */}
-      {selectedAttender && (
-        isMobile ? (
+      {selectedAttender &&
+        (isMobile ? (
           <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
             <DrawerContent className="flex flex-col overflow-hidden">
               <DrawerHeader>
@@ -868,66 +1100,114 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="font-semibold">{selectedAttender.name}</div>
-                      {selectedAttender.is_anonymous && (
-                        <Badge variant="secondary" className="mt-1">Anonymous</Badge>
+                      <div className="font-semibold">
+                        {selectedAttender.name}
+                      </div>
+                      {selectedAttender.invite_status ===
+                        "pending_acceptance" && (
+                        <Badge variant="secondary" className="mt-1">
+                          Pending invite
+                        </Badge>
                       )}
+                      {selectedAttender.invite_status === "accepted" && (
+                        <Badge variant="outline" className="mt-1">
+                          Invited
+                        </Badge>
+                      )}
+                      {selectedAttender.is_anonymous &&
+                        selectedAttender.invite_status === "self" && (
+                          <Badge variant="secondary" className="mt-1">
+                            Anonymous
+                          </Badge>
+                        )}
                     </div>
                   </div>
 
                   <div className="space-y-3 border-t pt-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Email</span>
-                      <span className="text-sm font-medium">{selectedAttender.email || "-"}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Email
+                      </span>
+                      <span className="text-sm font-medium">
+                        {selectedAttender.email || "-"}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Phone</span>
-                      <span className="text-sm font-medium">{selectedAttender.phone || "-"}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Phone
+                      </span>
+                      <span className="text-sm font-medium">
+                        {selectedAttender.phone || "-"}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">RSVP Status</span>
-                      <Badge variant={rsvpStatusConfig[selectedAttender.rsvp_status].variant}>
-                        {rsvpStatusConfig[selectedAttender.rsvp_status].label}
-                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        RSVP Status
+                      </span>
+                      {renderAttenderRsvpBadge(selectedAttender)}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Approval Status</span>
+                      <span className="text-sm text-muted-foreground">
+                        Approval Status
+                      </span>
                       <Badge
                         variant="outline"
                         className={cn(
                           "border-transparent font-medium",
-                          approvalStatusConfig[selectedAttender.approval_status as EventApprovalStatus]?.className,
-                          selectedAttender.approval_status === 'approved' && "bg-green-100 text-green-700 hover:bg-green-200 border-green-200"
+                          approvalStatusConfig[
+                            selectedAttender.approval_status as EventApprovalStatus
+                          ]?.className,
+                          selectedAttender.approval_status === "approved" &&
+                            "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
                         )}
                       >
-                        {approvalStatusConfig[selectedAttender.approval_status as EventApprovalStatus]?.label || "Approved"}
+                        {selectedAttender.invite_status === "pending_acceptance"
+                          ? "Not accepted"
+                          : approvalStatusConfig[
+                              selectedAttender.approval_status as EventApprovalStatus
+                            ]?.label || "Approved"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Checked In</span>
-                      <Badge variant={selectedAttender.is_attended ? "default" : "outline"}>
-                        {selectedAttender.is_attended ? "Checked in" : "Not checked in"}
+                      <span className="text-sm text-muted-foreground">
+                        Checked In
+                      </span>
+                      <Badge
+                        variant={
+                          selectedAttender.is_attended ? "default" : "outline"
+                        }
+                      >
+                        {selectedAttender.is_attended
+                          ? "Checked in"
+                          : "Not checked in"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Registered At</span>
+                      <span className="text-sm text-muted-foreground">
+                        Registered At
+                      </span>
                       <span className="text-sm font-medium">
                         {selectedAttender.registered_at
-                          ? new Date(selectedAttender.registered_at).toLocaleString()
+                          ? new Date(
+                              selectedAttender.registered_at,
+                            ).toLocaleString()
                           : "-"}
                       </span>
                     </div>
+                    <AttenderInviteDetails attender={selectedAttender} />
                   </div>
                 </div>
 
                 {/* Custom Answers */}
-                {(customQuestions && selectedAttender.custom_answers) && (
+                {customQuestions && selectedAttender.custom_answers && (
                   <>
                     <Separator />
                     <div>
                       <h3 className="font-semibold mb-3">Custom Answers</h3>
                       <RegistrationAnswersDisplay
-                        answers={selectedAttender.custom_answers as CustomAnswerJson | null}
+                        answers={
+                          selectedAttender.custom_answers as CustomAnswerJson | null
+                        }
                         questions={customQuestions}
                       />
                     </div>
@@ -959,66 +1239,114 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="font-semibold">{selectedAttender.name}</div>
-                      {selectedAttender.is_anonymous && (
-                        <Badge variant="secondary" className="mt-1">Anonymous</Badge>
+                      <div className="font-semibold">
+                        {selectedAttender.name}
+                      </div>
+                      {selectedAttender.invite_status ===
+                        "pending_acceptance" && (
+                        <Badge variant="secondary" className="mt-1">
+                          Pending invite
+                        </Badge>
                       )}
+                      {selectedAttender.invite_status === "accepted" && (
+                        <Badge variant="outline" className="mt-1">
+                          Invited
+                        </Badge>
+                      )}
+                      {selectedAttender.is_anonymous &&
+                        selectedAttender.invite_status === "self" && (
+                          <Badge variant="secondary" className="mt-1">
+                            Anonymous
+                          </Badge>
+                        )}
                     </div>
                   </div>
 
                   <div className="space-y-3 border-t pt-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Email</span>
-                      <span className="text-sm font-medium">{selectedAttender.email || "-"}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Email
+                      </span>
+                      <span className="text-sm font-medium">
+                        {selectedAttender.email || "-"}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Phone</span>
-                      <span className="text-sm font-medium">{selectedAttender.phone || "-"}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Phone
+                      </span>
+                      <span className="text-sm font-medium">
+                        {selectedAttender.phone || "-"}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">RSVP Status</span>
-                      <Badge variant={rsvpStatusConfig[selectedAttender.rsvp_status].variant}>
-                        {rsvpStatusConfig[selectedAttender.rsvp_status].label}
-                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        RSVP Status
+                      </span>
+                      {renderAttenderRsvpBadge(selectedAttender)}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Approval Status</span>
+                      <span className="text-sm text-muted-foreground">
+                        Approval Status
+                      </span>
                       <Badge
                         variant="outline"
                         className={cn(
                           "border-transparent font-medium",
-                          approvalStatusConfig[selectedAttender.approval_status as EventApprovalStatus]?.className,
-                          selectedAttender.approval_status === 'approved' && "bg-green-100 text-green-700 hover:bg-green-200 border-green-200"
+                          approvalStatusConfig[
+                            selectedAttender.approval_status as EventApprovalStatus
+                          ]?.className,
+                          selectedAttender.approval_status === "approved" &&
+                            "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
                         )}
                       >
-                          {approvalStatusConfig[selectedAttender.approval_status as EventApprovalStatus]?.label || "Approved"}
+                        {selectedAttender.invite_status === "pending_acceptance"
+                          ? "Not accepted"
+                          : approvalStatusConfig[
+                              selectedAttender.approval_status as EventApprovalStatus
+                            ]?.label || "Approved"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Checked In</span>
-                      <Badge variant={selectedAttender.is_attended ? "default" : "outline"}>
-                        {selectedAttender.is_attended ? "Checked in" : "Not checked in"}
+                      <span className="text-sm text-muted-foreground">
+                        Checked In
+                      </span>
+                      <Badge
+                        variant={
+                          selectedAttender.is_attended ? "default" : "outline"
+                        }
+                      >
+                        {selectedAttender.is_attended
+                          ? "Checked in"
+                          : "Not checked in"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Registered At</span>
+                      <span className="text-sm text-muted-foreground">
+                        Registered At
+                      </span>
                       <span className="text-sm font-medium">
                         {selectedAttender.registered_at
-                          ? new Date(selectedAttender.registered_at).toLocaleString()
+                          ? new Date(
+                              selectedAttender.registered_at,
+                            ).toLocaleString()
                           : "-"}
                       </span>
                     </div>
+                    <AttenderInviteDetails attender={selectedAttender} />
                   </div>
                 </div>
 
                 {/* Custom Answers */}
-                {(customQuestions && selectedAttender.custom_answers) && (
+                {customQuestions && selectedAttender.custom_answers && (
                   <>
                     <Separator />
                     <div>
                       <h3 className="font-semibold mb-3">Custom Answers</h3>
                       <RegistrationAnswersDisplay
-                        answers={selectedAttender.custom_answers as CustomAnswerJson | null}
+                        answers={
+                          selectedAttender.custom_answers as CustomAnswerJson | null
+                        }
                         questions={customQuestions}
                       />
                     </div>
@@ -1027,8 +1355,7 @@ export function AttendersTable({ eventId, isExternalEvent = false }: AttendersTa
               </div>
             </DialogContent>
           </Dialog>
-        )
-      )}
+        ))}
     </div>
   );
-}
+});

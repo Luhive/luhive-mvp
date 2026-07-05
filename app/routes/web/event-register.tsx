@@ -1,8 +1,10 @@
 export { action } from "~/modules/events/server/event-detail-action.server";
+export { loader } from "~/modules/events/server/event-register-loader.server";
 export { meta } from "~/modules/events/model/event-register-meta";
 
-import { Navigate, useRouteLoaderData } from "react-router";
+import { Navigate, useLoaderData, useRouteLoaderData } from "react-router";
 import type { EventDetailLoaderData } from "~/modules/events/server/event-detail-loader.server";
+import type { EventRegisterInviteLoaderData } from "~/modules/events/server/event-register-loader.server";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
 import { EventRegisterView } from "~/modules/events/components/event-register/event-register-view";
@@ -11,6 +13,7 @@ export default function EventRegisterPage() {
   const parent = useRouteLoaderData(
     "routes/web/event-detail",
   ) as EventDetailLoaderData | undefined;
+  const inviteData = useLoaderData<EventRegisterInviteLoaderData | null>();
 
   if (!parent) return null;
 
@@ -18,12 +21,17 @@ export default function EventRegisterPage() {
     parent;
   const eventPageUrl = Routes.community.event(community.slug, publicEventSlug(event));
 
+  const isInviteMode = Boolean(
+    inviteData?.inviteToken && userData.user && hasCustomQuestions,
+  );
+
   const isEligible =
-    !isExternalEvent &&
-    !userData.isOwnerOrAdmin &&
-    !userData.isUserRegistered &&
-    userData.canRegister &&
-    !(userData.user && !hasCustomQuestions);
+    isInviteMode ||
+    (!isExternalEvent &&
+      !userData.isOwnerOrAdmin &&
+      !userData.isUserRegistered &&
+      userData.canRegister &&
+      !(userData.user && !hasCustomQuestions));
 
   if (!isEligible) {
     return <Navigate to={eventPageUrl} replace />;
@@ -38,6 +46,8 @@ export default function EventRegisterPage() {
       userPhone={userPhone}
       user={userData.user}
       userProfile={userData.userProfile}
+      inviteData={inviteData}
+      isCommunityMember={userData.isCommunityMember}
     />
   );
 }

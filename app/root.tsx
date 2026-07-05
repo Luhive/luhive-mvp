@@ -20,6 +20,7 @@ import manrope600Url from "./assets/fonts/manrope-v20-latin_latin-ext-600.woff2?
 import manrope700Url from "./assets/fonts/manrope-v20-latin_latin-ext-700.woff2?url";
 import { Toaster } from "~/shared/components/ui/sonner";
 import ErrorComponent from "./routes/error";
+import { QueryProvider } from "~/shared/lib/query/query-provider";
 
 
 
@@ -68,7 +69,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
 
-  return <Outlet />;
+  return (
+    <QueryProvider>
+      <Outlet />
+    </QueryProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

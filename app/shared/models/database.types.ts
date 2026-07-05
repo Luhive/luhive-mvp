@@ -357,10 +357,12 @@ export type Database = {
           custom_answers: Json | null
           event_id: string
           id: string
+          invited_by_user_id: string | null
           is_attended: boolean
           is_verified: boolean
           registered_at: string | null
           registration_source_community_id: string | null
+          registration_type: string
           rsvp_status: Database["public"]["Enums"]["rsvp_status"]
           token_expires_at: string | null
           updated_at: string | null
@@ -379,10 +381,12 @@ export type Database = {
           custom_answers?: Json | null
           event_id: string
           id?: string
+          invited_by_user_id?: string | null
           is_attended?: boolean
           is_verified?: boolean
           registered_at?: string | null
           registration_source_community_id?: string | null
+          registration_type?: string
           rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
           token_expires_at?: string | null
           updated_at?: string | null
@@ -401,10 +405,12 @@ export type Database = {
           custom_answers?: Json | null
           event_id?: string
           id?: string
+          invited_by_user_id?: string | null
           is_attended?: boolean
           is_verified?: boolean
           registered_at?: string | null
           registration_source_community_id?: string | null
+          registration_type?: string
           rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
           token_expires_at?: string | null
           updated_at?: string | null
@@ -417,6 +423,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_invited_by_user_id_fkey"
+            columns: ["invited_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

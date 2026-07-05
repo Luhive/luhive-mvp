@@ -142,6 +142,7 @@ export function EventDetail({
 
 	const timeRemaining = useRegistrationTimer(event.registration_deadline, event.timezone);
 	useEventDetailToasts({
+		eventId: event.id,
 		submittedIntentRef: lastSubmittedIntentRef,
 	});
 

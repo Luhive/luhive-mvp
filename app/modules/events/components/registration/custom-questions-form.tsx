@@ -541,6 +541,7 @@ export function CustomQuestionsForm({
           className="flex flex-col flex-1 min-h-0"
         >
           {formBody}
+          {afterQuestionsContent}
         </Form>
       </FullscreenModal>
     );
@@ -562,7 +563,10 @@ export function CustomQuestionsForm({
           onSubmit={handleSubmit}
           className="flex flex-col flex-1 min-h-0 overflow-hidden"
         >
-          <div className="flex-1 overflow-y-auto px-6">{formBody}</div>
+          <div className="flex-1 overflow-y-auto px-6 space-y-4">
+            {formBody}
+            {afterQuestionsContent}
+          </div>
           <div className="px-6 py-4 shrink-0">{submitButton}</div>
         </Form>
       </DialogContent>

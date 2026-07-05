@@ -20,14 +20,31 @@ export interface CommunityWithStats {
 	verified?: boolean;
 }
 
+/** Live registration state for an event, cached client-side via react-query */
+export interface EventRegistrationState {
+	isUserRegistered: boolean;
+	userRegistrationStatus: string | null;
+	userCheckinToken: string | null;
+	registrationCount: number;
+}
+
+/** Full event-page user slice cached client-side via react-query */
+export interface EventPageUserState extends EventRegistrationState {
+	user: { id: string; email?: string | null } | null;
+	userProfile: Profile | null;
+	isCommunityMember: boolean;
+	canRegister: boolean;
+}
+
 /** Action response payload from event-detail action */
 export interface EventDetailActionData {
-	success: boolean;
-	error?: string;
-	message?: string;
-	needsCustomQuestions?: boolean;
-	anonymousName?: string;
-	anonymousEmail?: string;
+  success: boolean;
+  error?: string;
+  message?: string;
+  needsCustomQuestions?: boolean;
+  anonymousName?: string;
+  anonymousEmail?: string;
+  registrationState?: EventRegistrationState & { canRegister?: boolean };
 }
 
 /** Time remaining until registration deadline */
