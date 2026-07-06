@@ -1,4 +1,4 @@
-import { Link, useSubmit } from "react-router";
+import { Form, Link, useLocation } from "react-router";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Button } from "~/shared/components/ui/button";
@@ -10,10 +10,16 @@ interface TopNavigationProps {
   user?: { id: string; avatar_url?: string | null; full_name?: string | null } | null;
   /** Show the external "Create Community" CTA below the `sm` breakpoint (hub mobile). */
   showCreateCommunityOnMobile?: boolean;
+  onLogout?: () => void;
 }
 
-export function TopNavigation({ user, showCreateCommunityOnMobile = false }: TopNavigationProps) {
-  const submit = useSubmit();
+export function TopNavigation({
+  user,
+  showCreateCommunityOnMobile = false,
+  onLogout,
+}: TopNavigationProps) {
+  const location = useLocation();
+  const returnTo = `${location.pathname}${location.search}`;
 
   const getAvatarContent = () => {
     if (user?.avatar_url) return null;
@@ -69,20 +75,22 @@ export function TopNavigation({ user, showCreateCommunityOnMobile = false }: Top
                 </div>
               </Link>
 
-              <Button
-                onClick={() => {
-                  const returnTo = window.location.pathname + window.location.search;
-                  const formData = new FormData();
-                  formData.append("returnTo", returnTo);
-                  submit(formData, { method: "post", action: "/logout" });
-                }}
-                variant="link"
-                className="hover:shadow-sm hover:scale-110 hover:text-red-500 text-foreground/50 cursor-pointer"
-                size="icon"
-                asChild
+              <Form
+                method="post"
+                action="/logout"
+                className="inline"
+                onSubmit={onLogout}
               >
-                <LogOut className="h-4 w-4" />
-              </Button>
+                <input type="hidden" name="returnTo" value={returnTo} />
+                <Button
+                  type="submit"
+                  variant="link"
+                  className="hover:shadow-sm hover:scale-110 hover:text-red-500 text-foreground/50 cursor-pointer"
+                  size="icon"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </Form>
             </div>
           ) : (
             <Button

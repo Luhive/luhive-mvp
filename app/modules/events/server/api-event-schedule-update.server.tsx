@@ -108,7 +108,7 @@ export async function action({ request }: ActionFunctionArgs) {
         is_verified,
         rsvp_status,
         approval_status,
-        profiles ( full_name )
+        profiles!event_registrations_user_id_fkey1 ( full_name )
       `)
 			.eq("event_id", eventId)
 			.eq("is_verified", true)

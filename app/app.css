@@ -357,6 +357,18 @@ select:-webkit-autofill:active {
   caret-color: oklch(0.985 0 0) !important;
 }
 
+/* Prevent iOS Safari auto-zoom on focus (font-size must be >= 16px).
+   Scoped to iOS only so desktop sizing is unchanged. */
+@supports (-webkit-touch-callout: none) {
+  input,
+  textarea,
+  select,
+  [data-slot="input"],
+  [data-slot="select-trigger"] {
+    font-size: 16px;
+  }
+}
+
 
 /* scrollbar styles */
 .event-sidebar-scrollbar::-webkit-scrollbar {
@@ -407,4 +419,28 @@ select:-webkit-autofill:active {
 /* Handle on hover */
 .custom-scroll-design::-webkit-scrollbar-thumb:hover {
   background: #fb8b53;
+}
+
+@keyframes registration-highlight-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 0%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+  }
+}
+
+.registration-card-highlight {
+  animation: registration-highlight-pulse 1s cubic-bezier(0.23, 1, 0.32, 1) 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registration-card-highlight {
+    animation: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+  }
 }

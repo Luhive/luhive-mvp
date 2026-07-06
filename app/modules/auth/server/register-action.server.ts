@@ -80,21 +80,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "event-rsvp-signup") {
     const email = (formData.get("email") as string)?.trim() || "";
-    const name = (formData.get("name") as string)?.trim() || "";
-    const surname = (formData.get("surname") as string)?.trim() || "";
+    const fullName = (formData.get("fullName") as string)?.trim() || "";
     const eventId = formData.get("eventId") as string | null;
     const communityId = formData.get("communityId") as string | null;
     const joinCommunity = formData.get("joinCommunity") !== "false";
 
-    if (!email || !name || !surname) {
+    if (!email || !fullName) {
       return Response.json(
-        { success: false, error: "Name, surname and email are required." },
+        { success: false, error: "Full name and email are required." },
         { headers, status: 400 }
       );
     }
 
     const password = crypto.randomBytes(16).toString("hex");
-    const fullName = `${name} ${surname}`.trim();
 
     const { data, error } = await supabase.auth.signUp({
       email,

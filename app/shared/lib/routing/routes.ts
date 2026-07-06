@@ -47,6 +47,10 @@ export class Routes {
     events: (slug: string) => `${COMMUNITY_BASE}/${slug}/events`,
     event: (communitySlug: string, eventSlug: string) =>
       `${COMMUNITY_BASE}/${communitySlug}/${eventSlug}`,
+    eventRegister: (communitySlug: string, eventSlug: string) =>
+      `${COMMUNITY_BASE}/${communitySlug}/${eventSlug}/register`,
+    eventInviteAccept: (communitySlug: string, eventSlug: string) =>
+      `${COMMUNITY_BASE}/${communitySlug}/${eventSlug}/invite/accept`,
     eventCollaboration: (communitySlug: string, eventSlug: string) =>
       `${COMMUNITY_BASE}/${communitySlug}/${eventSlug}/collaboration`,
     collaborationInvite: (slug: string, collaborationId: string) =>
@@ -93,6 +97,7 @@ export class Routes {
     events: {
       attendersEmails: `${API_BASE}/events/attenders-emails`,
       attendersList: `${API_BASE}/events/attenders-list`,
+      invite: `${API_BASE}/events/invite`,
       updateRegistrationStatus: `${API_BASE}/events/update-registration-status`,
       scheduleUpdate: `${API_BASE}/events/schedule-update`,
       emailDebug: `${API_BASE}/events/email-debug`,

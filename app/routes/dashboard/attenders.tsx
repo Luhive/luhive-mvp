@@ -1,11 +1,13 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useRef } from "react";
 import { Link, useLoaderData, useParams } from "react-router";
 import { AttendersTableSkeleton } from "~/modules/events/components/attenders/attenders-table-skeleton";
+import type { AttendersTableHandle } from "~/modules/events/components/attenders/attenders-table";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
 import { getEventByIdClient } from "~/modules/events/data/events-repo.client";
 import { createClient } from "~/shared/lib/supabase/client";
 import type { Database } from "~/shared/models/database.types";
 import { ScanQrCode } from "lucide-react";
+import { InviteSomeoneButton } from "~/modules/events/components/registration/invite-modal";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
 
@@ -18,7 +20,7 @@ type AttendersLoaderData = {
 const AttendersTable = lazy(() =>
   import("~/modules/events/components/attenders/attenders-table").then((m) => ({
     default: m.AttendersTable,
-  }))
+  })),
 );
 
 async function clientLoader({
@@ -50,7 +52,7 @@ async function clientLoader({
   // First, try to get the event as host (community owns the event)
   const { event, error: eventError } = await getEventByIdClient(
     eventId,
-    community.id
+    community.id,
   );
 
   if (event) {
@@ -113,6 +115,7 @@ export function meta() {
 export default function AttendersPage() {
   const { event, eventId, error } = useLoaderData<AttendersLoaderData>();
   const { slug } = useParams();
+  const attendersTableRef = useRef<AttendersTableHandle>(null);
 
   if (!eventId || !event) {
     return (
@@ -137,10 +140,13 @@ export default function AttendersPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center py-12">
             <div className="text-center space-y-4 max-w-md">
-              <h2 className="text-lg font-semibold">Link events don&apos;t track attendees</h2>
+              <h2 className="text-lg font-semibold">
+                Link events don&apos;t track attendees
+              </h2>
               <p className="text-muted-foreground text-sm">
-                Attendee management is only available for events with Luhive registration.
-                Visitors on link events are redirected to the external event page.
+                Attendee management is only available for events with Luhive
+                registration. Visitors on link events are redirected to the
+                external event page.
               </p>
               {slug ? (
                 <Link
@@ -170,7 +176,7 @@ export default function AttendersPage() {
           </div>
         </div>
         {slug ? (
-          <div>
+          <div className="flex flex-wrap items-center gap-2">
             <Link
               to={`/dashboard/${slug}/events/${eventId}/scanner`}
               className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted"
@@ -178,11 +184,19 @@ export default function AttendersPage() {
               <ScanQrCode className="h-4 w-4" />
               Open QR Scanner
             </Link>
+            <InviteSomeoneButton
+              eventId={eventId}
+              size="default"
+              className="inline-flex w-auto"
+              onInviteSuccess={(invite) => {
+                attendersTableRef.current?.applyInviteResult(invite);
+              }}
+            />
           </div>
         ) : null}
 
         <Suspense fallback={<AttendersTableSkeleton />}>
-          <AttendersTable eventId={eventId} />
+          <AttendersTable ref={attendersTableRef} eventId={eventId} />
         </Suspense>
       </div>
     </div>

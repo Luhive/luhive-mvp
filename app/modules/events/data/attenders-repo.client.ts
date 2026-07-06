@@ -50,7 +50,7 @@ export async function getEventAttendersRaw(eventId: string) {
       is_attended,
       registered_at,
       custom_answers,
-      profiles (
+      profiles!event_registrations_user_id_fkey1 (
         id,
         full_name,
         avatar_url
@@ -58,6 +58,7 @@ export async function getEventAttendersRaw(eventId: string) {
     `,
     )
     .eq("event_id", eventId)
+    .eq("is_verified", true)
     .order("registered_at", { ascending: false });
   return { data: data || [], error };
 }
@@ -67,7 +68,8 @@ export async function getFullRegistrationsForExport(eventId: string) {
   const { data } = await supabase
     .from("event_registrations")
     .select("*")
-    .eq("event_id", eventId);
+    .eq("event_id", eventId)
+    .eq("is_verified", true);
   return data || [];
 }
 

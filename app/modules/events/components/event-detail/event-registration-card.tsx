@@ -1,5 +1,6 @@
 import { Activity } from "react";
 import { ExternalLink } from "lucide-react";
+import { cn } from "~/shared/lib/utils/cn";
 import { Card, CardContent } from "~/shared/components/ui/card";
 import { Badge } from "~/shared/components/ui/badge";
 import { AdminManagementView } from "./registration-states/admin-management-view";
@@ -27,10 +28,8 @@ interface EventRegistrationCardProps {
 	externalPlatformName: string;
 	isRegistering: boolean;
 	isUnregistering: boolean;
-	isSubmitting: boolean;
 	eventTrackingContext: EventTrackingContext;
-	onShowCustomQuestionsForm: () => void;
-	onShowRsvpModal: () => void;
+	highlighted?: boolean;
 }
 
 export function EventRegistrationCard({
@@ -46,10 +45,8 @@ export function EventRegistrationCard({
 	externalPlatformName,
 	isRegistering,
 	isUnregistering,
-	isSubmitting,
 	eventTrackingContext,
-	onShowCustomQuestionsForm,
-	onShowRsvpModal,
+	highlighted = false,
 }: EventRegistrationCardProps) {
 	const {
 		registrationCount,
@@ -57,24 +54,44 @@ export function EventRegistrationCard({
 		userRegistrationStatus,
 		canRegister,
 		isOwnerOrAdmin,
+		user,
+		userProfile,
 	} = userData;
+
+	const hideRegistrationHeading =
+		!isOwnerOrAdmin && !isExternalEvent && (isUserRegistered || canRegister);
+
+	const useNativeAttendeePadding =
+		!isOwnerOrAdmin && !isExternalEvent && (isUserRegistered || canRegister);
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center gap-2">
-				<h2 className="text-xl font-semibold">
-					{isOwnerOrAdmin ? "Event Management" : isExternalEvent ? "Event" : "Registration"}
-				</h2>
-				{isExternalEvent && (
-					<Badge variant="outline" className="border-primary/50 bg-primary/5 text-primary">
-						<ExternalLink className="h-3 w-3 mr-1" />
-						Link event
-					</Badge>
-				)}
-			</div>
+			<Activity mode={hideRegistrationHeading ? "hidden" : "visible"}>
+				<div className="flex items-center gap-2">
+					<h2 className="text-xl font-semibold">
+						{isOwnerOrAdmin ? "Event Management" : isExternalEvent ? "Event" : "Registration"}
+					</h2>
+					{isExternalEvent && (
+						<Badge variant="outline" className="border-primary/50 bg-primary/5 text-primary">
+							<ExternalLink className="h-3 w-3 mr-1" />
+							Link event
+						</Badge>
+					)}
+				</div>
+			</Activity>
 
-			<Card className="bg-card/50 shadow-none transition-all border-primary/20 hover:border-primary/40">
-				<CardContent className="px-4 py-0 space-y-4">
+			<Card
+				data-highlight={highlighted ? "true" : undefined}
+				className={cn(
+					"bg-card/50 shadow-none transition-all border-primary/20 hover:border-primary/40 py-1.5",
+					highlighted && "registration-card-highlight",
+				)}
+			>
+				<CardContent
+					className={
+						useNativeAttendeePadding ? "px-3 py-3" : "px-4 pt-3 pb-0 space-y-4"
+					}
+				>
 					<Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
 						<AdminManagementView event={event} community={community} isExternalEvent={isExternalEvent} />
 					</Activity>
@@ -103,10 +120,10 @@ export function EventRegistrationCard({
 							event={event}
 							userRegistrationStatus={userRegistrationStatus}
 							userCheckinToken={userData.userCheckinToken}
-							registrationCount={registrationCount}
-							canRegister={canRegister}
 							isPastEvent={isPastEvent}
 							isUnregistering={isUnregistering}
+							user={user}
+							userProfile={userProfile}
 						/>
 					</Activity>
 
@@ -125,10 +142,8 @@ export function EventRegistrationCard({
 							registrationDeadlineFormatted={registrationDeadlineFormatted}
 							hasCustomQuestions={hasCustomQuestions}
 							isRegistering={isRegistering}
-							isSubmitting={isSubmitting}
+							isPastEvent={isPastEvent}
 							eventTrackingContext={eventTrackingContext}
-							onShowCustomQuestionsForm={onShowCustomQuestionsForm}
-							onShowRsvpModal={onShowRsvpModal}
 						/>
 					</Activity>
 

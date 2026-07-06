@@ -10,6 +10,7 @@ import { CommunityWaitlistNotification } from "~/templates/community-waitlist-no
 import { CommunityJoinNotification } from "~/templates/community-join-notification";
 import { CommunityAnnouncementEmail } from "~/templates/community-announcement-email";
 import { CollaborationInviteEmail } from "~/templates/collaboration-invite-email";
+import { EventInviteEmail } from "~/templates/event-invite-email";
 import { CollaborationAcceptedEmail } from "~/templates/collaboration-accepted-email";
 import { generateICS } from "~/modules/events/utils/ics-manager";
 import QRCode from "qrcode";
@@ -564,6 +565,18 @@ interface CollaborationInviteEmailData {
   inviteLink: string;
   eventLink: string;
   invitedByName: string;
+}
+
+interface EventInviteEmailData {
+  eventTitle: string;
+  communityName: string;
+  recipientName: string;
+  recipientEmail: string;
+  inviteLink: string;
+  eventLink: string;
+  invitedByName: string;
+  eventDate: string;
+  eventTime: string;
 }
 
 interface CollaborationAcceptedEmailData {
@@ -1314,6 +1327,69 @@ export async function sendCollaborationInviteEmail(
   console.log(`✅ Collaboration invite email sent successfully:`, {
     id: result.id,
     from: `${hostCommunityName} <${baseEmailAddressLog}>`,
+    to: recipientEmail,
+  });
+
+  return { success: true, data: { id: result.id } };
+}
+
+export async function sendEventInviteEmail(data: EventInviteEmailData) {
+  const {
+    eventTitle,
+    communityName,
+    recipientName,
+    recipientEmail,
+    inviteLink,
+    eventLink,
+    invitedByName,
+    eventDate,
+    eventTime,
+  } = data;
+
+  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
+
+  console.log(`📧 Attempting to send event invite email:`, {
+    to: recipientEmail,
+    from: `${communityName} <${baseEmailAddress}>`,
+    subject: `You're invited to ${eventTitle}`,
+  });
+
+  const result = await sendEmail({
+    to: recipientEmail,
+    subject: `You're invited to ${eventTitle}`,
+    from: `${communityName} <${baseEmailAddress}>`,
+    react: EventInviteEmail({
+      eventTitle,
+      communityName,
+      recipientName,
+      recipientEmail,
+      inviteLink,
+      eventLink,
+      invitedByName,
+      eventDate,
+      eventTime,
+    }),
+    metadata: {
+      template: "EventInviteEmail",
+      eventTitle,
+      communityName,
+    },
+  });
+
+  if (!result.success) {
+    console.error("❌ Failed to send event invite email:", {
+      to: recipientEmail,
+      error: result.error,
+    });
+    throw new Error(
+      `Failed to send event invite email: ${
+        result.error?.message || "Unknown error"
+      }`,
+    );
+  }
+
+  console.log(`✅ Event invite email sent successfully:`, {
+    id: result.id,
     to: recipientEmail,
   });
 

@@ -1,4 +1,4 @@
-import { Activity } from "react";
+import { Activity, useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -11,6 +11,7 @@ import type { UserData } from "~/modules/events/server/event-detail-loader.serve
 import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import type { EventTrackingContext } from "~/modules/events/utils/event-session-tracker";
 import { EventRegistrationCard } from "./event-registration-card";
+import { EventAttendeesAvatars } from "./event-attendees-avatars";
 import { EventLocationMapSection } from "~/modules/events/components/shared/event-location-map-section";
 import {
   toLocationValue,
@@ -22,53 +23,84 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 interface EventInfoSectionProps {
-	event: Event;
-	community: Community;
-	userData: UserData;
-	timeRemaining: TimeRemaining | null;
-	registrationDeadlineFormatted: string;
-	hasCustomQuestions: boolean;
-	isPastEvent: boolean;
-	isExternalEvent: boolean;
-	externalPlatform: ExternalPlatform | null;
-	externalPlatformName: string;
-	isRegistering: boolean;
-	isUnregistering: boolean;
-	isSubmitting: boolean;
-	eventTrackingContext: EventTrackingContext;
-	onShowCustomQuestionsForm: () => void;
-	onShowRsvpModal: () => void;
+  event: Event;
+  community: Community;
+  userData: UserData;
+  timeRemaining: TimeRemaining | null;
+  registrationDeadlineFormatted: string;
+  hasCustomQuestions: boolean;
+  isPastEvent: boolean;
+  isExternalEvent: boolean;
+  externalPlatform: ExternalPlatform | null;
+  externalPlatformName: string;
+  isRegistering: boolean;
+  isUnregistering: boolean;
+  eventTrackingContext: EventTrackingContext;
+  highlightRegistrationCard?: boolean;
+  isRegisterOpen?: boolean;
 }
 
 export function EventInfoSection({
-	event,
-	community,
-	userData,
-	timeRemaining,
-	registrationDeadlineFormatted,
-	hasCustomQuestions,
-	isPastEvent,
-	isExternalEvent,
-	externalPlatform,
-	externalPlatformName,
-	isRegistering,
-	isUnregistering,
-	isSubmitting,
-	eventTrackingContext,
-	onShowCustomQuestionsForm,
-	onShowRsvpModal,
+  event,
+  community,
+  userData,
+  timeRemaining,
+  registrationDeadlineFormatted,
+  hasCustomQuestions,
+  isPastEvent,
+  isExternalEvent,
+  externalPlatform,
+  externalPlatformName,
+  isRegistering,
+  isUnregistering,
+  eventTrackingContext,
+  highlightRegistrationCard = false,
+  isRegisterOpen = false,
 }: EventInfoSectionProps) {
- const { isUserRegistered, isOwnerOrAdmin } = userData;
-	const tz = event.timezone ?? "UTC";
-	const eventDate = dayjs(event.start_time).tz(tz);
-	const eventEndDate = event.end_time ? dayjs(event.end_time).tz(tz) : null;
-	const location = toLocationValue(event);
+  const { isUserRegistered, isOwnerOrAdmin } = userData;
+  const registrationCardRef = useRef<HTMLDivElement>(null);
+  const tz = event.timezone ?? "UTC";
+  const eventDate = dayjs(event.start_time).tz(tz);
+  const eventEndDate = event.end_time ? dayjs(event.end_time).tz(tz) : null;
+  const location = toLocationValue(event);
 
-	return (
+  useEffect(() => {
+    if (!highlightRegistrationCard || !isUserRegistered || isRegisterOpen)
+      return;
+    if (!window.matchMedia("(max-width: 1023px)").matches) return;
+
+    const scrollToCard = () => {
+      registrationCardRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    };
+
+    let retryTimeoutId: number | undefined;
+
+    const timeoutId = window.setTimeout(() => {
+      scrollToCard();
+
+      retryTimeoutId = window.setTimeout(() => {
+        if (window.scrollY < 80) {
+          scrollToCard();
+        }
+      }, 200);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (retryTimeoutId !== undefined) {
+        window.clearTimeout(retryTimeoutId);
+      }
+    };
+  }, [highlightRegistrationCard, isUserRegistered, isRegisterOpen]);
+
+  return (
     <div className="contents lg:block lg:space-y-6">
-      <div className="order-2">
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+      <div className="order-2 min-w-0">
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+          <h1 className="min-w-0 text-2xl md:text-4xl font-bold leading-tight">
             {event.title}
           </h1>
           <Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
@@ -89,7 +121,7 @@ export function EventInfoSection({
         </div>
       </div>
 
-      <div className="order-4 space-y-6">
+      <div className="order-4 min-w-0 space-y-4">
         <div className="flex items-start gap-3">
           <div className="mt-1">
             <Calendar className="h-5 w-5 text-muted-foreground" />
@@ -140,28 +172,40 @@ export function EventInfoSection({
             );
           })()}
         </Activity>
+      </div>
 
+      <div className="order-5 min-w-0 space-y-4 lg:space-y-6">
         <Separator />
 
-        <EventRegistrationCard
-          event={event}
-          community={community}
-          userData={userData}
-          timeRemaining={timeRemaining}
-          registrationDeadlineFormatted={registrationDeadlineFormatted}
-          hasCustomQuestions={hasCustomQuestions}
-          isPastEvent={isPastEvent}
-          isExternalEvent={isExternalEvent}
-          externalPlatform={externalPlatform}
-          externalPlatformName={externalPlatformName}
-          isRegistering={isRegistering}
-          isUnregistering={isUnregistering}
-          isSubmitting={isSubmitting}
-          eventTrackingContext={eventTrackingContext}
-          onShowCustomQuestionsForm={onShowCustomQuestionsForm}
-          onShowRsvpModal={onShowRsvpModal}
-        />
+        <div ref={registrationCardRef}>
+          <EventRegistrationCard
+            event={event}
+            community={community}
+            userData={userData}
+            timeRemaining={timeRemaining}
+            registrationDeadlineFormatted={registrationDeadlineFormatted}
+            hasCustomQuestions={hasCustomQuestions}
+            isPastEvent={isPastEvent}
+            isExternalEvent={isExternalEvent}
+            externalPlatform={externalPlatform}
+            externalPlatformName={externalPlatformName}
+            isRegistering={isRegistering}
+            isUnregistering={isUnregistering}
+            eventTrackingContext={eventTrackingContext}
+            highlighted={highlightRegistrationCard}
+          />
+        </div>
+      </div>
 
+      <div className="order-6 min-w-0 lg:hidden">
+        <EventAttendeesAvatars
+          event={event}
+          userData={userData}
+          isExternalEvent={isExternalEvent}
+        />
+      </div>
+
+      <div className="order-7 min-w-0 space-y-6">
         <Activity mode={event.description ? "visible" : "hidden"}>
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">About Event</h2>

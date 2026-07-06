@@ -28,7 +28,13 @@ export default [
         "routes/web/event-collaboration-legacy-redirect.tsx",
       ),
       route(":eventSlug/collaboration", "routes/web/event-collaboration.tsx"),
-      route(":eventSlug", "routes/web/event-detail.tsx"),
+      route(":eventSlug", "routes/web/event-detail.tsx", [
+        route("register", "routes/web/event-register.tsx"),
+      ]),
+      route(
+        ":eventSlug/invite/accept",
+        "routes/web/event-invite-accept.tsx",
+      ),
     ]),
     route(
       "c/:slug/collaboration-invite/:collaborationId",
@@ -103,6 +109,9 @@ export default [
     "routes/api/events/attenders-emails.tsx",
   ),
   route("api/events/attenders-list", "routes/api/events/attenders-list.tsx"),
+  route("api/events/invite", "routes/api/events/invite.tsx"),
+  route("api/current-user", "routes/api/current-user.tsx"),
+  route("api/events/registration-state", "routes/api/events/registration-state.tsx"),
   route("api/events/event-statistics", "routes/api/events/event-statistics.tsx"),
   route(
     "api/events/update-registration-status",

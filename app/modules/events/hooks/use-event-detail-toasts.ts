@@ -2,10 +2,12 @@ import { useEffect, type MutableRefObject } from "react";
 import { useActionData, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import type { EventDetailActionData } from "~/modules/events/model/event-detail-view.types";
+import { useRegistrationCacheUpdate } from "~/modules/events/hooks/use-event-registration-query";
 
 export interface UseEventDetailToastsOptions {
-	onRegisterSuccess?: () => void;
-	submittedIntentRef?: MutableRefObject<string | null>;
+  eventId?: string;
+  onRegisterSuccess?: () => void;
+  submittedIntentRef?: MutableRefObject<string | null>;
 }
 
 /**
@@ -14,25 +16,31 @@ export interface UseEventDetailToastsOptions {
 export function useEventDetailToasts(options?: UseEventDetailToastsOptions) {
 	const actionData = useActionData<EventDetailActionData>();
 	const [searchParams] = useSearchParams();
+  const updateRegistrationCache = useRegistrationCacheUpdate(
+    options?.eventId ?? "__missing-event-id__",
+  );
 
 	useEffect(() => {
 		if (!actionData) return;
 		if (actionData.success && actionData.message) {
 			toast.success(actionData.message);
+      if (options?.eventId && actionData.registrationState) {
+        updateRegistrationCache(actionData.registrationState);
+      }
 			const intent = options?.submittedIntentRef?.current;
-			if (intent === "register") {
-				options?.onRegisterSuccess?.();
-				if (options?.submittedIntentRef) {
-					options.submittedIntentRef.current = null;
-				}
-			}
+			if (intent === "register" || intent === "accept-invite") {
+        options?.onRegisterSuccess?.();
+        if (options?.submittedIntentRef) {
+          options.submittedIntentRef.current = null;
+        }
+      }
 		} else if (actionData.error) {
 			toast.error(actionData.error);
 			if (options?.submittedIntentRef) {
 				options.submittedIntentRef.current = null;
 			}
 		}
-	}, [actionData]);
+	}, [actionData, options?.eventId, updateRegistrationCache]);
 
 	useEffect(() => {
 		const verified = searchParams.get("verified");

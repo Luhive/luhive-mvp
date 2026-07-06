@@ -5,10 +5,13 @@ import { redirect } from "react-router";
 import type { ActionFunctionArgs } from "react-router";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
-import { createClient } from "~/shared/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "~/shared/lib/supabase/server";
 import { getIpLocation } from "~/shared/lib/ip-location.server";
 import { notifyCommunityJoin } from "~/modules/community/server/notify-community-join.server";
 import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
+import { fetchEventPageUserState } from "~/modules/events/server/fetch-event-page-user-state.server";
+import type { EventPageUserState } from "~/modules/events/model/event-detail-view.types";
+import type { Profile } from "~/shared/models/entity.types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -39,6 +42,56 @@ function getSafeReturnTo(returnTo: string | null): string | null {
 function withJoinedQuery(path: string): string {
   const separator = path.includes("?") ? "&" : "?";
   return `${path}${separator}joined=true`;
+}
+
+async function buildOtpModalSuccessResponse(
+  supabase: ReturnType<typeof createClient>["supabase"],
+  user: { id: string; email?: string | null },
+  opts: {
+    joined: boolean;
+    communitySlug: string | null;
+    registeredEvent: boolean;
+    registeredEventCommunityId: string | null;
+    eventId: string | null;
+    fullName: string | null;
+    avatarUrl: string | null;
+    headers: Headers;
+  },
+) {
+  const serviceClient = createServiceRoleClient();
+  const { data: userProfile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  let registrationState: EventPageUserState | undefined;
+  if (opts.eventId && opts.registeredEventCommunityId && opts.registeredEvent) {
+    registrationState = await fetchEventPageUserState(
+      supabase,
+      serviceClient,
+      opts.eventId,
+      opts.registeredEventCommunityId,
+    );
+  }
+
+  return Response.json(
+    {
+      success: true,
+      joined: opts.joined,
+      communitySlug: opts.communitySlug,
+      registeredEvent: opts.registeredEvent,
+      fullName: opts.fullName ?? userProfile?.full_name ?? null,
+      avatarUrl: opts.avatarUrl ?? userProfile?.avatar_url ?? null,
+      userId: user.id,
+      email: user.email ?? null,
+      userProfile: (userProfile as Profile | null) ?? null,
+      registrationState,
+      isCommunityMember:
+        registrationState?.isCommunityMember ?? opts.joined,
+    },
+    { headers: opts.headers },
+  );
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -144,20 +197,19 @@ export async function action({ request }: ActionFunctionArgs) {
   let joined = false;
   let communitySlug: string | null = null;
 
-  // Event RSVP flow: create profile if name/surname provided and none exists
-  const name = (formData.get("name") as string | null)?.trim();
-  const surname = (formData.get("surname") as string | null)?.trim();
-  if (name && surname) {
+  const submittedFullName = (formData.get("fullName") as string | null)?.trim() || null;
+
+  // Event RSVP flow: create profile if fullName provided and none exists
+  if (submittedFullName) {
     const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
       .eq("id", data.user.id)
       .maybeSingle();
     if (!existingProfile) {
-      const fullName = `${name} ${surname}`.trim();
       await supabase.from("profiles").insert({
         id: data.user.id,
-        full_name: fullName,
+        full_name: submittedFullName,
       });
     }
   }
@@ -200,188 +252,204 @@ export async function action({ request }: ActionFunctionArgs) {
       .single();
 
     if (event) {
-      if (event.custom_questions) {
-        const { validateCustomAnswers } = await import(
-          "~/modules/events/utils/custom-questions"
-        );
-        const validation = validateCustomAnswers(
-          (customAnswers || {}) as import("~/modules/events/model/event.types").CustomAnswerJson,
-          event.custom_questions as unknown as import("~/modules/events/model/event.types").CustomQuestionJson
-        );
-        if (!validation.valid) {
-          return Response.json(
-            { success: false, error: "Please fill in all required fields." },
-            { headers, status: 400 }
-          );
-        }
-      }
-
-      const approvalStatus = event.is_approve_required ? "pending" : "approved";
-      const checkinToken =
-        approvalStatus === "approved" ? crypto.randomUUID() : null;
-
-      const registrationLocation = await getIpLocation(request);
-
-      let registrationSessionId: string | null = eventSessionId;
-      let registrationCountry: string | null = registrationLocation.country;
-      let registrationCity: string | null = registrationLocation.city;
-      let timeToRegisterSeconds: number | null = getTimeToRegisterSeconds(
-        eventFirstVisitStartedAt,
-      );
-      let utmSource = eventUtmSource;
-      let utmMedium = eventUtmMedium;
-      let utmCampaign = eventUtmCampaign;
-      let utmContent = eventUtmContent;
-      let utmTerm = eventUtmTerm;
-
-      let firstVisitQuery = (supabase as any)
-        .from("event_visits")
-        .select(
-          "visited_at, session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, country, city",
-        )
+      const { data: existingRegistration } = await supabase
+        .from("event_registrations")
+        .select("id")
         .eq("event_id", eventId)
-        .order("visited_at", { ascending: true })
-        .limit(1);
+        .eq("user_id", data.user.id)
+        .maybeSingle();
 
-      if (eventSessionId) {
-        firstVisitQuery = firstVisitQuery.eq("session_id", eventSessionId);
-      } else {
-        firstVisitQuery = firstVisitQuery.eq("user_id", data.user.id);
-      }
-
-      const { data: firstVisitRows } = await firstVisitQuery;
-      const firstVisit = firstVisitRows?.[0] ?? null;
-
-      if (firstVisit) {
-        registrationSessionId = registrationSessionId || firstVisit.session_id || null;
-        registrationCountry = firstVisit.country || null;
-        registrationCity = firstVisit.city || null;
-        utmSource = normalizeUtmSource(firstVisit.utm_source || utmSource);
-        utmMedium = firstVisit.utm_medium || utmMedium;
-        utmCampaign = firstVisit.utm_campaign || utmCampaign;
-        utmContent = firstVisit.utm_content || utmContent;
-        utmTerm = firstVisit.utm_term || utmTerm;
-
-        const visitedAt = new Date(firstVisit.visited_at);
-        const now = new Date();
-        if (!Number.isNaN(visitedAt.getTime())) {
-          timeToRegisterSeconds = Math.max(
-            0,
-            Math.floor((now.getTime() - visitedAt.getTime()) / 1000),
-          );
-        }
-      }
-
-      const { error: regError } = await supabase.from("event_registrations").insert({
-        event_id: eventId,
-        user_id: data.user.id,
-        rsvp_status: "going",
-        is_verified: true,
-        approval_status: approvalStatus,
-        custom_answers: customAnswers as import("~/shared/models/database.types").Json | undefined,
-        registration_source_community_id: event.community_id,
-        checkin_token: checkinToken,
-        registration_session_id: registrationSessionId,
-        registration_ip: registrationLocation.ip,
-        registration_country: registrationCountry,
-        registration_city: registrationCity,
-        time_to_register_seconds: timeToRegisterSeconds,
-        utm_source: utmSource,
-        utm_medium: utmMedium,
-        utm_campaign: utmCampaign,
-        utm_content: utmContent,
-        utm_term: utmTerm,
-      });
-
-      if (!regError) {
+      if (existingRegistration) {
         registeredEvent = true;
         registeredEventCommunityId = event.community_id as string;
+      } else {
+        const hasCustomQuestions = !!event.custom_questions;
+        const shouldRegisterNow = !hasCustomQuestions || customAnswers !== null;
 
-        // Hoist shared variables for admin notification and registrant email
-        const { data: hostCommunity } = await supabase
-          .from("communities")
-          .select("name, slug")
-          .eq("id", event.community_id)
-          .single();
+        if (shouldRegisterNow) {
+          if (hasCustomQuestions) {
+            const { validateCustomAnswers } = await import(
+              "~/modules/events/utils/custom-questions"
+            );
+            const validation = validateCustomAnswers(
+              (customAnswers || {}) as import("~/modules/events/model/event.types").CustomAnswerJson,
+              event.custom_questions as unknown as import("~/modules/events/model/event.types").CustomQuestionJson
+            );
+            if (!validation.valid) {
+              return Response.json(
+                { success: false, error: "Please fill in all required fields." },
+                { headers, status: 400 }
+              );
+            }
+          }
 
-        const { data: collaborations } = await supabase
-          .from("event_collaborations")
-          .select("community_id, community:communities(name)")
-          .eq("event_id", eventId)
-          .eq("status", "accepted")
-          .neq("role", "host");
+          const approvalStatus = event.is_approve_required ? "pending" : "approved";
+          const checkinToken =
+            approvalStatus === "approved" ? crypto.randomUUID() : null;
 
-        const coHostCommunityNames = collaborations
-          ?.map((c: { community?: { name?: string } | { name?: string }[] }) =>
-            Array.isArray((c as any).community)
-              ? (c as any).community[0]?.name
-              : (c as any).community?.name
-          )
-          .filter(Boolean) as string[] | [];
+          const registrationLocation = await getIpLocation(request);
 
-        const fullName = name && surname ? `${name} ${surname}`.trim() : null;
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", data.user.id)
-          .maybeSingle();
+          let registrationSessionId: string | null = eventSessionId;
+          let registrationCountry: string | null = registrationLocation.country;
+          let registrationCity: string | null = registrationLocation.city;
+          let timeToRegisterSeconds: number | null = getTimeToRegisterSeconds(
+            eventFirstVisitStartedAt,
+          );
+          let utmSource = eventUtmSource;
+          let utmMedium = eventUtmMedium;
+          let utmCampaign = eventUtmCampaign;
+          let utmContent = eventUtmContent;
+          let utmTerm = eventUtmTerm;
 
-        const registrantName =
-          fullName || profile?.full_name || data.user.email?.split("@")[0] || "Someone";
-        const tz = (event.timezone as string) ?? "UTC";
-        const eventDate = dayjs(event.start_time).tz(tz);
-        const origin = new URL(request.url).origin;
-        const eventLink = Routes.absolute(origin, Routes.community.event(hostCommunity?.slug ?? "unknown", publicEventSlug(event)));
+          let firstVisitQuery = (supabase as any)
+            .from("event_visits")
+            .select(
+              "visited_at, session_id, utm_source, utm_medium, utm_campaign, utm_content, utm_term, country, city",
+            )
+            .eq("event_id", eventId)
+            .order("visited_at", { ascending: true })
+            .limit(1);
 
-        // Block 1 — notify host and co-host community admins
-        try {
-          await fetch(`${origin}/api/events/collaboration-notification`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: "registration-notification",
-              eventId,
-              hostCommunityId: event.community_id,
-              hostCommunityName: hostCommunity?.name ?? "Community",
-              coHostCommunityNames,
-              eventTitle: (event.title as string) ?? "Event",
-              registrantName,
-              registrantEmail: data.user.email ?? "",
-              eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-              eventTime: eventDate.format("h:mm A z"),
-              eventLink,
-            }),
+          if (eventSessionId) {
+            firstVisitQuery = firstVisitQuery.eq("session_id", eventSessionId);
+          } else {
+            firstVisitQuery = firstVisitQuery.eq("user_id", data.user.id);
+          }
+
+          const { data: firstVisitRows } = await firstVisitQuery;
+          const firstVisit = firstVisitRows?.[0] ?? null;
+
+          if (firstVisit) {
+            registrationSessionId = registrationSessionId || firstVisit.session_id || null;
+            registrationCountry = firstVisit.country || null;
+            registrationCity = firstVisit.city || null;
+            utmSource = normalizeUtmSource(firstVisit.utm_source || utmSource);
+            utmMedium = firstVisit.utm_medium || utmMedium;
+            utmCampaign = firstVisit.utm_campaign || utmCampaign;
+            utmContent = firstVisit.utm_content || utmContent;
+            utmTerm = firstVisit.utm_term || utmTerm;
+
+            const visitedAt = new Date(firstVisit.visited_at);
+            const now = new Date();
+            if (!Number.isNaN(visitedAt.getTime())) {
+              timeToRegisterSeconds = Math.max(
+                0,
+                Math.floor((now.getTime() - visitedAt.getTime()) / 1000),
+              );
+            }
+          }
+
+          const { error: regError } = await supabase.from("event_registrations").insert({
+            event_id: eventId,
+            user_id: data.user.id,
+            rsvp_status: "going",
+            is_verified: true,
+            approval_status: approvalStatus,
+            custom_answers: customAnswers as import("~/shared/models/database.types").Json | undefined,
+            registration_source_community_id: event.community_id,
+            checkin_token: checkinToken,
+            registration_session_id: registrationSessionId,
+            registration_ip: registrationLocation.ip,
+            registration_country: registrationCountry,
+            registration_city: registrationCity,
+            time_to_register_seconds: timeToRegisterSeconds,
+            utm_source: utmSource,
+            utm_medium: utmMedium,
+            utm_campaign: utmCampaign,
+            utm_content: utmContent,
+            utm_term: utmTerm,
           });
-        } catch (notifyError) {
-          console.error("Failed to trigger registration notification:", notifyError);
-        }
 
-        // Block 2 — send registrant confirmation email via API
-        const recipientEmail = data.user.email ?? "";
-        if (recipientEmail) {
-          try {
-            await fetch(`${origin}/api/events/registration-confirmation`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                approvalStatus,
-                recipientEmail,
-                recipientName: registrantName,
-                eventTitle: (event.title as string) ?? "Event",
-                communityName: hostCommunity?.name ?? "Community",
-                eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-                eventTime: eventDate.format("h:mm A z"),
-                eventLink,
-                registerAccountLink: `${origin}/signup`,
-                startTimeISO: event.start_time,
-                endTimeISO: (event as { end_time?: string }).end_time ?? event.start_time,
-                locationAddress: (event as { location_address?: string }).location_address ?? undefined,
-                onlineMeetingLink: (event as { online_meeting_link?: string }).online_meeting_link ?? undefined,
-                checkinToken,
-              }),
-            });
-          } catch (emailError) {
-            console.error("Failed to trigger registration confirmation email:", emailError);
+          if (!regError) {
+            registeredEvent = true;
+            registeredEventCommunityId = event.community_id as string;
+
+            const { data: hostCommunity } = await supabase
+              .from("communities")
+              .select("name, slug")
+              .eq("id", event.community_id)
+              .single();
+
+            const { data: collaborations } = await supabase
+              .from("event_collaborations")
+              .select("community_id, community:communities(name)")
+              .eq("event_id", eventId)
+              .eq("status", "accepted")
+              .neq("role", "host");
+
+            const coHostCommunityNames = collaborations
+              ?.map((c: { community?: { name?: string } | { name?: string }[] }) =>
+                Array.isArray((c as any).community)
+                  ? (c as any).community[0]?.name
+                  : (c as any).community?.name
+              )
+              .filter(Boolean) as string[] | [];
+
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", data.user.id)
+              .maybeSingle();
+
+            const registrantName =
+              submittedFullName ||
+              profile?.full_name ||
+              data.user.email?.split("@")[0] ||
+              "Someone";
+            const tz = (event.timezone as string) ?? "UTC";
+            const eventDate = dayjs(event.start_time).tz(tz);
+            const origin = new URL(request.url).origin;
+            const eventLink = Routes.absolute(origin, Routes.community.event(hostCommunity?.slug ?? "unknown", publicEventSlug(event)));
+
+            try {
+              await fetch(`${origin}/api/events/collaboration-notification`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  type: "registration-notification",
+                  eventId,
+                  hostCommunityId: event.community_id,
+                  hostCommunityName: hostCommunity?.name ?? "Community",
+                  coHostCommunityNames,
+                  eventTitle: (event.title as string) ?? "Event",
+                  registrantName,
+                  registrantEmail: data.user.email ?? "",
+                  eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+                  eventTime: eventDate.format("h:mm A z"),
+                  eventLink,
+                }),
+              });
+            } catch (notifyError) {
+              console.error("Failed to trigger registration notification:", notifyError);
+            }
+
+            const recipientEmail = data.user.email ?? "";
+            if (recipientEmail) {
+              try {
+                await fetch(`${origin}/api/events/registration-confirmation`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    approvalStatus,
+                    recipientEmail,
+                    recipientName: registrantName,
+                    eventTitle: (event.title as string) ?? "Event",
+                    communityName: hostCommunity?.name ?? "Community",
+                    eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+                    eventTime: eventDate.format("h:mm A z"),
+                    eventLink,
+                    registerAccountLink: `${origin}/signup`,
+                    startTimeISO: event.start_time,
+                    endTimeISO: (event as { end_time?: string }).end_time ?? event.start_time,
+                    locationAddress: (event as { location_address?: string }).location_address ?? undefined,
+                    onlineMeetingLink: (event as { online_meeting_link?: string }).online_meeting_link ?? undefined,
+                    checkinToken,
+                  }),
+                });
+              } catch (emailError) {
+                console.error("Failed to trigger registration confirmation email:", emailError);
+              }
+            }
           }
         }
       }
@@ -431,7 +499,7 @@ export async function action({ request }: ActionFunctionArgs) {
           memberEmail: data.user.email ?? null,
           memberName:
             memberProfile?.full_name ||
-            (name && surname ? `${name} ${surname}`.trim() : null) ||
+            submittedFullName ||
             data.user.email?.split("@")[0] ||
             "A new member",
         });
@@ -449,10 +517,16 @@ export async function action({ request }: ActionFunctionArgs) {
       communitySlug = community.slug;
 
       if (isModal) {
-        return Response.json(
-          { success: true, joined, communitySlug, registeredEvent, fullName, avatarUrl },
-          { headers }
-        );
+        return buildOtpModalSuccessResponse(supabase, data.user, {
+          joined,
+          communitySlug,
+          registeredEvent,
+          registeredEventCommunityId,
+          eventId: eventId ?? null,
+          fullName,
+          avatarUrl,
+          headers,
+        });
       }
 
       const destination = resolvedReturnTo ?? Routes.community.detail(community.slug);
@@ -461,10 +535,16 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (isModal) {
-    return Response.json(
-      { success: true, joined, communitySlug, registeredEvent, fullName, avatarUrl },
-      { headers }
-    );
+    return buildOtpModalSuccessResponse(supabase, data.user, {
+      joined,
+      communitySlug,
+      registeredEvent,
+      registeredEventCommunityId,
+      eventId: eventId ?? null,
+      fullName,
+      avatarUrl,
+      headers,
+    });
   }
 
   if (resolvedReturnTo) {
