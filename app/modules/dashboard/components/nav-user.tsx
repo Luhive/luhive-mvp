@@ -16,16 +16,17 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/shared/components/ui/dropdown-menu"
+} from "~/shared/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "~/shared/components/ui/sidebar"
+import { Link } from "react-router";
+import { Routes } from "~/shared/lib/routing/routes";
 
 export function NavUser({
   user,
@@ -49,7 +50,9 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {user.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
@@ -66,8 +69,14 @@ export function NavUser({
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+            <DropdownMenuItem
+              asChild
+              className="p-0 cursor-pointer"
+            >
+              <Link
+                to={Routes.profile}
+                className="flex items-center gap-2 px-2 py-1.5 text-left text-sm"
+              >
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
@@ -78,8 +87,8 @@ export function NavUser({
                     {user.email}
                   </span>
                 </div>
-              </div>
-            </DropdownMenuLabel>
+              </Link>
+            </DropdownMenuItem>
             {/* <DropdownMenuSeparator /> */}
             <DropdownMenuGroup>
               {/* <DropdownMenuItem>
@@ -104,5 +113,5 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }
