@@ -8,12 +8,12 @@ import { ArrowLeft } from "lucide-react";
 import { EventPageSkeleton } from "~/modules/events/components/event-list/event-page-skeleton";
 import { EventPreviewSidebar } from "~/modules/events/components/event-list/event-preview-sidebar";
 import type { Community, Event } from "~/shared/models/entity.types";
-import type { CommunityLoaderData } from "~/modules/community/server/community-loader.server";
+import type { CommunityLayoutLoaderData } from "~/modules/community/server/community-layout-loader.server";
 import { Routes } from "~/shared/lib/routing/routes";
 
 export default function EventsLayout() {
   const { slug } = useParams<{ slug: string }>();
-  const parentData = useRouteLoaderData("routes/web/community") as CommunityLoaderData | undefined;
+  const parentData = useRouteLoaderData("routes/web/community-layout") as CommunityLayoutLoaderData | undefined;
   const community = parentData?.community ?? null;
   const user = parentData?.user ?? null;
   const profile = parentData?.profile ?? null;

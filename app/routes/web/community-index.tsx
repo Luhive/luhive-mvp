@@ -1,31 +1,12 @@
-export { loader } from "~/modules/community/server/community-loader.server";
-
-export { action } from "~/modules/community/server/community-action.server";
-
-export { meta } from "~/modules/community/model/community-meta";
-
-export function shouldRevalidate({
-  nextUrl,
-  formMethod,
-  defaultShouldRevalidate,
-}: {
-  nextUrl: URL;
-  formMethod?: string;
-  defaultShouldRevalidate: boolean;
-}) {
-  if (nextUrl.searchParams.has("published")) return true;
-  if (formMethod === "GET" || formMethod === undefined) return false;
-  return defaultShouldRevalidate;
-}
-
+export { loader } from "~/modules/community/server/community-home-loader.server";
 
 import {
   useLoaderData,
+  useRouteLoaderData,
   Link,
   useNavigation,
   useRevalidator,
   useLocation,
-  Outlet,
 } from "react-router";
 import { createClient as createClientBrowser } from "~/shared/lib/supabase/client";
 import { Routes } from "~/shared/lib/routing/routes";
@@ -73,7 +54,9 @@ import { EventPageSkeleton } from "~/modules/events/components/event-list/event-
 import { EventPreviewSidebar } from "~/modules/events/components/event-list/event-preview-sidebar";
 import { useIsMobile } from "~/shared/hooks/use-mobile";
 import { toast } from "sonner";
-import type { CommunityLoaderData } from "~/modules/community/server/community-loader.server";
+import type { CommunityHomeLoaderData } from "~/modules/community/server/community-home-loader.server";
+import type { CommunityLayoutLoaderData } from "~/modules/community/server/community-layout-loader.server";
+import type { CommunityAnnouncement } from "~/modules/community/server/community-home-loader.server";
 import type { Community } from "~/modules/community/model/community-types";
 import {
   MorphingDialog,
@@ -91,7 +74,7 @@ import {
 import { ScrollArea } from "~/shared/components/ui/scroll-area";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];
-type Announcement = CommunityLoaderData["announcements"][number];
+type Announcement = CommunityAnnouncement;
 
 
 const EventList = lazy(() =>
@@ -100,8 +83,20 @@ const EventList = lazy(() =>
   }))
 );
 
-export default function CommunityPage() {
-  const loaderData = useLoaderData<CommunityLoaderData>();
+export default function CommunityIndexPage() {
+  const homeData = useLoaderData<CommunityHomeLoaderData>();
+  const layoutData = useRouteLoaderData(
+    "routes/web/community-layout",
+  ) as CommunityLayoutLoaderData | undefined;
+  const loaderData = {
+    community: null,
+    isOwner: false,
+    isMember: false,
+    user: null,
+    profile: null,
+    ...layoutData,
+    ...homeData,
+  };
   const navigation = useNavigation();
   const location = useLocation();
   const revalidator = useRevalidator();
@@ -301,10 +296,6 @@ export default function CommunityPage() {
     trackView();
   }, [selectedAnnouncement?.id]);
 
-  const isChildRoute = community?.slug
-    ? Routes.community.isCommunityChildPath(community.slug, location.pathname)
-    : false;
-
   useEffect(() => {
     if (location.search.includes("published")) {
       window.history.replaceState({}, "", location.pathname);
@@ -313,7 +304,6 @@ export default function CommunityPage() {
 
   return (
     <>
-      <div className={isChildRoute ? "hidden" : ""}>
         {pendingEvent && community && (
           <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
             <div className="min-h-screen container mx-auto px-4 sm:px-8">
@@ -993,8 +983,6 @@ export default function CommunityPage() {
             </div>
           </div>
         )}
-      </div>
-      <Outlet />
     </>
   );
 }

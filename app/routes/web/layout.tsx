@@ -26,7 +26,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	if (authUser) {
 		const { data } = await supabase
 			.from("profiles")
-			.select("*")
+			.select("id, full_name, avatar_url")
 			.eq("id", authUser.id)
 			.single();
 		profile = data ?? null;

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "~/shared/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
-import type { CommunityLoaderData } from "~/modules/community/server/community-loader.server";
+import type { CommunityLayoutLoaderData } from "~/modules/community/server/community-layout-loader.server";
 import { toast } from "sonner";
 import { createClient } from "~/shared/lib/supabase/client";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
@@ -18,7 +18,7 @@ export default function AnnouncementNewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const parentData = useRouteLoaderData("routes/web/community") as CommunityLoaderData | undefined;
+  const parentData = useRouteLoaderData("routes/web/community-layout") as CommunityLayoutLoaderData | undefined;
   const community = parentData?.community ?? null;
   const profile = parentData?.profile ?? null;
 
