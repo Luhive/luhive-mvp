@@ -35,6 +35,7 @@ export async function action({
   const instagram = formData.get("instagram") as string;
   const linkedin = formData.get("linkedin") as string;
   const whatsapp = formData.get("whatsapp") as string;
+  const discord = formData.get("discord") as string;
   const logo_url = formData.get("logo_url") as string;
 
   const taglineWordCount = countWords(tagline);
@@ -52,6 +53,7 @@ export async function action({
     instagram: instagram || null,
     linkedin: linkedin || null,
     whatsapp: whatsapp || null,
+    discord: discord || null,
   };
 
   const { error } = await supabase

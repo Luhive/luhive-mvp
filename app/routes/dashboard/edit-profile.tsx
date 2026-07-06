@@ -61,7 +61,7 @@ export default function CommunityEdit() {
   }, [actionData]);
 
   const { community } = data;
-  const socialLinks = community.social_links as { website?: string; instagram?: string; linkedin?: string; whatsapp?: string } | null;
+  const socialLinks = community.social_links as { website?: string; instagram?: string; linkedin?: string; whatsapp?: string; discord?: string } | null;
 
   const handleLogoUpdate = (newLogoUrl: string) => {
     setLogoUrl(newLogoUrl);
@@ -154,6 +154,10 @@ export default function CommunityEdit() {
                   <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <MessageCircle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <Input name="whatsapp" defaultValue={socialLinks?.whatsapp || ""} placeholder="https://wa.me/1234567890" className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" type="url" />
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <img src="/discord-logo.svg" alt="" className="h-4 w-4 shrink-0 grayscale" />
+                    <Input name="discord" defaultValue={socialLinks?.discord || ""} placeholder="https://discord.gg/invite" className="border-0 bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0" type="url" />
                   </div>
                   <Button type="button" variant="ghost" className="w-full text-muted-foreground" disabled>+ Add more</Button>
                 </CardContent>

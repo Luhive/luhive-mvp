@@ -186,6 +186,7 @@ export default function CommunityPage() {
     instagram?: string;
     linkedin?: string;
     whatsapp?: string;
+    discord?: string;
   } | null;
 
   const showStickyButton = !isMember && !isOwner;
@@ -566,6 +567,37 @@ export default function CommunityPage() {
                             className="bg-popover border text-popover-foreground"
                           >
                             <p className="text-xs">{socialLinks?.whatsapp}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Activity>
+                    <Activity
+                      mode={socialLinks?.discord ? "visible" : "hidden"}
+                    >
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                              aria-label="Discord"
+                              onClick={() =>
+                                window.open(
+                                  socialLinks?.discord,
+                                  "_blank",
+                                  "noopener,noreferrer",
+                                )
+                              }
+                            >
+                              <img src="/discord-logo.svg" alt="" className="h-4 w-4 grayscale" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="bottom"
+                            className="bg-popover border text-popover-foreground"
+                          >
+                            <p className="text-xs">{socialLinks?.discord}</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>

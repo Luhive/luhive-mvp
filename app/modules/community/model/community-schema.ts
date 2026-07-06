@@ -19,6 +19,7 @@ export const communityProfileSchema = z.object({
   instagram: z.string().url().optional().or(z.literal("")),
   linkedin: z.string().url().optional().or(z.literal("")),
   whatsapp: z.string().url().optional().or(z.literal("")),
+  discord: z.string().url().optional().or(z.literal("")),
   logo_url: z.string().url().optional().or(z.literal("")),
 });
 
