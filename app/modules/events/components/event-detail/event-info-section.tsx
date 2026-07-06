@@ -103,6 +103,7 @@ export function EventInfoSection({
           <h1 className="min-w-0 text-2xl md:text-4xl font-bold leading-tight">
             {event.title}
           </h1>
+          {/* Insight button — hidden for now
           <Activity mode={isOwnerOrAdmin ? "visible" : "hidden"}>
             <Button
               asChild
@@ -118,6 +119,7 @@ export function EventInfoSection({
               </a>
             </Button>
           </Activity>
+          */}
         </div>
       </div>
 
@@ -143,7 +145,7 @@ export function EventInfoSection({
           {(() => {
             const venueName =
               location?.name || event.location_address?.split(",")[0] || "";
-            // const city = deriveLocality(event.location_address);
+            const city = deriveLocality(event.location_address);
             const href = location
               ? GoogleMaps.mapsLink(location)
               : GoogleMaps.mapsSearchUrl({ address: event.location_address });
@@ -164,7 +166,8 @@ export function EventInfoSection({
                   </p>
                   {event.location_address && (
                     <p className="text-sm text-muted-foreground">
-                      {event.location_address}
+                      <span className="lg:hidden">{city || event.location_address}</span>
+                      <span className="hidden lg:inline">{event.location_address}</span>
                     </p>
                   )}
                 </div>

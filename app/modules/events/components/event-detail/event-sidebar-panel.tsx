@@ -1,13 +1,7 @@
 import { Activity } from "react";
 import { Calendar } from "lucide-react";
-import { Button } from "~/shared/components/ui/button";
 import { Badge } from "~/shared/components/ui/badge";
 import HostedBy from "~/modules/events/components/shared/hosted-by";
-import {
-  detectDiscussionPlatform,
-  getPlatformName,
-  getPlatformIcon,
-} from "~/modules/events/utils/discussion-platform";
 import { EventAttendeesAvatars } from "./event-attendees-avatars";
 import { cn } from "~/shared/lib/utils";
 import type { Community, Event } from "~/shared/models/entity.types";
@@ -142,8 +136,8 @@ export function EventSidebarPanel({
           </div>
         </Activity>
 
-        <div className="space-y-3">
-          {/* <div className="space-y-2">
+        {/* <div className="space-y-3">
+          <div className="space-y-2">
             <Button
               onClick={() => onShare(event)}
               variant="link"
@@ -153,37 +147,8 @@ export function EventSidebarPanel({
               <Send className="h-4 w-4 mr-2" />
               Share Event
             </Button>
-          </div> */}
-
-          <Activity mode={event.discussion_link ? "visible" : "hidden"}>
-            <div>
-              {(() => {
-                const platform = detectDiscussionPlatform(
-                  event.discussion_link || "",
-                );
-                const PlatformIcon = getPlatformIcon(platform);
-                const platformName = getPlatformName(platform);
-                return (
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="w-full"
-                    size="lg"
-                  >
-                    <a
-                      href={event.discussion_link || ""}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <PlatformIcon className="h-4 w-4 mr-2" />
-                      Join Event Chat on {platformName}
-                    </a>
-                  </Button>
-                );
-              })()}
-            </div>
-          </Activity>
-        </div>
+          </div>
+        </div> */}
       </div>
     </div>
   );
