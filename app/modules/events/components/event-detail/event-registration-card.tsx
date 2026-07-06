@@ -120,6 +120,7 @@ export function EventRegistrationCard({
 							event={event}
 							userRegistrationStatus={userRegistrationStatus}
 							userCheckinToken={userData.userCheckinToken}
+							discussionLink={event.discussion_link}
 							isPastEvent={isPastEvent}
 							isUnregistering={isUnregistering}
 							user={user}

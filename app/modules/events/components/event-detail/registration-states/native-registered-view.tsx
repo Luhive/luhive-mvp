@@ -3,6 +3,7 @@ import { CheckinQrDialog } from "~/modules/events/components/registration/checki
 import { InviteSomeoneButton } from "~/modules/events/components/registration/invite-modal";
 import { useEventStartTimer } from "~/modules/events/hooks/use-event-start-timer";
 import type { Event } from "~/shared/models/entity.types";
+import { EventDiscussionLinkButton } from "../event-discussion-link-button";
 import { CancelRegistrationLink } from "./shared/cancel-registration-link";
 import { EventStartCountdownBadge } from "./shared/event-start-countdown-badge";
 import { RegistrationIdentityRow } from "./shared/registration-identity-row";
@@ -16,6 +17,7 @@ interface NativeRegisteredViewProps {
 	event: Event;
 	userRegistrationStatus: string | null;
 	userCheckinToken: string | null;
+	discussionLink?: string | null;
 	isPastEvent: boolean;
 	isUnregistering: boolean;
 	user: { id: string; email?: string | null } | null;
@@ -69,23 +71,16 @@ function RegisteredAttendeeLayout({
 				}
 			/>
 
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-				<div className="min-w-0 space-y-2 sm:flex-1">
-					{statusLine}
-					<div className="hidden sm:block">
-						<CancelRegistrationLink isUnregistering={isUnregistering} />
-					</div>
-				</div>
+			<div className="space-y-3">
+				{statusLine}
 
 				{actions ? (
-					<div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:shrink-0">
+					<div className="flex flex-col gap-2 w-full sm:flex-row sm:flex-wrap">
 						{actions}
 					</div>
 				) : null}
 
-				<div className="sm:hidden">
-					<CancelRegistrationLink isUnregistering={isUnregistering} />
-				</div>
+				<CancelRegistrationLink isUnregistering={isUnregistering} />
 			</div>
 		</div>
 	);
@@ -94,11 +89,15 @@ function RegisteredAttendeeLayout({
 function ApprovedRegisteredView({
 	event,
 	userCheckinToken,
+	discussionLink,
 	isPastEvent,
 	isUnregistering,
 	user,
 	userProfile,
-}: RegisteredStateViewProps & { userCheckinToken: string | null }) {
+}: RegisteredStateViewProps & {
+	userCheckinToken: string | null;
+	discussionLink?: string | null;
+}) {
 	const timeUntilStart = useEventStartTimer(
 		event.start_time,
 		event.timezone,
@@ -130,8 +129,12 @@ function ApprovedRegisteredView({
 					{userCheckinToken ? (
 						<CheckinQrDialog
 							checkinToken={userCheckinToken}
+							userEmail={user?.email}
 							className="w-full sm:w-auto"
 						/>
+					) : null}
+					{discussionLink ? (
+						<EventDiscussionLinkButton discussionLink={discussionLink} />
 					) : null}
 				</>
 			}
@@ -212,6 +215,7 @@ export function NativeRegisteredView({
 	event,
 	userRegistrationStatus,
 	userCheckinToken,
+	discussionLink,
 	isPastEvent,
 	isUnregistering,
 	user,
@@ -230,6 +234,7 @@ export function NativeRegisteredView({
 			<ApprovedRegisteredView
 				{...stateProps}
 				userCheckinToken={userCheckinToken}
+				discussionLink={discussionLink}
 			/>
 		);
 	}
