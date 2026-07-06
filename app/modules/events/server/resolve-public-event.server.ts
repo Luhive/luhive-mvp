@@ -5,6 +5,12 @@ import { isUuid } from "~/modules/events/utils/event-slug";
 
 type Supabase = SupabaseClient<Database>;
 
+export const PUBLIC_COMMUNITY_COLUMNS =
+  "id, name, slug, logo_url, created_by, description, tagline, cover_url, verified, is_show, social_links";
+
+export const PUBLIC_EVENT_COLUMNS =
+  "id, slug, community_id, title, description, cover_url, start_time, end_time, timezone, status, capacity, registration_deadline, registration_type, custom_questions, external_platform, external_registration_url, event_type, location_address, location_lat, location_lng, location_name, location_place_id, online_meeting_link, discussion_link, is_approve_required, created_by, created_at, updated_at, external_registration_count";
+
 export type ResolvedPublicEvent = {
   event: Event;
   community: Community;
@@ -20,57 +26,30 @@ export async function resolvePublicEvent(
   eventSlug: string,
   options?: { publishedOnly?: boolean },
 ): Promise<ResolvedPublicEvent | null> {
-  const { data: community, error: communityError } = await supabase
-    .from("communities")
-    .select("*")
-    .eq("slug", communitySlug)
-    .single();
+  const lookupId = isUuid(eventSlug) ? eventSlug : null;
+
+  const [{ data: community, error: communityError }, { data: event }] =
+    await Promise.all([
+      supabase
+        .from("communities")
+        .select(PUBLIC_COMMUNITY_COLUMNS)
+        .eq("slug", communitySlug)
+        .single(),
+      lookupId
+        ? supabase
+            .from("events")
+            .select(PUBLIC_EVENT_COLUMNS)
+            .eq("id", lookupId)
+            .maybeSingle()
+        : supabase
+            .from("events")
+            .select(PUBLIC_EVENT_COLUMNS)
+            .eq("slug", eventSlug)
+            .maybeSingle(),
+    ]);
 
   if (communityError || !community) {
     return null;
-  }
-
-  const lookupSlug = eventSlug;
-  const lookupId = isUuid(eventSlug) ? eventSlug : null;
-
-  let event: Event | null = null;
-
-  if (lookupId) {
-    const { data } = await supabase
-      .from("events")
-      .select("*")
-      .eq("id", lookupId)
-      .maybeSingle();
-    event = data;
-  } else {
-    const { data: hostEvent } = await supabase
-      .from("events")
-      .select("*")
-      .eq("slug", lookupSlug)
-      .eq("community_id", community.id)
-      .maybeSingle();
-
-    if (hostEvent) {
-      event = hostEvent;
-    } else {
-      const { data: coHostCollab } = await supabase
-        .from("event_collaborations")
-        .select("event_id")
-        .eq("community_id", community.id)
-        .eq("role", "co-host")
-        .eq("status", "accepted");
-
-      if (coHostCollab?.length) {
-        const eventIds = coHostCollab.map((c) => c.event_id);
-        const { data: coHostEvent } = await supabase
-          .from("events")
-          .select("*")
-          .eq("slug", lookupSlug)
-          .in("id", eventIds)
-          .maybeSingle();
-        event = coHostEvent;
-      }
-    }
   }
 
   if (!event) {
@@ -81,7 +60,6 @@ export async function resolvePublicEvent(
     return null;
   }
 
-  // Co-host path: verify this community is allowed to view the event
   if (event.community_id !== community.id) {
     const { data: collaboration } = await supabase
       .from("event_collaborations")
@@ -97,5 +75,8 @@ export async function resolvePublicEvent(
     }
   }
 
-  return { event, community };
+  return {
+    event: event as Event,
+    community: community as Community,
+  };
 }

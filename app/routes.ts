@@ -13,7 +13,8 @@ export default [
   layout("routes/web/layout.tsx", [
     route("hub", "routes/web/hub.tsx"),
     route("profile", "routes/web/profile.tsx"),
-    route("c/:slug", "routes/web/community.tsx", [
+    route("c/:slug", "routes/web/community-layout.tsx", [
+      index("routes/web/community-index.tsx"),
       route("announcements/new", "routes/web/announcement-new.tsx"),
       route(
         "announcements/:announcementId",

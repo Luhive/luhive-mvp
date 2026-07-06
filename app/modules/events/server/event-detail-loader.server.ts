@@ -16,8 +16,14 @@ import { Routes } from "~/shared/lib/routing/routes";
 import { isUuid } from "~/modules/events/utils/event-slug";
 import { dehydrateSeed } from "~/shared/lib/query/dehydrate-loader.server";
 import { eventRegistrationKey } from "~/shared/lib/query/query-keys";
+import {
+  logLoaderTiming,
+  timedLoader,
+} from "~/shared/lib/diagnostics/loader-timing.server";
 
 dayjs.extend(timezone);
+
+const PROFILE_EVENT_DETAIL_COLUMNS = "id, full_name, avatar_url, metadata";
 
 const EXTERNAL_PLATFORM_NAMES: Record<ExternalPlatform, string> = {
   google_forms: "Google Forms",
@@ -66,6 +72,7 @@ export async function loader({
   request,
   params,
 }: LoaderFunctionArgs): Promise<EventDetailLoaderData> {
+  const loaderStartedAt = performance.now();
   const { supabase } = createClient(request);
 
   const communitySlug = (params as { slug?: string }).slug;
@@ -75,9 +82,12 @@ export async function loader({
     throw new Response("Not Found", { status: 404 });
   }
 
-  const resolved = await resolvePublicEvent(supabase, communitySlug, eventSlug, {
-    publishedOnly: true,
-  });
+  const resolved = await timedLoader(
+    "eventDetail resolvePublicEvent",
+    resolvePublicEvent(supabase, communitySlug, eventSlug, {
+      publishedOnly: true,
+    }),
+  );
 
   if (!resolved) {
     throw new Response("Event not found", { status: 404 });
@@ -93,6 +103,7 @@ export async function loader({
   const origin = url.origin;
 
   const serviceClient = createServiceRoleClient();
+  const isHostCommunityPath = event.community_id === community.id;
 
   const [
     { count: regCount },
@@ -100,23 +111,38 @@ export async function loader({
       data: { user: u },
     },
     { collaborations },
-    { data: hostCommunity, error: hostCommunityError },
+    hostCommunityResult,
   ] = await Promise.all([
-    serviceClient
-      .from("event_registrations")
-      .select("*", { count: "exact", head: true })
-      .eq("event_id", event.id)
-      .eq("is_verified", true)
-      .eq("rsvp_status", "going")
-      .eq("approval_status", "approved"),
-    supabase.auth.getUser(),
-    getEventCollaborations(supabase, event.id),
-    supabase
-      .from("communities")
-      .select("id, name, slug, logo_url")
-      .eq("id", event.community_id)
-      .single(),
+    timedLoader(
+      "eventDetail registration count",
+      serviceClient
+        .from("event_registrations")
+        .select("*", { count: "exact", head: true })
+        .eq("event_id", event.id)
+        .eq("is_verified", true)
+        .eq("rsvp_status", "going")
+        .eq("approval_status", "approved"),
+    ),
+    timedLoader("eventDetail auth getUser", supabase.auth.getUser()),
+    timedLoader("eventDetail collaborations", getEventCollaborations(supabase, event.id)),
+    isHostCommunityPath
+      ? Promise.resolve({
+          data: {
+            id: community.id,
+            name: community.name,
+            slug: community.slug,
+            logo_url: community.logo_url,
+          },
+          error: null,
+        })
+      : supabase
+          .from("communities")
+          .select("id, name, slug, logo_url")
+          .eq("id", event.community_id)
+          .single(),
   ]);
+
+  const { data: hostCommunity, error: hostCommunityError } = hostCommunityResult;
 
   let isUserRegistered = false;
   let userRegistrationStatus: string | null = null;
@@ -145,7 +171,11 @@ export async function loader({
           .eq("community_id", community.id)
           .eq("user_id", u.id)
           .single(),
-        supabase.from("profiles").select("*").eq("id", u.id).single(),
+        supabase
+          .from("profiles")
+          .select(PROFILE_EVENT_DETAIL_COLUMNS)
+          .eq("id", u.id)
+          .single(),
       ]);
 
     if (event.registration_type !== "external") {
@@ -157,7 +187,7 @@ export async function loader({
     isOwnerOrAdmin =
       membership?.role === "owner" || membership?.role === "admin";
     isCommunityMember = !!membership;
-    userProfile = profile || null;
+    userProfile = (profile as Profile | null) || null;
   }
 
   if (hostCommunityError || !hostCommunity) {
@@ -292,6 +322,7 @@ export async function loader({
     }));
   }
 
+  logLoaderTiming("eventDetail loader total", loaderStartedAt);
   return {
     event,
     community,
