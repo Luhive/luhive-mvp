@@ -11,19 +11,47 @@ import { useFetcher, useNavigation, useSubmit } from "react-router";
 import { toast } from "sonner";
 import { OtpInputInline } from "~/modules/auth/components/otp-input-inline";
 import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
-import { JoinCommunityCheckbox } from "~/modules/events/components/registration/join-community-checkbox";
 import type { CustomQuestionJson } from "~/modules/events/model/event.types";
 import type { CustomAnswerJson } from "~/modules/events/model/event.types";
 import {
   getEventTrackingContext,
   type EventTrackingContext,
 } from "~/modules/events/utils/event-session-tracker";
+import { motion } from "motion/react";
 import { cn } from "~/shared/lib/utils/cn";
-import { createClient } from "~/shared/lib/supabase/client";
 import type { OtpVerifySuccessResult } from "~/modules/auth/model/otp.types";
 
 const OVERLAY_FIELD_CLASS =
   "bg-muted/50 border-transparent shadow-none h-11 rounded-lg focus-visible:bg-background";
+
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 48 48"
+      className={className}
+      aria-hidden
+      focusable="false"
+    >
+      <path
+        fill="#FFC107"
+        d="M43.611 20.083H42V20H24v8h11.303C33.843 32.658 29.29 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20c10.494 0 19.143-7.656 19.143-20 0-1.341-.147-2.652-.432-3.917z"
+      />
+      <path
+        fill="#FF3D00"
+        d="M6.306 14.691l6.571 4.813C14.297 16.128 18.787 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 15.316 4 7.954 8.924 6.306 14.691z"
+      />
+      <path
+        fill="#4CAF50"
+        d="M24 44c5.196 0 9.86-1.992 13.38-5.223l-6.173-5.234C29.093 34.484 26.682 35.5 24 35.5c-5.262 0-9.799-3.507-11.397-8.248l-6.52 5.017C8.704 39.043 15.83 44 24 44z"
+      />
+      <path
+        fill="#1976D2"
+        d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z"
+      />
+    </svg>
+  );
+}
 
 type EmailFormValues = { email: string };
 type DetailsFormValues = { fullName: string };
@@ -61,7 +89,6 @@ export interface RegistrationFlowProps {
   showStepHeader?: boolean;
   onStepChange?: (step: RegistrationFlowStep) => void;
   variant?: "default" | "overlay";
-  isCommunityMember?: boolean;
 }
 
 export function getRegistrationStepLabels(step: RegistrationFlowStep) {
@@ -109,7 +136,6 @@ export function RegistrationFlow({
   showStepHeader = false,
   onStepChange,
   variant = "default",
-  isCommunityMember: isCommunityMemberProp,
 }: RegistrationFlowProps) {
   const isOverlay = variant === "overlay";
   const checkEmailFetcher = useFetcher<CheckEmailFetcherData>();
@@ -123,17 +149,16 @@ export function RegistrationFlow({
   const [otpEmail, setOtpEmail] = React.useState("");
   const [emailStepError, setEmailStepError] = React.useState<string | null>(null);
   const [detailsStepError, setDetailsStepError] = React.useState<string | null>(null);
-  const [joinCommunity, setJoinCommunity] = React.useState(true);
   const [customAnswers, setCustomAnswers] = React.useState<CustomAnswerJson | null>(null);
   const [existingUserFullName, setExistingUserFullName] = React.useState<string | null>(null);
   const [existingUserAvatarUrl, setExistingUserAvatarUrl] = React.useState<string | null>(null);
-  const [resolvedIsCommunityMember, setResolvedIsCommunityMember] = React.useState<
-    boolean | null
-  >(isCommunityMemberProp !== undefined ? isCommunityMemberProp : null);
+  const [showEmailSection, setShowEmailSection] = React.useState(false);
+  const emailInputRef = React.useRef<HTMLInputElement>(null);
 
   const emailForm = useForm<EmailFormValues>({
     defaultValues: { email: "" },
   });
+  const { ref: emailRegisterRef, ...emailRegisterProps } = emailForm.register("email");
   const detailsForm = useForm<DetailsFormValues>({
     defaultValues: { fullName: "" },
   });
@@ -154,59 +179,6 @@ export function RegistrationFlow({
     () => trackingContext ?? getEventTrackingContext(eventId),
     [eventId, trackingContext],
   );
-
-  React.useEffect(() => {
-    if (isCommunityMemberProp !== undefined) {
-      setResolvedIsCommunityMember(isCommunityMemberProp);
-      if (isCommunityMemberProp) {
-        setJoinCommunity(false);
-      }
-    }
-  }, [isCommunityMemberProp]);
-
-  React.useEffect(() => {
-    if (isCommunityMemberProp !== undefined) return;
-    if (userExists !== true || step !== "questions") return;
-
-    let cancelled = false;
-
-    (async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user || cancelled) return;
-
-      const { data: membership } = await supabase
-        .from("community_members")
-        .select("id")
-        .eq("community_id", communityId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (cancelled) return;
-
-      const isMember = !!membership;
-      setResolvedIsCommunityMember(isMember);
-      if (isMember) {
-        setJoinCommunity(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [communityId, isCommunityMemberProp, step, userExists]);
-
-  const isCheckingExistingMembership =
-    isCommunityMemberProp === undefined &&
-    userExists === true &&
-    step === "questions" &&
-    resolvedIsCommunityMember === null;
-
-  const shouldShowJoinCommunityCheckbox =
-    !isCheckingExistingMembership && resolvedIsCommunityMember !== true;
 
   React.useEffect(() => {
     const data = checkEmailFetcher.data;
@@ -280,7 +252,6 @@ export function RegistrationFlow({
     formData.append("provider", "google");
     formData.append("eventId", eventId);
     formData.append("communityId", communityId);
-    formData.append("joinCommunity", joinCommunity ? "true" : "false");
     if (returnTo) formData.append("returnTo", returnTo);
     formData.append("eventSessionId", resolvedTrackingContext.sessionId);
     formData.append("eventUtmSource", resolvedTrackingContext.utmSource);
@@ -302,6 +273,11 @@ export function RegistrationFlow({
     );
 
     submit(formData, { method: "post", action: "/signup" });
+  };
+
+  const handleExpandEmailSection = () => {
+    setShowEmailSection(true);
+    setEmailStepError(null);
   };
 
   const validateFullName = (): string | null => {
@@ -337,7 +313,6 @@ export function RegistrationFlow({
     formData.append("email", email);
     formData.append("eventId", eventId);
     formData.append("communityId", communityId);
-    formData.append("joinCommunity", joinCommunity ? "true" : "false");
     signupFetcher.submit(formData, { method: "post", action: "/signup" });
   };
 
@@ -352,7 +327,6 @@ export function RegistrationFlow({
     formData.append("email", email);
     formData.append("eventId", eventId);
     formData.append("communityId", communityId);
-    formData.append("joinCommunity", joinCommunity ? "true" : "false");
     signupFetcher.submit(formData, { method: "post", action: "/signup" });
   };
 
@@ -360,7 +334,6 @@ export function RegistrationFlow({
     const formData = new FormData();
     formData.append("intent", "register");
     formData.append("custom_answers", JSON.stringify(answers));
-    formData.append("joinCommunity", joinCommunity ? "true" : "false");
     questionsFetcher.submit(formData, {
       method: "post",
       action: resolvedRegisterActionUrl,
@@ -390,54 +363,92 @@ export function RegistrationFlow({
     onSuccess(result);
   };
 
-  const joinCommunityCheckbox = shouldShowJoinCommunityCheckbox ? (
-    <JoinCommunityCheckbox
-      id="join-community"
-      communityName={communityName}
-      checked={joinCommunity}
-      onCheckedChange={setJoinCommunity}
-      disabled={isSubmittingSignup || isSubmittingQuestions || isSubmittingOAuth}
-    />
-  ) : null;
-
   const emailStepContent = (
     <div className="space-y-5">
-      <div className="space-y-2">
-        <Label htmlFor="rsvp-email">Email</Label>
-        <Input
-          id="rsvp-email"
-          type="email"
-          placeholder="you@example.com"
-          {...emailForm.register("email")}
-          disabled={isCheckingEmail}
-          className={isOverlay ? OVERLAY_FIELD_CLASS : undefined}
-        />
-      </div>
-      {emailStepError && (
-        <p className="text-sm text-destructive">{emailStepError}</p>
-      )}
-      <div className="space-y-3">
-        <Button
-          type="button"
-          onClick={handleContinueWithGoogle}
-          disabled={isCheckingEmail || isSubmittingOAuth}
-          variant="outline"
-          className="w-full"
-          size={isOverlay ? "lg" : "default"}
-        >
-          {isSubmittingOAuth ? <Spinner /> : "Continue with Google"}
-        </Button>
-        <Button
-          type="button"
-          onClick={handleContinueWithEmail}
-          disabled={isCheckingEmail || isSubmittingOAuth}
-          className="w-full"
-          size={isOverlay ? "lg" : "default"}
-        >
-          {isCheckingEmail ? <Spinner /> : "Continue with Email"}
-        </Button>
-      </div>
-      {joinCommunityCheckbox}
+      <Button
+        type="button"
+        onClick={handleContinueWithGoogle}
+        disabled={isCheckingEmail || isSubmittingOAuth}
+        variant="outline"
+        className="w-full hover:bg-muted hover:text-foreground"
+        size={isOverlay ? "lg" : "default"}
+      >
+        {isSubmittingOAuth ? (
+          <Spinner />
+        ) : (
+          <>
+            <GoogleIcon className="mr-1 size-5 shrink-0" />
+            Register with Google
+          </>
+        )}
+      </Button>
+
+      {!showEmailSection ? (
+        <p className="text-center text-sm text-muted-foreground transition-opacity duration-300 motion-reduce:transition-none">
+          or with{" "}
+          <button
+            type="button"
+            onClick={handleExpandEmailSection}
+            disabled={isCheckingEmail || isSubmittingOAuth}
+            className="underline underline-offset-2 transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+          >
+            email
+          </button>
+        </p>
+      ) : null}
+
+      <motion.div
+        initial={false}
+        animate={{
+          height: showEmailSection ? "auto" : 0,
+          opacity: showEmailSection ? 1 : 0,
+        }}
+        transition={{
+          height: { duration: 0.3, ease: [0.32, 0.72, 0, 1] },
+          opacity: { duration: 0.25, ease: "easeOut" },
+        }}
+        className="overflow-hidden motion-reduce:transition-none"
+        aria-hidden={!showEmailSection}
+        style={{ pointerEvents: showEmailSection ? "auto" : "none" }}
+      >
+        <div className="space-y-5 pt-1">
+          <div className="flex items-center gap-4">
+            <div className="h-px flex-1 bg-border" />
+            <span className="shrink-0 text-xs text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          <div className="space-y-2 px-1">
+            <Label htmlFor="rsvp-email">Email</Label>
+            <Input
+              id="rsvp-email"
+              type="email"
+              placeholder="you@example.com"
+              {...emailRegisterProps}
+              ref={(node) => {
+                emailRegisterRef(node);
+                emailInputRef.current = node;
+              }}
+              disabled={isCheckingEmail || isSubmittingOAuth}
+              className={isOverlay ? OVERLAY_FIELD_CLASS : undefined}
+            />
+          </div>
+
+          {emailStepError && (
+            <p className="px-1 text-sm text-destructive">{emailStepError}</p>
+          )}
+
+          <Button
+            type="button"
+            onClick={handleContinueWithEmail}
+            disabled={isCheckingEmail || isSubmittingOAuth}
+            className="w-full"
+            size={isOverlay ? "lg" : "default"}
+          >
+            {isCheckingEmail ? <Spinner /> : "Continue with Email"}
+          </Button>
+        </div>
+      </motion.div>
     </div>
   );
 
@@ -456,7 +467,6 @@ export function RegistrationFlow({
       {detailsStepError && (
         <p className="text-sm text-destructive">{detailsStepError}</p>
       )}
-      {!hasCustomQuestions ? joinCommunityCheckbox : null}
       {hasCustomQuestions ? (
         <Button
           type="button"
@@ -504,7 +514,6 @@ export function RegistrationFlow({
         isSubmitting={isSubmittingQuestions}
         inline={!isOverlay}
         variant={isOverlay ? "overlay" : "default"}
-        afterQuestionsContent={joinCommunityCheckbox}
       />
     ) : (
       <CustomQuestionsForm
@@ -519,7 +528,6 @@ export function RegistrationFlow({
         isSubmitting={isSubmittingSignup}
         inline={!isOverlay}
         variant={isOverlay ? "overlay" : "default"}
-        afterQuestionsContent={joinCommunityCheckbox}
       />
     ));
 
@@ -527,7 +535,7 @@ export function RegistrationFlow({
     <div className="space-y-4">
       <OtpInputInline
         email={otpEmail}
-        communityId={joinCommunity ? communityId : undefined}
+        communityId={communityId}
         returnTo={returnTo ?? undefined}
         onSuccess={userExists ? handleOtpSuccessExistingUser : handleOtpSuccessNewUser}
         fullName={
@@ -542,7 +550,6 @@ export function RegistrationFlow({
         eventUtmContent={resolvedTrackingContext.utmContent}
         eventUtmTerm={resolvedTrackingContext.utmTerm}
         eventFirstVisitStartedAt={resolvedTrackingContext.firstVisitStartedAt}
-        joinCommunity={joinCommunity}
       />
     </div>
   );
@@ -561,6 +568,16 @@ export function RegistrationFlow({
   React.useEffect(() => {
     onStepChange?.(step);
   }, [onStepChange, step]);
+
+  React.useEffect(() => {
+    if (!showEmailSection || step !== "email") return;
+
+    const timer = window.setTimeout(() => {
+      emailInputRef.current?.focus();
+    }, 320);
+
+    return () => window.clearTimeout(timer);
+  }, [showEmailSection, step]);
 
   return (
     <div className={cn(isOverlay ? undefined : "space-y-6")}>

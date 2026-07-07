@@ -35,8 +35,8 @@ async function buildOtpModalSuccessResponse(
     joined: boolean;
     communitySlug: string | null;
     registeredEvent: boolean;
-    registeredEventCommunityId: string | null;
     eventId: string | null;
+    registrationCommunityId: string | null;
     fullName: string | null;
     avatarUrl: string | null;
     headers: Headers;
@@ -50,12 +50,12 @@ async function buildOtpModalSuccessResponse(
     .maybeSingle();
 
   let registrationState: EventPageUserState | undefined;
-  if (opts.eventId && opts.registeredEventCommunityId && opts.registeredEvent) {
+  if (opts.eventId && opts.registrationCommunityId) {
     registrationState = await fetchEventPageUserState(
       supabase,
       serviceClient,
       opts.eventId,
-      opts.registeredEventCommunityId,
+      opts.registrationCommunityId,
     );
   }
 
@@ -218,6 +218,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   let registeredEvent = false;
   let registeredEventCommunityId: string | null = null;
+  let eventRegistrationCommunityId: string | null = null;
   if (eventId) {
     const customAnswersStr = formData.get("customAnswers") as string | null;
     let customAnswers: Record<string, unknown> | null = null;
@@ -245,6 +246,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ]);
 
     if (event) {
+      eventRegistrationCommunityId = communityId || event.community_id;
       const hasCustomQuestions = !!event.custom_questions;
       const shouldRegisterNow = !hasCustomQuestions || customAnswers !== null;
 
@@ -358,8 +360,8 @@ export async function action({ request }: ActionFunctionArgs) {
           joined,
           communitySlug,
           registeredEvent,
-          registeredEventCommunityId,
           eventId: eventId ?? null,
+          registrationCommunityId: eventRegistrationCommunityId,
           fullName,
           avatarUrl,
           headers,
@@ -376,8 +378,8 @@ export async function action({ request }: ActionFunctionArgs) {
       joined,
       communitySlug,
       registeredEvent,
-      registeredEventCommunityId,
       eventId: eventId ?? null,
+      registrationCommunityId: eventRegistrationCommunityId,
       fullName,
       avatarUrl,
       headers,

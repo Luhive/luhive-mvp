@@ -14,11 +14,12 @@ export async function getCommunityMemberEmails(
 ): Promise<string[]> {
   const supabase = supabaseClient || createServiceRoleClient();
 
-  // Get all community members
+  // Get all community members who have not opted out of emails
   const { data: members, error } = await supabase
     .from("community_members")
     .select("user_id")
-    .eq("community_id", communityId);
+    .eq("community_id", communityId)
+    .eq("email_opt_out", false);
 
   if (error || !members) {
     console.error("Error fetching community members:", error);
@@ -72,11 +73,12 @@ export async function getCommunityMemberEmailsWithIds(
 ): Promise<Array<{ email: string; userId: string }>> {
   const supabase = supabaseClient || createServiceRoleClient();
 
-  // Get all community members
+  // Get all community members who have not opted out of emails
   const { data: members, error } = await supabase
     .from("community_members")
     .select("user_id")
-    .eq("community_id", communityId);
+    .eq("community_id", communityId)
+    .eq("email_opt_out", false);
 
   if (error || !members) {
     console.error("Error fetching community members:", error);

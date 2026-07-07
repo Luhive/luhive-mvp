@@ -59,6 +59,7 @@ export default [
 
   route("privacy-policy", "routes/web/privacy-policy.tsx"),
   route("terms-of-service", "routes/web/terms-conditions.tsx"),
+  route("unsubscribe", "routes/web/unsubscribe.tsx"),
 
   // Dashboard: parent route owns :slug, children are relative
   route("dashboard/:slug", "routes/dashboard/layout.tsx", [

@@ -58,7 +58,7 @@ export function RegistrationOverlayShell({
       >
         <h1 className="mb-8 text-2xl font-bold tracking-tight">{title}</h1>
 
-        <div className="flex-1 px-1">{children}</div>
+        <div className="flex-1 min-w-0">{children}</div>
 
         {footer && (
           <div className="shrink-0 pt-6 pb-[max(0px,env(safe-area-inset-bottom))]">

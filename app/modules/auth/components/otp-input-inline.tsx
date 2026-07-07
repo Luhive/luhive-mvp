@@ -40,7 +40,6 @@ interface OtpInputInlineProps {
   fullName?: string;
   eventId?: string;
   customAnswers?: string;
-  joinCommunity?: boolean;
   eventSessionId?: string;
   eventUtmSource?: string;
   eventUtmMedium?: string | null;
@@ -61,7 +60,6 @@ export function OtpInputInline({
   fullName,
   eventId,
   customAnswers,
-  joinCommunity,
   eventSessionId,
   eventUtmSource,
   eventUtmMedium,
@@ -198,7 +196,6 @@ export function OtpInputInline({
     if (eventUtmContent) formData.append("eventUtmContent", eventUtmContent);
     if (eventUtmTerm) formData.append("eventUtmTerm", eventUtmTerm);
     if (eventFirstVisitStartedAt) formData.append("eventFirstVisitStartedAt", eventFirstVisitStartedAt);
-    if (joinCommunity === false) formData.append("joinCommunity", "false");
 
     verifyFetcher.submit(formData, { method: "post", action: "/auth/verify-otp" });
   }, [
@@ -214,7 +211,6 @@ export function OtpInputInline({
     eventUtmTerm,
     eventFirstVisitStartedAt,
     isVerifying,
-    joinCommunity,
     fullName,
     otpValue,
     returnTo,
@@ -243,7 +239,6 @@ export function OtpInputInline({
     if (eventUtmContent) formData.append("eventUtmContent", eventUtmContent);
     if (eventUtmTerm) formData.append("eventUtmTerm", eventUtmTerm);
     if (eventFirstVisitStartedAt) formData.append("eventFirstVisitStartedAt", eventFirstVisitStartedAt);
-    if (joinCommunity === false) formData.append("joinCommunity", "false");
 
     verifyFetcher.submit(formData, { method: "post", action: "/auth/verify-otp" });
   };
