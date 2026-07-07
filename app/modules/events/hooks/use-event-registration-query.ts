@@ -59,6 +59,16 @@ export function useEventRegistrationQuery(eventId: string, communityId: string) 
 	return useQuery(eventRegistrationQueryOptions(eventId, communityId));
 }
 
+export function useInvalidateEventRegistrationQuery(eventId: string) {
+	const queryClient = useQueryClient();
+
+	return useCallback(() => {
+		void queryClient.invalidateQueries({
+			queryKey: eventRegistrationKey(eventId),
+		});
+	}, [eventId, queryClient]);
+}
+
 /**
  * Merge known event-page user fields into the cache for an instant UI update,
  * then refetch in the background to reconcile anything not provided.

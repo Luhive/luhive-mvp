@@ -1,6 +1,6 @@
 import { createServiceRoleClient } from "~/shared/lib/supabase/server";
 import type { ActionFunctionArgs } from "react-router";
-import { getCommunityMemberEmails } from "~/modules/community/utils/community-members";
+import { getCommunityMemberEmailsWithIds } from "~/modules/community/utils/community-members";
 import { sendNewCollaborationEventEmail, sendEventRegistrationNotificationEmail } from "~/shared/lib/email.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -32,6 +32,7 @@ export async function action({ request }: ActionFunctionArgs) {
     } = body;
 
     const serviceClient = createServiceRoleClient();
+    const emailOrigin = new URL(request.url).origin;
 
     console.log("type:", type);
     console.log("coHostCommunityId:", coHostCommunityId);
@@ -41,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // Send to all co-host community members
       if (coHostCommunityId) {
         console.log("Fetching co-host community member emails for:", coHostCommunityId);
-        const coHostEmails = await getCommunityMemberEmails(coHostCommunityId, serviceClient);
+        const coHostEmails = await getCommunityMemberEmailsWithIds(coHostCommunityId, serviceClient);
         console.log("coHostEmails:", coHostEmails);
         
         const { data: coHostCommunity } = await serviceClient
@@ -61,15 +62,19 @@ export async function action({ request }: ActionFunctionArgs) {
         
         console.log("Sending emails to co-host members:", coHostEmails.length);
 
-        const coHostPayloads = coHostEmails.map((email) => ({
+        const coHostPayloads = coHostEmails.map(({ email, userId }) => ({
           eventTitle,
           hostCommunityName: hostName,
           coHostCommunityName: coHostName,
+          communityId: coHostCommunityId,
+          communityName: coHostName,
           eventDate,
           eventTime,
           eventLink,
           recipientEmail: email,
           recipientName: email.split("@")[0],
+          recipientUserId: userId,
+          emailOrigin,
           isNewEvent: true,
           locationAddress,
           onlineMeetingLink,
@@ -81,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // Send to all host community members
       if (hostCommunityId) {
         console.log("Fetching host community member emails for:", hostCommunityId);
-        const hostEmails = await getCommunityMemberEmails(hostCommunityId, serviceClient);
+        const hostEmails = await getCommunityMemberEmailsWithIds(hostCommunityId, serviceClient);
         console.log("hostEmails:", hostEmails);
         
         const { data: coHostCommunity } = await serviceClient
@@ -101,15 +106,19 @@ export async function action({ request }: ActionFunctionArgs) {
         
         console.log("Sending emails to host members:", hostEmails.length);
 
-        const hostPayloads = hostEmails.map((email) => ({
+        const hostPayloads = hostEmails.map(({ email, userId }) => ({
           eventTitle,
           hostCommunityName: hostName,
           coHostCommunityName: coHostName,
+          communityId: hostCommunityId,
+          communityName: hostName,
           eventDate,
           eventTime,
           eventLink,
           recipientEmail: email,
           recipientName: email.split("@")[0],
+          recipientUserId: userId,
+          emailOrigin,
           isNewEvent: true,
           locationAddress,
           onlineMeetingLink,
@@ -128,7 +137,7 @@ export async function action({ request }: ActionFunctionArgs) {
       
       if (coHostCommunityId) {
         console.log("Fetching co-host community member emails for existing event:", coHostCommunityId);
-        const coHostEmails = await getCommunityMemberEmails(coHostCommunityId, serviceClient);
+        const coHostEmails = await getCommunityMemberEmailsWithIds(coHostCommunityId, serviceClient);
         console.log("coHostEmails for existing event:", coHostEmails);
         
         const { data: coHostCommunity } = await serviceClient
@@ -148,15 +157,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
         console.log("Sending emails to co-host members for existing event:", coHostEmails.length);
 
-        const existingCoHostPayloads = coHostEmails.map((email) => ({
+        const existingCoHostPayloads = coHostEmails.map(({ email, userId }) => ({
           eventTitle,
           hostCommunityName: hostName,
           coHostCommunityName: coHostName,
+          communityId: coHostCommunityId,
+          communityName: coHostName,
           eventDate,
           eventTime,
           eventLink,
           recipientEmail: email,
           recipientName: email.split("@")[0],
+          recipientUserId: userId,
+          emailOrigin,
           isNewEvent: false,
           locationAddress,
           onlineMeetingLink,

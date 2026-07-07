@@ -28,6 +28,7 @@ interface CommunityAnnouncementEmailProps {
   communityLogo?: string;
   announcementId?: string;
   userId?: string;
+  unsubscribeUrl?: string;
 }
 
 export const CommunityAnnouncementEmail = ({
@@ -44,6 +45,7 @@ What do you want to announce? What do you want to announce? What do you want to 
   communityLogo = "https://luhive.com/LuhiveLogo.png",
   announcementId,
   userId,
+  unsubscribeUrl,
 }: CommunityAnnouncementEmailProps) => {
   const formattedDate = new Date(createdAt).toLocaleDateString("en-US", {
     month: "short",
@@ -170,6 +172,15 @@ What do you want to announce? What do you want to announce? What do you want to 
 
             {/* FOOTER */}
             <Section className="text-center mt-6">
+              {unsubscribeUrl ? (
+                <Text className="text-xs mb-4" style={{ color: "#9B9B9B" }}>
+                  You are receiving this because you are a member of {communityName}.{" "}
+                  <a href={unsubscribeUrl} style={{ color: "#9B9B9B" }}>
+                    Unsubscribe from emails
+                  </a>
+                </Text>
+              ) : null}
+
               <Text className="text-xs mb-4" style={{ color: "#9B9B9B" }}>
                 Create your community on
               </Text>

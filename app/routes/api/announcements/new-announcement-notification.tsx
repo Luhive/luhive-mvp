@@ -47,11 +47,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const announcementLink = Routes.absolute(new URL(request.url).origin, Routes.community.detail(communitySlug));
+    const emailOrigin = new URL(request.url).origin;
 
     const payloads = memberEmailsWithIds.map(({ email, userId }) => ({
       title,
       description,
       communityName,
+      communityId,
       announcementLink,
       recipientEmail: email,
       imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
@@ -59,6 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
       communityLogo: resolvedCommunityLogo,
       announcementId,
       userId,
+      emailOrigin,
     }));
 
     const { successCount, errorCount } = await sendAnnouncementNotificationEmail(

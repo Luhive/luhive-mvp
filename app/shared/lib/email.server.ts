@@ -13,6 +13,12 @@ import { CollaborationInviteEmail } from "~/templates/collaboration-invite-email
 import { EventInviteEmail } from "~/templates/event-invite-email";
 import { CollaborationAcceptedEmail } from "~/templates/collaboration-accepted-email";
 import { generateICS } from "~/modules/events/utils/ics-manager";
+import {
+  buildUnsubscribeFooterHtml,
+  buildUnsubscribeListHeaders,
+  buildUnsubscribeUrl,
+  getEmailOrigin,
+} from "~/shared/lib/email/unsubscribe-token.server";
 import QRCode from "qrcode";
 
 // Utility function to mask sensitive values for logging
@@ -150,6 +156,7 @@ type BaseEmailPayload = {
    * If not provided, defaults to FROM_EMAIL
    */
   from?: string;
+  headers?: Record<string, string>;
 };
 
 type EmailSendResult = {
@@ -216,6 +223,7 @@ async function sendEmailsInternal(
           subject: payload.subject,
           react: payload.react,
           html: payload.html,
+          headers: payload.headers,
           attachments:
             payload.attachments && payload.attachments.length > 0
               ? payload.attachments
@@ -281,6 +289,7 @@ async function sendEmailsInternal(
           subject: payload.subject,
           react: payload.react,
           html: payload.html,
+          headers: payload.headers,
           attachments:
             payload.attachments && payload.attachments.length > 0
               ? payload.attachments
@@ -311,6 +320,7 @@ async function sendEmailsInternal(
                 subject: payload.subject,
                 react: payload.react,
                 html: payload.html,
+                headers: payload.headers,
                 attachments:
                   payload.attachments && payload.attachments.length > 0
                     ? payload.attachments
@@ -382,6 +392,7 @@ async function sendEmailsInternal(
               subject: payload.subject,
               react: payload.react,
               html: payload.html,
+              headers: payload.headers,
               attachments:
                 payload.attachments && payload.attachments.length > 0
                   ? payload.attachments
@@ -590,11 +601,14 @@ interface CollaborationAcceptedEmailData {
 interface NewEventNotificationEmailData {
   eventTitle: string;
   communityName: string;
+  communityId: string;
   eventDate: string;
   eventTime: string;
   eventLink: string;
   recipientEmail: string;
   recipientName: string;
+  recipientUserId: string;
+  emailOrigin?: string;
   locationAddress?: string;
   locationMapUrl?: string;
   onlineMeetingLink?: string;
@@ -604,11 +618,15 @@ interface NewCollaborationEventEmailData {
   eventTitle: string;
   hostCommunityName: string;
   coHostCommunityName: string;
+  communityId: string;
+  communityName: string;
   eventDate: string;
   eventTime: string;
   eventLink: string;
   recipientEmail: string;
   recipientName: string;
+  recipientUserId: string;
+  emailOrigin?: string;
   isNewEvent: boolean;
   locationAddress?: string;
   onlineMeetingLink?: string;
@@ -631,6 +649,7 @@ interface AnnouncementNotificationEmailData {
   title: string;
   description: string;
   communityName: string;
+  communityId: string;
   announcementLink: string;
   recipientEmail: string;
   recipientName?: string;
@@ -640,6 +659,7 @@ interface AnnouncementNotificationEmailData {
   announcementId?: string;
   userId?: string;
   recipientUserId?: string;
+  emailOrigin?: string;
 }
 
 export async function sendRegistrationRequestEmail(
@@ -1473,18 +1493,30 @@ export async function sendNewEventNotificationEmail(
     ({
       eventTitle,
       communityName,
+      communityId,
       eventDate,
       eventTime,
       eventLink,
       recipientEmail,
       recipientName,
+      recipientUserId,
+      emailOrigin,
       locationAddress,
       locationMapUrl,
       onlineMeetingLink,
-    }) => ({
+    }) => {
+      const origin = emailOrigin ?? getEmailOrigin();
+      const unsubscribeUrl = buildUnsubscribeUrl(
+        origin,
+        communityId,
+        recipientUserId,
+      );
+
+      return {
       to: recipientEmail,
       subject: `New Event: ${eventTitle}`,
       from: `${communityName} <${baseEmailAddress}>`,
+      headers: buildUnsubscribeListHeaders(unsubscribeUrl),
       html: `
         <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #ff8040;">New Event Created!</h2>
@@ -1498,7 +1530,7 @@ export async function sendNewEventNotificationEmail(
             ${onlineMeetingLink ? `<p style="margin: 5px 0;"><strong>🔗 Online:</strong> <a href="${onlineMeetingLink}" style="color: #ff8040;">Join Meeting</a></p>` : ''}
           </div>
           <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event Details</a></p>
-          <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">${communityName}</p>
+          ${buildUnsubscribeFooterHtml(unsubscribeUrl, communityName)}
         </div>
       `,
       metadata: {
@@ -1506,7 +1538,8 @@ export async function sendNewEventNotificationEmail(
         eventTitle,
         communityName,
       },
-    })
+    };
+    },
   );
 
   console.log(
@@ -1547,6 +1580,7 @@ export async function sendAnnouncementNotificationEmail(
       title,
       description,
       communityName,
+      communityId,
       announcementLink,
       recipientEmail,
       imageUrls,
@@ -1555,10 +1589,21 @@ export async function sendAnnouncementNotificationEmail(
       announcementId,
       userId,
       recipientUserId,
-    }) => ({
+      emailOrigin,
+    }) => {
+      const resolvedUserId = userId ?? recipientUserId ?? "";
+      const origin = emailOrigin ?? getEmailOrigin();
+      const unsubscribeUrl = buildUnsubscribeUrl(
+        origin,
+        communityId,
+        resolvedUserId,
+      );
+
+      return {
       to: recipientEmail,
       subject: `${title}`,
       from: `${communityName} <${baseEmailAddress}>`,
+      headers: buildUnsubscribeListHeaders(unsubscribeUrl),
       react: CommunityAnnouncementEmail({
         title,
         description,
@@ -1568,14 +1613,16 @@ export async function sendAnnouncementNotificationEmail(
         createdAt,
         communityLogo,
         announcementId,
-        userId: userId ?? recipientUserId,
+        userId: resolvedUserId,
+        unsubscribeUrl,
       }),
       metadata: {
         template: "CommunityAnnouncementEmail",
         communityName,
         announcementId,
       },
-    })
+    };
+    },
   );
 
   console.log(
@@ -1619,20 +1666,32 @@ export async function sendNewCollaborationEventEmail(
       eventTitle,
       hostCommunityName,
       coHostCommunityName,
+      communityId,
+      communityName,
       eventDate,
       eventTime,
       eventLink,
       recipientEmail,
       recipientName,
+      recipientUserId,
+      emailOrigin,
       isNewEvent,
       locationAddress,
       onlineMeetingLink,
     }) => {
       const eventType = isNewEvent ? "New Event" : "Event Update";
+      const origin = emailOrigin ?? getEmailOrigin();
+      const unsubscribeUrl = buildUnsubscribeUrl(
+        origin,
+        communityId,
+        recipientUserId,
+      );
+
       return {
         to: recipientEmail,
         subject: `${eventType}: ${eventTitle} (${coHostCommunityName} joined)`,
         from: `${hostCommunityName} <${baseEmailAddress}>`,
+        headers: buildUnsubscribeListHeaders(unsubscribeUrl),
         html: `
         <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #ff8040;">${isNewEvent ? 'New Collaborative Event!' : 'Event Collaboration Update!'}</h2>
@@ -1648,7 +1707,7 @@ export async function sendNewCollaborationEventEmail(
             ${onlineMeetingLink ? `<p style="margin: 5px 0;"><strong>🔗 Online:</strong> <a href="${onlineMeetingLink}" style="color: #ff8040;">Join Meeting</a></p>` : ''}
           </div>
           <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event Details</a></p>
-          <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">${hostCommunityName}</p>
+          ${buildUnsubscribeFooterHtml(unsubscribeUrl, communityName)}
         </div>
       `,
         metadata: {

@@ -207,6 +207,7 @@ export type Database = {
         Row: {
           community_id: string | null
           custom_title: string | null
+          email_opt_out: boolean
           id: string
           joined_at: string | null
           metadata: Json | null
@@ -216,6 +217,7 @@ export type Database = {
         Insert: {
           community_id?: string | null
           custom_title?: string | null
+          email_opt_out?: boolean
           id?: string
           joined_at?: string | null
           metadata?: Json | null
@@ -225,6 +227,7 @@ export type Database = {
         Update: {
           community_id?: string | null
           custom_title?: string | null
+          email_opt_out?: boolean
           id?: string
           joined_at?: string | null
           metadata?: Json | null

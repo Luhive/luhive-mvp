@@ -9,13 +9,15 @@ import {
   type RegistrationFlowStep,
 } from "~/modules/events/components/registration/registration-flow";
 import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
-import { JoinCommunityCheckbox } from "~/modules/events/components/registration/join-community-checkbox";
 import { useEventDetailToasts } from "~/modules/events/hooks/use-event-detail-toasts";
 import { getEventTrackingContext } from "~/modules/events/utils/event-session-tracker";
 import type { Community, Event, Profile } from "~/shared/models/entity.types";
 import type { CustomQuestionJson } from "~/modules/events/model/event.types";
 import type { EventRegisterInviteLoaderData } from "~/modules/events/server/event-register-loader.server";
-import { useRegistrationCacheUpdate } from "~/modules/events/hooks/use-event-registration-query";
+import {
+  useInvalidateEventRegistrationQuery,
+  useRegistrationCacheUpdate,
+} from "~/modules/events/hooks/use-event-registration-query";
 import { useSetCurrentUserCache } from "~/shared/hooks/use-current-user-query";
 import type { OtpVerifySuccessResult } from "~/modules/auth/model/otp.types";
 
@@ -28,7 +30,6 @@ interface EventRegisterViewProps {
   user: { id: string; email?: string | null } | null;
   userProfile: Profile | null;
   inviteData?: EventRegisterInviteLoaderData | null;
-  isCommunityMember?: boolean;
 }
 
 export function EventRegisterView({
@@ -40,16 +41,15 @@ export function EventRegisterView({
   user,
   userProfile,
   inviteData,
-  isCommunityMember = false,
 }: EventRegisterViewProps) {
   const navigate = useNavigate();
   const submit = useSubmit();
   const navigation = useNavigation();
   const updateEventPageCache = useRegistrationCacheUpdate(event.id);
+  const invalidateEventRegistration = useInvalidateEventRegistrationQuery(event.id);
   const setCurrentUserCache = useSetCurrentUserCache();
   const lastSubmittedIntentRef = useRef<string | null>(null);
   const [guestStep, setGuestStep] = useState<RegistrationFlowStep>("email");
-  const [joinCommunity, setJoinCommunity] = useState(true);
 
   const isInviteMode = Boolean(inviteData?.inviteToken);
 
@@ -84,6 +84,11 @@ export function EventRegisterView({
   const handleOtpVerified = (result: OtpVerifySuccessResult) => {
     if (result.userProfile) {
       setCurrentUserCache(result.userProfile);
+    }
+    if (result.registrationState) {
+      updateEventPageCache(result.registrationState);
+    } else {
+      invalidateEventRegistration();
     }
   };
 
@@ -136,8 +141,6 @@ export function EventRegisterView({
       );
     }
 
-    formData.append("joinCommunity", joinCommunity ? "true" : "false");
-
     submit(formData, { method: "POST" });
   };
 
@@ -151,9 +154,6 @@ export function EventRegisterView({
     inviteData?.inviteeName || userProfile?.full_name || undefined;
   const inviteDisplayEmail =
     inviteData?.inviteeEmail || user?.email || undefined;
-  const showJoinCommunityCheckbox =
-    !isCommunityMember && (isInviteMode || Boolean(user && hasCustomQuestions));
-
   return (
     <RegistrationOverlayShell title={overlayTitle} onCloseHref={eventPageUrl}>
       {(user && hasCustomQuestions) || isInviteMode ? (
@@ -169,17 +169,6 @@ export function EventRegisterView({
           onSubmit={handleCustomQuestionsSubmit}
           isSubmitting={isSubmitting}
           variant="overlay"
-          afterQuestionsContent={
-            showJoinCommunityCheckbox ? (
-              <JoinCommunityCheckbox
-                id="join-community-register"
-                communityName={community.name}
-                checked={joinCommunity}
-                onCheckedChange={setJoinCommunity}
-                disabled={isSubmitting}
-              />
-            ) : null
-          }
         />
       ) : (
         <RegistrationFlow
@@ -198,7 +187,6 @@ export function EventRegisterView({
           onOtpVerified={handleOtpVerified}
           onStepChange={setGuestStep}
           variant="overlay"
-          isCommunityMember={isCommunityMember}
         />
       )}
     </RegistrationOverlayShell>

@@ -1,5 +1,5 @@
 import { createServiceRoleClient } from "~/shared/lib/supabase/server";
-import { getCommunityMemberEmails } from "~/modules/community/utils/community-members";
+import { getCommunityMemberEmailsWithIds } from "~/modules/community/utils/community-members";
 import { sendNewEventNotificationEmail } from "~/shared/lib/email.server";
 
 export interface NotifyNewEventParams {
@@ -29,7 +29,7 @@ export async function notifyNewEvent(params: NotifyNewEventParams): Promise<void
 
   const serviceClient = createServiceRoleClient();
 
-  const memberEmails = await getCommunityMemberEmails(communityId, serviceClient);
+  const memberEmails = await getCommunityMemberEmailsWithIds(communityId, serviceClient);
 
   if (memberEmails.length === 0) {
     console.log("No community members to notify for new event:", eventId);
@@ -44,14 +44,16 @@ export async function notifyNewEvent(params: NotifyNewEventParams): Promise<void
 
   const communityName = community?.name || "Unknown Community";
 
-  const payloads = memberEmails.map((email) => ({
+  const payloads = memberEmails.map(({ email, userId }) => ({
     eventTitle,
     communityName,
+    communityId,
     eventDate,
     eventTime,
     eventLink,
     recipientEmail: email,
     recipientName: email.split("@")[0],
+    recipientUserId: userId,
     locationAddress,
     locationMapUrl,
     onlineMeetingLink,

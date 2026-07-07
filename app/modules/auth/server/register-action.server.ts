@@ -3,8 +3,20 @@ import { redirect } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
 import { registerSchema } from "~/modules/auth/model/auth-schema";
 import type { ActionFunctionArgs } from "react-router";
+import { getSafeReturnTo } from "~/modules/auth/server/safe-return-to.server";
 
 const EXISTING_EMAIL_MESSAGE = "An account with this email already exists";
+const OAUTH_COOKIE_MAX_AGE_SECONDS = 600;
+
+function appendPendingCookie(headers: Headers, name: string, value: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return;
+
+  headers.append(
+    "Set-Cookie",
+    `${name}=${encodeURIComponent(trimmed)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${OAUTH_COOKIE_MAX_AGE_SECONDS}`,
+  );
+}
 
 export async function action({ request }: ActionFunctionArgs) {
   const { supabase, headers } = createClient(request);
@@ -14,21 +26,58 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "oauth") {
     const provider = formData.get("provider") as "google";
-    const communityId = formData.get("communityId") as string | null;
-    const returnTo = formData.get("returnTo") as string | null;
+    const communityId = (formData.get("communityId") as string | null)?.trim() || null;
+    const eventId = (formData.get("eventId") as string | null)?.trim() || null;
+    const returnTo = getSafeReturnTo(formData.get("returnTo") as string | null);
+    const joinCommunity = formData.get("joinCommunity") !== "false";
 
-    if (communityId) {
-      headers.append(
-        "Set-Cookie",
-        `pending_community_id=${communityId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
+    if (eventId) {
+      appendPendingCookie(headers, "pending_event_id", eventId);
+      appendPendingCookie(headers, "pending_event_community_id", communityId);
+      appendPendingCookie(
+        headers,
+        "pending_event_join_community",
+        joinCommunity ? "true" : "false",
       );
-    }
-    if (returnTo) {
-      headers.append(
-        "Set-Cookie",
-        `pending_return_to=${encodeURIComponent(returnTo)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
+      appendPendingCookie(
+        headers,
+        "pending_event_session_id",
+        formData.get("eventSessionId") as string | null,
       );
+      appendPendingCookie(
+        headers,
+        "pending_event_utm_source",
+        formData.get("eventUtmSource") as string | null,
+      );
+      appendPendingCookie(
+        headers,
+        "pending_event_utm_medium",
+        formData.get("eventUtmMedium") as string | null,
+      );
+      appendPendingCookie(
+        headers,
+        "pending_event_utm_campaign",
+        formData.get("eventUtmCampaign") as string | null,
+      );
+      appendPendingCookie(
+        headers,
+        "pending_event_utm_content",
+        formData.get("eventUtmContent") as string | null,
+      );
+      appendPendingCookie(
+        headers,
+        "pending_event_utm_term",
+        formData.get("eventUtmTerm") as string | null,
+      );
+      appendPendingCookie(
+        headers,
+        "pending_event_first_visit_started_at",
+        formData.get("eventFirstVisitStartedAt") as string | null,
+      );
+    } else if (communityId) {
+      appendPendingCookie(headers, "pending_community_id", communityId);
     }
+    appendPendingCookie(headers, "pending_return_to", returnTo);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
