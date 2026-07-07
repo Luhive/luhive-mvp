@@ -15,6 +15,8 @@ import { ensureCommunityMembership } from "~/modules/community/server/join-commu
 import { getApprovedRegistrationCount } from "~/modules/events/data/registrations-repo.server";
 import { computeCanRegister } from "~/modules/events/server/fetch-event-page-user-state.server";
 import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
+import { sendRegistrationAttendeeEmail } from "~/modules/events/server/send-registration-attendee-email.server";
+import { sendRegistrationOrganizerNotifications } from "~/modules/events/server/send-registration-notification.server";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -362,10 +364,8 @@ export async function completeEventRegistration({
   };
 
   if (user.email) {
-    fetch(`${origin}/api/events/registration-confirmation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      await sendRegistrationAttendeeEmail({
         approvalStatus,
         recipientEmail: user.email,
         recipientName,
@@ -387,51 +387,43 @@ export async function completeEventRegistration({
           : undefined,
         onlineMeetingLink: event.online_meeting_link || undefined,
         checkinToken,
-      }),
-    }).catch((error) => {
-      console.error("Failed to trigger registration confirmation email:", error);
-    });
+      });
+    } catch (error) {
+      console.error("Failed to send registration confirmation email:", error);
+    }
   }
 
-  void (async () => {
-    try {
-      const { data: collaborations } = await supabase
-        .from("event_collaborations")
-        .select("community_id, community:communities(name)")
-        .eq("event_id", event.id)
-        .eq("status", "accepted")
-        .neq("role", "host");
+  try {
+    const { data: collaborations } = await supabase
+      .from("event_collaborations")
+      .select("community_id, community:communities(name)")
+      .eq("event_id", event.id)
+      .eq("status", "accepted")
+      .neq("role", "host");
 
-      const coHostCommunityNames =
-        collaborations
-          ?.map((c: { community?: { name?: string } | { name?: string }[] }) => {
-            const collabCommunity = c.community;
-            if (Array.isArray(collabCommunity)) return collabCommunity[0]?.name;
-            return collabCommunity?.name;
-          })
-          .filter(Boolean) as string[] || [];
+    const coHostCommunityNames =
+      collaborations
+        ?.map((c: { community?: { name?: string } | { name?: string }[] }) => {
+          const collabCommunity = c.community;
+          if (Array.isArray(collabCommunity)) return collabCommunity[0]?.name;
+          return collabCommunity?.name;
+        })
+        .filter(Boolean) as string[] || [];
 
-      await fetch(`${origin}/api/events/collaboration-notification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "registration-notification",
-          eventId: event.id,
-          hostCommunityId: event.community_id,
-          hostCommunityName: resolvedCommunity?.name ?? "Community",
-          coHostCommunityNames,
-          eventTitle: event.title,
-          registrantName: recipientName,
-          registrantEmail: user.email || "",
-          eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-          eventTime: eventDate.format("h:mm A z"),
-          eventLink,
-        }),
-      });
-    } catch (notifyError) {
-      console.error("Failed to trigger registration notification:", notifyError);
-    }
-  })();
+    await sendRegistrationOrganizerNotifications({
+      hostCommunityId: event.community_id,
+      hostCommunityName: resolvedCommunity?.name ?? "Community",
+      coHostCommunityNames,
+      eventTitle: event.title,
+      registrantName: recipientName,
+      registrantEmail: user.email || "",
+      eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+      eventTime: eventDate.format("h:mm A z"),
+      eventLink,
+    });
+  } catch (notifyError) {
+    console.error("Failed to send registration notification:", notifyError);
+  }
 
   return {
     success: true,
