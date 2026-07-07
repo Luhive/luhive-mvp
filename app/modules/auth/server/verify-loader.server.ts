@@ -3,6 +3,54 @@ import { createClient } from "~/shared/lib/supabase/server";
 import type { LoaderFunctionArgs } from "react-router";
 import { Routes } from "~/shared/lib/routing/routes";
 import { notifyCommunityJoin } from "~/modules/community/server/notify-community-join.server";
+import { getSafeReturnTo } from "~/modules/auth/server/safe-return-to.server";
+import {
+  PUBLIC_COMMUNITY_COLUMNS,
+  PUBLIC_EVENT_COLUMNS,
+} from "~/modules/events/server/resolve-public-event.server";
+import { completeEventRegistration } from "~/modules/events/server/complete-event-registration.server";
+import { publicEventSlug } from "~/modules/events/utils/event-slug";
+
+const OAUTH_PENDING_COOKIE_NAMES = [
+  "pending_community_id",
+  "pending_return_to",
+  "pending_event_id",
+  "pending_event_community_id",
+  "pending_event_join_community",
+  "pending_event_session_id",
+  "pending_event_utm_source",
+  "pending_event_utm_medium",
+  "pending_event_utm_campaign",
+  "pending_event_utm_content",
+  "pending_event_utm_term",
+  "pending_event_first_visit_started_at",
+];
+
+function getCookieValue(cookieHeader: string, name: string): string | null {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = cookieHeader.match(new RegExp(`(?:^|; )${escapedName}=([^;]*)`));
+  if (!match) return null;
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
+function clearPendingCookies(headers: Headers) {
+  for (const name of OAUTH_PENDING_COOKIE_NAMES) {
+    headers.append(
+      "Set-Cookie",
+      `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+    );
+  }
+}
+
+function appendQuery(path: string, key: string, value: string) {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}${key}=${encodeURIComponent(value)}`;
+}
 
 function logVerify(message: string, payload?: Record<string, unknown>) {
   if (payload) {
@@ -27,18 +75,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const code = url.searchParams.get("code");
   if (code) {
     const cookieHeader = request.headers.get("Cookie") || "";
-    const pendingCommunityIdMatch = cookieHeader.match(
-      /pending_community_id=([^;]+)/
+    const pendingCommunityId = getCookieValue(cookieHeader, "pending_community_id");
+    const pendingReturnTo = getSafeReturnTo(
+      getCookieValue(cookieHeader, "pending_return_to"),
     );
-    const pendingCommunityId = pendingCommunityIdMatch
-      ? pendingCommunityIdMatch[1]
-      : null;
-    const pendingReturnToMatch = cookieHeader.match(
-      /pending_return_to=([^;]+)/
+    const pendingEventId = getCookieValue(cookieHeader, "pending_event_id");
+    const pendingEventCommunityId = getCookieValue(
+      cookieHeader,
+      "pending_event_community_id",
     );
-    const pendingReturnTo = pendingReturnToMatch
-      ? decodeURIComponent(pendingReturnToMatch[1])
-      : null;
+    const pendingEventJoinCommunity =
+      getCookieValue(cookieHeader, "pending_event_join_community") !== "false";
+    const pendingEventTracking = {
+      sessionId: getCookieValue(cookieHeader, "pending_event_session_id"),
+      utmSource: getCookieValue(cookieHeader, "pending_event_utm_source"),
+      utmMedium: getCookieValue(cookieHeader, "pending_event_utm_medium"),
+      utmCampaign: getCookieValue(cookieHeader, "pending_event_utm_campaign"),
+      utmContent: getCookieValue(cookieHeader, "pending_event_utm_content"),
+      utmTerm: getCookieValue(cookieHeader, "pending_event_utm_term"),
+      firstVisitStartedAt: getCookieValue(
+        cookieHeader,
+        "pending_event_first_visit_started_at",
+      ),
+    };
 
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
@@ -50,23 +109,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     if (data.user) {
-      if (pendingCommunityId) {
-        headers.append(
-          "Set-Cookie",
-          `pending_community_id=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
-        );
-      }
-      if (pendingReturnTo) {
-        headers.append(
-          "Set-Cookie",
-          `pending_return_to=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
-        );
-      }
+      clearPendingCookies(headers);
 
       logVerify("oauth session established", {
         userId: data.user.id,
         pendingCommunityId,
         pendingReturnTo,
+        pendingEventId,
       });
 
       const { data: existingProfile } = await supabase
@@ -257,6 +306,127 @@ export async function loader({ request }: LoaderFunctionArgs) {
       } else {
         logVerify("profile exists, no pending community", {
           userId: data.user.id,
+        });
+      }
+
+      if (pendingEventId) {
+        const [{ data: event }, { data: sourceCommunity }] = await Promise.all([
+          supabase
+            .from("events")
+            .select(PUBLIC_EVENT_COLUMNS)
+            .eq("id", pendingEventId)
+            .maybeSingle(),
+          pendingEventCommunityId
+            ? supabase
+                .from("communities")
+                .select(PUBLIC_COMMUNITY_COLUMNS)
+                .eq("id", pendingEventCommunityId)
+                .maybeSingle()
+            : Promise.resolve({ data: null }),
+        ]);
+
+        if (!event) {
+          logVerifyError("pending event not found", { eventId: pendingEventId });
+          const destination = pendingReturnTo ?? Routes.hub;
+          return redirect(appendQuery(destination, "register_error", "event-not-found"), {
+            headers,
+          });
+        }
+
+        const { data: hostCommunity } = await supabase
+          .from("communities")
+          .select(PUBLIC_COMMUNITY_COLUMNS)
+          .eq("id", event.community_id)
+          .maybeSingle();
+
+        const eventCommunity = sourceCommunity ?? hostCommunity;
+        const eventPageUrl = eventCommunity
+          ? Routes.community.event(eventCommunity.slug, publicEventSlug(event))
+          : (pendingReturnTo ?? Routes.hub);
+        const registrationIdsToCheck = [
+          event.community_id,
+          pendingEventCommunityId,
+        ].filter(Boolean) as string[];
+
+        const { data: adminMembership } = registrationIdsToCheck.length
+          ? await supabase
+              .from("community_members")
+              .select("id")
+              .eq("user_id", data.user.id)
+              .in("community_id", registrationIdsToCheck)
+              .in("role", ["owner", "admin"])
+              .maybeSingle()
+          : { data: null };
+        const isOwnerOrAdmin =
+          Boolean(adminMembership) ||
+          hostCommunity?.created_by === data.user.id ||
+          sourceCommunity?.created_by === data.user.id;
+
+        if (isOwnerOrAdmin) {
+          logVerify("event oauth user is owner/admin, skipping registration", {
+            userId: data.user.id,
+            eventId: pendingEventId,
+          });
+          return redirect(eventPageUrl, { headers });
+        }
+
+        if (event.custom_questions) {
+          const { data: existingRegistration } = await supabase
+            .from("event_registrations")
+            .select("id")
+            .eq("event_id", event.id)
+            .eq("user_id", data.user.id)
+            .maybeSingle();
+
+          if (existingRegistration) {
+            return redirect(appendQuery(eventPageUrl, "registered", "1"), {
+              headers,
+            });
+          }
+
+          const destination =
+            pendingReturnTo ??
+            (eventCommunity
+              ? Routes.community.eventRegister(
+                  eventCommunity.slug,
+                  publicEventSlug(event),
+                )
+              : eventPageUrl);
+          logVerify("event oauth requires custom questions", {
+            userId: data.user.id,
+            eventId: pendingEventId,
+            destination,
+          });
+          return redirect(destination, { headers });
+        }
+
+        const registrationResult = await completeEventRegistration({
+          request,
+          supabase,
+          user: data.user,
+          event: event as import("~/shared/models/entity.types").Event,
+          community: eventCommunity as import("~/shared/models/entity.types").Community | null,
+          sourceCommunityId: pendingEventCommunityId || event.community_id,
+          joinCommunityId: pendingEventCommunityId || event.community_id,
+          joinCommunity: pendingEventJoinCommunity,
+          tracking: pendingEventTracking,
+          duplicateMode: "success",
+        });
+
+        if (!registrationResult.success) {
+          logVerifyError("event oauth registration failed", {
+            userId: data.user.id,
+            eventId: pendingEventId,
+            error: registrationResult.error,
+          });
+          const destination = pendingReturnTo ?? eventPageUrl;
+          return redirect(appendQuery(destination, "register_error", "failed"), {
+            headers,
+          });
+        }
+
+        return redirect(appendQuery(eventPageUrl, "registered", "1"), {
+          headers,
         });
       }
 

@@ -7,7 +7,7 @@ import { Button } from "~/shared/components/ui/button";
 import { Input } from "~/shared/components/ui/input";
 import { Label } from "~/shared/components/ui/label";
 import { Spinner } from "~/shared/components/ui/spinner";
-import { useFetcher } from "react-router";
+import { useFetcher, useNavigation, useSubmit } from "react-router";
 import { toast } from "sonner";
 import { OtpInputInline } from "~/modules/auth/components/otp-input-inline";
 import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
@@ -115,6 +115,8 @@ export function RegistrationFlow({
   const checkEmailFetcher = useFetcher<CheckEmailFetcherData>();
   const signupFetcher = useFetcher<SignupFetcherData>();
   const questionsFetcher = useFetcher();
+  const navigation = useNavigation();
+  const submit = useSubmit();
 
   const [step, setStep] = React.useState<RegistrationFlowStep>("email");
   const [userExists, setUserExists] = React.useState<boolean | null>(null);
@@ -142,6 +144,9 @@ export function RegistrationFlow({
     signupFetcher.state === "submitting" || signupFetcher.state === "loading";
   const isSubmittingQuestions =
     questionsFetcher.state === "submitting" || questionsFetcher.state === "loading";
+  const isSubmittingOAuth =
+    navigation.formData?.get("intent") === "oauth" &&
+    navigation.formData?.get("eventId") === eventId;
 
   const eventPageUrl = Routes.community.event(communitySlug, eventSlug);
   const resolvedRegisterActionUrl = registerActionUrl ?? eventPageUrl;
@@ -269,6 +274,36 @@ export function RegistrationFlow({
     checkEmailFetcher.submit(formData, { method: "post", action: "/signup" });
   };
 
+  const handleContinueWithGoogle = () => {
+    const formData = new FormData();
+    formData.append("intent", "oauth");
+    formData.append("provider", "google");
+    formData.append("eventId", eventId);
+    formData.append("communityId", communityId);
+    formData.append("joinCommunity", joinCommunity ? "true" : "false");
+    if (returnTo) formData.append("returnTo", returnTo);
+    formData.append("eventSessionId", resolvedTrackingContext.sessionId);
+    formData.append("eventUtmSource", resolvedTrackingContext.utmSource);
+    if (resolvedTrackingContext.utmMedium) {
+      formData.append("eventUtmMedium", resolvedTrackingContext.utmMedium);
+    }
+    if (resolvedTrackingContext.utmCampaign) {
+      formData.append("eventUtmCampaign", resolvedTrackingContext.utmCampaign);
+    }
+    if (resolvedTrackingContext.utmContent) {
+      formData.append("eventUtmContent", resolvedTrackingContext.utmContent);
+    }
+    if (resolvedTrackingContext.utmTerm) {
+      formData.append("eventUtmTerm", resolvedTrackingContext.utmTerm);
+    }
+    formData.append(
+      "eventFirstVisitStartedAt",
+      resolvedTrackingContext.firstVisitStartedAt,
+    );
+
+    submit(formData, { method: "post", action: "/signup" });
+  };
+
   const validateFullName = (): string | null => {
     const fullName = detailsForm.getValues("fullName")?.trim() || "";
     if (!fullName || fullName.length < 2) {
@@ -355,6 +390,16 @@ export function RegistrationFlow({
     onSuccess(result);
   };
 
+  const joinCommunityCheckbox = shouldShowJoinCommunityCheckbox ? (
+    <JoinCommunityCheckbox
+      id="join-community"
+      communityName={communityName}
+      checked={joinCommunity}
+      onCheckedChange={setJoinCommunity}
+      disabled={isSubmittingSignup || isSubmittingQuestions || isSubmittingOAuth}
+    />
+  ) : null;
+
   const emailStepContent = (
     <div className="space-y-5">
       <div className="space-y-2">
@@ -371,27 +416,30 @@ export function RegistrationFlow({
       {emailStepError && (
         <p className="text-sm text-destructive">{emailStepError}</p>
       )}
-      <Button
-        type="button"
-        onClick={handleContinueWithEmail}
-        disabled={isCheckingEmail}
-        className="w-full"
-        size={isOverlay ? "lg" : "default"}
-      >
-        {isCheckingEmail ? <Spinner /> : "Continue"}
-      </Button>
+      <div className="space-y-3">
+        <Button
+          type="button"
+          onClick={handleContinueWithGoogle}
+          disabled={isCheckingEmail || isSubmittingOAuth}
+          variant="outline"
+          className="w-full"
+          size={isOverlay ? "lg" : "default"}
+        >
+          {isSubmittingOAuth ? <Spinner /> : "Continue with Google"}
+        </Button>
+        <Button
+          type="button"
+          onClick={handleContinueWithEmail}
+          disabled={isCheckingEmail || isSubmittingOAuth}
+          className="w-full"
+          size={isOverlay ? "lg" : "default"}
+        >
+          {isCheckingEmail ? <Spinner /> : "Continue with Email"}
+        </Button>
+      </div>
+      {joinCommunityCheckbox}
     </div>
   );
-
-  const joinCommunityCheckbox = shouldShowJoinCommunityCheckbox ? (
-    <JoinCommunityCheckbox
-      id="join-community"
-      communityName={communityName}
-      checked={joinCommunity}
-      onCheckedChange={setJoinCommunity}
-      disabled={isSubmittingSignup || isSubmittingQuestions}
-    />
-  ) : null;
 
   const detailsStepContent = (
     <form onSubmit={handleDetailsSubmit} className="space-y-5">
