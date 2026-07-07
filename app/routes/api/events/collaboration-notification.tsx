@@ -1,7 +1,8 @@
 import { createServiceRoleClient } from "~/shared/lib/supabase/server";
 import type { ActionFunctionArgs } from "react-router";
 import { getCommunityMemberEmailsWithIds } from "~/modules/community/utils/community-members";
-import { sendNewCollaborationEventEmail, sendEventRegistrationNotificationEmail } from "~/shared/lib/email.server";
+import { sendNewCollaborationEventEmail } from "~/shared/lib/email.server";
+import { sendRegistrationOrganizerNotifications } from "~/modules/events/server/send-registration-notification.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
@@ -182,82 +183,17 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (type === "registration-notification") {
-      // Get host community owner/admin user IDs
-      const { data: hostAdmins } = await serviceClient
-        .from("community_members")
-        .select("user_id")
-        .eq("community_id", hostCommunityId)
-        .in("role", ["owner", "admin"]);
-
-      // Get co-host community owner/admin user IDs
-      let coHostAdminIds: string[] = [];
-      if (coHostCommunityNames && coHostCommunityNames.length > 0) {
-        // Get co-host community IDs from names
-        const { data: coHostCommunities } = await serviceClient
-          .from("communities")
-          .select("id")
-          .in("name", coHostCommunityNames);
-
-        if (coHostCommunities && coHostCommunities.length > 0) {
-          const coHostIds = coHostCommunities.map((c) => c.id);
-          const { data: coHostAdmins } = await serviceClient
-            .from("community_members")
-            .select("user_id")
-            .in("community_id", coHostIds)
-            .in("role", ["owner", "admin"]);
-          
-          if (coHostAdmins) {
-            coHostAdminIds = coHostAdmins
-              .map((a) => a.user_id)
-              .filter((id): id is string => !!id);
-          }
-        }
-      }
-
-      // Get all unique admin user IDs
-      let allAdminIds: string[] = [];
-      if (hostAdmins) {
-        allAdminIds = hostAdmins
-          .map((a) => a.user_id)
-          .filter((id): id is string => !!id);
-      }
-      allAdminIds = [...new Set([...allAdminIds, ...coHostAdminIds])];
-
-      // Get emails for these users via auth.admin and send as a batch
-      const registrationPayloads = [];
-
-      for (const adminId of allAdminIds) {
-        try {
-          const { data: ownerData } = await serviceClient.auth.admin.getUserById(adminId);
-          if (ownerData?.user?.email) {
-            // Get profile for full name
-            const { data: profile } = await serviceClient
-              .from("profiles")
-              .select("full_name")
-              .eq("id", adminId)
-              .maybeSingle();
-
-            registrationPayloads.push({
-              eventTitle,
-              registrantName,
-              registrantEmail,
-              hostCommunityName,
-              coHostCommunityNames,
-              eventDate,
-              eventTime,
-              eventLink,
-              recipientEmail: ownerData.user.email,
-              recipientName: profile?.full_name || ownerData.user.email.split("@")[0],
-            });
-          }
-        } catch (error) {
-          console.error("Failed to prepare registration notification for admin:", adminId, error);
-        }
-      }
-
-      if (registrationPayloads.length > 0) {
-        await sendEventRegistrationNotificationEmail(registrationPayloads);
-      }
+      await sendRegistrationOrganizerNotifications({
+        hostCommunityId,
+        hostCommunityName,
+        coHostCommunityNames: coHostCommunityNames ?? [],
+        eventTitle,
+        registrantName,
+        registrantEmail,
+        eventDate,
+        eventTime,
+        eventLink,
+      });
 
       return { success: true, message: "Registration notifications sent" };
     }

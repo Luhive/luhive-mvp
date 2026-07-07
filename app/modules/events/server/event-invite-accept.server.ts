@@ -18,6 +18,8 @@ import { getApprovedRegistrationCount } from "~/modules/events/data/registration
 import { ensureCommunityMembership } from "~/modules/community/server/join-community.server";
 import type { PendingEventInvite } from "~/modules/events/model/invite.types";
 import type { CustomAnswerJson } from "~/modules/events/model/event.types";
+import { sendRegistrationAttendeeEmail } from "~/modules/events/server/send-registration-attendee-email.server";
+import { sendRegistrationOrganizerNotifications } from "~/modules/events/server/send-registration-notification.server";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -272,28 +274,24 @@ async function sendInviteRegistrationEmails({
   );
 
   try {
-    await fetch(`${origin}/api/events/registration-confirmation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        approvalStatus,
-        recipientEmail: userEmail,
-        recipientName: inviteName,
-        eventTitle: event.title ?? "Event",
-        communityName: hostCommunity?.name ?? "Community",
-        eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-        eventTime: eventDate.format("h:mm A z"),
-        eventLink,
-        registerAccountLink: `${origin}/signup`,
-        startTimeISO: event.start_time,
-        endTimeISO: event.end_time ?? event.start_time,
-        locationAddress: event.location_address ?? undefined,
-        onlineMeetingLink: event.online_meeting_link ?? undefined,
-        checkinToken,
-      }),
+    await sendRegistrationAttendeeEmail({
+      approvalStatus,
+      recipientEmail: userEmail,
+      recipientName: inviteName,
+      eventTitle: event.title ?? "Event",
+      communityName: hostCommunity?.name ?? "Community",
+      eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+      eventTime: eventDate.format("h:mm A z"),
+      eventLink,
+      registerAccountLink: `${origin}/signup`,
+      startTimeISO: event.start_time,
+      endTimeISO: event.end_time ?? event.start_time,
+      locationAddress: event.location_address ?? undefined,
+      onlineMeetingLink: event.online_meeting_link ?? undefined,
+      checkinToken,
     });
   } catch (emailError) {
-    console.error("Failed to trigger invite registration confirmation email:", emailError);
+    console.error("Failed to send invite registration confirmation email:", emailError);
   }
 
   try {
@@ -311,27 +309,21 @@ async function sendInviteRegistrationEmails({
             ? (c as { community?: { name?: string }[] }).community?.[0]?.name
             : (c as { community?: { name?: string } }).community?.name,
         )
-        .filter(Boolean) ?? [];
+        .filter(Boolean) as string[] ?? [];
 
-    await fetch(`${origin}/api/events/collaboration-notification`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "registration-notification",
-        eventId: event.id,
-        hostCommunityId: event.community_id,
-        hostCommunityName: hostCommunity?.name ?? "Community",
-        coHostCommunityNames,
-        eventTitle: event.title,
-        registrantName: inviteName,
-        registrantEmail: userEmail,
-        eventDate: eventDate.format("dddd, MMMM D, YYYY"),
-        eventTime: eventDate.format("h:mm A z"),
-        eventLink,
-      }),
+    await sendRegistrationOrganizerNotifications({
+      hostCommunityId: event.community_id,
+      hostCommunityName: hostCommunity?.name ?? "Community",
+      coHostCommunityNames,
+      eventTitle: event.title,
+      registrantName: inviteName,
+      registrantEmail: userEmail,
+      eventDate: eventDate.format("dddd, MMMM D, YYYY"),
+      eventTime: eventDate.format("h:mm A z"),
+      eventLink,
     });
   } catch (notifyError) {
-    console.error("Failed to trigger invite registration notification:", notifyError);
+    console.error("Failed to send invite registration notification:", notifyError);
   }
 }
 
