@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useForm } from "react-hook-form";
-import { Routes } from "~/shared/lib/routing/routes";
 import { Button } from "~/shared/components/ui/button";
 import { Input } from "~/shared/components/ui/input";
 import { Label } from "~/shared/components/ui/label";
@@ -10,19 +9,30 @@ import { Spinner } from "~/shared/components/ui/spinner";
 import { useFetcher, useNavigation, useSubmit } from "react-router";
 import { toast } from "sonner";
 import { OtpInputInline } from "~/modules/auth/components/otp-input-inline";
-import { CustomQuestionsForm } from "~/modules/events/components/registration/custom-questions-form";
+import {
+  CustomQuestionFields,
+  REGISTRATION_OVERLAY_FIELD_CLASS,
+  type CustomQuestionFormAnswers,
+} from "~/modules/events/components/registration/custom-question-fields";
 import type { CustomQuestionJson } from "~/modules/events/model/event.types";
 import type { CustomAnswerJson } from "~/modules/events/model/event.types";
+import type { DropdownOption } from "~/modules/events/model/event.types";
 import {
   getEventTrackingContext,
   type EventTrackingContext,
 } from "~/modules/events/utils/event-session-tracker";
-import { motion } from "motion/react";
+import {
+  buildCustomAnswersFromFormState,
+  isValidPhoneNumber,
+  normalizePhoneInput,
+  validateCustomAnswers,
+} from "~/modules/events/utils/custom-questions";
 import { cn } from "~/shared/lib/utils/cn";
 import type { OtpVerifySuccessResult } from "~/modules/auth/model/otp.types";
 
-const OVERLAY_FIELD_CLASS =
-  "bg-muted/50 border-transparent shadow-none h-11 rounded-lg focus-visible:bg-background";
+const EMAIL_EXPAND_EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
+const EMAIL_CONTENT_EASE = "cubic-bezier(0.23, 1, 0.32, 1)";
+const EMAIL_EXPAND_MS = 420;
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -53,10 +63,9 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-type EmailFormValues = { email: string };
-type DetailsFormValues = { fullName: string };
+type FormValues = { email: string; fullName: string };
 
-export type RegistrationFlowStep = "email" | "details" | "questions" | "otp";
+export type RegistrationFlowStep = "form" | "otp";
 
 type CheckEmailFetcherData = {
   success?: boolean;
@@ -93,44 +102,28 @@ export interface RegistrationFlowProps {
 
 export function getRegistrationStepLabels(step: RegistrationFlowStep) {
   const title =
-    step === "otp"
-      ? "Verify your email"
-      : step === "details"
-        ? "Your details"
-        : step === "questions"
-          ? "Complete your registration"
-          : "Register for event";
+    step === "otp" ? "Verify your email" : "Register for event";
 
   const description =
-    step === "email"
-      ? "Enter your email to get started."
-      : step === "otp"
-        ? null
-        : step === "questions"
-          ? "Please answer the following questions."
-          : "Enter your name to continue.";
+    step === "otp"
+      ? null
+      : "Enter your details to register for this event.";
 
   return { title, description };
 }
 
 export function getRegistrationOverlayTitle(step: RegistrationFlowStep) {
   if (step === "otp") return "Verify your email";
-  if (step === "email") return "Register";
-  return "Your Info";
+  return "Register";
 }
 
 export function RegistrationFlow({
   eventId,
-  eventSlug,
-  communitySlug,
   communityId,
-  communityName,
   hasCustomQuestions,
   customQuestions,
-  userPhone,
   returnTo,
   trackingContext,
-  registerActionUrl,
   onSuccess,
   onOtpVerified,
   showStepHeader = false,
@@ -140,41 +133,38 @@ export function RegistrationFlow({
   const isOverlay = variant === "overlay";
   const checkEmailFetcher = useFetcher<CheckEmailFetcherData>();
   const signupFetcher = useFetcher<SignupFetcherData>();
-  const questionsFetcher = useFetcher();
   const navigation = useNavigation();
   const submit = useSubmit();
 
-  const [step, setStep] = React.useState<RegistrationFlowStep>("email");
+  const [step, setStep] = React.useState<RegistrationFlowStep>("form");
   const [userExists, setUserExists] = React.useState<boolean | null>(null);
   const [otpEmail, setOtpEmail] = React.useState("");
-  const [emailStepError, setEmailStepError] = React.useState<string | null>(null);
-  const [detailsStepError, setDetailsStepError] = React.useState<string | null>(null);
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [questionErrors, setQuestionErrors] = React.useState<Record<string, string>>({});
   const [customAnswers, setCustomAnswers] = React.useState<CustomAnswerJson | null>(null);
-  const [existingUserFullName, setExistingUserFullName] = React.useState<string | null>(null);
-  const [existingUserAvatarUrl, setExistingUserAvatarUrl] = React.useState<string | null>(null);
+  const [phone, setPhone] = React.useState("");
+  const [questionFormAnswers, setQuestionFormAnswers] =
+    React.useState<CustomQuestionFormAnswers>({});
   const [showEmailSection, setShowEmailSection] = React.useState(false);
   const emailInputRef = React.useRef<HTMLInputElement>(null);
+  const pendingSignupRef = React.useRef<{ email: string; fullName: string } | null>(
+    null,
+  );
 
-  const emailForm = useForm<EmailFormValues>({
-    defaultValues: { email: "" },
+  const form = useForm<FormValues>({
+    defaultValues: { email: "", fullName: "" },
   });
-  const { ref: emailRegisterRef, ...emailRegisterProps } = emailForm.register("email");
-  const detailsForm = useForm<DetailsFormValues>({
-    defaultValues: { fullName: "" },
-  });
+  const { ref: emailRegisterRef, ...emailRegisterProps } = form.register("email");
 
   const isCheckingEmail =
     checkEmailFetcher.state === "submitting" || checkEmailFetcher.state === "loading";
   const isSubmittingSignup =
     signupFetcher.state === "submitting" || signupFetcher.state === "loading";
-  const isSubmittingQuestions =
-    questionsFetcher.state === "submitting" || questionsFetcher.state === "loading";
+  const isSubmittingForm = isCheckingEmail || isSubmittingSignup;
   const isSubmittingOAuth =
     navigation.formData?.get("intent") === "oauth" &&
     navigation.formData?.get("eventId") === eventId;
 
-  const eventPageUrl = Routes.community.event(communitySlug, eventSlug);
-  const resolvedRegisterActionUrl = registerActionUrl ?? eventPageUrl;
   const resolvedTrackingContext = React.useMemo(
     () => trackingContext ?? getEventTrackingContext(eventId),
     [eventId, trackingContext],
@@ -186,65 +176,47 @@ export function RegistrationFlow({
 
     if (data.userExists) {
       setUserExists(true);
-      setOtpEmail((data.email || emailForm.getValues("email") || "").trim());
+      setOtpEmail((data.email || form.getValues("email") || "").trim());
       setStep("otp");
       return;
     }
+
     if (data.success && !data.userExists) {
       setUserExists(false);
-      setStep("details");
+      const pending = pendingSignupRef.current;
+      if (!pending) return;
+
+      const formData = new FormData();
+      formData.append("intent", "event-rsvp-signup");
+      formData.append("_modal", "true");
+      formData.append("fullName", pending.fullName);
+      formData.append("email", pending.email);
+      formData.append("eventId", eventId);
+      formData.append("communityId", communityId);
+      signupFetcher.submit(formData, { method: "post", action: "/signup" });
       return;
     }
+
     if (data.error) {
-      setEmailStepError(data.error);
+      setFormError(data.error);
     }
-  }, [checkEmailFetcher.data, checkEmailFetcher.state, emailForm]);
+  }, [checkEmailFetcher.data, checkEmailFetcher.state, communityId, eventId, form, signupFetcher]);
 
   React.useEffect(() => {
     const data = signupFetcher.data;
     if (!data || signupFetcher.state !== "idle") return;
 
     if (data.success && data.otpSent) {
-      const email = (data.email || emailForm.getValues("email") || "").trim();
+      const email = (data.email || form.getValues("email") || "").trim();
       setOtpEmail(email);
       setStep("otp");
       return;
     }
+
     if (data.error) {
       toast.error(data.error);
     }
-  }, [signupFetcher.data, signupFetcher.state, emailForm]);
-
-  React.useEffect(() => {
-    const data = questionsFetcher.data as { success?: boolean; error?: string } | undefined;
-    if (!data || questionsFetcher.state !== "idle") return;
-
-    if (data.success) {
-      toast.success("Successfully registered for the event!");
-      onSuccess();
-    } else if (data.error) {
-      toast.error(data.error);
-    }
-  }, [questionsFetcher.data, questionsFetcher.state, onSuccess]);
-
-  const handleContinueWithEmail = () => {
-    const rawEmail = emailForm.getValues("email");
-    const trimmedEmail = typeof rawEmail === "string" ? rawEmail.trim() : "";
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
-      setEmailStepError("Please enter a valid email address.");
-      return;
-    }
-    setEmailStepError(null);
-    emailForm.setValue("email", trimmedEmail, { shouldValidate: true });
-
-    const formData = new FormData();
-    formData.append("intent", "check-email");
-    formData.append("_modal", "true");
-    formData.append("email", trimmedEmail);
-    checkEmailFetcher.submit(formData, { method: "post", action: "/signup" });
-  };
+  }, [signupFetcher.data, signupFetcher.state, form]);
 
   const handleContinueWithGoogle = () => {
     const formData = new FormData();
@@ -277,72 +249,118 @@ export function RegistrationFlow({
 
   const handleExpandEmailSection = () => {
     setShowEmailSection(true);
-    setEmailStepError(null);
+    setFormError(null);
   };
 
-  const validateFullName = (): string | null => {
-    const fullName = detailsForm.getValues("fullName")?.trim() || "";
+  const handlePhoneChange = (value: string) => {
+    setPhone(normalizePhoneInput(value));
+
+    if (questionErrors.phone) {
+      setQuestionErrors((prev) => {
+        const next = { ...prev };
+        delete next.phone;
+        return next;
+      });
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    if (phone && !isValidPhoneNumber(phone)) {
+      setQuestionErrors((prev) => ({
+        ...prev,
+        phone:
+          "Please enter a valid phone number in international format (e.g., +994501234567)",
+      }));
+    }
+  };
+
+  const handleQuestionAnswerChange = (
+    questionId: string,
+    value: string | DropdownOption | DropdownOption[],
+  ) => {
+    setQuestionFormAnswers((prev) => ({
+      ...prev,
+      [questionId]: value,
+    }));
+
+    if (questionErrors[questionId]) {
+      setQuestionErrors((prev) => {
+        const next = { ...prev };
+        delete next[questionId];
+        return next;
+      });
+    }
+  };
+
+  const handleMultiCheckboxChange = (
+    questionId: string,
+    option: DropdownOption,
+    checked: boolean,
+  ) => {
+    const current = questionFormAnswers[questionId];
+    const currentArray = Array.isArray(current) ? current : [];
+    const updated = checked
+      ? [...currentArray, option]
+      : currentArray.filter((v) => v.id !== option.id);
+    handleQuestionAnswerChange(questionId, updated);
+  };
+
+  const validateForm = (): { email: string; fullName: string } | null => {
+    const rawEmail = form.getValues("email");
+    const trimmedEmail = typeof rawEmail === "string" ? rawEmail.trim() : "";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setFormError("Please enter a valid email address.");
+      return null;
+    }
+
+    const fullName = form.getValues("fullName")?.trim() || "";
     if (!fullName || fullName.length < 2) {
-      return "Please enter your full name.";
+      setFormError("Please enter your full name.");
+      return null;
     }
-    detailsForm.setValue("fullName", fullName);
-    return null;
+
+    form.setValue("email", trimmedEmail, { shouldValidate: true });
+    form.setValue("fullName", fullName);
+
+    if (hasCustomQuestions && customQuestions) {
+      const answers = buildCustomAnswersFromFormState(
+        customQuestions,
+        phone,
+        questionFormAnswers,
+      );
+      const validation = validateCustomAnswers(answers, customQuestions);
+      if (!validation.valid) {
+        setQuestionErrors(validation.errors);
+        setFormError(null);
+        return null;
+      }
+      setCustomAnswers(answers);
+    } else {
+      setCustomAnswers(null);
+    }
+
+    setFormError(null);
+    setQuestionErrors({});
+    return { email: trimmedEmail, fullName };
   };
 
-  const handleDetailsSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validationError = validateFullName();
-    if (validationError) {
-      setDetailsStepError(validationError);
-      return;
-    }
-    setDetailsStepError(null);
+    const validated = validateForm();
+    if (!validated) return;
 
-    const fullName = detailsForm.getValues("fullName").trim();
-    const email = emailForm.getValues("email")?.trim() || "";
-
-    if (hasCustomQuestions) {
-      setStep("questions");
-      return;
-    }
+    pendingSignupRef.current = validated;
 
     const formData = new FormData();
-    formData.append("intent", "event-rsvp-signup");
+    formData.append("intent", "check-email");
     formData.append("_modal", "true");
-    formData.append("fullName", fullName);
-    formData.append("email", email);
-    formData.append("eventId", eventId);
-    formData.append("communityId", communityId);
-    signupFetcher.submit(formData, { method: "post", action: "/signup" });
+    formData.append("email", validated.email);
+    checkEmailFetcher.submit(formData, { method: "post", action: "/signup" });
   };
 
-  const handleQuestionsSubmitFromDetails = (answers: CustomAnswerJson) => {
-    setCustomAnswers(answers);
-    const fullName = detailsForm.getValues("fullName").trim();
-    const email = emailForm.getValues("email")?.trim() || "";
-    const formData = new FormData();
-    formData.append("intent", "event-rsvp-signup");
-    formData.append("_modal", "true");
-    formData.append("fullName", fullName);
-    formData.append("email", email);
-    formData.append("eventId", eventId);
-    formData.append("communityId", communityId);
-    signupFetcher.submit(formData, { method: "post", action: "/signup" });
-  };
-
-  const handleQuestionsSubmitFromExisting = (answers: CustomAnswerJson) => {
-    const formData = new FormData();
-    formData.append("intent", "register");
-    formData.append("custom_answers", JSON.stringify(answers));
-    questionsFetcher.submit(formData, {
-      method: "post",
-      action: resolvedRegisterActionUrl,
-    });
-  };
-
-  const handleOtpSuccessExistingUser = (result: OtpVerifySuccessResult) => {
-    if (result.fullName) setExistingUserFullName(result.fullName);
-    setExistingUserAvatarUrl(result.avatarUrl ?? null);
+  const handleOtpSuccess = (result: OtpVerifySuccessResult) => {
     onOtpVerified?.(result);
 
     if (result.registrationState?.isUserRegistered) {
@@ -350,25 +368,16 @@ export function RegistrationFlow({
       return;
     }
 
-    if (hasCustomQuestions) {
-      setStep("questions");
-    } else {
-      toast.success("Successfully registered for the event!");
-      onSuccess(result);
-    }
-  };
-
-  const handleOtpSuccessNewUser = (result: OtpVerifySuccessResult) => {
     toast.success("Successfully registered for the event!");
     onSuccess(result);
   };
 
-  const emailStepContent = (
-    <div className="space-y-5">
+  const formStepContent = (
+    <form onSubmit={handleFormSubmit} className="space-y-5">
       <Button
         type="button"
         onClick={handleContinueWithGoogle}
-        disabled={isCheckingEmail || isSubmittingOAuth}
+        disabled={isSubmittingForm || isSubmittingOAuth}
         variant="outline"
         className="w-full hover:bg-muted hover:text-foreground"
         size={isOverlay ? "lg" : "default"}
@@ -383,35 +392,69 @@ export function RegistrationFlow({
         )}
       </Button>
 
-      {!showEmailSection ? (
-        <p className="text-center text-sm text-muted-foreground transition-opacity duration-300 motion-reduce:transition-none">
-          or with{" "}
-          <button
-            type="button"
-            onClick={handleExpandEmailSection}
-            disabled={isCheckingEmail || isSubmittingOAuth}
-            className="underline underline-offset-2 transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-          >
-            email
-          </button>
-        </p>
-      ) : null}
+      <div className="space-y-0">
+        <div
+          className={cn(
+            "grid motion-reduce:transition-none",
+            showEmailSection ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
+          )}
+          style={{
+            transitionProperty: "grid-template-rows",
+            transitionDuration: `${EMAIL_EXPAND_MS}ms`,
+            transitionTimingFunction: EMAIL_EXPAND_EASE,
+          }}
+          aria-hidden={showEmailSection}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <p
+              className={cn(
+                "text-center text-sm text-muted-foreground transition-[opacity,transform] duration-200 motion-reduce:transition-none",
+                showEmailSection
+                  ? "pointer-events-none -translate-y-1 opacity-0"
+                  : "translate-y-0 opacity-100",
+              )}
+              style={{ transitionTimingFunction: EMAIL_CONTENT_EASE }}
+            >
+              or with{" "}
+              <button
+                type="button"
+                onClick={handleExpandEmailSection}
+                disabled={isSubmittingForm || isSubmittingOAuth}
+                className="underline underline-offset-2 transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+              >
+                email
+              </button>
+            </p>
+          </div>
+        </div>
 
-      <motion.div
-        initial={false}
-        animate={{
-          height: showEmailSection ? "auto" : 0,
-          opacity: showEmailSection ? 1 : 0,
-        }}
-        transition={{
-          height: { duration: 0.3, ease: [0.32, 0.72, 0, 1] },
-          opacity: { duration: 0.25, ease: "easeOut" },
-        }}
-        className="overflow-hidden motion-reduce:transition-none"
-        aria-hidden={!showEmailSection}
-        style={{ pointerEvents: showEmailSection ? "auto" : "none" }}
-      >
-        <div className="space-y-5 pt-1">
+        <div
+          className={cn(
+            "grid motion-reduce:transition-none",
+            showEmailSection ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+          )}
+          style={{
+            transitionProperty: "grid-template-rows",
+            transitionDuration: `${EMAIL_EXPAND_MS}ms`,
+            transitionTimingFunction: EMAIL_EXPAND_EASE,
+          }}
+          aria-hidden={!showEmailSection}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div
+              className={cn(
+                "space-y-5 motion-reduce:transition-none",
+                showEmailSection
+                  ? "translate-y-0 opacity-100"
+                  : "pointer-events-none -translate-y-2 opacity-0",
+              )}
+              style={{
+                transitionProperty: "opacity, transform",
+                transitionDuration: "300ms",
+                transitionTimingFunction: EMAIL_CONTENT_EASE,
+                transitionDelay: showEmailSection ? "80ms" : "0ms",
+              }}
+            >
           <div className="flex items-center gap-4">
             <div className="h-px flex-1 bg-border" />
             <span className="shrink-0 text-xs text-muted-foreground">or</span>
@@ -429,107 +472,58 @@ export function RegistrationFlow({
                 emailRegisterRef(node);
                 emailInputRef.current = node;
               }}
-              disabled={isCheckingEmail || isSubmittingOAuth}
-              className={isOverlay ? OVERLAY_FIELD_CLASS : undefined}
+              disabled={isSubmittingForm || isSubmittingOAuth}
+              className={isOverlay ? REGISTRATION_OVERLAY_FIELD_CLASS : undefined}
             />
           </div>
 
-          {emailStepError && (
-            <p className="px-1 text-sm text-destructive">{emailStepError}</p>
+          <div className="space-y-2 px-1">
+            <Label htmlFor="rsvp-full-name">Full Name</Label>
+            <Input
+              id="rsvp-full-name"
+              placeholder="John Doe"
+              {...form.register("fullName")}
+              disabled={isSubmittingForm || isSubmittingOAuth}
+              className={isOverlay ? REGISTRATION_OVERLAY_FIELD_CLASS : undefined}
+            />
+          </div>
+
+          {hasCustomQuestions && customQuestions ? (
+            <div className="px-1">
+              <CustomQuestionFields
+                customQuestions={customQuestions}
+                phone={phone}
+                customAnswers={questionFormAnswers}
+                errors={questionErrors}
+                onPhoneChange={handlePhoneChange}
+                onPhoneBlur={handlePhoneBlur}
+                onAnswerChange={handleQuestionAnswerChange}
+                onMultiCheckboxChange={handleMultiCheckboxChange}
+                isOverlay={isOverlay}
+                isSubmitting={isSubmittingForm}
+                phoneInputId="rsvp-phone"
+              />
+            </div>
+          ) : null}
+
+          {formError && (
+            <p className="px-1 text-sm text-destructive">{formError}</p>
           )}
 
           <Button
-            type="button"
-            onClick={handleContinueWithEmail}
-            disabled={isCheckingEmail || isSubmittingOAuth}
+            type="submit"
+            disabled={isSubmittingForm || isSubmittingOAuth}
             className="w-full"
             size={isOverlay ? "lg" : "default"}
           >
-            {isCheckingEmail ? <Spinner /> : "Continue with Email"}
+            {isSubmittingForm ? <Spinner /> : "Register"}
           </Button>
+            </div>
+          </div>
         </div>
-      </motion.div>
-    </div>
-  );
-
-  const detailsStepContent = (
-    <form onSubmit={handleDetailsSubmit} className="space-y-5">
-      <div className="space-y-2">
-        <Label htmlFor="rsvp-full-name">Full Name</Label>
-        <Input
-          id="rsvp-full-name"
-          placeholder="John Doe"
-          {...detailsForm.register("fullName")}
-          disabled={isSubmittingSignup}
-          className={isOverlay ? OVERLAY_FIELD_CLASS : undefined}
-        />
       </div>
-      {detailsStepError && (
-        <p className="text-sm text-destructive">{detailsStepError}</p>
-      )}
-      {hasCustomQuestions ? (
-        <Button
-          type="button"
-          onClick={() => {
-            const validationError = validateFullName();
-            if (validationError) {
-              setDetailsStepError(validationError);
-              return;
-            }
-            setDetailsStepError(null);
-            setStep("questions");
-          }}
-          disabled={isSubmittingSignup}
-          className="w-full"
-          size={isOverlay ? "lg" : "default"}
-        >
-          Continue
-        </Button>
-      ) : (
-        <Button
-          type="submit"
-          disabled={isSubmittingSignup}
-          className="w-full"
-          size={isOverlay ? "lg" : "default"}
-        >
-          {isSubmittingSignup ? <Spinner /> : "Continue to Verify"}
-        </Button>
-      )}
     </form>
   );
-
-  const questionsStepContent =
-    hasCustomQuestions &&
-    (userExists ? (
-      <CustomQuestionsForm
-        open={step === "questions"}
-        onOpenChange={() => {}}
-        eventId={eventId}
-        customQuestions={customQuestions}
-        userName={existingUserFullName ?? otpEmail?.split("@")[0] ?? undefined}
-        userEmail={otpEmail}
-        userAvatarUrl={existingUserAvatarUrl ?? undefined}
-        userPhone={userPhone ?? undefined}
-        onSubmit={handleQuestionsSubmitFromExisting}
-        isSubmitting={isSubmittingQuestions}
-        inline={!isOverlay}
-        variant={isOverlay ? "overlay" : "default"}
-      />
-    ) : (
-      <CustomQuestionsForm
-        open={step === "questions"}
-        onOpenChange={() => {}}
-        eventId={eventId}
-        customQuestions={customQuestions}
-        userName={detailsForm.getValues("fullName")?.trim() || undefined}
-        userEmail={emailForm.getValues("email")?.trim()}
-        userPhone={userPhone ?? undefined}
-        onSubmit={(answers) => handleQuestionsSubmitFromDetails(answers)}
-        isSubmitting={isSubmittingSignup}
-        inline={!isOverlay}
-        variant={isOverlay ? "overlay" : "default"}
-      />
-    ));
 
   const otpStepContent = (
     <div className="space-y-4">
@@ -537,9 +531,9 @@ export function RegistrationFlow({
         email={otpEmail}
         communityId={communityId}
         returnTo={returnTo ?? undefined}
-        onSuccess={userExists ? handleOtpSuccessExistingUser : handleOtpSuccessNewUser}
+        onSuccess={handleOtpSuccess}
         fullName={
-          !userExists ? detailsForm.getValues("fullName")?.trim() || undefined : undefined
+          !userExists ? form.getValues("fullName")?.trim() || undefined : undefined
         }
         eventId={eventId}
         customAnswers={customAnswers ? JSON.stringify(customAnswers) : undefined}
@@ -554,15 +548,7 @@ export function RegistrationFlow({
     </div>
   );
 
-  const stepContent =
-    step === "email"
-      ? emailStepContent
-      : step === "details"
-        ? detailsStepContent
-        : step === "questions"
-          ? questionsStepContent
-          : otpStepContent;
-
+  const stepContent = step === "form" ? formStepContent : otpStepContent;
   const { title, description } = getRegistrationStepLabels(step);
 
   React.useEffect(() => {
@@ -570,18 +556,18 @@ export function RegistrationFlow({
   }, [onStepChange, step]);
 
   React.useEffect(() => {
-    if (!showEmailSection || step !== "email") return;
+    if (!showEmailSection || step !== "form") return;
 
     const timer = window.setTimeout(() => {
       emailInputRef.current?.focus();
-    }, 320);
+    }, EMAIL_EXPAND_MS);
 
     return () => window.clearTimeout(timer);
   }, [showEmailSection, step]);
 
   return (
     <div className={cn(isOverlay ? undefined : "space-y-6")}>
-      {showStepHeader && !isOverlay && step !== "questions" && (
+      {showStepHeader && !isOverlay && (
         <div className="space-y-1">
           <h2
             className={`text-xl font-semibold ${step === "otp" ? "text-center" : ""}`}
@@ -593,7 +579,7 @@ export function RegistrationFlow({
           )}
         </div>
       )}
-      {step === "questions" ? questionsStepContent : stepContent}
+      {stepContent}
     </div>
   );
 }

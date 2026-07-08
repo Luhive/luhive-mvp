@@ -49,7 +49,7 @@ export function EventRegisterView({
   const invalidateEventRegistration = useInvalidateEventRegistrationQuery(event.id);
   const setCurrentUserCache = useSetCurrentUserCache();
   const lastSubmittedIntentRef = useRef<string | null>(null);
-  const [guestStep, setGuestStep] = useState<RegistrationFlowStep>("email");
+  const [guestStep, setGuestStep] = useState<RegistrationFlowStep>("form");
 
   const isInviteMode = Boolean(inviteData?.inviteToken);
 

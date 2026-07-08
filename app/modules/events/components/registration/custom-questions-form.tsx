@@ -9,37 +9,26 @@ import {
 } from '~/shared/components/ui/dialog';
 import { FullscreenModal } from '~/shared/components/ui/fullscreen-modal';
 import { Button } from '~/shared/components/ui/button';
-import { Input } from '~/shared/components/ui/input';
-import { Label } from '~/shared/components/ui/label';
-import { Textarea } from '~/shared/components/ui/textarea';
-import { Checkbox } from '~/shared/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/shared/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '~/shared/components/ui/avatar';
 import { Separator } from '~/shared/components/ui/separator';
 import { Spinner } from '~/shared/components/ui/spinner';
-import { Phone, User, Mail } from 'lucide-react';
+import { User, Mail } from 'lucide-react';
 import type {
   CustomQuestionJson,
   CustomAnswerJson,
   DropdownOption,
 } from '~/modules/events/model/event.types';
 import {
+  buildCustomAnswersFromFormState,
   isValidPhoneNumber,
-  formatPhoneNumber,
+  normalizePhoneInput,
   validateCustomAnswers,
 } from '~/modules/events/utils/custom-questions';
-import { MAX_ANSWER_LENGTH } from '~/modules/events/utils/custom-questions-constants';
 import { Form } from 'react-router';
-import { cn } from '~/shared/lib/utils/cn';
-
-const OVERLAY_FIELD_CLASS =
-  'bg-muted/50 border-transparent shadow-none h-11 rounded-lg focus-visible:bg-background';
+import {
+  CustomQuestionFields,
+  type CustomQuestionFormAnswers,
+} from '~/modules/events/components/registration/custom-question-fields';
 
 interface CustomQuestionsFormProps {
   open: boolean;
@@ -87,21 +76,16 @@ export function CustomQuestionsForm({
   const isAuthenticated = Boolean(userEmail || userName);
   const authenticatedFallbackName = userEmail?.split('@')[0]?.trim() || 'User';
 
-  // Form state
   const [phone, setPhone] = useState('');
-  const [customAnswers, setCustomAnswers] = useState<
-    Record<string, string | DropdownOption | DropdownOption[]>
-  >({});
+  const [customAnswers, setCustomAnswers] = useState<CustomQuestionFormAnswers>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Initialize phone from user profile if authenticated
   useEffect(() => {
     if (isAuthenticated && userPhone && !phone) {
       setPhone(userPhone);
     }
   }, [isAuthenticated, userPhone, phone]);
 
-  // Reset form when dialog opens/closes
   useEffect(() => {
     if (!open) {
       setPhone('');
@@ -111,17 +95,8 @@ export function CustomQuestionsForm({
   }, [open]);
 
   const handlePhoneChange = (value: string) => {
-    // Remove all non-digit characters except +
-    let cleaned = value.replace(/[^\d+]/g, '');
-    
-    // Ensure it starts with +
-    if (cleaned && !cleaned.startsWith('+')) {
-      cleaned = '+' + cleaned.replace(/\+/g, '');
-    }
-    
-    setPhone(cleaned);
-    
-    // Clear error when user starts typing
+    setPhone(normalizePhoneInput(value));
+
     if (errors.phone) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -174,49 +149,23 @@ export function CustomQuestionsForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const answers = buildCustomAnswersFromFormState(
+      customQuestions,
+      phone,
+      customAnswers,
+    );
+
     if (!customQuestions) {
-      onSubmit({});
+      onSubmit(answers);
       return;
     }
 
-    // Build answers object
-    const answers: CustomAnswerJson = {};
-    
-    if (customQuestions.phone.enabled && phone.trim()) {
-      answers.phone = phone.trim();
-    }
-
-    // Add custom question answers
-    if (customQuestions.custom && customQuestions.custom.length > 0) {
-      for (const question of customQuestions.custom) {
-        const answer = customAnswers[question.id];
-        const questionType = question.type ?? 'text';
-
-        if (questionType === 'dropdown') {
-          if (Array.isArray(answer) && answer.length > 0) {
-            answers[question.id] = answer;
-          } else if (
-            answer &&
-            typeof answer === 'object' &&
-            !Array.isArray(answer) &&
-            'id' in answer
-          ) {
-            answers[question.id] = answer;
-          }
-        } else if (typeof answer === 'string' && answer.trim()) {
-          answers[question.id] = answer.trim();
-        }
-      }
-    }
-
-    // Validate
     const validation = validateCustomAnswers(answers, customQuestions);
     if (!validation.valid) {
       setErrors(validation.errors);
       return;
     }
 
-    // Submit - the parent component will handle the form submission
     onSubmit(answers);
   };
 
@@ -277,206 +226,18 @@ export function CustomQuestionsForm({
         <>
           {!isOverlay && <Separator />}
 
-          <div className="space-y-5 pb-0">
-            {/* Phone Number Field */}
-            {customQuestions.phone.enabled && (
-              <div className="space-y-2">
-                <Label htmlFor="phone">
-                  Phone Number
-                  {customQuestions.phone.required && (
-                    <span className="text-destructive ml-1">*</span>
-                  )}
-                </Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => handlePhoneChange(e.target.value)}
-                    onBlur={handlePhoneBlur}
-                    placeholder="+994501234567"
-                    required={customQuestions.phone.required}
-                    disabled={isSubmitting}
-                    className={cn(
-                      errors.phone ? 'border-destructive pl-10' : 'pl-10',
-                      isOverlay && OVERLAY_FIELD_CLASS,
-                    )}
-                  />
-                </div>
-                {errors.phone && (
-                  <p className="text-xs text-destructive">{errors.phone}</p>
-                )}
-                {phone && !errors.phone && (
-                  <p className="text-xs text-muted-foreground">
-                    {formatPhoneNumber(phone)}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Custom Questions */}
-            {customQuestions.custom &&
-              customQuestions.custom.length > 0 &&
-              customQuestions.custom
-                .sort((a, b) => a.order - b.order)
-                .map((question) => {
-                  const questionType = question.type ?? 'text';
-
-                  if (questionType === 'dropdown' && question.allowMultiple) {
-                    const selectedValues = Array.isArray(customAnswers[question.id])
-                      ? (customAnswers[question.id] as DropdownOption[])
-                      : [];
-                    return (
-                      <div key={question.id} className="space-y-2">
-                        <Label>
-                          {question.label}
-                          {question.required && (
-                            <span className="text-destructive ml-1">*</span>
-                          )}
-                        </Label>
-                        <div className="space-y-2">
-                          {(question.options ?? []).map((option) => (
-                            <div key={option.id} className="flex items-center gap-2">
-                              <Checkbox
-                                id={`${question.id}-${option.id}`}
-                                checked={selectedValues.some((v) => v.id === option.id)}
-                                onCheckedChange={(checked) =>
-                                  handleMultiCheckboxChange(
-                                    question.id,
-                                    option,
-                                    checked === true
-                                  )
-                                }
-                                disabled={isSubmitting}
-                              />
-                              <Label
-                                htmlFor={`${question.id}-${option.id}`}
-                                className="text-sm font-normal cursor-pointer"
-                              >
-                                {option.label}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                        {errors[question.id] && (
-                          <p className="text-xs text-destructive">{errors[question.id]}</p>
-                        )}
-                      </div>
-                    );
-                  }
-
-                  if (questionType === 'dropdown') {
-                    const selectedOption =
-                      customAnswers[question.id] &&
-                      typeof customAnswers[question.id] === 'object' &&
-                      !Array.isArray(customAnswers[question.id])
-                        ? (customAnswers[question.id] as DropdownOption)
-                        : null;
-                    return (
-                      <div key={question.id} className="space-y-2">
-                        <Label htmlFor={`question-${question.id}`}>
-                          {question.label}
-                          {question.required && (
-                            <span className="text-destructive ml-1">*</span>
-                          )}
-                        </Label>
-                        <Select
-                          value={selectedOption?.id ?? ''}
-                          onValueChange={(optionId) => {
-                            const option = (question.options ?? []).find(
-                              (o) => o.id === optionId
-                            );
-                            if (option) {
-                              handleCustomAnswerChange(question.id, option);
-                            }
-                          }}
-                          disabled={isSubmitting}
-                        >
-                          <SelectTrigger
-                            id={`question-${question.id}`}
-                            className={cn(
-                              'w-full',
-                              errors[question.id] ? 'border-destructive' : '',
-                              isOverlay && OVERLAY_FIELD_CLASS,
-                            )}
-                          >
-                            <SelectValue placeholder="Select an option" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(question.options ?? []).map((option) => (
-                              <SelectItem key={option.id} value={option.id}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {errors[question.id] && (
-                          <p className="text-xs text-destructive">{errors[question.id]}</p>
-                        )}
-                      </div>
-                    );
-                  }
-
-                  // Default: text question
-                  const textValue =
-                    typeof customAnswers[question.id] === 'string'
-                      ? (customAnswers[question.id] as string)
-                      : '';
-                  return (
-                    <div key={question.id} className="space-y-2">
-                      <Label htmlFor={`question-${question.id}`}>
-                        {question.label}
-                        {question.required && (
-                          <span className="text-destructive ml-1">*</span>
-                        )}
-                      </Label>
-                      {isOverlay ? (
-                        <Input
-                          id={`question-${question.id}`}
-                          name={`question-${question.id}`}
-                          value={textValue}
-                          onChange={(e) =>
-                            handleCustomAnswerChange(question.id, e.target.value)
-                          }
-                          placeholder="Your answer..."
-                          required={question.required}
-                          disabled={isSubmitting}
-                          maxLength={MAX_ANSWER_LENGTH}
-                          className={cn(
-                            errors[question.id] ? 'border-destructive' : '',
-                            OVERLAY_FIELD_CLASS,
-                          )}
-                        />
-                      ) : (
-                        <Textarea
-                          id={`question-${question.id}`}
-                          name={`question-${question.id}`}
-                          value={textValue}
-                          onChange={(e) =>
-                            handleCustomAnswerChange(question.id, e.target.value)
-                          }
-                          placeholder="Your answer..."
-                          required={question.required}
-                          disabled={isSubmitting}
-                          maxLength={MAX_ANSWER_LENGTH}
-                          rows={2}
-                          className={errors[question.id] ? 'border-destructive' : ''}
-                        />
-                      )}
-                      {errors[question.id] && (
-                        <p className="text-xs text-destructive">{errors[question.id]}</p>
-                      )}
-                      {!isOverlay && textValue && (
-                        <p className="text-xs text-muted-foreground">
-                          {textValue.length}/{MAX_ANSWER_LENGTH} characters
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-          </div>
+          <CustomQuestionFields
+            customQuestions={customQuestions}
+            phone={phone}
+            customAnswers={customAnswers}
+            errors={errors}
+            onPhoneChange={handlePhoneChange}
+            onPhoneBlur={handlePhoneBlur}
+            onAnswerChange={handleCustomAnswerChange}
+            onMultiCheckboxChange={handleMultiCheckboxChange}
+            isOverlay={isOverlay}
+            isSubmitting={isSubmitting}
+          />
         </>
       )}
     </div>
@@ -573,4 +334,3 @@ export function CustomQuestionsForm({
     </Dialog>
   );
 }
-
