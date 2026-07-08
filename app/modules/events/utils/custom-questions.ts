@@ -102,6 +102,56 @@ export function formatPhoneNumber(phone: string): string {
   return `+${countryCode} ${formattedNumber}`;
 }
 
+export function normalizePhoneInput(value: string): string {
+  let cleaned = value.replace(/[^\d+]/g, "");
+
+  if (cleaned && !cleaned.startsWith("+")) {
+    cleaned = "+" + cleaned.replace(/\+/g, "");
+  }
+
+  return cleaned;
+}
+
+export function buildCustomAnswersFromFormState(
+  customQuestions: CustomQuestionJson | null,
+  phone: string,
+  formAnswers: Record<string, string | DropdownOption | DropdownOption[]>,
+): CustomAnswerJson {
+  const answers: CustomAnswerJson = {};
+
+  if (!customQuestions) {
+    return answers;
+  }
+
+  if (customQuestions.phone.enabled && phone.trim()) {
+    answers.phone = phone.trim();
+  }
+
+  if (customQuestions.custom && customQuestions.custom.length > 0) {
+    for (const question of customQuestions.custom) {
+      const answer = formAnswers[question.id];
+      const questionType = question.type ?? "text";
+
+      if (questionType === "dropdown") {
+        if (Array.isArray(answer) && answer.length > 0) {
+          answers[question.id] = answer;
+        } else if (
+          answer &&
+          typeof answer === "object" &&
+          !Array.isArray(answer) &&
+          "id" in answer
+        ) {
+          answers[question.id] = answer;
+        }
+      } else if (typeof answer === "string" && answer.trim()) {
+        answers[question.id] = answer.trim();
+      }
+    }
+  }
+
+  return answers;
+}
+
 /**
  * Validates custom answers against the question configuration
  */

@@ -51,7 +51,7 @@ export function EventRsvpModal({
 }: EventRsvpModalProps) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const [step, setStep] = React.useState<RegistrationFlowStep>("email");
+  const [step, setStep] = React.useState<RegistrationFlowStep>("form");
   const flowKey = open ? "open" : "closed";
 
   const pathname = Routes.community.event(communitySlug, eventSlug);
@@ -65,7 +65,7 @@ export function EventRsvpModal({
 
   React.useEffect(() => {
     if (open) return;
-    setStep("email");
+    setStep("form");
   }, [open]);
 
   const { title, description } = getRegistrationStepLabels(step);
