@@ -1,4 +1,5 @@
 import { Activity } from "react";
+import { CalendarSubscriptionButton } from "~/modules/events/components/registration/calendar-subscription-dialog";
 import { CheckinQrDialog } from "~/modules/events/components/registration/checkin-qr-dialog";
 import { InviteSomeoneButton } from "~/modules/events/components/registration/invite-modal";
 import { useEventStartTimer } from "~/modules/events/hooks/use-event-start-timer";
@@ -15,6 +16,7 @@ import {
 
 interface NativeRegisteredViewProps {
 	event: Event;
+	communityName?: string;
 	userRegistrationStatus: string | null;
 	userCheckinToken: string | null;
 	discussionLink?: string | null;
@@ -26,6 +28,7 @@ interface NativeRegisteredViewProps {
 
 interface RegisteredStateViewProps {
 	event: Event;
+	communityName?: string;
 	isPastEvent: boolean;
 	isUnregistering: boolean;
 	user: { id: string; email?: string | null } | null;
@@ -41,6 +44,9 @@ function useRegistrationIdentity(
 	return { displayName, avatarInitials };
 }
 
+const DEFAULT_ACTIONS_CLASSNAME =
+	"flex flex-col gap-2 w-full sm:flex-row sm:flex-wrap";
+
 function RegisteredAttendeeLayout({
 	displayName,
 	avatarUrl,
@@ -48,6 +54,7 @@ function RegisteredAttendeeLayout({
 	timeFormatted,
 	statusLine,
 	actions,
+	actionsClassName,
 	isUnregistering,
 }: {
 	displayName: string;
@@ -56,6 +63,7 @@ function RegisteredAttendeeLayout({
 	timeFormatted?: string | null;
 	statusLine: React.ReactNode;
 	actions?: React.ReactNode;
+	actionsClassName?: string;
 	isUnregistering: boolean;
 }) {
 	return (
@@ -75,7 +83,7 @@ function RegisteredAttendeeLayout({
 				{statusLine}
 
 				{actions ? (
-					<div className="flex flex-col gap-2 w-full sm:flex-row sm:flex-wrap">
+					<div className={actionsClassName ?? DEFAULT_ACTIONS_CLASSNAME}>
 						{actions}
 					</div>
 				) : null}
@@ -88,6 +96,7 @@ function RegisteredAttendeeLayout({
 
 function ApprovedRegisteredView({
 	event,
+	communityName,
 	userCheckinToken,
 	discussionLink,
 	isPastEvent,
@@ -112,6 +121,7 @@ function ApprovedRegisteredView({
 			avatarInitials={avatarInitials}
 			timeFormatted={timeUntilStart?.formatted}
 			isUnregistering={isUnregistering}
+			actionsClassName="flex flex-col gap-2 w-full sm:flex-row sm:justify-between sm:items-center"
 			statusLine={
 				<RegistrationStatusLine variant="green">
 					You&apos;re registered
@@ -119,23 +129,39 @@ function ApprovedRegisteredView({
 			}
 			actions={
 				<>
+					<div className="contents sm:flex sm:flex-row sm:flex-wrap sm:justify-start sm:gap-2">
+						{userCheckinToken ? (
+							<CheckinQrDialog
+								checkinToken={userCheckinToken}
+								userEmail={user?.email}
+								className="order-2 w-full sm:order-0 sm:w-auto"
+							/>
+						) : null}
+						<CalendarSubscriptionButton
+							title={event.title}
+							description={event.description}
+							startTime={event.start_time}
+							endTime={event.end_time}
+							timezone={event.timezone}
+							locationAddress={event.location_address}
+							onlineMeetingLink={event.online_meeting_link}
+							communityName={communityName}
+							className="order-4 w-full sm:order-0 sm:w-auto"
+						/>
+						{discussionLink ? (
+							<EventDiscussionLinkButton
+								discussionLink={discussionLink}
+								className="order-3 sm:order-0"
+							/>
+						) : null}
+					</div>
 					<InviteSomeoneButton
 						eventId={event.id}
 						label="Invite a Friend"
 						size="sm"
 						variant="outline"
-						className="w-full sm:w-auto h-8"
+						className="order-1 w-full sm:order-0 sm:w-auto h-8 sm:shrink-0"
 					/>
-					{userCheckinToken ? (
-						<CheckinQrDialog
-							checkinToken={userCheckinToken}
-							userEmail={user?.email}
-							className="w-full sm:w-auto"
-						/>
-					) : null}
-					{discussionLink ? (
-						<EventDiscussionLinkButton discussionLink={discussionLink} />
-					) : null}
 				</>
 			}
 		/>
@@ -213,6 +239,7 @@ function RejectedRegisteredView({
 
 export function NativeRegisteredView({
 	event,
+	communityName,
 	userRegistrationStatus,
 	userCheckinToken,
 	discussionLink,
@@ -223,6 +250,7 @@ export function NativeRegisteredView({
 }: NativeRegisteredViewProps) {
 	const stateProps: RegisteredStateViewProps = {
 		event,
+		communityName,
 		isPastEvent,
 		isUnregistering,
 		user,
