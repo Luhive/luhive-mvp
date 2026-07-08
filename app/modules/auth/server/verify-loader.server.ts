@@ -68,6 +68,28 @@ function logVerifyError(message: string, payload?: Record<string, unknown>) {
   }
 }
 
+type OAuthUserMetadata = {
+  avatar_url?: string;
+  picture?: string;
+  full_name?: string;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+};
+
+function getGoogleAvatarUrlFromMetadata(
+  metadata: OAuthUserMetadata | null | undefined,
+): string | null {
+  const raw =
+    (typeof metadata?.avatar_url === "string" ? metadata.avatar_url : "") ||
+    (typeof metadata?.picture === "string" ? metadata.picture : "");
+  const trimmed = raw.trim();
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
+    return null;
+  }
+  return trimmed;
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { supabase, headers } = createClient(request);
   const url = new URL(request.url);
@@ -118,9 +140,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
         pendingEventId,
       });
 
+      const googleAvatarUrl = getGoogleAvatarUrlFromMetadata(
+        data.user.user_metadata as OAuthUserMetadata | undefined,
+      );
+
       const { data: existingProfile } = await supabase
         .from("profiles")
-        .select("id")
+        .select("id, avatar_url")
         .eq("id", data.user.id)
         .single();
 
@@ -137,6 +163,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         const { error: profileError } = await supabase.from("profiles").insert({
           id: data.user.id,
           full_name: fullName,
+          ...(googleAvatarUrl ? { avatar_url: googleAvatarUrl } : {}),
           metadata: pendingCommunityId
             ? { referral_community_id: pendingCommunityId }
             : undefined,
@@ -148,7 +175,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
             error: profileError.message,
           });
         } else {
-          logVerify("profile inserted", { userId: data.user.id, fullName });
+          logVerify("profile inserted", {
+            userId: data.user.id,
+            fullName,
+            hasAvatar: Boolean(googleAvatarUrl),
+          });
         }
 
         if (pendingCommunityId) {
@@ -213,7 +244,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
             }
           }
         }
-      } else if (pendingCommunityId) {
+      } else {
+        if (!existingProfile.avatar_url?.trim() && googleAvatarUrl) {
+          const { error: avatarError } = await supabase
+            .from("profiles")
+            .update({ avatar_url: googleAvatarUrl })
+            .eq("id", data.user.id);
+
+          if (avatarError) {
+            logVerifyError("profile avatar update failed", {
+              userId: data.user.id,
+              error: avatarError.message,
+            });
+          } else {
+            logVerify("profile avatar updated from Google", {
+              userId: data.user.id,
+            });
+          }
+        }
+
+        if (pendingCommunityId) {
         logVerify("profile exists, checking community join", {
           userId: data.user.id,
           communityId: pendingCommunityId,
@@ -303,10 +353,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
             communityId: pendingCommunityId,
           });
         }
-      } else {
+        } else {
         logVerify("profile exists, no pending community", {
           userId: data.user.id,
         });
+      }
       }
 
       if (pendingEventId) {

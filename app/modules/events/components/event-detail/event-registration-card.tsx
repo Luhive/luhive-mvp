@@ -118,6 +118,7 @@ export function EventRegistrationCard({
 					>
 						<NativeRegisteredView
 							event={event}
+							communityName={community.name}
 							userRegistrationStatus={userRegistrationStatus}
 							userCheckinToken={userData.userCheckinToken}
 							discussionLink={event.discussion_link}
