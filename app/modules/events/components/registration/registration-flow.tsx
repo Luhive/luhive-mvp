@@ -162,6 +162,7 @@ export function RegistrationFlow({
     signupFetcher.state === "submitting" || signupFetcher.state === "loading";
   const isSubmittingForm = isCheckingEmail || isSubmittingSignup;
   const isSubmittingOAuth =
+    navigation.state === "submitting" &&
     navigation.formData?.get("intent") === "oauth" &&
     navigation.formData?.get("eventId") === eventId;
 
@@ -462,7 +463,10 @@ export function RegistrationFlow({
           </div>
 
           <div className="space-y-2 px-1">
-            <Label htmlFor="rsvp-email">Email</Label>
+            <Label htmlFor="rsvp-email">
+              Email
+              <span className="text-destructive ml-1">*</span>
+            </Label>
             <Input
               id="rsvp-email"
               type="email"
@@ -478,7 +482,10 @@ export function RegistrationFlow({
           </div>
 
           <div className="space-y-2 px-1">
-            <Label htmlFor="rsvp-full-name">Full Name</Label>
+            <Label htmlFor="rsvp-full-name">
+              Full Name
+              <span className="text-destructive ml-1">*</span>
+            </Label>
             <Input
               id="rsvp-full-name"
               placeholder="John Doe"
