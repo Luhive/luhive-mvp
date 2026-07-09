@@ -6,7 +6,7 @@ import { Button } from "~/shared/components/ui/button";
 import { Input } from "~/shared/components/ui/input";
 import { Label } from "~/shared/components/ui/label";
 import { Spinner } from "~/shared/components/ui/spinner";
-import { useFetcher, useNavigation, useSubmit } from "react-router";
+import { useFetcher, useSubmit } from "react-router";
 import { toast } from "sonner";
 import { OtpInputInline } from "~/modules/auth/components/otp-input-inline";
 import {
@@ -133,10 +133,10 @@ export function RegistrationFlow({
   const isOverlay = variant === "overlay";
   const checkEmailFetcher = useFetcher<CheckEmailFetcherData>();
   const signupFetcher = useFetcher<SignupFetcherData>();
-  const navigation = useNavigation();
   const submit = useSubmit();
 
   const [step, setStep] = React.useState<RegistrationFlowStep>("form");
+  const [isOAuthLoading, setIsOAuthLoading] = React.useState(false);
   const [userExists, setUserExists] = React.useState<boolean | null>(null);
   const [otpEmail, setOtpEmail] = React.useState("");
   const [formError, setFormError] = React.useState<string | null>(null);
@@ -161,10 +161,6 @@ export function RegistrationFlow({
   const isSubmittingSignup =
     signupFetcher.state === "submitting" || signupFetcher.state === "loading";
   const isSubmittingForm = isCheckingEmail || isSubmittingSignup;
-  const isSubmittingOAuth =
-    navigation.state === "submitting" &&
-    navigation.formData?.get("intent") === "oauth" &&
-    navigation.formData?.get("eventId") === eventId;
 
   const resolvedTrackingContext = React.useMemo(
     () => trackingContext ?? getEventTrackingContext(eventId),
@@ -219,6 +215,15 @@ export function RegistrationFlow({
     }
   }, [signupFetcher.data, signupFetcher.state, form]);
 
+  React.useEffect(() => {
+    const handlePageShow = () => {
+      setIsOAuthLoading(false);
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   const handleContinueWithGoogle = () => {
     const formData = new FormData();
     formData.append("intent", "oauth");
@@ -245,6 +250,7 @@ export function RegistrationFlow({
       resolvedTrackingContext.firstVisitStartedAt,
     );
 
+    setIsOAuthLoading(true);
     submit(formData, { method: "post", action: "/signup" });
   };
 
@@ -378,12 +384,12 @@ export function RegistrationFlow({
       <Button
         type="button"
         onClick={handleContinueWithGoogle}
-        disabled={isSubmittingForm || isSubmittingOAuth}
+        disabled={isSubmittingForm || isOAuthLoading}
         variant="outline"
         className="w-full hover:bg-muted hover:text-foreground"
         size={isOverlay ? "lg" : "default"}
       >
-        {isSubmittingOAuth ? (
+        {isOAuthLoading ? (
           <Spinner />
         ) : (
           <>
@@ -420,7 +426,7 @@ export function RegistrationFlow({
               <button
                 type="button"
                 onClick={handleExpandEmailSection}
-                disabled={isSubmittingForm || isSubmittingOAuth}
+                disabled={isSubmittingForm || isOAuthLoading}
                 className="underline underline-offset-2 transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
               >
                 email
@@ -476,7 +482,7 @@ export function RegistrationFlow({
                 emailRegisterRef(node);
                 emailInputRef.current = node;
               }}
-              disabled={isSubmittingForm || isSubmittingOAuth}
+              disabled={isSubmittingForm || isOAuthLoading}
               className={isOverlay ? REGISTRATION_OVERLAY_FIELD_CLASS : undefined}
             />
           </div>
@@ -490,7 +496,7 @@ export function RegistrationFlow({
               id="rsvp-full-name"
               placeholder="John Doe"
               {...form.register("fullName")}
-              disabled={isSubmittingForm || isSubmittingOAuth}
+              disabled={isSubmittingForm || isOAuthLoading}
               className={isOverlay ? REGISTRATION_OVERLAY_FIELD_CLASS : undefined}
             />
           </div>
@@ -519,7 +525,7 @@ export function RegistrationFlow({
 
           <Button
             type="submit"
-            disabled={isSubmittingForm || isSubmittingOAuth}
+            disabled={isSubmittingForm || isOAuthLoading}
             className="w-full"
             size={isOverlay ? "lg" : "default"}
           >
