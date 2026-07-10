@@ -52,10 +52,14 @@ Keep everything for `updates.luhive.com` and `test2.luhive.com` (dev domains).
       v=spf1 include:amazonses.com ~all
       ```
 
-**`<AGGREGATOR_ADDRESS>`:** sign up for a free DMARC report aggregator first — Postmark DMARC
-Digests (dmarc.postmarkapp.com) or dmarcian free tier — and use the `rua` address it gives you
-in all three DMARC records in this checklist. You get weekly human-readable summaries instead
-of raw XML.
+**`<AGGREGATOR_ADDRESS>`:** using Postmark DMARC Digests (dmarc.postmarkapp.com). Register
+**three separate domains** there — `luhive.com`, `events.luhive.com`, `news.luhive.com` — each
+gets its own `re+<token>@dmarc.postmarkapp.com` address; use each domain's own token in its
+DMARC record (a token is tied to the domain it was created for). For `_dmarc.luhive.com`, paste
+Postmark's suggested record as-is (`p=none; pct=100; rua=...; sp=none; aspf=r` — the extra tags
+are defaults/harmless; `sp=none` is overridden by the subdomains' own records). For the
+subdomain records keep our stricter `p=quarantine` policy even if Postmark's wizard suggests
+`p=none` — their verification only checks that their rua address is present.
 
 **Do not touch:** both `google-site-verification` TXTs, `google._domainkey`, the Google MX on
 `luhive.com`, `subdomain-owner-verification`, all `send.*` TXT/MX records,
@@ -68,10 +72,8 @@ of raw XML.
 | `events` | TXT | `v=spf1 include:amazonses.com ~all` | — |
 | `_dmarc.events` | TXT | `v=DMARC1; p=quarantine; rua=mailto:<AGGREGATOR_ADDRESS>` | — |
 | `_dmarc.news` | TXT | `v=DMARC1; p=quarantine; rua=mailto:<AGGREGATOR_ADDRESS>` | — |
-| `events` | MX | `mx1.improvmx.com` | 10 |
-| `events` | MX | `mx2.improvmx.com` | 20 |
-| `news` | MX | `mx1.improvmx.com` | 10 |
-| `news` | MX | `mx2.improvmx.com` | 20 |
+| `events` | MX | `smtp.google.com` | 1 |
+| `news` | MX | `smtp.google.com` | 1 |
 
 - [ ] All 7 records added
 
@@ -80,15 +82,27 @@ had *no* records at all, a strong Outlook junk signal. `p=quarantine` directly o
 subdomains is safe because only Resend sends from them and its SPF/DKIM are verified.
 
 Note: Cloudflare Email Routing can't do this — it only routes addresses on the zone apex
-(`@luhive.com`) on non-Enterprise plans, hence ImprovMX for the subdomains.
+(`@luhive.com`) on non-Enterprise plans. ImprovMX free covers only 1 domain. Instead we use
+Google Workspace **domain aliases** (free, up to 20) — receiving MX points at Google itself,
+which is also the strongest legitimacy signal.
 
-## Step 4 — ImprovMX (free plan)
+## Step 4 — Google Workspace domain aliases (receiving)
 
-- [ ] Create account at improvmx.com, add domain `events.luhive.com`
-- [ ] Add domain `news.luhive.com`
-- [ ] Catch-all forward `*@events.luhive.com` → Google Workspace mailbox
-- [ ] Catch-all forward `*@news.luhive.com` → Google Workspace mailbox
-- [ ] Test: send a mail from Gmail to `events@events.luhive.com`, confirm it arrives forwarded
+- [ ] admin.google.com → Account → Domains → Manage domains → **Add a domain** →
+      `events.luhive.com` → type **User alias domain** → verify via the TXT record Google
+      provides (add it in Cloudflare)
+- [ ] Same for `news.luhive.com`
+- [ ] Add the MX records from Step 3 (`smtp.google.com`, priority 1) for both subdomains
+- [ ] Domain aliases mirror existing addresses (`you@events.luhive.com` → `you@luhive.com`).
+      Create `events@luhive.com` and `news@luhive.com` (free Groups: who-can-post = Anyone on
+      the web, join = invited only, no external members). `events@luhive.com` also makes the
+      ICS organizer address real
+- [ ] The app's actual From address is `hi@events.luhive.com` (env `EMAIL_SENDER`, overrides the
+      `events@` fallback in email.server.ts — keep it, recipients know this sender). Make it
+      deliverable: Directory → Users → your user → add email alias `hi` → `hi@luhive.com`
+      exists → mirror makes `hi@events.luhive.com` work
+- [ ] Test: send a mail from an external account to `events@events.luhive.com`, confirm it
+      arrives in the Workspace mailbox
 
 ## Step 5 — Resend dashboard
 

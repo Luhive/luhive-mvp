@@ -28,6 +28,7 @@ import { HydrationBoundary } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import type { EventDetailLoaderData } from "~/modules/events/server/event-detail-loader.server";
 import { EventDetail } from "~/modules/events/components/event-detail/event-detail";
+import { RegistrationEmailAttention } from "~/modules/events/components/registration/registration-email-attention";
 import { useEventRegistrationQuery } from "~/modules/events/hooks/use-event-registration-query";
 
 export default function EventPublicView() {
@@ -43,6 +44,7 @@ export default function EventPublicView() {
 function EventInner({ loaderData }: { loaderData: EventDetailLoaderData }) {
 	const [searchParams] = useSearchParams();
 	const [highlightRegistrationCard, setHighlightRegistrationCard] = useState(false);
+	const [emailAttentionOpen, setEmailAttentionOpen] = useState(false);
 	const processedRegisteredParamRef = useRef(false);
 
 	useEffect(() => {
@@ -51,6 +53,7 @@ function EventInner({ loaderData }: { loaderData: EventDetailLoaderData }) {
 
 		processedRegisteredParamRef.current = true;
 		setHighlightRegistrationCard(true);
+		setEmailAttentionOpen(true);
 
 		const url = new URL(window.location.href);
 		url.searchParams.delete("registered");
@@ -105,6 +108,11 @@ function EventInner({ loaderData }: { loaderData: EventDetailLoaderData }) {
 					isRegisterOpen={isRegisterOpen}
 				/>
 			</div>
+			<RegistrationEmailAttention
+				open={emailAttentionOpen}
+				onOpenChange={setEmailAttentionOpen}
+				status={resolvedPageUserState.userRegistrationStatus}
+			/>
 			<Outlet />
 		</>
 	);

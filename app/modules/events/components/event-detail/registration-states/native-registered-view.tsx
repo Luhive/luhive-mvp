@@ -2,6 +2,7 @@ import { Activity } from "react";
 import { CalendarSubscriptionButton } from "~/modules/events/components/registration/calendar-subscription-dialog";
 import { CheckinQrDialog } from "~/modules/events/components/registration/checkin-qr-dialog";
 import { InviteSomeoneButton } from "~/modules/events/components/registration/invite-modal";
+import { RegistrationEmailSpamHint } from "~/modules/events/components/registration/registration-email-spam-hint";
 import { useEventStartTimer } from "~/modules/events/hooks/use-event-start-timer";
 import type { Event } from "~/shared/models/entity.types";
 import { EventDiscussionLinkButton } from "../event-discussion-link-button";
@@ -123,9 +124,12 @@ function ApprovedRegisteredView({
 			isUnregistering={isUnregistering}
 			actionsClassName="flex flex-col gap-2 w-full sm:flex-row sm:justify-between sm:items-center"
 			statusLine={
-				<RegistrationStatusLine variant="green">
-					You&apos;re registered
-				</RegistrationStatusLine>
+				<div className="space-y-1">
+					<RegistrationStatusLine variant="green">
+						You&apos;re registered
+					</RegistrationStatusLine>
+					<RegistrationEmailSpamHint />
+				</div>
 			}
 			actions={
 				<>
@@ -190,9 +194,12 @@ function PendingRegisteredView({
 			timeFormatted={timeUntilStart?.formatted}
 			isUnregistering={isUnregistering}
 			statusLine={
-				<RegistrationStatusLine variant="amber">
-					Waiting for host approval
-				</RegistrationStatusLine>
+				<div className="space-y-1">
+					<RegistrationStatusLine variant="amber">
+						Waiting for host approval
+					</RegistrationStatusLine>
+					<RegistrationEmailSpamHint />
+				</div>
 			}
 			actions={
 				<InviteSomeoneButton

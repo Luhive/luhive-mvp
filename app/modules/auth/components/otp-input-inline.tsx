@@ -6,6 +6,7 @@ import { Button } from "~/shared/components/ui/button";
 import { Spinner } from "~/shared/components/ui/spinner";
 import { toast } from "sonner";
 import type { OtpVerifySuccessResult } from "~/modules/auth/model/otp.types";
+import { OtpSpamHint } from "~/modules/auth/components/otp-spam-hint";
 import type { EventPageUserState } from "~/modules/events/model/event-detail-view.types";
 import type { Profile } from "~/shared/models/entity.types";
 
@@ -267,6 +268,7 @@ export function OtpInputInline({
       <p className="text-sm text-muted-foreground text-center">
         We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>.
       </p>
+      <OtpSpamHint />
 
       <div ref={otpContainerRef} className="flex justify-center">
         <InputOTP
