@@ -26,7 +26,7 @@ export function useMemberRoleActions(communityId: string) {
         { method: "post", action: "/api/community/update-member-role" },
       );
     },
-    [communityId, fetcher],
+    [communityId, fetcher.submit],
   );
 
   const promoteMember = useCallback(
