@@ -92,7 +92,7 @@
   "devDependencies": {
     "@locator/babel-jsx": "^0.5.1",
     "@locator/runtime": "^0.5.1",
-    "@react-email/preview-server": "^5.2.5",
+    "@react-email/preview-server": "^5.2.11",
     "@react-router/dev": "^7.9.2",
     "@tailwindcss/vite": "^4.1.13",
     "@types/google.maps": "^3.65.1",
@@ -105,5 +105,6 @@
     "typescript": "^5.9.2",
     "vite": "^7.1.7",
     "vite-tsconfig-paths": "^5.1.4"
-  }
+  },
+  "packageManager": "pnpm@10.22.0+sha512.bf049efe995b28f527fd2b41ae0474ce29186f7edcb3bf545087bd61fbbebb2bf75362d1307fda09c2d288e1e499787ac12d4fcb617a974718a6051f2eee741c"
 }
