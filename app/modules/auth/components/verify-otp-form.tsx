@@ -14,6 +14,7 @@ import LuhiveLogo from "~/assets/images/LuhiveLogo.svg";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "~/shared/components/ui/input-otp";
 import { Button } from "~/shared/components/ui/button";
 import { Spinner } from "~/shared/components/ui/spinner";
+import { OtpSpamHint } from "~/modules/auth/components/otp-spam-hint";
 
 type VerifyOtpLoaderData = {
   email: string;
@@ -156,9 +157,12 @@ export function VerifyOtpForm() {
       <div className="flex flex-col items-center text-center">
         <img src={LuhiveLogo} alt="Luhive logo" className="h-12 w-12 mb-6" />
         <h1 className="text-2xl font-bold mb-2">Enter Verification Code</h1>
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-sm text-muted-foreground mb-2">
           We sent a 6-digit code to <span className="font-medium text-foreground">{email}</span>
         </p>
+        <div className="mb-4">
+          <OtpSpamHint />
+        </div>
       </div>
 
       <div className="mx-auto border rounded-md border-muted max-w-md px-6 py-12">
