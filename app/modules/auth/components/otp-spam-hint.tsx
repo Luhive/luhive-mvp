@@ -14,8 +14,8 @@ export function OtpSpamHint() {
         ${shrunk ? "text-xs" : "text-sm"}`}
       style={{ willChange: "font-size" }}
     >
-      Please check your{" "}
-      <span className="font-bold text-orange-500">spam</span> folder and click not spam
+      Please check your <span className="font-bold text-orange-500">spam</span>{" "}
+      folder and mark us as safe
     </p>
   );
 }

@@ -58,9 +58,12 @@ export function EventRsvpModal({
 
   const handleSuccess = React.useCallback(() => {
     onOpenChange(false);
-    navigate(pathname + (typeof window !== "undefined" ? window.location.search : ""), {
-      replace: true,
-    });
+    const params = new URLSearchParams(
+      typeof window !== "undefined" ? window.location.search : "",
+    );
+    params.set("registered", "1");
+    const query = params.toString();
+    navigate(`${pathname}${query ? `?${query}` : ""}`, { replace: true });
   }, [navigate, onOpenChange, pathname]);
 
   React.useEffect(() => {
