@@ -6,7 +6,7 @@ import { Button } from "~/shared/components/ui/button";
 import { Input } from "~/shared/components/ui/input";
 import { Label } from "~/shared/components/ui/label";
 import { Spinner } from "~/shared/components/ui/spinner";
-import { useFetcher, useSubmit } from "react-router";
+import { useFetcher } from "react-router";
 import { toast } from "sonner";
 import { OtpInputInline } from "~/modules/auth/components/otp-input-inline";
 import {
@@ -81,6 +81,12 @@ type SignupFetcherData = {
   error?: string;
 };
 
+type OAuthFetcherData = {
+  success?: boolean;
+  url?: string;
+  error?: string;
+};
+
 export interface RegistrationFlowProps {
   eventId: string;
   eventSlug: string;
@@ -133,7 +139,7 @@ export function RegistrationFlow({
   const isOverlay = variant === "overlay";
   const checkEmailFetcher = useFetcher<CheckEmailFetcherData>();
   const signupFetcher = useFetcher<SignupFetcherData>();
-  const submit = useSubmit();
+  const oauthFetcher = useFetcher<OAuthFetcherData>();
 
   const [step, setStep] = React.useState<RegistrationFlowStep>("form");
   const [isOAuthLoading, setIsOAuthLoading] = React.useState(false);
@@ -216,6 +222,21 @@ export function RegistrationFlow({
   }, [signupFetcher.data, signupFetcher.state, form]);
 
   React.useEffect(() => {
+    const data = oauthFetcher.data;
+    if (!data || oauthFetcher.state !== "idle") return;
+
+    if (data.url) {
+      window.location.href = data.url;
+      return;
+    }
+
+    if (data.error) {
+      toast.error(data.error);
+      setIsOAuthLoading(false);
+    }
+  }, [oauthFetcher.data, oauthFetcher.state]);
+
+  React.useEffect(() => {
     const handlePageShow = () => {
       setIsOAuthLoading(false);
     };
@@ -228,6 +249,7 @@ export function RegistrationFlow({
     const formData = new FormData();
     formData.append("intent", "oauth");
     formData.append("provider", "google");
+    formData.append("_modal", "true");
     formData.append("eventId", eventId);
     formData.append("communityId", communityId);
     if (returnTo) formData.append("returnTo", returnTo);
@@ -251,7 +273,7 @@ export function RegistrationFlow({
     );
 
     setIsOAuthLoading(true);
-    submit(formData, { method: "post", action: "/signup" });
+    oauthFetcher.submit(formData, { method: "post", action: "/signup" });
   };
 
   const handleExpandEmailSection = () => {

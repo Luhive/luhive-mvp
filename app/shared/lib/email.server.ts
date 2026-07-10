@@ -734,12 +734,12 @@ export async function sendRegistrationRequestEmail(
   console.log(`📧 Attempting to send registration request email:`, {
     to: recipientEmail,
     from: FROM_EMAIL,
-    subject: `Registration Request Received: ${eventTitle}`,
+    subject: `You're pending approval: ${eventTitle}`,
   });
 
   const result = await sendEmailInternal({
     to: recipientEmail,
-    subject: `Registration Request Received: ${eventTitle}`,
+    subject: `You're pending approval: ${eventTitle}`,
     react: EventRegistrationRequestEmail({
       eventTitle,
       communityName,
@@ -890,8 +890,8 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
 
   const subject =
     status === "approved"
-      ? `Registration Approved: ${eventTitle}`
-      : `Registration Update: ${eventTitle}`;
+      ? `You're accepted: ${eventTitle}`
+      : `You weren't accepted: ${eventTitle}`;
 
   const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 

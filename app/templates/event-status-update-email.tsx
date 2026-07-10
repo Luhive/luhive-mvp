@@ -44,7 +44,7 @@ export const EventStatusUpdateEmail = ({
 	if (!isApproved) {
 		return (
 			<EmailLayout
-				preview={`An update on your registration for ${eventTitle}`}
+				preview={`Your registration for ${eventTitle} wasn't approved this time`}
 			>
 				<Eyebrow>Registration update</Eyebrow>
 				<EmailTitle>{eventTitle}</EmailTitle>
