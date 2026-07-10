@@ -60,7 +60,7 @@ export function resolveEventHostedByJoinCta(input: {
     return {
       mode: "whatsapp",
       url: socialLinks.whatsapp,
-      label: "Join WhatsApp",
+      label: "Join",
     };
   }
 
