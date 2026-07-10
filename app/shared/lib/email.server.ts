@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { render } from "@react-email/components";
 import type React from "react";
 import { EventVerificationEmail } from "~/templates/event-verification-email";
 import { EventConfirmationEmail } from "~/templates/event-confirmation-email";
@@ -141,6 +142,11 @@ type BaseEmailPayload = {
    */
   react?: React.ReactElement;
   html?: string;
+  /**
+   * Plain-text alternative part. Auto-generated from `react`/`html` when
+   * omitted — HTML-only emails score worse with spam filters.
+   */
+  text?: string;
   attachments?: {
     filename: string;
     content: string;
@@ -169,6 +175,50 @@ type EmailSendResult = {
   };
 };
 
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<a\s+[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_, href, label) => {
+      const labelText = label.replace(/<[^>]+>/g, "").trim();
+      if (!labelText || labelText === href) return href;
+      return `${labelText}: ${href}`;
+    })
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&mdash;/gi, "—")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+async function withPlainText(payload: BaseEmailPayload): Promise<BaseEmailPayload> {
+  if (payload.text) return payload;
+  try {
+    if (payload.react) {
+      return { ...payload, text: await render(payload.react, { plainText: true }) };
+    }
+    if (payload.html) {
+      return { ...payload, text: htmlToPlainText(payload.html) };
+    }
+  } catch (error) {
+    console.warn("⚠️ Failed to generate plain-text part, sending HTML-only:", {
+      error: error instanceof Error ? error.message : String(error),
+      subject: payload.subject,
+    });
+  }
+  return payload;
+}
+
 function chunkArray<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = [];
   for (let i = 0; i < items.length; i += size) {
@@ -178,9 +228,9 @@ function chunkArray<T>(items: T[], size: number): T[][] {
 }
 
 async function sendEmailsInternal(
-  payloads: BaseEmailPayload[]
+  rawPayloads: BaseEmailPayload[]
 ): Promise<EmailSendResult[]> {
-  if (payloads.length === 0) return [];
+  if (rawPayloads.length === 0) return [];
 
   if (!resend) {
     const errorMsg =
@@ -194,6 +244,8 @@ async function sendEmailsInternal(
     console.error(`❌ ${errorMsg}`);
     throw new Error(errorMsg);
   }
+
+  const payloads = await Promise.all(rawPayloads.map(withPlainText));
 
   const results: EmailSendResult[] = [];
   const chunks = chunkArray(payloads, 100);
@@ -223,6 +275,7 @@ async function sendEmailsInternal(
           subject: payload.subject,
           react: payload.react,
           html: payload.html,
+          text: payload.text,
           headers: payload.headers,
           attachments:
             payload.attachments && payload.attachments.length > 0
@@ -289,6 +342,7 @@ async function sendEmailsInternal(
           subject: payload.subject,
           react: payload.react,
           html: payload.html,
+          text: payload.text,
           headers: payload.headers,
           attachments:
             payload.attachments && payload.attachments.length > 0
@@ -320,6 +374,7 @@ async function sendEmailsInternal(
                 subject: payload.subject,
                 react: payload.react,
                 html: payload.html,
+                text: payload.text,
                 headers: payload.headers,
                 attachments:
                   payload.attachments && payload.attachments.length > 0
@@ -392,6 +447,7 @@ async function sendEmailsInternal(
               subject: payload.subject,
               react: payload.react,
               html: payload.html,
+              text: payload.text,
               headers: payload.headers,
               attachments:
                 payload.attachments && payload.attachments.length > 0

@@ -71,8 +71,11 @@ function EventRegisterContent({
 
   useEffect(() => {
     if (isEligible) return;
-    navigate(eventPageUrl, { replace: true });
-  }, [eventPageUrl, isEligible, navigate]);
+    const target = resolvedUserData.isUserRegistered
+      ? `${eventPageUrl}${eventPageUrl.includes("?") ? "&" : "?"}registered=1`
+      : eventPageUrl;
+    navigate(target, { replace: true });
+  }, [eventPageUrl, isEligible, navigate, resolvedUserData.isUserRegistered]);
 
   if (!isEligible) {
     return null;
