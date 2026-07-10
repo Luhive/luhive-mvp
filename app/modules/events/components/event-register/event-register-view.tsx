@@ -144,9 +144,13 @@ export function EventRegisterView({
     submit(formData, { method: "POST" });
   };
 
+  const showCustomQuestionsForm =
+    isInviteMode ||
+    (Boolean(user) && hasCustomQuestions && guestStep !== "otp");
+
   const overlayTitle = isInviteMode
     ? "Complete your registration"
-    : user && hasCustomQuestions
+    : showCustomQuestionsForm
       ? "Tell us more"
       : getRegistrationOverlayTitle(guestStep);
 
@@ -156,7 +160,7 @@ export function EventRegisterView({
     inviteData?.inviteeEmail || user?.email || undefined;
   return (
     <RegistrationOverlayShell title={overlayTitle} onCloseHref={eventPageUrl}>
-      {(user && hasCustomQuestions) || isInviteMode ? (
+      {showCustomQuestionsForm ? (
         <CustomQuestionsForm
           open
           onOpenChange={() => {}}
