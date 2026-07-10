@@ -91,9 +91,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (data?.url) {
-      if (isModal) {
-        return Response.json({ success: true, url: data.url }, { headers });
-      }
       return redirect(data.url, { headers });
     }
 

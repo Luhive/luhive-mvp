@@ -81,12 +81,6 @@ type SignupFetcherData = {
   error?: string;
 };
 
-type OAuthFetcherData = {
-  success?: boolean;
-  url?: string;
-  error?: string;
-};
-
 export interface RegistrationFlowProps {
   eventId: string;
   eventSlug: string;
@@ -139,7 +133,6 @@ export function RegistrationFlow({
   const isOverlay = variant === "overlay";
   const checkEmailFetcher = useFetcher<CheckEmailFetcherData>();
   const signupFetcher = useFetcher<SignupFetcherData>();
-  const oauthFetcher = useFetcher<OAuthFetcherData>();
 
   const [step, setStep] = React.useState<RegistrationFlowStep>("form");
   const [isOAuthLoading, setIsOAuthLoading] = React.useState(false);
@@ -153,6 +146,7 @@ export function RegistrationFlow({
     React.useState<CustomQuestionFormAnswers>({});
   const [showEmailSection, setShowEmailSection] = React.useState(false);
   const emailInputRef = React.useRef<HTMLInputElement>(null);
+  const oauthFormRef = React.useRef<HTMLFormElement>(null);
   const pendingSignupRef = React.useRef<{ email: string; fullName: string } | null>(
     null,
   );
@@ -222,21 +216,6 @@ export function RegistrationFlow({
   }, [signupFetcher.data, signupFetcher.state, form]);
 
   React.useEffect(() => {
-    const data = oauthFetcher.data;
-    if (!data || oauthFetcher.state !== "idle") return;
-
-    if (data.url) {
-      window.location.href = data.url;
-      return;
-    }
-
-    if (data.error) {
-      toast.error(data.error);
-      setIsOAuthLoading(false);
-    }
-  }, [oauthFetcher.data, oauthFetcher.state]);
-
-  React.useEffect(() => {
     const handlePageShow = () => {
       setIsOAuthLoading(false);
     };
@@ -246,34 +225,8 @@ export function RegistrationFlow({
   }, []);
 
   const handleContinueWithGoogle = () => {
-    const formData = new FormData();
-    formData.append("intent", "oauth");
-    formData.append("provider", "google");
-    formData.append("_modal", "true");
-    formData.append("eventId", eventId);
-    formData.append("communityId", communityId);
-    if (returnTo) formData.append("returnTo", returnTo);
-    formData.append("eventSessionId", resolvedTrackingContext.sessionId);
-    formData.append("eventUtmSource", resolvedTrackingContext.utmSource);
-    if (resolvedTrackingContext.utmMedium) {
-      formData.append("eventUtmMedium", resolvedTrackingContext.utmMedium);
-    }
-    if (resolvedTrackingContext.utmCampaign) {
-      formData.append("eventUtmCampaign", resolvedTrackingContext.utmCampaign);
-    }
-    if (resolvedTrackingContext.utmContent) {
-      formData.append("eventUtmContent", resolvedTrackingContext.utmContent);
-    }
-    if (resolvedTrackingContext.utmTerm) {
-      formData.append("eventUtmTerm", resolvedTrackingContext.utmTerm);
-    }
-    formData.append(
-      "eventFirstVisitStartedAt",
-      resolvedTrackingContext.firstVisitStartedAt,
-    );
-
     setIsOAuthLoading(true);
-    oauthFetcher.submit(formData, { method: "post", action: "/signup" });
+    oauthFormRef.current?.submit();
   };
 
   const handleExpandEmailSection = () => {
@@ -615,6 +568,56 @@ export function RegistrationFlow({
         </div>
       )}
       {stepContent}
+      <form ref={oauthFormRef} method="post" action="/signup" className="hidden" aria-hidden>
+        <input type="hidden" name="intent" value="oauth" />
+        <input type="hidden" name="provider" value="google" />
+        <input type="hidden" name="eventId" value={eventId} />
+        <input type="hidden" name="communityId" value={communityId} />
+        {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
+        <input
+          type="hidden"
+          name="eventSessionId"
+          value={resolvedTrackingContext.sessionId}
+        />
+        <input
+          type="hidden"
+          name="eventUtmSource"
+          value={resolvedTrackingContext.utmSource}
+        />
+        {resolvedTrackingContext.utmMedium ? (
+          <input
+            type="hidden"
+            name="eventUtmMedium"
+            value={resolvedTrackingContext.utmMedium}
+          />
+        ) : null}
+        {resolvedTrackingContext.utmCampaign ? (
+          <input
+            type="hidden"
+            name="eventUtmCampaign"
+            value={resolvedTrackingContext.utmCampaign}
+          />
+        ) : null}
+        {resolvedTrackingContext.utmContent ? (
+          <input
+            type="hidden"
+            name="eventUtmContent"
+            value={resolvedTrackingContext.utmContent}
+          />
+        ) : null}
+        {resolvedTrackingContext.utmTerm ? (
+          <input
+            type="hidden"
+            name="eventUtmTerm"
+            value={resolvedTrackingContext.utmTerm}
+          />
+        ) : null}
+        <input
+          type="hidden"
+          name="eventFirstVisitStartedAt"
+          value={resolvedTrackingContext.firstVisitStartedAt}
+        />
+      </form>
     </div>
   );
 }
