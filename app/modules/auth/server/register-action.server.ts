@@ -4,6 +4,7 @@ import { createClient } from "~/shared/lib/supabase/server";
 import { registerSchema } from "~/modules/auth/model/auth-schema";
 import type { ActionFunctionArgs } from "react-router";
 import { getSafeReturnTo } from "~/modules/auth/server/safe-return-to.server";
+import { clearPendingAuthCookies } from "~/modules/auth/server/pending-auth-cookies.server";
 
 const EXISTING_EMAIL_MESSAGE = "An account with this email already exists";
 const OAUTH_COOKIE_MAX_AGE_SECONDS = 600;
@@ -101,6 +102,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "check-email") {
+    clearPendingAuthCookies(headers);
+
     const email = (formData.get("email") as string | null)?.trim() || "";
     if (!email) {
       return Response.json(
@@ -128,6 +131,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "event-rsvp-signup") {
+    clearPendingAuthCookies(headers);
+
     const email = (formData.get("email") as string)?.trim() || "";
     const fullName = (formData.get("fullName") as string)?.trim() || "";
     const eventId = formData.get("eventId") as string | null;

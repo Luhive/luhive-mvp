@@ -10,21 +10,7 @@ import {
 } from "~/modules/events/server/resolve-public-event.server";
 import { completeEventRegistration } from "~/modules/events/server/complete-event-registration.server";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
-
-const OAUTH_PENDING_COOKIE_NAMES = [
-  "pending_community_id",
-  "pending_return_to",
-  "pending_event_id",
-  "pending_event_community_id",
-  "pending_event_join_community",
-  "pending_event_session_id",
-  "pending_event_utm_source",
-  "pending_event_utm_medium",
-  "pending_event_utm_campaign",
-  "pending_event_utm_content",
-  "pending_event_utm_term",
-  "pending_event_first_visit_started_at",
-];
+import { clearPendingAuthCookies } from "~/modules/auth/server/pending-auth-cookies.server";
 
 function getCookieValue(cookieHeader: string, name: string): string | null {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -35,15 +21,6 @@ function getCookieValue(cookieHeader: string, name: string): string | null {
     return decodeURIComponent(match[1]);
   } catch {
     return match[1];
-  }
-}
-
-function clearPendingCookies(headers: Headers) {
-  for (const name of OAUTH_PENDING_COOKIE_NAMES) {
-    headers.append(
-      "Set-Cookie",
-      `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
-    );
   }
 }
 
@@ -131,7 +108,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     if (data.user) {
-      clearPendingCookies(headers);
+      clearPendingAuthCookies(headers);
 
       logVerify("oauth session established", {
         userId: data.user.id,

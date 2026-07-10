@@ -383,13 +383,19 @@ export function RegistrationFlow({
   const handleOtpSuccess = (result: OtpVerifySuccessResult) => {
     onOtpVerified?.(result);
 
-    if (result.registrationState?.isUserRegistered) {
+    const isRegistered =
+      Boolean(result.registeredEvent) ||
+      Boolean(result.registrationState?.isUserRegistered);
+
+    if (isRegistered) {
+      toast.success("Successfully registered for the event!");
       onSuccess(result);
       return;
     }
 
-    toast.success("Successfully registered for the event!");
-    onSuccess(result);
+    // Auth-only OTP (e.g. custom questions still needed): leave OTP so the
+    // parent can show CustomQuestionsForm without a false success navigate.
+    setStep("form");
   };
 
   const formStepContent = (
