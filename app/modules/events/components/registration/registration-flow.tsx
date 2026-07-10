@@ -228,7 +228,22 @@ export function RegistrationFlow({
   }, [signupFetcher.data, signupFetcher.state, form]);
 
   React.useEffect(() => {
-    const handlePageShow = () => {
+    const oauthReturnKey = "luhive_event_oauth_return";
+
+    // Soft/bfcache return from Google: hard-reload once for a clean auth cookie
+    // and React state slate before the user continues with email.
+    if (sessionStorage.getItem(oauthReturnKey) === "1") {
+      sessionStorage.removeItem(oauthReturnKey);
+      window.location.reload();
+      return;
+    }
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted && sessionStorage.getItem(oauthReturnKey) === "1") {
+        sessionStorage.removeItem(oauthReturnKey);
+        window.location.reload();
+        return;
+      }
       setIsOAuthLoading(false);
     };
 
@@ -262,6 +277,7 @@ export function RegistrationFlow({
       resolvedTrackingContext.firstVisitStartedAt,
     );
 
+    sessionStorage.setItem("luhive_event_oauth_return", "1");
     setIsOAuthLoading(true);
     submit(formData, { method: "post", action: "/signup" });
   };
