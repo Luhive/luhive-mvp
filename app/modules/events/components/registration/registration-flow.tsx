@@ -150,6 +150,7 @@ export function RegistrationFlow({
   const pendingSignupRef = React.useRef<{ email: string; fullName: string } | null>(
     null,
   );
+  const signupTriggeredRef = React.useRef(false);
 
   const form = useForm<FormValues>({
     defaultValues: { email: "", fullName: "" },
@@ -180,8 +181,12 @@ export function RegistrationFlow({
 
     if (data.success && !data.userExists) {
       setUserExists(false);
+      if (signupTriggeredRef.current) return;
       const pending = pendingSignupRef.current;
       if (!pending) return;
+
+      signupTriggeredRef.current = true;
+      pendingSignupRef.current = null;
 
       const formData = new FormData();
       formData.append("intent", "event-rsvp-signup");
@@ -359,6 +364,7 @@ export function RegistrationFlow({
     if (!validated) return;
 
     pendingSignupRef.current = validated;
+    signupTriggeredRef.current = false;
 
     const formData = new FormData();
     formData.append("intent", "check-email");
