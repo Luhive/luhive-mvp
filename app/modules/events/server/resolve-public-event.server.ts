@@ -6,7 +6,7 @@ import { isUuid } from "~/modules/events/utils/event-slug";
 type Supabase = SupabaseClient<Database>;
 
 export const PUBLIC_COMMUNITY_COLUMNS =
-  "id, name, slug, logo_url, created_by, description, tagline, cover_url, verified, is_show, social_links";
+  "id, name, slug, logo_url, created_by, description, tagline, cover_url, verified, is_show, social_links, settings";
 
 export const PUBLIC_EVENT_COLUMNS =
   "id, slug, community_id, title, description, cover_url, start_time, end_time, timezone, status, capacity, registration_deadline, registration_type, custom_questions, external_platform, external_registration_url, event_type, location_address, location_lat, location_lng, location_name, location_place_id, online_meeting_link, discussion_link, is_approve_required, created_by, created_at, updated_at, external_registration_count";

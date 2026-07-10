@@ -65,6 +65,8 @@ export interface EventDetailLoaderData {
     logo_url: string | null;
     role: "host" | "co-host";
     isMember: boolean;
+    settings: Community["settings"];
+    social_links: Community["social_links"];
   }>;
 }
 
@@ -132,12 +134,14 @@ export async function loader({
             name: community.name,
             slug: community.slug,
             logo_url: community.logo_url,
+            settings: community.settings,
+            social_links: community.social_links,
           },
           error: null,
         })
       : supabase
           .from("communities")
-          .select("id, name, slug, logo_url")
+          .select("id, name, slug, logo_url, settings, social_links")
           .eq("id", event.community_id)
           .single(),
   ]);
@@ -279,6 +283,8 @@ export async function loader({
     logo_url: string | null;
     role: "host" | "co-host";
     isMember: boolean;
+    settings: Community["settings"];
+    social_links: Community["social_links"];
   }> = [];
 
   hostingCommunities.push({
@@ -288,6 +294,8 @@ export async function loader({
     logo_url: hostCommunity.logo_url,
     role: "host",
     isMember: false,
+    settings: hostCommunity.settings ?? null,
+    social_links: hostCommunity.social_links ?? null,
   });
 
   for (const collab of collaborations) {
@@ -303,6 +311,8 @@ export async function loader({
           logo_url: coHostCommunity.logo_url,
           role: "co-host",
           isMember: false,
+          settings: coHostCommunity.settings ?? null,
+          social_links: coHostCommunity.social_links ?? null,
         });
       }
     }
