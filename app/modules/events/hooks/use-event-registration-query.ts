@@ -70,22 +70,29 @@ export function useInvalidateEventRegistrationQuery(eventId: string) {
 }
 
 /**
- * Merge known event-page user fields into the cache for an instant UI update,
- * then refetch in the background to reconcile anything not provided.
+ * Merge known event-page user fields into the cache for an instant UI update.
+ * By default refetches in the background to reconcile anything not provided.
+ * Pass `{ revalidate: false }` when the caller already has a complete state
+ * (e.g. OTP verify) so we do not race new session cookies with a refetch.
  */
 export function useRegistrationCacheUpdate(eventId: string) {
 	const queryClient = useQueryClient();
 
 	return useCallback(
-		(state: Partial<EventPageUserState>) => {
+		(
+			state: Partial<EventPageUserState>,
+			{ revalidate = true }: { revalidate?: boolean } = {},
+		) => {
 			queryClient.setQueryData<EventPageUserState>(
 				eventRegistrationKey(eventId),
 				(current) => (current ? { ...current, ...state } : current),
 			);
 
-			void queryClient.invalidateQueries({
-				queryKey: eventRegistrationKey(eventId),
-			});
+			if (revalidate) {
+				void queryClient.invalidateQueries({
+					queryKey: eventRegistrationKey(eventId),
+				});
+			}
 		},
 		[eventId, queryClient],
 	);

@@ -586,5 +586,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hasCode: Boolean(url.searchParams.get("code")),
     hasTokenHash: Boolean(url.searchParams.get("token_hash")),
   });
+  clearPendingAuthCookies(headers);
+  await supabase.auth.signOut({ scope: "local" });
   return redirect("/login?error=verification-failed", { headers });
 }
