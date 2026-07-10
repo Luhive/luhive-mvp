@@ -80,13 +80,14 @@ export function EventRegisterView({
   });
 
   // Guest/OTP flows register outside this route's action, so flip the UI
-  // from what we know; the cache update refetches the rest (count, token).
+  // from what we know. Skip refetch when OTP already returned full state —
+  // an immediate GET would race before new session cookies stick.
   const handleOtpVerified = (result: OtpVerifySuccessResult) => {
     if (result.userProfile) {
       setCurrentUserCache(result.userProfile);
     }
     if (result.registrationState) {
-      updateEventPageCache(result.registrationState);
+      updateEventPageCache(result.registrationState, { revalidate: false });
     } else {
       invalidateEventRegistration();
     }
@@ -98,7 +99,7 @@ export function EventRegisterView({
     }
 
     if (result?.registrationState) {
-      updateEventPageCache(result.registrationState);
+      updateEventPageCache(result.registrationState, { revalidate: false });
     } else {
       updateEventPageCache({
         isUserRegistered: true,

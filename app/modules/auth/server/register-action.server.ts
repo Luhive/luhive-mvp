@@ -103,6 +103,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "check-email") {
     clearPendingAuthCookies(headers);
+    await supabase.auth.signOut({ scope: "local" });
 
     const email = (formData.get("email") as string | null)?.trim() || "";
     if (!email) {
@@ -132,6 +133,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "event-rsvp-signup") {
     clearPendingAuthCookies(headers);
+    await supabase.auth.signOut({ scope: "local" });
 
     const email = (formData.get("email") as string)?.trim() || "";
     const fullName = (formData.get("fullName") as string)?.trim() || "";
