@@ -11,6 +11,8 @@ export type CollaborationWithCommunity = Collaboration & {
     name: string;
     slug: string;
     logo_url: string | null;
+    settings?: Database["public"]["Tables"]["communities"]["Row"]["settings"];
+    social_links?: Database["public"]["Tables"]["communities"]["Row"]["social_links"];
   };
 };
 
@@ -30,7 +32,9 @@ export async function getEventCollaborations(
         id,
         name,
         slug,
-        logo_url
+        logo_url,
+        settings,
+        social_links
       )
     `
     )

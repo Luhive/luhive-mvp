@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Button } from "~/shared/components/ui/button";
 import { JoinCommunityForm } from "~/modules/community/components/join-community-form";
+import { resolveEventHostedByJoinCta } from "~/modules/community/utils/resolve-event-hosted-by-join-cta";
 import type { Community } from "~/shared/models/entity.types";
 import { Routes } from "~/shared/lib/routing/routes";
 import React from "react";
@@ -15,6 +16,8 @@ type Host = {
   logo_url: string | null;
   role: "host" | "co-host";
   isMember?: boolean;
+  settings?: Community["settings"];
+  social_links?: Community["social_links"];
 };
 
 interface HostedByProps {
@@ -47,6 +50,8 @@ export function HostedBy({
             slug: fallbackCommunity.slug,
             logo_url: fallbackCommunity.logo_url,
             role: "host" as const,
+            settings: fallbackCommunity.settings,
+            social_links: fallbackCommunity.social_links,
           },
         ];
 
@@ -64,82 +69,105 @@ export function HostedBy({
         Hosted By
       </h3>
       <div className={cn("space-y-2", hideLabelOnMobile && "space-y-1 lg:space-y-2")}>
-        {resolvedHosts.map((host) => (
-          <div
-            key={host.id}
-            className={cn(
-              "flex items-center gap-3",
-              hideLabelOnMobile && "gap-2 lg:gap-3",
-            )}
-          >
-            <a
-              href={Routes.community.detail(host.slug)}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(Routes.community.detail(host.slug));
-              }}
+        {resolvedHosts.map((host) => {
+          const joinCta = resolveEventHostedByJoinCta({
+            settings: host.settings,
+            socialLinks: host.social_links,
+          });
+
+          return (
+            <div
+              key={host.id}
               className={cn(
-                "flex items-center gap-3 min-w-0 flex-1 group",
+                "flex items-center gap-3",
                 hideLabelOnMobile && "gap-2 lg:gap-3",
               )}
             >
-              <Avatar
+              <a
+                href={Routes.community.detail(host.slug)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(Routes.community.detail(host.slug));
+                }}
                 className={cn(
-                  avatarSize,
-                  hideLabelOnMobile && "h-4 w-4 lg:h-8 lg:w-8",
+                  "flex items-center gap-3 min-w-0 flex-1 group",
+                  hideLabelOnMobile && "gap-2 lg:gap-3",
                 )}
               >
-                <AvatarImage src={host.logo_url || ""} alt={host.name} />
-                <AvatarFallback
+                <Avatar
                   className={cn(
-                    "bg-primary/10 text-primary text-xs font-semibold",
-                    hideLabelOnMobile && "text-[8px] lg:text-xs",
+                    avatarSize,
+                    hideLabelOnMobile && "h-4 w-4 lg:h-8 lg:w-8",
                   )}
                 >
-                  {host.name?.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <span
-                className={cn(
-                  "text-sm truncate inline-flex items-center gap-0.5 min-w-0 group-hover:underline",
-                  hideLabelOnMobile ? "font-bold lg:font-medium" : "font-medium",
-                )}
-              >
-                {host.name}
-                <ChevronRight className="h-3.5 w-3.5 font-medium shrink-0 opacity-70" />
-              </span>
-            </a>
-            {showJoin && (
-              <div className="hidden lg:block shrink-0">
-                <JoinCommunityForm
-                  communityId={host.id}
-                  communityName={host.name}
-                  userEmail={userEmail ?? undefined}
-                  isLoggedIn={isLoggedIn}
-                  isMember={host.isMember ?? false}
-                  returnTo={pathname}
-                  trigger={
-                    host.isMember ? (
-                      <Button
-                        size="sm"
-                        className="shrink-0 rounded-full py-0 h-8 bg-transparent border border-primary/50 text-primary/90 shadow-none hover:bg-primary/10"
+                  <AvatarImage src={host.logo_url || ""} alt={host.name} />
+                  <AvatarFallback
+                    className={cn(
+                      "bg-primary/10 text-primary text-xs font-semibold",
+                      hideLabelOnMobile && "text-[8px] lg:text-xs",
+                    )}
+                  >
+                    {host.name?.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span
+                  className={cn(
+                    "text-sm truncate inline-flex items-center gap-0.5 min-w-0 group-hover:underline",
+                    hideLabelOnMobile ? "font-bold lg:font-medium" : "font-medium",
+                  )}
+                >
+                  {host.name}
+                  <ChevronRight className="h-3.5 w-3.5 font-medium shrink-0 opacity-70" />
+                </span>
+              </a>
+              {showJoin && (
+                <div className="hidden lg:block shrink-0">
+                  {joinCta.mode === "whatsapp" ? (
+                    <Button
+                      size="sm"
+                      asChild
+                      className="shrink-0 rounded-full py-0 h-8 bg-primary/15 text-primary/90 shadow-none hover:bg-primary/20"
+                    >
+                      <a
+                        href={joinCta.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        Joined
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="shrink-0 rounded-full py-0 h-8  bg-primary/15 text-primary/90 shadow-none hover:bg-primary/20"
-                      >
-                        Join
-                      </Button>
-                    )
-                  }
-                />
-              </div>
-            )}
-          </div>
-        ))}
+                        {joinCta.label}
+                      </a>
+                    </Button>
+                  ) : (
+                    <JoinCommunityForm
+                      communityId={host.id}
+                      communityName={host.name}
+                      userEmail={userEmail ?? undefined}
+                      isLoggedIn={isLoggedIn}
+                      isMember={host.isMember ?? false}
+                      returnTo={pathname}
+                      trigger={
+                        host.isMember ? (
+                          <Button
+                            size="sm"
+                            className="shrink-0 rounded-full py-0 h-8 bg-transparent border border-primary/50 text-primary/90 shadow-none hover:bg-primary/10"
+                          >
+                            Joined
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="shrink-0 rounded-full py-0 h-8  bg-primary/15 text-primary/90 shadow-none hover:bg-primary/20"
+                          >
+                            Join
+                          </Button>
+                        )
+                      }
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
