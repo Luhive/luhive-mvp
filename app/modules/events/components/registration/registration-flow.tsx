@@ -202,7 +202,14 @@ export function RegistrationFlow({
     if (data.error) {
       setFormError(data.error);
     }
-  }, [checkEmailFetcher.data, checkEmailFetcher.state, communityId, eventId, form, signupFetcher]);
+  }, [
+    checkEmailFetcher.data,
+    checkEmailFetcher.state,
+    communityId,
+    eventId,
+    form,
+    signupFetcher.submit,
+  ]);
 
   React.useEffect(() => {
     const data = signupFetcher.data;

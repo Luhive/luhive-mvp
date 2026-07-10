@@ -215,7 +215,7 @@ export function OtpInputInline({
     fullName,
     otpValue,
     returnTo,
-    verifyFetcher,
+    verifyFetcher.submit,
   ]);
 
   const handleVerifySubmit = () => {
