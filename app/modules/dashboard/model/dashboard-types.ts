@@ -29,3 +29,7 @@ export type DashboardStatsData = {
   uniqueVisitors: number;
   joinedUsers: number;
 };
+
+export type NotificationSettingsLoaderData = {
+  notifyRegistrations: boolean;
+};

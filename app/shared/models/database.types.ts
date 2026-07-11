@@ -211,6 +211,7 @@ export type Database = {
           id: string
           joined_at: string | null
           metadata: Json | null
+          notify_registrations: boolean
           role: string | null
           user_id: string | null
         }
@@ -221,6 +222,7 @@ export type Database = {
           id?: string
           joined_at?: string | null
           metadata?: Json | null
+          notify_registrations?: boolean
           role?: string | null
           user_id?: string | null
         }
@@ -231,6 +233,7 @@ export type Database = {
           id?: string
           joined_at?: string | null
           metadata?: Json | null
+          notify_registrations?: boolean
           role?: string | null
           user_id?: string | null
         }
