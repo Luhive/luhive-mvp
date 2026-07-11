@@ -92,6 +92,7 @@ export class Routes {
     forms: (slug: string) => `${DASHBOARD_BASE}/${slug}/forms`,
     form: (slug: string, formId: string) =>
       `${DASHBOARD_BASE}/${slug}/forms/${formId}`,
+    settings: (slug: string) => `${DASHBOARD_BASE}/${slug}/settings`,
   };
 
   static api = {

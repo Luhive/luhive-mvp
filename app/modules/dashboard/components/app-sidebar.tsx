@@ -99,16 +99,11 @@ export function AppSidebar({ community, user, userEmail, role, collabRequestCoun
   ];
 
   const navSecondary: { title: string; url: string; icon: LucideIcon }[] = [
-    // {
-    //   title: "Settings",
-    //   url: `/dashboard/${communitySlug}/settings`,
-    //   icon: Settings,
-    // },
-    // {
-    //   title: "Get Help",
-    //   url: "#",
-    //   icon: HelpCircle,
-    // },
+    {
+      title: "Settings",
+      url: `/dashboard/${communitySlug}/settings`,
+      icon: Settings,
+    },
   ];
 
   const userData = {

@@ -34,7 +34,8 @@ export async function sendRegistrationOrganizerNotifications(
 		.from("community_members")
 		.select("user_id")
 		.eq("community_id", hostCommunityId)
-		.in("role", ["owner", "admin"]);
+		.in("role", ["owner", "admin"])
+		.eq("notify_registrations", true);
 
 	let coHostAdminIds: string[] = [];
 	if (coHostCommunityNames.length > 0) {
@@ -49,7 +50,8 @@ export async function sendRegistrationOrganizerNotifications(
 				.from("community_members")
 				.select("user_id")
 				.in("community_id", coHostIds)
-				.in("role", ["owner", "admin"]);
+				.in("role", ["owner", "admin"])
+				.eq("notify_registrations", true);
 
 			if (coHostAdmins) {
 				coHostAdminIds = coHostAdmins

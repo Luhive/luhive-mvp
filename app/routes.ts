@@ -91,6 +91,7 @@ export default [
     route("attenders", "routes/dashboard/attenders.tsx"),
     route("forms", "routes/dashboard/forms.tsx"),
     route("forms/:formId", "routes/dashboard/forms-detail.tsx"),
+    route("settings", "routes/dashboard/settings.tsx"),
   ]),
 
   route("logout", "routes/auth/logout.tsx"),
