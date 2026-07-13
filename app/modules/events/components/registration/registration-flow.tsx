@@ -28,6 +28,8 @@ import {
   validateCustomAnswers,
 } from "~/modules/events/utils/custom-questions";
 import { cn } from "~/shared/lib/utils/cn";
+import { useIsInAppBrowser } from "~/shared/hooks/use-is-in-app-browser";
+import { GoogleInAppBrowserHint } from "~/shared/components/google-in-app-browser-hint";
 import type { OtpVerifySuccessResult } from "~/modules/auth/model/otp.types";
 
 const EMAIL_EXPAND_EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
@@ -131,6 +133,7 @@ export function RegistrationFlow({
   variant = "default",
 }: RegistrationFlowProps) {
   const isOverlay = variant === "overlay";
+  const isInAppBrowser = useIsInAppBrowser();
   const checkEmailFetcher = useFetcher<CheckEmailFetcherData>();
   const signupFetcher = useFetcher<SignupFetcherData>();
   const submit = useSubmit();
@@ -252,6 +255,8 @@ export function RegistrationFlow({
   }, []);
 
   const handleContinueWithGoogle = () => {
+    if (isInAppBrowser) return;
+
     const formData = new FormData();
     formData.append("intent", "oauth");
     formData.append("provider", "google");
@@ -416,23 +421,28 @@ export function RegistrationFlow({
 
   const formStepContent = (
     <form onSubmit={handleFormSubmit} className="space-y-5">
-      <Button
-        type="button"
-        onClick={handleContinueWithGoogle}
-        disabled={isSubmittingForm || isOAuthLoading}
-        variant="outline"
-        className="w-full hover:bg-muted hover:text-foreground"
-        size={isOverlay ? "lg" : "default"}
-      >
-        {isOAuthLoading ? (
-          <Spinner />
-        ) : (
-          <>
-            <GoogleIcon className="mr-1 size-5 shrink-0" />
-            Register with Google
-          </>
-        )}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          type="button"
+          onClick={handleContinueWithGoogle}
+          disabled={isSubmittingForm || isOAuthLoading || isInAppBrowser}
+          variant="outline"
+          className="w-full hover:bg-muted hover:text-foreground"
+          size={isOverlay ? "lg" : "default"}
+        >
+          {isOAuthLoading ? (
+            <Spinner />
+          ) : (
+            <>
+              <GoogleIcon className="mr-1 size-5 shrink-0" />
+              Register with Google
+            </>
+          )}
+        </Button>
+        {isInAppBrowser ? (
+          <GoogleInAppBrowserHint className="text-center text-sm text-muted-foreground" />
+        ) : null}
+      </div>
 
       <div className="space-y-0">
         <div
