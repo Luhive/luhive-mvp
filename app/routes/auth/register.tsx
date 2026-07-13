@@ -10,6 +10,8 @@ import { Button } from "~/shared/components/ui/button";
 import LuhiveLogo from "~/assets/images/LuhiveLogo.svg";
 import { Spinner } from "~/shared/components/ui/spinner";
 import { toast } from "sonner";
+import { useIsInAppBrowser } from "~/shared/hooks/use-is-in-app-browser";
+import { GoogleInAppBrowserHint } from "~/shared/components/google-in-app-browser-hint";
 
 type ActionData = {
   success: boolean;
@@ -28,6 +30,7 @@ export default function RegisterPage() {
   const navigation = useNavigation();
   const [searchParams] = useSearchParams();
   const isSubmitting = navigation.state === "submitting";
+  const isInAppBrowser = useIsInAppBrowser();
 
   const submittingIntent = navigation.formData?.get("intent") as string | null;
   const isSubmittingPassword = isSubmitting && submittingIntent === "password";
@@ -112,42 +115,45 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <Form method="post" className="flex" replace>
-          <input type="hidden" name="intent" value="oauth" />
-          <input type="hidden" name="provider" value="google" />
-          {communityIdParam && (
-            <input type="hidden" name="communityId" value={communityIdParam} />
-          )}
-          {returnToParam && (
-            <input type="hidden" name="returnTo" value={returnToParam} />
-          )}
-          <Button
-            disabled={isSubmittingOAuth}
-            variant="outline"
-            className="w-full hover:bg-muted hover:text-foreground"
-            type="submit"
-          >
-            {isSubmittingOAuth ? (
-              <Spinner />
-            ) : (
-              <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 48 48"
-                  className="size-5 mr-1"
-                  aria-hidden
-                  focusable="false"
-                >
-                  <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.843 32.658 29.29 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20c10.494 0 19.143-7.656 19.143-20 0-1.341-.147-2.652-.432-3.917z" />
-                  <path fill="#FF3D00" d="M6.306 14.691l6.571 4.813C14.297 16.128 18.787 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 15.316 4 7.954 8.924 6.306 14.691z" />
-                  <path fill="#4CAF50" d="M24 44c5.196 0 9.86-1.992 13.38-5.223l-6.173-5.234C29.093 34.484 26.682 35.5 24 35.5c-5.262 0-9.799-3.507-11.397-8.248l-6.52 5.017C8.704 39.043 15.83 44 24 44z" />
-                  <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z" />
-                </svg>
-                Continue with Google
-              </>
+        <div className="space-y-2">
+          <Form method="post" className="flex" replace>
+            <input type="hidden" name="intent" value="oauth" />
+            <input type="hidden" name="provider" value="google" />
+            {communityIdParam && (
+              <input type="hidden" name="communityId" value={communityIdParam} />
             )}
-          </Button>
-        </Form>
+            {returnToParam && (
+              <input type="hidden" name="returnTo" value={returnToParam} />
+            )}
+            <Button
+              disabled={isSubmittingOAuth || isInAppBrowser}
+              variant="outline"
+              className="w-full hover:bg-muted hover:text-foreground"
+              type="submit"
+            >
+              {isSubmittingOAuth ? (
+                <Spinner />
+              ) : (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 48 48"
+                    className="size-5 mr-1"
+                    aria-hidden
+                    focusable="false"
+                  >
+                    <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.843 32.658 29.29 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20c10.494 0 19.143-7.656 19.143-20 0-1.341-.147-2.652-.432-3.917z" />
+                    <path fill="#FF3D00" d="M6.306 14.691l6.571 4.813C14.297 16.128 18.787 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.676 6.053 29.629 4 24 4 15.316 4 7.954 8.924 6.306 14.691z" />
+                    <path fill="#4CAF50" d="M24 44c5.196 0 9.86-1.992 13.38-5.223l-6.173-5.234C29.093 34.484 26.682 35.5 24 35.5c-5.262 0-9.799-3.507-11.397-8.248l-6.52 5.017C8.704 39.043 15.83 44 24 44z" />
+                    <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-1.018 2.977-3.279 5.308-6.093 6.443l.001-.001 6.173 5.234C34.84 40.782 43 36 43 24c0-1.341-.147-2.652-.432-3.917z" />
+                  </svg>
+                  Continue with Google
+                </>
+              )}
+            </Button>
+          </Form>
+          {isInAppBrowser ? <GoogleInAppBrowserHint /> : null}
+        </div>
 
         <div className="my-6 flex items-center gap-4">
           <div className="h-px flex-1 bg-border" />

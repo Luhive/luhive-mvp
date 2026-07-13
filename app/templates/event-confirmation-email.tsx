@@ -149,20 +149,6 @@ export const EventConfirmationEmail = ({
 						</Section>
 					)}
 
-					<Section className="border-l-4 p-4 mb-8 rounded" style={{ backgroundColor: '#FFF5EE', borderLeftColor: '#FF8040' }}>
-						<Text className="text-sm leading-relaxed m-0" style={{ color: '#6B6B6B' }}>
-							💡 <strong style={{ color: '#242424' }}>Make it easier next time!</strong> Create a free
-							Luhive account for instant one-click registration at future events.{" "}
-							<Link
-								href={registerAccountLink}
-								className="underline"
-								style={{ color: '#FF8040' }}
-							>
-								Sign up now
-							</Link>
-						</Text>
-					</Section>
-
 					<Text className="text-sm leading-relaxed text-center mb-8" style={{ color: '#6B6B6B' }}>
 						We look forward to seeing you at the event!
 					</Text>
