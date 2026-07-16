@@ -104,6 +104,9 @@ export default [
   route("auth/forgot-password", "routes/auth/forgot-password.tsx"),
   route("auth/verify/reset-password", "routes/auth/verify-reset-password.tsx"),
 
+  // OG image generation
+  route("api/og/event/:slug/:eventSlug", "routes/api/og/event.tsx"),
+
   // Events API routes
   route("api/events/create", "routes/api/events/create.tsx"),
   route("api/events/update", "routes/api/events/update.tsx"),

@@ -13,3 +13,4 @@ dbMigration.sh
 /.react-router/
 /build/
 package-lock.json
+.pnpm-store/

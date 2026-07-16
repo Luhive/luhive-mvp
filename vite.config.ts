@@ -72,7 +72,7 @@ export default defineConfig((config) => {
   return {
     ssr: {},
     server: {
-      allowedHosts: ["1421-82-194-22-223.ngrok-free.app"],
+      allowedHosts: ["screenshot-exactly-baker-trembl.trycloudflare.com"],
     },
     plugins: [
       tailwindcss(),

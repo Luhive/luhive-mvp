@@ -16,39 +16,15 @@ export function meta({ data }: { data?: EventDetailLoaderData }) {
 
   const canonicalUrl = Routes.absolute(origin, Routes.community.event(community.slug, publicEventSlug(event)));
 
-  const getAbsoluteImageUrl = (url: string | null | undefined): string => {
-    if (!url) return "";
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
-    if (url.startsWith("/")) {
-      return `${origin}${url}`;
-    }
-    return url;
-  };
-
-  let imageUrl = getAbsoluteImageUrl(event.cover_url || community.logo_url);
-
-  if (!imageUrl) {
-    imageUrl = "https://luhive.com/LuhiveLogoBackground.png";
-  }
-
-  if (imageUrl) {
-    try {
-      const url = new URL(imageUrl);
-      url.search = "";
-      imageUrl = url.toString();
-
-      if (
-        imageUrl.includes("supabase.co") &&
-        !imageUrl.startsWith("https://")
-      ) {
-        imageUrl = imageUrl.replace(/^http:\/\//, "https://");
-      }
-    } catch (e) {
-      console.warn("Failed to parse image URL:", imageUrl);
-    }
-  }
+  // Custom branded OG image, generated on-demand. Immutable-cached, so append a
+  // version derived from the event's last update to bust the cache on changes.
+  const ogVersion = event.updated_at
+    ? new Date(event.updated_at).getTime()
+    : null;
+  const imageUrl = `${Routes.absolute(
+    origin,
+    Routes.og.event(community.slug, publicEventSlug(event)),
+  )}${ogVersion ? `?v=${ogVersion}` : ""}`;
 
   const communityName = community?.name ?? "Community";
 
@@ -76,21 +52,10 @@ export function meta({ data }: { data?: EventDetailLoaderData }) {
   ];
 
   if (imageUrl) {
-    const getImageType = (url: string): string => {
-      const lowerUrl = url.toLowerCase();
-      if (lowerUrl.includes(".png")) return "image/png";
-      if (lowerUrl.includes(".jpg") || lowerUrl.includes(".jpeg"))
-        return "image/jpeg";
-      if (lowerUrl.includes(".webp")) return "image/webp";
-      return "image/jpeg";
-    };
-
-    const imageType = getImageType(imageUrl);
-
     metaTags.push(
       { property: "og:image", content: imageUrl },
       { property: "og:image:secure_url", content: imageUrl },
-      { property: "og:image:type", content: imageType },
+      { property: "og:image:type", content: "image/png" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:alt", content: `${event.title} - ${communityName}` }

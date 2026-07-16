@@ -95,6 +95,11 @@ export class Routes {
     settings: (slug: string) => `${DASHBOARD_BASE}/${slug}/settings`,
   };
 
+  static og = {
+    event: (communitySlug: string, eventSlug: string) =>
+      `${API_BASE}/og/event/${communitySlug}/${eventSlug}`,
+  };
+
   static api = {
     events: {
       attendersEmails: `${API_BASE}/events/attenders-emails`,
