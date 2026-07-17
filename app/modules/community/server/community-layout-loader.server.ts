@@ -1,3 +1,4 @@
+import { redirect } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
 import type { LoaderFunctionArgs } from "react-router";
 import type { Community } from "~/modules/community/model/community-types";
@@ -6,6 +7,7 @@ import {
   logLoaderTiming,
   timedLoader,
 } from "~/shared/lib/diagnostics/loader-timing.server";
+import { getLegacyCommunitySlugRedirect } from "~/modules/community/server/legacy-community-slug-redirect.server";
 
 const COMMUNITY_LAYOUT_COLUMNS =
   "id, name, slug, logo_url, created_by, description, tagline, cover_url, verified, is_show, social_links";
@@ -29,9 +31,18 @@ export async function loader({
 
   const {
     data: { user },
-  } = await timedLoader("communityLayout auth getUser", supabase.auth.getUser());
+  } = await timedLoader(
+    "communityLayout auth getUser",
+    supabase.auth.getUser(),
+  );
 
   const slug = (params as { slug?: string }).slug;
+
+  //TODO: Remove this once we have a proper redirect system
+  if (slug) {
+    const legacyTarget = getLegacyCommunitySlugRedirect(request, slug);
+    if (legacyTarget) throw redirect(legacyTarget, 302);
+  }
 
   if (!slug) {
     const { data: profile } = user
