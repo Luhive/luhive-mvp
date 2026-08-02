@@ -2,8 +2,8 @@ import { useTranslation } from 'react-i18next';
 
 import { GlowBorder } from "~/components/core/glowing-border";
 import { Button } from '~/shared/components/ui/button';
+import { useCalBookingUrl } from '~/shared/hooks/use-cal-booking-url';
 import { AnalyticsEvents } from '~/shared/lib/analytics';
-import { LUHIVE_CREATE_COMMUNITY_BOOKING_URL } from '~/shared/lib/utils/url';
 
 const FREE_FEATURE_KEYS = ['feature1', 'feature2', 'feature3'] as const;
 const BUSINESS_FEATURE_KEYS = ['feature1', 'feature2', 'feature3'] as const;
@@ -27,6 +27,7 @@ function PricingBulletList({ plan }: { plan: 'free' | 'business' }) {
 
 export function LandingPricing() {
   const { t } = useTranslation('landing');
+  const bookingUrl = useCalBookingUrl();
 
   return (
     <section id="pricing" className="bg-[#F6F4F1] py-16 md:py-24">
@@ -64,7 +65,7 @@ export function LandingPricing() {
                 asChild
               >
                 <a
-                  href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+                  href={bookingUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() =>
@@ -121,7 +122,7 @@ export function LandingPricing() {
                   asChild
                 >
                   <a
-                    href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+                    href={bookingUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() =>

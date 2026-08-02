@@ -11,6 +11,7 @@ import { useEffect } from "react";
 
 import * as Sentry from "@sentry/react-router";
 import { initGA, trackPageView } from "~/shared/lib/analytics";
+import { readFirstTouchSource } from "~/shared/lib/first-touch.server";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -22,7 +23,9 @@ import { Toaster } from "~/shared/components/ui/sonner";
 import ErrorComponent from "./routes/error";
 import { QueryProvider } from "~/shared/lib/query/query-provider";
 
-
+export async function loader({ request }: Route.LoaderArgs) {
+  return { firstTouchSource: readFirstTouchSource(request) };
+}
 
 export const links: Route.LinksFunction = () => [
   // Preload local Manrope font files for faster first paint
@@ -56,6 +59,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <script
+          defer
+          src="https://cloud.umami.is/script.js"
+          data-website-id="f5c72579-b361-4002-bda5-bd5ffb7e247d"
+          data-tag="main"
+          data-domains="luhive.com"
+          data-performance="true"
+        />
       </head>
       <body>
         {children}
