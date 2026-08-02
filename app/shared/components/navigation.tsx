@@ -3,7 +3,7 @@ import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/shared/components/ui/avatar";
 import { Button } from "~/shared/components/ui/button";
 import { cn } from "~/shared/lib/utils/cn";
-import { LUHIVE_CREATE_COMMUNITY_BOOKING_URL } from "~/shared/lib/utils/url";
+import { useCalBookingUrl } from "~/shared/hooks/use-cal-booking-url";
 import LuhiveLogo from "~/assets/images/LuhiveLogo.svg";
 
 interface TopNavigationProps {
@@ -20,6 +20,7 @@ export function TopNavigation({
 }: TopNavigationProps) {
   const location = useLocation();
   const returnTo = `${location.pathname}${location.search}`;
+  const bookingUrl = useCalBookingUrl();
 
   const getAvatarContent = () => {
     if (user?.avatar_url) return null;
@@ -54,7 +55,7 @@ export function TopNavigation({
             )}
             asChild
           >
-            <a href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL} target="_blank" rel="noopener noreferrer">
+            <a href={bookingUrl} target="_blank" rel="noopener noreferrer">
               <span className="text-sm text-primary/60 hover:text-primary transition-colors">
                 Create Community
               </span>

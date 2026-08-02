@@ -10,9 +10,10 @@ import {
   AvatarImage,
 } from "~/shared/components/ui/avatar";
 import { createClient } from '~/shared/lib/supabase/client';
+import { useCalBookingUrl } from "~/shared/hooks/use-cal-booking-url";
 import { AnalyticsEvents } from "~/shared/lib/analytics";
 import { cn } from "~/shared/lib/utils/cn";
-import { LUHIVE_CREATE_COMMUNITY_BOOKING_URL } from "~/shared/lib/utils/url";
+
 interface UserData {
   id: string;
   full_name: string | null;
@@ -50,6 +51,7 @@ type NavSectionId = "features" | "pricing" | "faqs";
 
 export function LandingNavbar() {
   const { t } = useTranslation('landing');
+  const bookingUrl = useCalBookingUrl();
   const [user, setUser] = useState<UserData | null>(null);
   const [, setIsLoadingUser] = useState(true);
   const [scrolled, setScrolled] = useState(false);
@@ -216,7 +218,7 @@ export function LandingNavbar() {
           {/* CTA — same Book a Call on mobile + desktop */}
           <div className="flex items-center gap-1 shrink-0">
             <a
-              href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+              href={bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => AnalyticsEvents.bookDemoClick("Header V2")}
@@ -322,7 +324,7 @@ export function LandingNavbar() {
                 asChild
               >
                 <a
-                  href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+                  href={bookingUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => {

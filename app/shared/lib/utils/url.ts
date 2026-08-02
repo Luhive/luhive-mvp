@@ -10,6 +10,18 @@ export const LUHIVE_CREATE_COMMUNITY_BOOKING_URL =
   "https://cal.com/luhive/30min?user=luhive";
 
 /**
+ * Builds the Cal.com booking URL, appending `source` when first-touch
+ * attribution from free tools is present.
+ */
+export function buildCalBookingUrl(firstTouchSource: string | null): string {
+  if (!firstTouchSource) return LUHIVE_CREATE_COMMUNITY_BOOKING_URL;
+
+  const url = new URL(LUHIVE_CREATE_COMMUNITY_BOOKING_URL);
+  url.searchParams.set("source", firstTouchSource);
+  return url.toString();
+}
+
+/**
  * Safely parse a URL string.
  *
  * Returns a URL instance on success, or null if the value is falsy or invalid.

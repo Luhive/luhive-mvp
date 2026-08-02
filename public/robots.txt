@@ -1,4 +1,4 @@
-# robots.txt for app.luhive.com
+# robots.txt for luhive.com
 
 User-agent: *
 Allow: /
@@ -18,5 +18,4 @@ Disallow: /c/*/events/*/verification-sent
 Disallow: /api/
 
 # Sitemap location
-Sitemap: https://app.luhive.com/sitemap.xml
-
+Sitemap: https://luhive.com/sitemap.xml
