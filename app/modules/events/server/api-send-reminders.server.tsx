@@ -260,7 +260,7 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
             await resend.emails.send({
               from: FROM_EMAIL,
               to: [participantEmail],
-              subject: `Reminder: ${event.title} is ${getReminderSubjectSuffix(reminderTime)}!`,
+              subject: `Reminder: ${event.title} is ${getReminderSubjectSuffix(reminderTime)}`,
               react: EventReminderEmail({
                 eventTitle: event.title,
                 communityName:

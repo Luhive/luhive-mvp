@@ -13,9 +13,11 @@ import { CommunityAnnouncementEmail } from "~/templates/community-announcement-e
 import { CollaborationInviteEmail } from "~/templates/collaboration-invite-email";
 import { EventInviteEmail } from "~/templates/event-invite-email";
 import { CollaborationAcceptedEmail } from "~/templates/collaboration-accepted-email";
+import { NewEventNotificationEmail } from "~/templates/new-event-notification-email";
+import { NewCollaborationEventEmail } from "~/templates/new-collaboration-event-email";
+import { EventRegistrationNotificationEmail } from "~/templates/event-registration-notification-email";
 import { generateICS } from "~/modules/events/utils/ics-manager";
 import {
-  buildUnsubscribeFooterHtml,
   buildUnsubscribeListHeaders,
   buildUnsubscribeUrl,
   getEmailOrigin,
@@ -974,12 +976,12 @@ export async function sendEventScheduleUpdateEmail(
   console.log(`📧 Attempting to send event schedule update email:`, {
     to: recipientEmail,
     from: `${communityName} <${baseEmailAddress}>`,
-    subject: `Event Updated: ${eventTitle}`,
+    subject: `Event updated: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
-    subject: `Event Updated: ${eventTitle}`,
+    subject: `Event updated: ${eventTitle}`,
     from: `${communityName} <${baseEmailAddress}>`,
     react: EventUpdateEmail({
       eventTitle,
@@ -1128,7 +1130,7 @@ export async function sendRegistrationConfirmationEmail(
   console.log(`📧 Attempting to send confirmation email:`, {
     to: recipientEmail,
     from: FROM_EMAIL,
-    subject: `You're registered for ${eventTitle}!`,
+    subject: `You're registered: ${eventTitle}`,
   });
 
   // Generate ICS file content
@@ -1186,7 +1188,7 @@ export async function sendRegistrationConfirmationEmail(
 
   const result = await sendEmail({
     to: recipientEmail,
-    subject: `You're registered for ${eventTitle}!`,
+    subject: `You're registered: ${eventTitle}`,
     react: EventConfirmationEmail(confirmationEmailProps),
     attachments,
     metadata: {
@@ -1235,12 +1237,12 @@ export async function sendCommunityWaitlistNotification(
   console.log(`📧 Attempting to send waitlist notification email:`, {
     to: recipientEmail,
     from: FROM_EMAIL,
-    subject: `New Community Request: ${communityName}`,
+    subject: `New community request: ${communityName}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
-    subject: `New Community Request: ${communityName}`,
+    subject: `New community request: ${communityName}`,
     react: CommunityWaitlistNotification({
       communityName,
       userName,
@@ -1296,12 +1298,12 @@ export async function sendCommunityJoinNotification(
   console.log(`📧 Attempting to send community join notification email:`, {
     to: ownerEmail,
     from: FROM_EMAIL,
-    subject: `New member joined ${communityName}!`,
+    subject: `New member joined ${communityName}`,
   });
 
   const result = await sendEmail({
     to: ownerEmail,
-    subject: `New member joined ${communityName}!`,
+    subject: `New member joined ${communityName}`,
     react: CommunityJoinNotification({
       communityName,
       communitySlug,
@@ -1361,12 +1363,12 @@ export async function sendCollaborationInviteEmail(
   console.log(`📧 Attempting to send collaboration invite email:`, {
     to: recipientEmail,
     from: `${hostCommunityName} <${baseEmailAddress}>`,
-    subject: `Collaboration Invitation: ${eventTitle}`,
+    subject: `Collaboration invite: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
-    subject: `Collaboration Invitation: ${eventTitle}`,
+    subject: `Collaboration invite: ${eventTitle}`,
     from: `${hostCommunityName} <${baseEmailAddress}>`,
     react: CollaborationInviteEmail({
       eventTitle,
@@ -1488,12 +1490,12 @@ export async function sendCollaborationAcceptedEmail(
   console.log(`📧 Attempting to send collaboration accepted email:`, {
     to: recipientEmail,
     from: `${hostCommunityName} <${baseEmailAddress}>`,
-    subject: `Collaboration Accepted: ${eventTitle}`,
+    subject: `Collaboration accepted: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
-    subject: `Collaboration Accepted: ${eventTitle}`,
+    subject: `Collaboration accepted: ${eventTitle}`,
     from: `${hostCommunityName} <${baseEmailAddress}>`,
     react: CollaborationAcceptedEmail({
       eventTitle,
@@ -1570,25 +1572,21 @@ export async function sendNewEventNotificationEmail(
 
       return {
       to: recipientEmail,
-      subject: `New Event: ${eventTitle}`,
+      subject: `New event: ${eventTitle}`,
       from: `${communityName} <${baseEmailAddress}>`,
       headers: buildUnsubscribeListHeaders(unsubscribeUrl),
-      html: `
-        <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #ff8040;">New Event Created!</h2>
-          <p>Hi ${recipientName},</p>
-          <p>A new event has been created in <strong>${communityName}</strong>:</p>
-          <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0;">${eventTitle}</h3>
-            <p style="margin: 5px 0;"><strong>📅 Date:</strong> ${eventDate}</p>
-            <p style="margin: 5px 0;"><strong>⏰ Time:</strong> ${eventTime}</p>
-            ${locationAddress ? `<p style="margin: 5px 0;"><strong>📍 Location:</strong> ${locationAddress}${locationMapUrl ? ` &mdash; <a href="${locationMapUrl}" style="color: #ff8040;">View on Google Maps</a>` : ''}</p>` : ''}
-            ${onlineMeetingLink ? `<p style="margin: 5px 0;"><strong>🔗 Online:</strong> <a href="${onlineMeetingLink}" style="color: #ff8040;">Join Meeting</a></p>` : ''}
-          </div>
-          <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event Details</a></p>
-          ${buildUnsubscribeFooterHtml(unsubscribeUrl, communityName)}
-        </div>
-      `,
+      react: NewEventNotificationEmail({
+        eventTitle,
+        communityName,
+        eventDate,
+        eventTime,
+        eventLink,
+        recipientName,
+        locationAddress,
+        locationMapUrl,
+        onlineMeetingLink,
+        unsubscribeUrl,
+      }),
       metadata: {
         template: "NewEventNotificationEmail",
         eventTitle,
@@ -1748,24 +1746,19 @@ export async function sendNewCollaborationEventEmail(
         subject: `${eventType}: ${eventTitle} (${coHostCommunityName} joined)`,
         from: `${hostCommunityName} <${baseEmailAddress}>`,
         headers: buildUnsubscribeListHeaders(unsubscribeUrl),
-        html: `
-        <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #ff8040;">${isNewEvent ? 'New Collaborative Event!' : 'Event Collaboration Update!'}</h2>
-          <p>Hi ${recipientName},</p>
-          <p><strong>${hostCommunityName}</strong> and <strong>${coHostCommunityName}</strong> are now co-hosting an event:</p>
-          <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0;">${eventTitle}</h3>
-            <p style="margin: 5px 0;"><strong>📅 Date:</strong> ${eventDate}</p>
-            <p style="margin: 5px 0;"><strong>⏰ Time:</strong> ${eventTime}</p>
-            <p style="margin: 5px 0;"><strong>🏠 Host:</strong> ${hostCommunityName}</p>
-            <p style="margin: 5px 0;"><strong>🤝 Co-host:</strong> ${coHostCommunityName}</p>
-            ${locationAddress ? `<p style="margin: 5px 0;"><strong>📍 Location:</strong> ${locationAddress}</p>` : ''}
-            ${onlineMeetingLink ? `<p style="margin: 5px 0;"><strong>🔗 Online:</strong> <a href="${onlineMeetingLink}" style="color: #ff8040;">Join Meeting</a></p>` : ''}
-          </div>
-          <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event Details</a></p>
-          ${buildUnsubscribeFooterHtml(unsubscribeUrl, communityName)}
-        </div>
-      `,
+        react: NewCollaborationEventEmail({
+          eventTitle,
+          hostCommunityName,
+          coHostCommunityName,
+          eventDate,
+          eventTime,
+          eventLink,
+          recipientName,
+          isNewEvent,
+          locationAddress,
+          onlineMeetingLink,
+          unsubscribeUrl,
+        }),
         metadata: {
           template: "NewCollaborationEventEmail",
           eventTitle,
@@ -1826,31 +1819,20 @@ export async function sendEventRegistrationNotificationEmail(
       recipientEmail,
       recipientName,
     }) => {
-      const coHostsText =
-        coHostCommunityNames.length > 0
-          ? coHostCommunityNames.join(", ")
-          : "none";
-
       return {
         to: recipientEmail,
-        subject: `New Registration: ${eventTitle}`,
-        html: `
-        <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color:#242424; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #ff8040;">New Event Registration!</h2>
-          <p>Hi ${recipientName},</p>
-          <p>Someone has registered for <strong>${eventTitle}</strong>:</p>
-          <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 5px 0;"><strong>👤 Name:</strong> ${registrantName}</p>
-            <p style="margin: 5px 0;"><strong>📧 Email:</strong> ${registrantEmail}</p>
-            <p style="margin: 5px 0;"><strong>📅 Event Date:</strong> ${eventDate}</p>
-            <p style="margin: 5px 0;"><strong>⏰ Event Time:</strong> ${eventTime}</p>
-            <p style="margin: 5px 0;"><strong>🏠 Host:</strong> ${hostCommunityName}</p>
-            <p style="margin: 5px 0;"><strong>🤝 Co-hosts:</strong> ${coHostsText}</p>
-          </div>
-          <p><a href="${eventLink}" style="background: #ff8040; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Event & Registrants</a></p>
-          <p style="color: #6B6B6B; font-size: 12px; margin-top: 30px;">Luhive Events</p>
-        </div>
-      `,
+        subject: `New registration: ${eventTitle}`,
+        react: EventRegistrationNotificationEmail({
+          eventTitle,
+          registrantName,
+          registrantEmail,
+          hostCommunityName,
+          coHostCommunityNames,
+          eventDate,
+          eventTime,
+          eventLink,
+          recipientName,
+        }),
         metadata: {
           template: "EventRegistrationNotificationEmail",
           eventTitle,

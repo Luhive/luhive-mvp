@@ -14,52 +14,40 @@ import {
 	type DetailRowData,
 } from "./components/email-layout";
 
-interface NewEventNotificationEmailProps {
+interface NewCollaborationEventEmailProps {
 	eventTitle: string;
-	communityName: string;
+	hostCommunityName: string;
+	coHostCommunityName: string;
 	eventDate: string;
 	eventTime: string;
 	eventLink: string;
 	recipientName: string;
+	isNewEvent: boolean;
 	locationAddress?: string;
-	locationMapUrl?: string;
 	onlineMeetingLink?: string;
 	unsubscribeUrl?: string;
 }
 
-export const NewEventNotificationEmail = ({
+export const NewCollaborationEventEmail = ({
 	eventTitle = "Tech Meetup 2024",
-	communityName = "Tech Community",
+	hostCommunityName = "Tech Community",
+	coHostCommunityName = "Partner Community",
 	eventDate = "Saturday, January 20, 2024",
 	eventTime = "2:00 PM PST",
 	eventLink = "https://luhive.com/events/123",
 	recipientName = "there",
+	isNewEvent = true,
 	locationAddress,
-	locationMapUrl,
 	onlineMeetingLink,
 	unsubscribeUrl,
-}: NewEventNotificationEmailProps) => {
+}: NewCollaborationEventEmailProps) => {
 	const rows: DetailRowData[] = [
 		{ label: "Date", value: eventDate },
 		{ label: "Time", value: eventTime },
+		{ label: "Host", value: hostCommunityName },
+		{ label: "Co-host", value: coHostCommunityName },
 	];
-	if (locationAddress)
-		rows.push({
-			label: "Location",
-			value: locationMapUrl ? (
-				<>
-					{locationAddress}{" "}
-					<Link
-						href={locationMapUrl}
-						style={{ color: emailColors.accent, textDecoration: "underline" }}
-					>
-						Map
-					</Link>
-				</>
-			) : (
-				locationAddress
-			),
-		});
+	if (locationAddress) rows.push({ label: "Location", value: locationAddress });
 	if (onlineMeetingLink)
 		rows.push({
 			label: "Online",
@@ -72,29 +60,35 @@ export const NewEventNotificationEmail = ({
 				</Link>
 			),
 		});
-	rows.push({ label: "Host", value: communityName });
 
 	return (
 		<EmailLayout
-			preview={`${communityName} announced ${eventTitle}`}
+			preview={`${hostCommunityName} and ${coHostCommunityName} are co-hosting ${eventTitle}`}
 			unsubscribeUrl={unsubscribeUrl}
 		>
-			<Eyebrow>New event</Eyebrow>
+			<Eyebrow>{isNewEvent ? "New event" : "Event update"}</Eyebrow>
 			<EmailTitle>{eventTitle}</EmailTitle>
 			<Divider />
 			<Paragraph>
 				Hi {recipientName},{" "}
-				<strong style={{ color: emailColors.heading }}>{communityName}</strong>{" "}
-				just announced a new event.
+				<strong style={{ color: emailColors.heading }}>
+					{hostCommunityName}
+				</strong>{" "}
+				and{" "}
+				<strong style={{ color: emailColors.heading }}>
+					{coHostCommunityName}
+				</strong>{" "}
+				are co-hosting this event.
 			</Paragraph>
 			<SectionLabel>Event details</SectionLabel>
 			<DetailsCard rows={rows} />
 			<CtaButton href={eventLink}>View event →</CtaButton>
 			<FinePrint>
-				You're receiving this because you're a member of {communityName}.
+				You're receiving this because you're a member of one of these
+				communities.
 			</FinePrint>
 		</EmailLayout>
 	);
 };
 
-export default NewEventNotificationEmail;
+export default NewCollaborationEventEmail;
