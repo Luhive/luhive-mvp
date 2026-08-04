@@ -81,6 +81,26 @@ function FooterSocialsColumn() {
   );
 }
 
+function FooterFreeToolsColumn() {
+  return (
+    <div className="min-w-0 shrink-0">
+      <p className="mb-5 text-[0.9em] leading-4 font-semibold text-[#737373]">Free Tools</p>
+      <ul className="flex flex-col gap-4">
+        <li>
+          {/* Plain anchor, not Link: /tools/* is a proxied Next.js app outside the router. */}
+          <a
+            href="/tools/ics-generator"
+            data-umami-event="footer_tool_clicked"
+            className={footerFounderLinkClassName}
+          >
+            Free ICS File Generator
+          </a>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
 function FooterLogoWordmark() {
   return (
     <img
@@ -126,9 +146,10 @@ export function LandingFooter() {
               </span>
             </h2>
 
-            <div className="flex w-full items-start justify-start gap-[100px]">
+            <div className="flex w-full flex-wrap items-start justify-start gap-x-[100px] gap-y-10">
               <FooterFoundersColumn />
               <FooterSocialsColumn />
+              <FooterFreeToolsColumn />
             </div>
           </div>
 
@@ -157,9 +178,10 @@ export function LandingFooter() {
               </span>
             </h2>
 
-            <div className="flex shrink-0 gap-[100px]">
+            <div className="flex shrink-0 flex-wrap gap-x-[100px] gap-y-10">
               <FooterFoundersColumn />
               <FooterSocialsColumn />
+              <FooterFreeToolsColumn />
             </div>
           </div>
 
