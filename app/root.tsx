@@ -61,8 +61,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
         <script
           defer
-          src="https://cloud.umami.is/script.js"
+          src="/stats.js"
           data-website-id="f5c72579-b361-4002-bda5-bd5ffb7e247d"
+          data-host-url="https://luhive.com"
           data-tag="main"
           data-domains="luhive.com"
           data-performance="true"
