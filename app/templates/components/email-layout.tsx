@@ -2,6 +2,7 @@ import {
 	Body,
 	Column,
 	Container,
+	Font,
 	Head,
 	Heading,
 	Hr,
@@ -16,28 +17,45 @@ import {
 import * as React from "react";
 
 export const emailFont =
-	"'Inter', Helvetica, Arial, -apple-system, 'Segoe UI', sans-serif";
+	"'IBM Plex Sans', Helvetica, Arial, -apple-system, 'Segoe UI', sans-serif";
 
 export const emailColors = {
-	heading: "#242424",
-	accent: "#FF8040",
-	body: "#6B6B6B",
-	subtle: "#8A8A8A",
-	faint: "#C0C0C0",
-	divider: "#E6E6E6",
-	cardBorder: "#E6E6E6",
+	heading: "#111111",
+	accent: "#F97316",
+	body: "#444444",
+	subtle: "#999999",
+	faint: "#c0c0c0",
+	divider: "#e9e9e9",
+	cardBorder: "#e9e9e9",
 };
 
-const LOGO_URL = "https://luhive.com/LuhiveLogo.png";
+const WORD_LOGO_URL =
+	"https://ncgqtxfchavfugucdnnh.supabase.co/storage/v1/object/public/Luhive-Assets/LuhiveWordLogoEmail.png";
 
 interface EmailLayoutProps {
 	preview: string;
+	unsubscribeUrl?: string;
 	children: React.ReactNode;
 }
 
-export const EmailLayout = ({ preview, children }: EmailLayoutProps) => (
+export const EmailLayout = ({
+	preview,
+	unsubscribeUrl,
+	children,
+}: EmailLayoutProps) => (
 	<Html lang="en">
-		<Head />
+		<Head>
+			<Font
+				fontFamily="IBM Plex Sans"
+				fallbackFontFamily={["Helvetica", "Arial"]}
+				webFont={{
+					url: "https://fonts.gstatic.com/s/ibmplexsans/v22/zYXgKVElMYYaJe8bpLHnCwDKtdbUFI5NadY.woff2",
+					format: "woff2",
+				}}
+				fontWeight={400}
+				fontStyle="normal"
+			/>
+		</Head>
 		<Preview>{preview}</Preview>
 		<Body
 			style={{
@@ -65,17 +83,15 @@ export const EmailLayout = ({ preview, children }: EmailLayoutProps) => (
 						}}
 					/>
 					<Row>
-						<Column style={{ width: "26px", verticalAlign: "middle" }}>
+						<Column style={{ verticalAlign: "middle" }}>
 							<Img
-								src={LOGO_URL}
+								src={WORD_LOGO_URL}
 								alt="Luhive"
-								width="18"
-								height="18"
+								height="16"
 								style={{
 									display: "block",
-									width: "18px",
-									height: "18px",
-									borderRadius: "4px",
+									height: "16px",
+									width: "auto",
 								}}
 							/>
 						</Column>
@@ -88,19 +104,19 @@ export const EmailLayout = ({ preview, children }: EmailLayoutProps) => (
 									lineHeight: 1.7,
 								}}
 							>
-								© {new Date().getFullYear()}{" "}
-								<span style={{ color: emailColors.subtle, fontWeight: 500 }}>
+								You received this email via{" "}
+								<span style={{ color: "#aaaaaa", fontWeight: 500 }}>
 									Luhive
 								</span>{" "}
 								·{" "}
 								<Link
-									href="https://luhive.com"
+									href={unsubscribeUrl ?? "https://luhive.com"}
 									style={{
-										color: emailColors.heading,
+										color: emailColors.accent,
 										textDecoration: "none",
 									}}
 								>
-									luhive.com
+									{unsubscribeUrl ? "Manage notifications" : "luhive.com"}
 								</Link>
 							</Text>
 						</Column>
@@ -117,7 +133,7 @@ export const Eyebrow = ({ children }: { children: React.ReactNode }) => (
 			margin: "0 0 10px 0",
 			fontSize: "11px",
 			fontWeight: 600,
-			color: emailColors.heading,
+			color: emailColors.accent,
 			letterSpacing: "1px",
 			textTransform: "uppercase",
 		}}
@@ -193,7 +209,7 @@ export const DetailsCard = ({ rows }: { rows: DetailRowData[] }) => (
 		style={{
 			border: `1px solid ${emailColors.cardBorder}`,
 			borderRadius: "8px",
-			padding: "24px 28px",
+			padding: "22px 24px",
 			marginBottom: "32px",
 		}}
 	>
@@ -201,9 +217,9 @@ export const DetailsCard = ({ rows }: { rows: DetailRowData[] }) => (
 			<Row key={row.label}>
 				<Column
 					style={{
-						width: "90px",
+						width: "100px",
 						verticalAlign: "top",
-						paddingBottom: index === rows.length - 1 ? 0 : "16px",
+						paddingBottom: index === rows.length - 1 ? 0 : "14px",
 					}}
 				>
 					<Text
@@ -220,7 +236,7 @@ export const DetailsCard = ({ rows }: { rows: DetailRowData[] }) => (
 				<Column
 					style={{
 						verticalAlign: "top",
-						paddingBottom: index === rows.length - 1 ? 0 : "16px",
+						paddingBottom: index === rows.length - 1 ? 0 : "14px",
 					}}
 				>
 					<Text
@@ -251,7 +267,7 @@ export const CtaButton = ({
 			href={href}
 			style={{
 				display: "inline-block",
-				padding: "14px 32px",
+				padding: "12px 20px",
 				backgroundColor: emailColors.accent,
 				borderRadius: "8px",
 				fontSize: "15px",

@@ -1,19 +1,18 @@
-import {
-	Body,
-	Button,
-	Container,
-	Head,
-	Heading,
-	Hr,
-	Html,
-	Img,
-	Link,
-	Preview,
-	Section,
-	Tailwind,
-	Text,
-} from "@react-email/components";
+import { Img, Link, Section, Text } from "@react-email/components";
 import * as React from "react";
+import {
+	CtaButton,
+	DetailsCard,
+	Divider,
+	EmailLayout,
+	EmailTitle,
+	Eyebrow,
+	FinePrint,
+	Paragraph,
+	SectionLabel,
+	emailColors,
+	type DetailRowData,
+} from "./components/email-layout";
 
 interface EventConfirmationEmailProps {
 	eventTitle: string;
@@ -36,133 +35,88 @@ export const EventConfirmationEmail = ({
 	eventTime = "2:00 PM PST",
 	eventLink = "https://luhive.com/events/123",
 	recipientName = "there",
-	registerAccountLink = "https://luhive.com/signup",
 	locationAddress,
 	locationMapUrl,
 	onlineMeetingLink,
 	hasQrCode = false,
-}: EventConfirmationEmailProps) => (
-	<Html>
-		<Preview>You're registered for {eventTitle}!</Preview>
-		<Tailwind>
-			<Head />
-			<Body className="bg-white" style={{ fontFamily: 'Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-				<Container className="mx-auto py-5 pb-12 px-4 max-w-[600px]">
-					<Section className="text-center mb-8">
-						<Img
-							src="https://luhive.com/LuhiveLogo.png"
-							alt="Luhive"
-							width="48"
-							height="46"
-							className="mx-auto mb-6"
-						/>
-						<Heading className="text-[28px] font-semibold leading-tight mb-2.5 mt-0" style={{ color: '#242424' }}>
-							🎉 You're All Set!
-						</Heading>
-					</Section>
+}: EventConfirmationEmailProps) => {
+	const rows: DetailRowData[] = [
+		{ label: "Date", value: eventDate },
+		{ label: "Time", value: eventTime },
+	];
+	if (locationAddress)
+		rows.push({
+			label: "Location",
+			value: locationMapUrl ? (
+				<>
+					{locationAddress}{" "}
+					<Link
+						href={locationMapUrl}
+						style={{ color: emailColors.accent, textDecoration: "underline" }}
+					>
+						Map
+					</Link>
+				</>
+			) : (
+				locationAddress
+			),
+		});
+	if (onlineMeetingLink)
+		rows.push({
+			label: "Online",
+			value: (
+				<Link
+					href={onlineMeetingLink}
+					style={{ color: emailColors.accent, textDecoration: "underline" }}
+				>
+					Join meeting
+				</Link>
+			),
+		});
+	rows.push({ label: "Host", value: communityName });
 
-					<Text className="text-base leading-relaxed mb-5" style={{ color: '#6B6B6B' }}>
-						Hi {recipientName},
+	return (
+		<EmailLayout preview={`You're registered — ${eventTitle}`}>
+			<Eyebrow>Registration confirmed</Eyebrow>
+			<EmailTitle>{eventTitle}</EmailTitle>
+			<Divider />
+			<Paragraph>
+				Hi {recipientName}, your spot at{" "}
+				<strong style={{ color: emailColors.heading }}>{eventTitle}</strong> is
+				confirmed. A calendar invite is attached.
+			</Paragraph>
+			<SectionLabel>Event details</SectionLabel>
+			<DetailsCard rows={rows} />
+			{hasQrCode && (
+				<Section style={{ marginBottom: "32px" }}>
+					<SectionLabel>Check-in</SectionLabel>
+					<Text
+						style={{
+							margin: "0 0 16px 0",
+							fontSize: "14px",
+							color: emailColors.body,
+							lineHeight: 1.7,
+						}}
+					>
+						Show this QR code at the door. It's also attached to this email.
 					</Text>
-
-					<Text className="text-base leading-relaxed mb-8" style={{ color: '#6B6B6B' }}>
-						Your registration for <strong style={{ color: '#242424' }}>{eventTitle}</strong> is confirmed!
-					</Text>
-
-					<Section className="rounded-lg p-6 mb-8" style={{ backgroundColor: '#F9F9F9', border: '1px solid #E6E6E6' }}>
-						<Heading className="text-xl font-semibold leading-tight mb-4 mt-0" style={{ color: '#242424' }}>
-							Event Details
-						</Heading>
-
-						<Section className="mb-3">
-							<Text className="text-sm font-semibold mb-1 mt-0" style={{ color: '#242424' }}>
-								📅 Date & Time
-							</Text>
-							<Text className="text-sm m-0" style={{ color: '#6B6B6B' }}>
-								{eventDate} at {eventTime}
-							</Text>
-						</Section>
-
-					{locationAddress && (
-						<Section className="mb-3">
-							<Text className="text-sm font-semibold mb-1 mt-0" style={{ color: '#242424' }}>
-								📍 Location
-							</Text>
-							<Text className="text-sm m-0" style={{ color: '#6B6B6B' }}>
-								{locationAddress}
-							</Text>
-							{locationMapUrl && (
-								<Link href={locationMapUrl} className="text-xs" style={{ color: '#ff8040' }}>
-									View on Google Maps →
-								</Link>
-							)}
-						</Section>
-					)}
-
-						{onlineMeetingLink && (
-							<Section className="mb-3">
-								<Text className="text-sm font-semibold mb-1 mt-0" style={{ color: '#242424' }}>
-									💻 Online Meeting
-								</Text>
-								<Text className="text-sm m-0" style={{ color: '#6B6B6B' }}>
-									<Link
-										href={onlineMeetingLink}
-										className="underline"
-										style={{ color: '#FF8040' }}
-									>
-										Join Meeting
-									</Link>
-								</Text>
-							</Section>
-						)}
-
-						<Section className="mb-0">
-							<Text className="text-sm font-semibold mb-1 mt-0" style={{ color: '#242424' }}>
-								👥 Hosted by
-							</Text>
-							<Text className="text-sm m-0" style={{ color: '#6B6B6B' }}>{communityName}</Text>
-						</Section>
-					</Section>
-
-					<Section className="text-center mb-8">
-						<Button
-							href={eventLink}
-							className="text-white rounded-md text-base font-semibold no-underline text-center inline-block py-3.5 px-8"
-							style={{ backgroundColor: '#FF8040' }}
-						>
-							View Event Details
-						</Button>
-					</Section>
-
-					{hasQrCode && (
-						<Section className="text-center mb-8">
-							<Text className="text-sm mb-3 mt-0" style={{ color: "#6B6B6B" }}>
-								Show this QR code at check-in.
-							</Text>
-							<Img
-								src="cid:event-qr"
-								width="200"
-								height="200"
-								alt="Your event QR ticket"
-								className="mx-auto"
-							/>
-						</Section>
-					)}
-
-					<Text className="text-sm leading-relaxed text-center mb-8" style={{ color: '#6B6B6B' }}>
-						We look forward to seeing you at the event!
-					</Text>
-
-					<Hr className="my-8" style={{ borderColor: '#E6E6E6' }} />
-
-					<Text className="text-xs text-center m-0" style={{ color: '#6B6B6B' }}>
-						© {new Date().getFullYear()} Luhive. All rights reserved.
-					</Text>
-				</Container>
-			</Body>
-		</Tailwind>
-	</Html>
-);
+					<Img
+						src="cid:event-qr"
+						width="180"
+						height="180"
+						alt="Your check-in QR code"
+						style={{
+							display: "block",
+							border: `1px solid ${emailColors.cardBorder}`,
+							borderRadius: "8px",
+						}}
+					/>
+				</Section>
+			)}
+			<CtaButton href={eventLink}>View event →</CtaButton>
+			<FinePrint>See you there.</FinePrint>
+		</EmailLayout>
+	);
+};
 
 export default EventConfirmationEmail;
-

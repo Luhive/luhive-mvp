@@ -36,9 +36,13 @@ interface SendRemindersRequest {
 const CRON_SECRET = process.env.CRON_SECRET || "development-secret";
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const EMAIL_SENDER = process.env.EMAIL_SENDER || "events@events.luhive.com";
-const FROM_EMAIL = process.env.EMAIL_SENDER?.includes("<")
-  ? process.env.EMAIL_SENDER
-  : `Luhive <${EMAIL_SENDER}>`;
+const FROM_EMAIL_ADDRESS = process.env.EMAIL_SENDER?.includes("<")
+  ? (process.env.EMAIL_SENDER.match(/<([^>]+)>/)?.[1] ?? EMAIL_SENDER)
+  : EMAIL_SENDER;
+
+function fromCommunity(communityName: string): string {
+  return `${communityName} <${FROM_EMAIL_ADDRESS}>`;
+}
 
 function getRemindersToSend(reminderTime: ReminderTime) {
   const now = dayjs.utc();
@@ -256,15 +260,17 @@ async function sendRemindersHandler(body: SendRemindersRequest) {
 
           const resend = new Resend(RESEND_API_KEY);
 
+          const communityName =
+            event.communities?.name || "Community";
+
           const { data: emailData, error: emailError } =
             await resend.emails.send({
-              from: FROM_EMAIL,
+              from: fromCommunity(communityName),
               to: [participantEmail],
-              subject: `Reminder: ${event.title} is ${getReminderSubjectSuffix(reminderTime)}!`,
+              subject: `Reminder: ${event.title} is ${getReminderSubjectSuffix(reminderTime)}`,
               react: EventReminderEmail({
                 eventTitle: event.title,
-                communityName:
-                  event.communities?.name || "Community",
+                communityName,
                 communityLogoUrl:
                   event.communities?.logo_url || null,
                 eventDate,
