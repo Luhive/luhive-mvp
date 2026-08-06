@@ -6,7 +6,7 @@ import { Input } from '~/shared/components/ui/input';
 import { Checkbox } from '~/shared/components/ui/checkbox';
 import { Card } from '~/shared/components/ui/card';
 import { Separator } from '~/shared/components/ui/separator';
-import { Phone, Plus, Trash2, AlertCircle, CircleDot, AlignLeft } from 'lucide-react';
+import { Mail, Phone, Plus, Trash2, AlertCircle, CircleDot, AlignLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '~/shared/lib/utils/cn';
 import type {
@@ -161,6 +161,20 @@ export function CustomQuestionsBuilder({
 
   return (
     <div className="space-y-6">
+      {/* Email — always collected */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Email
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Always collected — required for registration
+          </p>
+        </div>
+        <Switch checked disabled aria-label="Email is always collected" />
+      </div>
+
       {/* Phone Number Collection */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
