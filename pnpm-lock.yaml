@@ -246,6 +246,9 @@ importers:
       '@locator/runtime':
         specifier: ^0.5.1
         version: 0.5.1
+      '@netlify/edge-functions':
+        specifier: ^3.0.8
+        version: 3.0.8
       '@react-email/preview-server':
         specifier: ^5.2.11
         version: 5.2.11(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)

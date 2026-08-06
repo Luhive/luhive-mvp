@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '~/shared/components/ui/avatar';
+import { useCalBookingUrl } from '~/shared/hooks/use-cal-booking-url';
 import { AnalyticsEvents } from '~/shared/lib/analytics';
-import { LUHIVE_CREATE_COMMUNITY_BOOKING_URL } from '~/shared/lib/utils/url';
 
 import styles from './book-a-call-button.module.css';
 
@@ -13,11 +13,12 @@ export function BookACallButton({
   size = 'md',
   analyticsSource = 'About V2',
 }: BookACallButtonProps) {
+  const bookingUrl = useCalBookingUrl();
   const isSmall = size === 'sm';
 
   return (
     <a
-      href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+      href={bookingUrl}
       target="_blank"
       rel="noopener noreferrer"
       className={styles.btn}

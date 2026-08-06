@@ -2,46 +2,50 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Static public routes -->
   <url>
-    <loc>https://app.luhive.com/</loc>
+    <loc>https://luhive.com/</loc>
     <lastmod>2025-01-27</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://app.luhive.com/login</loc>
+    <loc>https://luhive.com/login</loc>
     <lastmod>2025-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://app.luhive.com/signup</loc>
+    <loc>https://luhive.com/signup</loc>
     <lastmod>2025-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://app.luhive.com/create-community</loc>
+    <loc>https://luhive.com/create-community</loc>
     <lastmod>2025-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://app.luhive.com/forgot-password</loc>
+    <loc>https://luhive.com/forgot-password</loc>
     <lastmod>2025-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://app.luhive.com/auth/verify</loc>
+    <loc>https://luhive.com/auth/verify</loc>
     <lastmod>2025-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://app.luhive.com/auth/forgot-password</loc>
+    <loc>https://luhive.com/auth/forgot-password</loc>
     <lastmod>2025-01-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://luhive.com/tools/ics-generator</loc>
+    <lastmod>2026-08-02</lastmod>
   </url>
   
   <!-- 

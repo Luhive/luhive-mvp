@@ -1,3 +1,19 @@
+[[redirects]]
+  from = "/stats.js"
+  to = "https://cloud.umami.is/script.js"
+  status = 200
+
+[[redirects]]
+  from = "/tools"
+  to = "/tools/ics-generator"
+  status = 302
+
+[[redirects]]
+  from = "/tools/*"
+  to = "https://luhive-tools.netlify.app/:splat"
+  status = 200
+  force = true
+
 [build]
   command = "react-router build"
   publish = "build/client"

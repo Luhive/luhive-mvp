@@ -20,13 +20,14 @@ import { AlertCircle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import type { CreateCommunityLoaderData } from "~/modules/community/server/create-community-loader.server";
 import type { CreateCommunityActionData } from "~/modules/community/server/create-community-action.server";
-import { LUHIVE_CREATE_COMMUNITY_BOOKING_URL } from "~/shared/lib/utils/url";
+import { useCalBookingUrl } from "~/shared/hooks/use-cal-booking-url";
 
 export default function CreateCommunityPage() {
   useLoaderData<CreateCommunityLoaderData>();
   const actionData = useActionData<CreateCommunityActionData>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const bookingUrl = useCalBookingUrl();
 
   useEffect(() => {
     if (actionData?.error) {
@@ -148,7 +149,7 @@ export default function CreateCommunityPage() {
             <div className="flex flex-wrap items-center gap-4 pt-4">
               <Button type="button" className="min-w-[140px]" asChild>
                 <a
-                  href={LUHIVE_CREATE_COMMUNITY_BOOKING_URL}
+                  href={bookingUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
