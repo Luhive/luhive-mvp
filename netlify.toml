@@ -4,11 +4,6 @@
   status = 200
 
 [[redirects]]
-  from = "/api/send"
-  to = "https://cloud.umami.is/api/send"
-  status = 200
-
-[[redirects]]
   from = "/tools"
   to = "/tools/ics-generator"
   status = 302
