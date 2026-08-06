@@ -131,6 +131,13 @@ if (emailConfig.resendApiKey) {
 }
 
 const FROM_EMAIL = getFromEmail();
+const FROM_EMAIL_ADDRESS =
+  FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
+
+/** Display-name as the community; Luhive stays in the footer only. */
+function fromCommunity(communityName: string): string {
+  return `${communityName} <${FROM_EMAIL_ADDRESS}>`;
+}
 
 /**
  * Core email sending types and helpers
@@ -733,15 +740,18 @@ export async function sendRegistrationRequestEmail(
     eventTime,
   } = data;
 
+  const from = fromCommunity(communityName);
+
   console.log(`📧 Attempting to send registration request email:`, {
     to: recipientEmail,
-    from: FROM_EMAIL,
+    from,
     subject: `You're pending approval: ${eventTitle}`,
   });
 
   const result = await sendEmailInternal({
     to: recipientEmail,
     subject: `You're pending approval: ${eventTitle}`,
+    from,
     react: EventRegistrationRequestEmail({
       eventTitle,
       communityName,
@@ -760,7 +770,7 @@ export async function sendRegistrationRequestEmail(
   if (!result.success) {
     console.error("❌ Failed to send request email:", {
       to: recipientEmail,
-      fromEmail: FROM_EMAIL,
+      fromEmail: from,
       error: result.error,
     });
     throw new Error(
@@ -770,7 +780,7 @@ export async function sendRegistrationRequestEmail(
 
   console.log(`✅ Registration request email sent successfully:`, {
     id: result.id,
-    from: FROM_EMAIL,
+    from,
     to: recipientEmail,
   });
 
@@ -787,15 +797,18 @@ export async function sendVerificationEmail(data: VerificationEmailData) {
     registerAccountLink,
   } = data;
 
+  const from = fromCommunity(communityName);
+
   console.log(`📧 Attempting to send verification email:`, {
     to: recipientEmail,
-    from: FROM_EMAIL,
+    from,
     subject: `Verify your registration for ${eventTitle}`,
   });
 
   const result = await sendEmailInternal({
     to: recipientEmail,
     subject: `Verify your registration for ${eventTitle}`,
+    from,
     react: EventVerificationEmail({
       eventTitle,
       communityName,
@@ -813,7 +826,7 @@ export async function sendVerificationEmail(data: VerificationEmailData) {
   if (!result.success) {
     console.error("❌ Failed to send verification email:", {
       to: recipientEmail,
-      fromEmail: FROM_EMAIL,
+      fromEmail: from,
       error: result.error,
     });
     throw new Error(
@@ -825,7 +838,7 @@ export async function sendVerificationEmail(data: VerificationEmailData) {
 
   console.log(`✅ Verification email sent successfully:`, {
     id: result.id,
-    from: FROM_EMAIL,
+    from,
     to: recipientEmail,
   });
 
@@ -895,11 +908,10 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
       ? `You're accepted: ${eventTitle}`
       : `You weren't accepted: ${eventTitle}`;
 
-  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   console.log(`📧 Attempting to send status update email:`, {
     to: recipientEmail,
-    from: `${communityName} <${baseEmailAddress}>`,
+    from: fromCommunity(communityName),
     status,
     subject,
   });
@@ -907,7 +919,7 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
   const result = await sendEmail({
     to: recipientEmail,
     subject,
-    from: `${communityName} <${baseEmailAddress}>`,
+    from: fromCommunity(communityName),
     react: EventStatusUpdateEmail({
       eventTitle,
       communityName,
@@ -943,10 +955,9 @@ export async function sendEventStatusUpdateEmail(data: StatusUpdateEmailData) {
     );
   }
 
-  const baseEmailAddressLog = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
   console.log(`✅ Status update email sent successfully:`, {
     id: result.id,
-    from: `${communityName} <${baseEmailAddressLog}>`,
+    from: fromCommunity(communityName),
     to: recipientEmail,
     status,
     hasAttachment: attachments.length > 0,
@@ -971,18 +982,17 @@ export async function sendEventScheduleUpdateEmail(
     onlineMeetingLink,
   } = data;
 
-  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   console.log(`📧 Attempting to send event schedule update email:`, {
     to: recipientEmail,
-    from: `${communityName} <${baseEmailAddress}>`,
+    from: fromCommunity(communityName),
     subject: `Event updated: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
     subject: `Event updated: ${eventTitle}`,
-    from: `${communityName} <${baseEmailAddress}>`,
+    from: fromCommunity(communityName),
     react: EventUpdateEmail({
       eventTitle,
       communityName,
@@ -1014,10 +1024,9 @@ export async function sendEventScheduleUpdateEmail(
     );
   }
 
-  const baseEmailAddressLog = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
   console.log(`✅ Event schedule update email sent successfully:`, {
     id: result.id,
-    from: `${communityName} <${baseEmailAddressLog}>`,
+    from: fromCommunity(communityName),
     to: recipientEmail,
   });
 
@@ -1053,18 +1062,17 @@ export async function sendEventReminderEmail(data: {
     reminderTime = "1-hour",
   } = data;
 
-  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   console.log(`📧 Attempting to send event reminder email:`, {
     to: recipientEmail,
-    from: `${communityName} <${baseEmailAddress}>`,
+    from: fromCommunity(communityName),
     subject: `Reminder: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
     subject: `Reminder: ${eventTitle}`,
-    from: `${communityName} <${baseEmailAddress}>`,
+    from: fromCommunity(communityName),
     react: EventReminderEmail({
       eventTitle,
       communityName,
@@ -1100,7 +1108,7 @@ export async function sendEventReminderEmail(data: {
 
   console.log(`✅ Event reminder email sent successfully:`, {
     id: result.id,
-    from: FROM_EMAIL,
+    from: fromCommunity(communityName),
     to: recipientEmail,
   });
 
@@ -1127,9 +1135,11 @@ export async function sendRegistrationConfirmationEmail(
     checkinToken,
   } = data;
 
+  const from = fromCommunity(communityName);
+
   console.log(`📧 Attempting to send confirmation email:`, {
     to: recipientEmail,
-    from: FROM_EMAIL,
+    from,
     subject: `You're registered: ${eventTitle}`,
   });
 
@@ -1189,6 +1199,7 @@ export async function sendRegistrationConfirmationEmail(
   const result = await sendEmail({
     to: recipientEmail,
     subject: `You're registered: ${eventTitle}`,
+    from,
     react: EventConfirmationEmail(confirmationEmailProps),
     attachments,
     metadata: {
@@ -1201,7 +1212,7 @@ export async function sendRegistrationConfirmationEmail(
   if (!result.success) {
     console.error("❌ Failed to send confirmation email:", {
       to: recipientEmail,
-      fromEmail: FROM_EMAIL,
+      fromEmail: from,
       error: result.error,
     });
     throw new Error(
@@ -1213,7 +1224,7 @@ export async function sendRegistrationConfirmationEmail(
 
   console.log(`✅ Confirmation email sent successfully:`, {
     id: result.id,
-    from: FROM_EMAIL,
+    from,
     to: recipientEmail,
     hasAttachment: attachments.length > 0,
   });
@@ -1294,16 +1305,18 @@ export async function sendCommunityJoinNotification(
   } = data;
 
   const dashboardLink = `${process.env.APP_URL || "https://luhive.com"}/dashboard/${communitySlug}/members`;
+  const from = fromCommunity(communityName);
 
   console.log(`📧 Attempting to send community join notification email:`, {
     to: ownerEmail,
-    from: FROM_EMAIL,
+    from,
     subject: `New member joined ${communityName}`,
   });
 
   const result = await sendEmail({
     to: ownerEmail,
     subject: `New member joined ${communityName}`,
+    from,
     react: CommunityJoinNotification({
       communityName,
       communitySlug,
@@ -1322,7 +1335,7 @@ export async function sendCommunityJoinNotification(
   if (!result.success) {
     console.error("❌ Failed to send community join notification email:", {
       to: ownerEmail,
-      fromEmail: FROM_EMAIL,
+      fromEmail: from,
       communityName,
       memberName,
       error: result.error,
@@ -1336,7 +1349,7 @@ export async function sendCommunityJoinNotification(
 
   console.log(`✅ Community join notification email sent successfully:`, {
     id: result.id,
-    from: FROM_EMAIL,
+    from,
     to: ownerEmail,
     communityName,
     memberName,
@@ -1358,18 +1371,17 @@ export async function sendCollaborationInviteEmail(
     invitedByName,
   } = data;
 
-  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   console.log(`📧 Attempting to send collaboration invite email:`, {
     to: recipientEmail,
-    from: `${hostCommunityName} <${baseEmailAddress}>`,
+    from: fromCommunity(hostCommunityName),
     subject: `Collaboration invite: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
     subject: `Collaboration invite: ${eventTitle}`,
-    from: `${hostCommunityName} <${baseEmailAddress}>`,
+    from: fromCommunity(hostCommunityName),
     react: CollaborationInviteEmail({
       eventTitle,
       hostCommunityName,
@@ -1388,10 +1400,9 @@ export async function sendCollaborationInviteEmail(
   });
 
   if (!result.success) {
-    const baseEmailAddressErr = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
     console.error("❌ Failed to send collaboration invite email:", {
       to: recipientEmail,
-      fromEmail: `${hostCommunityName} <${baseEmailAddressErr}>`,
+      fromEmail: fromCommunity(hostCommunityName),
       error: result.error,
     });
     throw new Error(
@@ -1401,10 +1412,9 @@ export async function sendCollaborationInviteEmail(
     );
   }
 
-  const baseEmailAddressLog = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
   console.log(`✅ Collaboration invite email sent successfully:`, {
     id: result.id,
-    from: `${hostCommunityName} <${baseEmailAddressLog}>`,
+    from: fromCommunity(hostCommunityName),
     to: recipientEmail,
   });
 
@@ -1424,18 +1434,17 @@ export async function sendEventInviteEmail(data: EventInviteEmailData) {
     eventTime,
   } = data;
 
-  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   console.log(`📧 Attempting to send event invite email:`, {
     to: recipientEmail,
-    from: `${communityName} <${baseEmailAddress}>`,
+    from: fromCommunity(communityName),
     subject: `You're invited to ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
     subject: `You're invited to ${eventTitle}`,
-    from: `${communityName} <${baseEmailAddress}>`,
+    from: fromCommunity(communityName),
     react: EventInviteEmail({
       eventTitle,
       communityName,
@@ -1485,18 +1494,17 @@ export async function sendCollaborationAcceptedEmail(
     eventLink,
   } = data;
 
-  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   console.log(`📧 Attempting to send collaboration accepted email:`, {
     to: recipientEmail,
-    from: `${hostCommunityName} <${baseEmailAddress}>`,
+    from: fromCommunity(hostCommunityName),
     subject: `Collaboration accepted: ${eventTitle}`,
   });
 
   const result = await sendEmail({
     to: recipientEmail,
     subject: `Collaboration accepted: ${eventTitle}`,
-    from: `${hostCommunityName} <${baseEmailAddress}>`,
+    from: fromCommunity(hostCommunityName),
     react: CollaborationAcceptedEmail({
       eventTitle,
       hostCommunityName,
@@ -1513,10 +1521,9 @@ export async function sendCollaborationAcceptedEmail(
   });
 
   if (!result.success) {
-    const baseEmailAddressErr = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
     console.error("❌ Failed to send collaboration accepted email:", {
       to: recipientEmail,
-      fromEmail: `${hostCommunityName} <${baseEmailAddressErr}>`,
+      fromEmail: fromCommunity(hostCommunityName),
       error: result.error,
     });
     throw new Error(
@@ -1526,10 +1533,9 @@ export async function sendCollaborationAcceptedEmail(
     );
   }
 
-  const baseEmailAddressLog2 = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
   console.log(`✅ Collaboration accepted email sent successfully:`, {
     id: result.id,
-    from: `${hostCommunityName} <${baseEmailAddressLog2}>`,
+    from: fromCommunity(hostCommunityName),
     to: recipientEmail,
   });
 
@@ -1545,7 +1551,6 @@ export async function sendNewEventNotificationEmail(
 ) {
   const items = Array.isArray(data) ? data : [data];
 
-  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   const payloads: BaseEmailPayload[] = items.map(
     ({
@@ -1573,7 +1578,7 @@ export async function sendNewEventNotificationEmail(
       return {
       to: recipientEmail,
       subject: `New event: ${eventTitle}`,
-      from: `${communityName} <${baseEmailAddress}>`,
+      from: fromCommunity(communityName),
       headers: buildUnsubscribeListHeaders(unsubscribeUrl),
       react: NewEventNotificationEmail({
         eventTitle,
@@ -1627,7 +1632,6 @@ export async function sendAnnouncementNotificationEmail(
 ) {
   const items = Array.isArray(data) ? data : [data];
 
-  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   const payloads: BaseEmailPayload[] = items.map(
     ({
@@ -1656,7 +1660,7 @@ export async function sendAnnouncementNotificationEmail(
       return {
       to: recipientEmail,
       subject: `${title}`,
-      from: `${communityName} <${baseEmailAddress}>`,
+      from: fromCommunity(communityName),
       headers: buildUnsubscribeListHeaders(unsubscribeUrl),
       react: CommunityAnnouncementEmail({
         title,
@@ -1713,7 +1717,6 @@ export async function sendNewCollaborationEventEmail(
 ) {
   const items = Array.isArray(data) ? data : [data];
 
-  const baseEmailAddress = FROM_EMAIL.match(/<([^>]+)>/)?.[1] || FROM_EMAIL;
 
   const payloads: BaseEmailPayload[] = items.map(
     ({
@@ -1744,7 +1747,7 @@ export async function sendNewCollaborationEventEmail(
       return {
         to: recipientEmail,
         subject: `${eventType}: ${eventTitle} (${coHostCommunityName} joined)`,
-        from: `${hostCommunityName} <${baseEmailAddress}>`,
+        from: fromCommunity(hostCommunityName),
         headers: buildUnsubscribeListHeaders(unsubscribeUrl),
         react: NewCollaborationEventEmail({
           eventTitle,
@@ -1822,6 +1825,7 @@ export async function sendEventRegistrationNotificationEmail(
       return {
         to: recipientEmail,
         subject: `New registration: ${eventTitle}`,
+        from: fromCommunity(hostCommunityName),
         react: EventRegistrationNotificationEmail({
           eventTitle,
           registrantName,
