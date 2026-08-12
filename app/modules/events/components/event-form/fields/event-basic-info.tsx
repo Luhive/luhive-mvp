@@ -16,9 +16,9 @@ export function EventBasicInfo({
   onDescriptionChange,
 }: EventBasicInfoProps) {
   return (
-    <div className="space-y-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       {/* Title */}
-      <div className="space-y-2">
+      <div className="shrink-0 space-y-2">
         <Label htmlFor="event-title">Event Title *</Label>
         <Input
           id="event-title"
@@ -34,18 +34,17 @@ export function EventBasicInfo({
       </div>
 
       {/* Description */}
-      <div className="space-y-2">
+      <div className="flex min-h-0 flex-1 flex-col space-y-2">
         <Label htmlFor="event-description">Description</Label>
         <Textarea
           id="event-description"
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Tell attendees what this event is about..."
-          rows={6}
-          className="resize-none"
+          className="min-h-[120px] flex-1 resize-none"
           maxLength={2000}
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="shrink-0 text-xs text-muted-foreground">
           {description.length}/2000 characters
         </p>
       </div>

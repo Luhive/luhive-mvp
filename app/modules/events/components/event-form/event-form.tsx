@@ -3,17 +3,28 @@ import { useNavigate, useFetcher } from 'react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '~/shared/components/ui/card';
 import { Button } from '~/shared/components/ui/button';
 import { Separator } from '~/shared/components/ui/separator';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '~/shared/components/ui/accordion';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '~/shared/components/ui/sheet';
 import { Routes } from '~/shared/lib/routing/routes';
 import { Spinner } from '~/shared/components/ui/spinner';
-import { Badge } from '~/shared/components/ui/badge';
-import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle, Users2, Bell } from 'lucide-react';
+import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle, Users2, Bell, Sparkles } from 'lucide-react';
 import { EventCoverUpload } from '~/modules/events/components/event-form/event-cover-upload';
 import { EventBasicInfo } from '~/modules/events/components/event-form/fields/event-basic-info';
 import { EventDateTime } from '~/modules/events/components/event-form/fields/event-datetime';
 import { EventLocation } from '~/modules/events/components/event-form/fields/event-location';
 import { EventCapacity } from '~/modules/events/components/event-form/fields/event-capacity';
 import { EventDiscussion } from '~/modules/events/components/event-form/fields/event-discussion';
-import { EventReminders, type ReminderTime, type EventRemindersConfig } from '~/modules/events/components/event-form/fields/event-reminders';
+import { EventReminderTimes, EventReminderEmailCustomization, type ReminderTime } from '~/modules/events/components/event-form/fields/event-reminders';
 import { CustomQuestionsBuilder } from '~/modules/events/components/registration/custom-questions-builder';
 import { CollaborationInviteDialog } from '~/modules/events/components/collaboration/collaboration-invite-dialog';
 import { CollaborationList } from '~/modules/events/components/collaboration/collaboration-list';
@@ -109,6 +120,9 @@ export function EventForm({
   );
   const [reminderTimes, setReminderTimes] = useState<ReminderTime[]>(initialData?.reminderTimes || []);
   const [reminderMessage, setReminderMessage] = useState<string | null>(initialData?.reminderMessage || null);
+
+  // Preview sheet
+  const [showPreview, setShowPreview] = useState(false);
 
   // Collaboration state
   const [collaborations, setCollaborations] = useState<CollaborationWithCommunity[]>([]);
@@ -470,7 +484,7 @@ export function EventForm({
   return (
     <div className="space-y-6">
       {/* Header with Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold">
             {mode === 'create' ? 'Create Event' : 'Edit Event'}
@@ -481,7 +495,28 @@ export function EventForm({
               : 'Update event information'}
           </p>
         </div>
-        <div className="flex gap-2">
+
+        {/* Mobile: Preview only — Save/Publish live in sticky bottom bar */}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full lg:hidden"
+          onClick={() => setShowPreview(true)}
+        >
+          <Eye className="h-4 w-4 mr-2 shrink-0" />
+          Preview
+        </Button>
+
+        {/* Desktop actions */}
+        <div className="hidden gap-2 lg:flex">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setShowPreview(true)}
+          >
+            <Eye className="h-4 w-4 mr-2 shrink-0" />
+            Preview
+          </Button>
           <Button
             type="button"
             variant="outline"
@@ -490,12 +525,12 @@ export function EventForm({
           >
             {isBusy ? (
               <>
-                <Spinner className="h-4 w-4 mr-2" />
+                <Spinner className="h-4 w-4 mr-2 shrink-0" />
                 Saving...
               </>
             ) : (
               <>
-                <FileText className="h-4 w-4 mr-2" />
+                <FileText className="h-4 w-4 mr-2 shrink-0" />
                 Save as Draft
               </>
             )}
@@ -507,12 +542,12 @@ export function EventForm({
           >
             {isBusy ? (
               <>
-                <Spinner className="h-4 w-4 mr-2" />
+                <Spinner className="h-4 w-4 mr-2 shrink-0" />
                 Publishing...
               </>
             ) : (
               <>
-                <Eye className="h-4 w-4 mr-2" />
+                <Eye className="h-4 w-4 mr-2 shrink-0" />
                 Publish Event
               </>
             )}
@@ -522,213 +557,178 @@ export function EventForm({
 
       <Separator />
 
-      {/* Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Cover and Preview */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Event Cover */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Event Cover</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventCoverUpload
-                communitySlug={communitySlug}
-                eventId={eventId}
-                currentCoverUrl={coverUrl}
-                onCoverUpdate={setCoverUrl}
-                isCreating={mode === 'create'}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Quick Preview */}
-          <Card className="bg-muted/30">
-            <CardHeader>
-              <CardTitle className="text-base">Preview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex items-start gap-2">
-                <FileText className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{title || 'Event Title'}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-muted-foreground">
-                    {startDate ? dayjs(startDate).format('MMM D, YYYY') : 'No date set'}
-                    {startTime && ` at ${startTime}`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1">
-                  <Badge variant="secondary" className="text-xs">
-                    {eventType === 'in-person' && 'In-person'}
-                    {eventType === 'online' && 'Online'}
-                    {eventType === 'hybrid' && 'Hybrid'}
-                  </Badge>
-                </div>
-              </div>
-              {capacity && (
-                <div className="flex items-start gap-2">
-                  <Users className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-muted-foreground">Max {capacity} attendees</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      {/* Event Cover + Event Details side by side */}
+      <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-[auto_1fr]">
+        <div className="aspect-square w-full shrink-0 self-stretch md:h-full md:w-auto md:max-w-[240px]">
+          <EventCoverUpload
+            communitySlug={communitySlug}
+            eventId={eventId}
+            currentCoverUrl={coverUrl}
+            onCoverUpdate={setCoverUrl}
+            isCreating={mode === 'create'}
+          />
         </div>
 
-        {/* Right Column - Form Fields */}
-        <div className="lg:col-span-2 space-y-6 max-h-[75svh] overflow-y-scroll">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Basic Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventBasicInfo
-                title={title}
-                description={description}
-                onTitleChange={setTitle}
-                onDescriptionChange={setDescription}
-              />
-            </CardContent>
-          </Card>
+        <Card className="flex h-full min-h-0 min-w-0 flex-col">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Event Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col min-h-0">
+            <EventBasicInfo
+              title={title}
+              description={description}
+              onTitleChange={setTitle}
+              onDescriptionChange={setDescription}
+            />
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Date & Time */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Date & Time
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventDateTime
-                startDate={startDate}
-                startTime={startTime}
-                endTime={endTime}
-                timezone={timezone}
-                onStartDateChange={setStartDate}
-                onStartTimeChange={setStartTime}
-                onEndTimeChange={setEndTime}
-                onTimezoneChange={setTimezone}
-              />
-            </CardContent>
-          </Card>
+      {/* Date & Time */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Schedule
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EventDateTime
+            startDate={startDate}
+            startTime={startTime}
+            endTime={endTime}
+            timezone={timezone}
+            onStartDateChange={setStartDate}
+            onStartTimeChange={setStartTime}
+            onEndTimeChange={setEndTime}
+            onTimezoneChange={setTimezone}
+          />
+        </CardContent>
+      </Card>
 
-          {/* Location */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Location
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventLocation
-                eventType={eventType}
-                location={location}
-                legacyAddress={!location ? (initialData?.locationAddress || undefined) : undefined}
-                onlineMeetingLink={onlineMeetingLink}
-                onEventTypeChange={setEventType}
-                onLocationChange={setLocation}
-                onOnlineMeetingLinkChange={setOnlineMeetingLink}
-              />
-            </CardContent>
-          </Card>
+      {/* Location */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            Location
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EventLocation
+            eventType={eventType}
+            location={location}
+            legacyAddress={!location ? (initialData?.locationAddress || undefined) : undefined}
+            onlineMeetingLink={onlineMeetingLink}
+            onEventTypeChange={setEventType}
+            onLocationChange={setLocation}
+            onOnlineMeetingLinkChange={setOnlineMeetingLink}
+          />
+        </CardContent>
+      </Card>
 
-          {/* Discussion Channel */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                Discussion Channel
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventDiscussion
-                discussionLink={discussionLink}
-                onDiscussionLinkChange={setDiscussionLink}
-              />
-            </CardContent>
-          </Card>
+      {/* Attendance Reminders */}
+      <Card className="mt-10! pb-[14px]">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Attendance Reminders
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EventReminderTimes
+            reminderTimes={reminderTimes}
+            onReminderTimesChange={setReminderTimes}
+          />
+          <Accordion type="single" collapsible className="mt-6 w-full">
+            <AccordionItem value="message" className="border-b-0">
+              <AccordionTrigger>
+                <span className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-muted-foreground" />
+                  Message Customization
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-0">
+                <EventReminderEmailCustomization
+                  customMessage={reminderMessage}
+                  onCustomMessageChange={setReminderMessage}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </CardContent>
+      </Card>
 
-          {/* Capacity & Registration */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Capacity & Registration
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventCapacity
-                capacity={capacity}
-                registrationDeadline={registrationDeadline}
-                isApproveRequired={isApproveRequired}
-                onCapacityChange={setCapacity}
-                onRegistrationDeadlineChange={setRegistrationDeadline}
-                onIsApproveRequiredChange={setIsApproveRequired}
-                eventStartDate={startDate}
-              />
-            </CardContent>
-          </Card>
+      {/* Attendee Discussion */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            Attendee Discussion
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EventDiscussion
+            discussionLink={discussionLink}
+            onDiscussionLinkChange={setDiscussionLink}
+          />
+        </CardContent>
+      </Card>
 
-          {/* Custom Registration Questions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <HelpCircle className="h-4 w-4" />
-                Registration Questions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CustomQuestionsBuilder
-                value={customQuestions}
-                onChange={setCustomQuestions}
-              />
-            </CardContent>
-          </Card>
+      <Card className="mt-10! py-[10px]">
+        <CardContent>
+          <Accordion type="multiple" className="w-full">
+            {/* Registration Controls */}
+            <AccordionItem value="registration">
+              <AccordionTrigger>
+                <span className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  Registration Controls
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <EventCapacity
+                  capacity={capacity}
+                  registrationDeadline={registrationDeadline}
+                  isApproveRequired={isApproveRequired}
+                  onCapacityChange={setCapacity}
+                  onRegistrationDeadlineChange={setRegistrationDeadline}
+                  onIsApproveRequiredChange={setIsApproveRequired}
+                  eventStartDate={startDate}
+                />
+              </AccordionContent>
+            </AccordionItem>
 
-          {/* Event Reminders */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                Event Reminders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventReminders
-                reminderTimes={reminderTimes}
-                customMessage={reminderMessage}
-                onReminderTimesChange={setReminderTimes}
-                onCustomMessageChange={setReminderMessage}
-              />
-            </CardContent>
-          </Card>
+            {/* Attendee Information */}
+            <AccordionItem value="attendee-info">
+              <AccordionTrigger>
+                <span className="flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                  Attendee Information
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <CustomQuestionsBuilder
+                  value={customQuestions}
+                  onChange={setCustomQuestions}
+                />
+              </AccordionContent>
+            </AccordionItem>
 
-          {/* Collaboration - show in edit mode or create mode (collect pending invites) */}
-          {(mode === 'edit' && eventId) || mode === 'create' ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Users2 className="h-4 w-4" />
-                  Collaboration
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            {/* Invite Co-Hosts - show in edit mode or create mode (collect pending invites) */}
+            {(mode === 'edit' && eventId) || mode === 'create' ? (
+              <AccordionItem value="co-hosts">
+                <AccordionTrigger>
+                  <span className="flex items-center gap-2">
+                    <Users2 className="h-4 w-4 text-muted-foreground" />
+                    Invite Co-Hosts
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     Invite other communities to co-host this event
@@ -851,11 +851,13 @@ export function EventForm({
                       }
                     }}
                   />
-              </CardContent>
-            </Card>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             ) : null}
-        </div>
-      </div>
+          </Accordion>
+        </CardContent>
+      </Card>
 
       {/* Mobile Submit Buttons */}
       <div className="lg:hidden sticky bottom-0 bg-background border-t p-4 -mx-4 flex gap-2">
@@ -877,6 +879,100 @@ export function EventForm({
           Publish
         </Button>
       </div>
+
+      {/* Preview Sheet */}
+      <Sheet open={showPreview} onOpenChange={setShowPreview}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Preview</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 px-4 pb-4">
+            <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-background">
+              {coverUrl ? (
+                <img
+                  src={coverUrl}
+                  alt={title || 'Event cover'}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <div className="flex size-full items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                  <Calendar className="h-16 w-16 text-primary/30" />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold leading-tight tracking-tight">
+                {title || 'Event Title'}
+              </h2>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-muted/40 p-3">
+                  <div className="mb-1 flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Date</span>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {startDate ? dayjs(startDate).format('MMM D, YYYY') : 'Not set'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {startTime || 'No time set'}
+                    {endTime && ` – ${endTime}`}
+                  </p>
+                </div>
+
+                <div className="rounded-lg bg-muted/40 p-3">
+                  <div className="mb-1 flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Location</span>
+                  </div>
+                  {location?.name || location?.address ? (
+                    <>
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {location.name || location.address}
+                      </p>
+                      {location.name && location.address && (
+                        <p className="truncate text-xs text-muted-foreground">{location.address}</p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-foreground">
+                        {eventType === 'online' ? 'Online' : eventType === 'hybrid' ? 'Hybrid' : 'In-person'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {eventType === 'online'
+                          ? 'Virtual event'
+                          : eventType === 'hybrid'
+                            ? 'In-person & online'
+                            : 'Venue TBA'}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-xs font-medium text-muted-foreground">About</h3>
+                {description ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                    {description}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No description yet</p>
+                )}
+              </div>
+
+              {capacity && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="h-3.5 w-3.5 shrink-0" />
+                  <span>Max {capacity} attendees</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

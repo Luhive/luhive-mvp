@@ -250,7 +250,7 @@ export function CustomQuestionsBuilder({
 
         {customQuestions.length === 0 && (
           <div className="text-center py-8 text-sm text-muted-foreground border border-dashed rounded-lg">
-            No custom questions added yet. Click "Text" or "Options" to get started.
+            No custom questions added yet
           </div>
         )}
 

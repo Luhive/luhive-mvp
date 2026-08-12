@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ImageUp } from "lucide-react";
 import { createClient } from "~/shared/lib/supabase/client";
 import { getCroppedImg, type CroppedAreaPixels } from "~/shared/lib/utils/image-crop";
+import { cn } from "~/shared/lib/utils/cn";
 
 interface EventCoverUploadProps {
   communitySlug: string;
@@ -13,6 +14,7 @@ interface EventCoverUploadProps {
   currentCoverUrl?: string;
   onCoverUpdate: (newCoverUrl: string) => void;
   isCreating?: boolean;
+  className?: string;
 }
 
 export function EventCoverUpload({
@@ -21,6 +23,7 @@ export function EventCoverUpload({
   currentCoverUrl = "",
   onCoverUpdate,
   isCreating = false,
+  className,
 }: EventCoverUploadProps) {
   const [isClient, setIsClient] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -157,24 +160,35 @@ export function EventCoverUpload({
 
   if (!isClient) {
     return (
-      <div className="relative w-full aspect-square bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background rounded-lg" />
+      <div
+        className={cn(
+          "relative size-full overflow-hidden rounded-lg bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background",
+          className
+        )}
+      />
     );
   }
 
   return (
     <>
-      <div className="relative w-full aspect-square bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background overflow-hidden rounded-lg border">
+      <div
+        className={cn(
+          "relative size-full overflow-hidden rounded-lg border bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background",
+          className
+        )}
+      >
         {currentCover ? (
           <img
             src={currentCover}
             alt="Event Cover"
-            className="w-full h-full object-cover object-center"
+            className="absolute inset-0 size-full object-cover object-center"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center space-y-2">
-              <ImageUp className="h-12 w-12 mx-auto text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">Event Cover</p>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="space-y-2 text-center">
+              <ImageUp className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">Upload cover image</p>
+              <p className="text-xs text-muted-foreground/70">Recommended 800 x 800px</p>
             </div>
           </div>
         )}

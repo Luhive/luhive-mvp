@@ -46,7 +46,7 @@ export function CollaborationList({
   if (!hasAny) {
     return (
       <div className="text-sm text-muted-foreground">
-        No collaborations yet. Invite communities to collaborate on this event.
+        No co-hosts invited yet
       </div>
     );
   }
