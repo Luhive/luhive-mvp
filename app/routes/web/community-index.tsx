@@ -70,7 +70,7 @@ import {
   MorphingDialogViewCount,
   MorphingDialogClose,
   MorphingDialogContainer,
-} from "~/components/core/morphing-dialog";
+} from "~/shared/components/core/morphing-dialog";
 import { ScrollArea } from "~/shared/components/ui/scroll-area";
 
 type Event = Database["public"]["Tables"]["events"]["Row"];

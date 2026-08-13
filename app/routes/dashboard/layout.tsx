@@ -167,12 +167,16 @@ export { clientLoader };
 export function shouldRevalidate({
   currentParams,
   nextParams,
+  formMethod,
 }: {
   currentParams: Record<string, string | undefined>;
   nextParams: Record<string, string | undefined>;
+  formMethod?: string;
 }) {
   // Only revalidate when switching to a different community (slug changes)
   if (currentParams?.slug !== nextParams?.slug) return true;
+  // Mutations (profile save, announcements, settings) change community data
+  if (formMethod && formMethod !== "GET") return true;
   // Skip parent revalidation when navigating between child tabs (same slug)
   return false;
 }
@@ -225,9 +229,12 @@ export default function DashboardLayoutPage() {
   const data = useLoaderData<DashboardCommunityData | undefined>();
 
   const navigation = useNavigation();
-  const isLoading = navigation.state === "loading";
   const targetPathname =
     navigation.location?.pathname ?? location.pathname;
+  // Keep the current tab mounted while a mutation revalidates in place,
+  // so only real tab changes swap in a skeleton.
+  const isLoading =
+    navigation.state === "loading" && targetPathname !== location.pathname;
 
   useEffect(() => {
     if (data) {

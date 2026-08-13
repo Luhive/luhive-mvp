@@ -41,7 +41,7 @@ export function EventBasicInfo({
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           placeholder="Tell attendees what this event is about..."
-          className="min-h-[120px] flex-1 resize-none"
+          className="min-h-30 flex-1 resize-none lg:min-h-0"
           maxLength={2000}
         />
         <p className="shrink-0 text-xs text-muted-foreground">

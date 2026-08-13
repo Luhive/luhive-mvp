@@ -558,8 +558,8 @@ export function EventForm({
       <Separator />
 
       {/* Event Cover + Event Details side by side */}
-      <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-[auto_1fr]">
-        <div className="aspect-square w-full shrink-0 self-stretch md:h-full md:w-auto md:max-w-[240px]">
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[auto_1fr]">
+        <div className="w-full max-w-xs shrink-0 self-start lg:w-96 lg:max-w-none">
           <EventCoverUpload
             communitySlug={communitySlug}
             eventId={eventId}

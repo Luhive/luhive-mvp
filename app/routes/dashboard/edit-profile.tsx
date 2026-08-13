@@ -1,12 +1,10 @@
 export { action } from "~/modules/dashboard/server/edit-profile-action.server";
 
 import { useState, useEffect } from "react";
-import { Form, useActionData, useNavigation, useLocation } from "react-router";
+import { useFetcher } from "react-router";
 import { useIsMobile } from "~/shared/hooks/use-mobile";
-import { countWords } from "~/shared/lib/utils/text";
 import { useWordCount } from "~/shared/hooks/use-word-count";
 import { useDashboardContext } from "~/modules/dashboard/hooks/use-dashboard-context";
-import { DashboardEditSkeleton } from "~/modules/dashboard/components/dashboard-edit-skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "~/shared/components/ui/card";
 import { Input } from "~/shared/components/ui/input";
 import { Label } from "~/shared/components/ui/label";
@@ -27,40 +25,35 @@ export function meta() {
 
 export default function CommunityEdit() {
   const data = useDashboardContext();
-  const actionData = useActionData<{ success: boolean; error?: string; message?: string }>();
-  const navigation = useNavigation();
-  const location = useLocation();
+  const fetcher = useFetcher<{ success: boolean; error?: string; message?: string }>();
   const isMobile = useIsMobile();
-  const isSubmitting = navigation.state === "submitting";
+  const isSubmitting = fetcher.state !== "idle";
+
+  const { community } = data;
 
   const [showSuccess, setShowSuccess] = useState(false);
-  const [logoUrl, setLogoUrl] = useState<string>("");
-  const { wordCount: taglineWordCount, handleChange: handleTaglineChange, setWordCount: setTaglineWordCount } = useWordCount<HTMLInputElement>();
-  const { wordCount: descriptionWordCount, handleChange: handleDescriptionChange, setWordCount: setDescriptionWordCount } = useWordCount<HTMLTextAreaElement>();
+  const [logoUrl, setLogoUrl] = useState<string>(community.logo_url || "");
+  const { wordCount: taglineWordCount, handleChange: handleTaglineChange } = useWordCount<HTMLInputElement>(community.tagline || "");
+  const { wordCount: descriptionWordCount, handleChange: handleDescriptionChange } = useWordCount<HTMLTextAreaElement>(community.description || "");
 
   const host = typeof window !== "undefined" ? window.location.host : "";
 
   useEffect(() => {
-    if (data?.community) {
-      setLogoUrl(data.community.logo_url || "");
-      setTaglineWordCount(countWords(data.community.tagline || ""));
-      setDescriptionWordCount(countWords(data.community.description || ""));
-    }
-  }, [data?.community, setTaglineWordCount, setDescriptionWordCount]);
+    const result = fetcher.data;
+    if (!result) return;
 
-  useEffect(() => {
-    if (actionData) {
-      if (actionData.success && actionData.message) {
-        toast.success(actionData.message);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      } else if (actionData.error) {
-        toast.error(actionData.error);
-      }
+    if (result.success && result.message) {
+      toast.success(result.message);
+      setShowSuccess(true);
+      const timeout = setTimeout(() => setShowSuccess(false), 3000);
+      return () => clearTimeout(timeout);
     }
-  }, [actionData]);
 
-  const { community } = data;
+    if (result.error) {
+      toast.error(result.error);
+    }
+  }, [fetcher.data]);
+
   const socialLinks = community.social_links as { website?: string; instagram?: string; linkedin?: string; whatsapp?: string; discord?: string } | null;
 
   const handleLogoUpdate = (newLogoUrl: string) => {
@@ -70,7 +63,7 @@ export default function CommunityEdit() {
   return (
     <div className="py-4 px-4 md:px-6">
       <div className="max-w-7xl mx-auto">
-        <Form method="post">
+        <fetcher.Form method="post">
           <input type="hidden" name="logo_url" value={logoUrl} />
 
           <div className="flex items-center gap-8 justify-between mb-6">
@@ -172,7 +165,7 @@ export default function CommunityEdit() {
               </Button>
             </div>
           )}
-        </Form>
+        </fetcher.Form>
       </div>
     </div>
   );

@@ -162,7 +162,7 @@ export function EventCoverUpload({
     return (
       <div
         className={cn(
-          "relative size-full overflow-hidden rounded-lg bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background",
+          "relative aspect-square w-full overflow-hidden rounded-lg bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background",
           className
         )}
       />
@@ -173,7 +173,7 @@ export function EventCoverUpload({
     <>
       <div
         className={cn(
-          "relative size-full overflow-hidden rounded-lg border bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background",
+          "relative aspect-square w-full overflow-hidden rounded-lg border bg-gradient-to-br from-muted/20 via-muted-foreground/10 to-background",
           className
         )}
       >

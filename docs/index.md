@@ -100,5 +100,9 @@ Practical guideline:
 
 - [Landing feature visuals wiki](landing-feature-visuals.md) — patterns for Features section right-panel mocks (Member Memory reference, tokens, i18n, storyboards for remaining tabs)
 
+## 8) Design engineer reference
+
+- [Routes map (plain language)](routes-design-guide.md) — which `app/routes/**` file is which page, and which `app/modules/**` folder holds the UI
+
 
 > npx skills add emilkowalski/skill - design skills
