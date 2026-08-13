@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { GlowBorder } from "~/components/core/glowing-border";
+import { GlowBorder } from "~/shared/components/core/glowing-border";
 import { Button } from '~/shared/components/ui/button';
 import { useCalBookingUrl } from '~/shared/hooks/use-cal-booking-url';
 import { AnalyticsEvents } from '~/shared/lib/analytics';
