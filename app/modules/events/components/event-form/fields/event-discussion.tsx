@@ -19,7 +19,7 @@ export function EventDiscussion({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="discussion-link">Discussion Channel</Label>
+      <Label htmlFor="discussion-link">Discussion link</Label>
       <InputGroup>
         <InputGroupAddon>
           <MessageCircle className="h-4 w-4" />
@@ -29,7 +29,7 @@ export function EventDiscussion({
           type="url"
           value={discussionLink}
           onChange={handleChange}
-          placeholder="Add WhatsApp group, Discord server, or Telegram channel link"
+          placeholder="Add WhatsApp group, Discord server, or Telegram link"
         />
       </InputGroup>
       <p className="text-xs text-muted-foreground">
