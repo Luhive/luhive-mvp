@@ -4,23 +4,6 @@ import { defineConfig, type PluginOption } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import netlifyReactRouter from "@netlify/vite-plugin-react-router";
 
-import {
-  sentryReactRouter,
-  type SentryReactRouterBuildOptions,
-} from "@sentry/react-router";
-
-const sentryConfig: SentryReactRouterBuildOptions = {
-  org: "luhive",
-  project: "luhive",
-  // An auth token is required for uploading source maps;
-  // store it in an environment variable to keep it secure.
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  // ...
-  sourcemaps: {
-    filesToDeleteAfterUpload: ["./build/**/*.map"],
-  },
-};
-
 const ensureServerBuildEntry = (): PluginOption => {
   const serverBuildModuleId = "virtual:react-router/server-build";
 
@@ -68,7 +51,7 @@ const ensureServerBuildEntry = (): PluginOption => {
   };
 };
 
-export default defineConfig((config) => {
+export default defineConfig(() => {
   return {
     ssr: {},
     server: {
@@ -77,7 +60,6 @@ export default defineConfig((config) => {
     plugins: [
       tailwindcss(),
       reactRouter(),
-      sentryReactRouter(sentryConfig, config),
       tsconfigPaths(),
       netlifyReactRouter(),
 

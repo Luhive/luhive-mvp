@@ -9,7 +9,6 @@ import {
 } from "react-router";
 import { useEffect } from "react";
 
-import * as Sentry from "@sentry/react-router";
 import { initGA, trackPageView } from "~/shared/lib/analytics";
 import { readFirstTouchSource } from "~/shared/lib/first-touch.server";
 
@@ -94,7 +93,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let stack: string | undefined;
 
   if (!isRouteErrorResponse(error)) {
-    Sentry.captureException(error);
+    console.error(error);
   }
 
 

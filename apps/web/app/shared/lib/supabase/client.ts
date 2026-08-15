@@ -1,6 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { Database } from "~/shared/models/database.types";
-import * as Sentry from "@sentry/react-router";
 
 let supabaseClient: ReturnType<typeof createBrowserClient<Database>> | null =
   null;
@@ -22,10 +21,6 @@ function createClient() {
   }
 
   supabaseClient = createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  if (import.meta.env.PROD) {
-    Sentry.addIntegration(Sentry.supabaseIntegration({ supabaseClient }));
-  }
 
   return supabaseClient;
 }

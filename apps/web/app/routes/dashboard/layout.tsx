@@ -5,8 +5,6 @@ import {
   useLoaderData,
   useNavigation,
 } from "react-router";
-import { useEffect } from "react";
-import { setUser, setCommunityContext } from "~/shared/lib/monitoring/sentry";
 import type {
   DashboardCommunityData,
   Profile,
@@ -235,21 +233,6 @@ export default function DashboardLayoutPage() {
   // so only real tab changes swap in a skeleton.
   const isLoading =
     navigation.state === "loading" && targetPathname !== location.pathname;
-
-  useEffect(() => {
-    if (data) {
-      setUser({
-        id: data.user.id,
-        email: data.userEmail,
-        username: data.user.full_name || undefined,
-      });
-      setCommunityContext({
-        id: data.community.id,
-        slug: data.community.slug,
-        name: data.community.name,
-      });
-    }
-  }, [data]);
 
   if (data === undefined) {
     return <DashboardLayoutSkeleton />;

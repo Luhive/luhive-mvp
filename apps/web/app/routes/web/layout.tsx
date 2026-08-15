@@ -1,11 +1,10 @@
 import type { Route } from "./+types/layout";
 import { Outlet, useLoaderData, useMatches, useLocation } from "react-router";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { HydrationBoundary } from "@tanstack/react-query";
 import { TopNavigation } from "~/shared/components/navigation";
 import { createClient } from "~/shared/lib/supabase/server";
 import Footer from "~/shared/components/footer";
-import { setUser, clearUser } from "~/shared/lib/monitoring/sentry";
 import {
 	useCurrentUserQuery,
 	useSetCurrentUserCache,
@@ -77,17 +76,6 @@ function LayoutInner() {
 		setCurrentUserCache(null, false);
 		clearEventRegistrationSessionState(queryClient, { revalidate: false });
 	}, [queryClient, setCurrentUserCache]);
-
-	useEffect(() => {
-		if (user) {
-			setUser({
-				id: user.id,
-				username: user.full_name || undefined,
-			});
-		} else {
-			clearUser();
-		}
-	}, [user]);
 
 	return (
 		<div
