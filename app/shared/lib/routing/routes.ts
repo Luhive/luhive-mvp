@@ -107,7 +107,6 @@ export class Routes {
       invite: `${API_BASE}/events/invite`,
       updateRegistrationStatus: `${API_BASE}/events/update-registration-status`,
       scheduleUpdate: `${API_BASE}/events/schedule-update`,
-      emailDebug: `${API_BASE}/events/email-debug`,
       sendReminders: `${API_BASE}/events/send-reminders`,
       newEventNotification: `${API_BASE}/events/new-event-notification`,
       collaborationNotification: `${API_BASE}/events/collaboration-notification`,

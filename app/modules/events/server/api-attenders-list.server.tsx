@@ -11,6 +11,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 	try {
 		const serviceClient = createServiceRoleClient();
+
+		// Service role bypasses RLS, so the event's own visibility is the only gate:
+		// the roster is public exactly where the event page itself is public.
+		const { data: event } = await serviceClient
+			.from("events")
+			.select("id, status, community:communities!events_community_id_fkey (is_show)")
+			.eq("id", eventId)
+			.maybeSingle();
+
+		if (!event || event.status !== "published" || !event.community?.is_show) {
+			return Response.json({ error: "Event not found" }, { status: 404 });
+		}
+
 		const { data: registrations, error } = await serviceClient
 			.from("event_registrations")
 			.select(`
