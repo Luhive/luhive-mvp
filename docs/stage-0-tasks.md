@@ -13,11 +13,26 @@ Ground truth before anything else. Full context in `docs/spec-moc.md`; stage gat
  └─ #3  move → apps/web
      └─ #4  fix build config
          └─ #5  VERIFY web deploys  ◄── hard gate
-             ├─ #6  apps/integration ── #10 CI
+             ├─ #6  apps/integration-api ── #10 CI
              └─ #7  packages/db skeleton
                  └─ #8  drizzle pull + reconcile migrations
                      └─ #9  web uses @luhive/db
 ```
+
+## Naming
+
+Directory and package name match, so `--filter` is predictable and nothing has two identities.
+
+| Directory | Package name | What it is |
+|---|---|---|
+| `apps/web` | `@luhive/web` | React Router app → Netlify |
+| `apps/core-api` | `@luhive/core-api` | private backend → GCP Cloud Run *(Stage 1)* |
+| `apps/integration-api` | `@luhive/integration-api` | public customer API → Cloudflare Workers |
+| `packages/db` | `@luhive/db` | drizzle schema, migrations, types |
+| `packages/domain` | `@luhive/domain` | zod contracts, `Result` *(Stage 1)* |
+| `packages/api-client` | `@luhive/api-client` | `ApiClient` *(Stage 1)* |
+
+The current root `package.json` is named `luhive-web-app` — rename it to `@luhive/web` when it moves in #3. The `-api` suffix marks the two deployables that serve HTTP to another program; `web` serves a browser.
 
 ---
 
@@ -56,13 +71,21 @@ Note: `pnpm build` emits a Sentry sourcemap upload failure when the network is r
 
 Blocked by #2.
 
-- [ ] `git mv` the app — `app/`, `public/`, build config, `package.json`, `netlify.toml`, `supabase/`
-- [ ] Keep `docs/` at the repo root; the spec symlinks live there and cover all apps
-- [ ] Verify history followed: `git log --follow apps/web/app/root.tsx` should show the full history
+- [x] `git mv` the app — all of the listed paths, plus `.netlify/` (the CLI state dir, which follows `netlify.toml`). `.env.development`, `.env.development.local` and `.env.production` moved with a plain `mv` since they are gitignored.
+- [x] Rename the moved `package.json` to `@luhive/web`; root `package.json` written — private, no deps, `pnpm -r --if-present` passthroughs, `packageManager` carried verbatim. **`packageManager` was removed from `apps/web`** so corepack has one source of truth.
+- [x] Leave `supabase/` at the root — caught late: it was moved with the rest and then moved back in `a46c29a`. Both directions are 100%-similarity renames, so `git log --follow` on a migration still traces through.
+- [x] Keep `docs/`, `.cursor/`, `.agents/`, `.vscode/` at the repo root
+- [x] Verify history followed
 
 **Use `git mv`, never a copy.** Those 409 commits — 100 of them bug fixes, 32 on OAuth/OTP — were the evidence that decided against a rewrite. Losing them is not recoverable.
 
-**Gate:** `git log --follow` on a moved file shows its pre-move commits.
+**Gate: passes.** `git log --follow apps/web/app/root.tsx` returns 18 commits ending at `16130b7 Initial commit from create-react-router`. `apps/web/package.json` keeps all 38. `git diff -M --summary` on the move commit was 631 entries, every one a `rename`, zero content changes.
+
+**Deviation from the plan above — the root `package.json` is a separate commit, not the same one.** Recreating a file at a path that is simultaneously the source of a rename destroys the pairing: git stops seeing `package.json → apps/web/package.json` and records a plain add, silently dropping 38 commits of dependency history. Verified — staging both together dropped the rename count from 631 to 630. The move commit therefore deletes the root `package.json`, and `4791d77` adds the workspace one immediately after.
+
+Commits: `e0bbadc` move · `4791d77` root manifest · `a46c29a` supabase back to root.
+
+**The build is broken until #4, as expected.** `pnpm-lock.yaml` still records every dependency under the root importer (`.`) rather than `apps/web`, so `pnpm install --frozen-lockfile` will now fail. Regenerating it is #4's job, together with the Netlify base directory and the `~/` alias check.
 
 ---
 
@@ -70,10 +93,29 @@ Blocked by #2.
 
 Blocked by #3. Three predictable breakages:
 
-- [ ] **Path aliases.** `~/` resolves relative to `app/` across ~56k LOC. `apps/web/tsconfig.json` keeps its own `paths` block and must not inherit a conflicting one from `tsconfig.base.json`. Check `vite-tsconfig-paths` still resolves.
-- [ ] **Netlify.** `netlify.toml` assumes the repo root is the app. Needs a base directory, and the build command must install from the workspace root so workspace deps resolve.
-- [ ] **Vite / React Router.** `vite.config.ts`, `react-router.config.ts`, and the `.react-router/` typegen output path.
-- [ ] Also check `instrument.server.mjs`, Sentry config, and `netlify/edge-functions/`. (You can remove sentry entirely)
+- [x] **Path aliases.** `apps/web/tsconfig.json` now `extends: "../../tsconfig.base.json"` and keeps `paths`, `baseUrl`, `lib`, `types`, `jsx`, `rootDirs` and `verbatimModuleSyntax` local. Since the file itself moved, `"~/*": ["./app/*"]` already resolved to `apps/web/app/*` unchanged. Proof it works: typecheck returns the *same 15 errors on the same lines* as before the move — a broken alias would have produced hundreds.
+- [x] **Netlify.** Rewritten for the layout Netlify actually documents for pnpm workspaces. See the manual step below.
+- [x] **Vite / React Router.** No path changes were needed. Vite's root is the config file's directory, so `build/` and `.react-router/` now land inside `apps/web` automatically. `.gitignore` was already unanchored for this in #3.
+- [x] **Sentry removed entirely** — `instrument.server.mjs`, `app/shared/lib/monitoring/sentry.ts`, the vite plugin, the `sentryOnBuildEnd` hook, both supabase integrations, `setUser`/`clearUser`/`setCommunityContext` in the two route layouts and the logout action, the `root.tsx` capture (now `console.error`), and the `@sentry/react-router` dependency. `app/entry.server.tsx` had no real handler of its own — it was `Sentry.createSentryHandleRequest` — so the stock React Router streaming handler that was sitting commented out in the same file was restored.
+- [x] **`netlify/edge-functions/`** — the umami proxy. Netlify auto-detects this directory *relative to the base*, which is the repo root, so after the move it would have silently stopped deploying. Now declared explicitly as `edge_functions = "apps/web/netlify/edge-functions"`.
+- [x] **Lockfile regenerated.** The `.` importer is now empty and `apps/web` holds the dependencies. Diffing the old root importer against the new one, the *only* line that changed was the removed Sentry package — zero version drift across the other ~90 dependencies.
+
+### ⚠ Manual step required in the Netlify UI before #5
+
+Per `docs.netlify.com/build/configure-builds/monorepos`, config search order is **package directory → base directory → root**, and the package directory **cannot be set in `netlify.toml`** — UI only.
+
+Set **Project configuration → Build & deploy → Continuous deployment → Build settings**:
+
+- **Package directory:** `apps/web`
+- **Base directory:** leave unset (repo root), so pnpm installs the whole workspace
+
+Until the package directory is set, Netlify falls back to the root, finds no `netlify.toml`, and **the `/tools` and `/stats.js` redirects disappear.** That is a live-traffic regression, not a build failure, so the deploy would look green.
+
+Every path in `netlify.toml` is relative to the **base** (the repo root), not to the file — hence `publish = "apps/web/build/client"`. This is the usual monorepo trap.
+
+**Verified locally:** `pnpm install` resolves · `pnpm typecheck` at the same 15-error baseline · `pnpm build` exits 0 and now runs clean, since the Sentry sourcemap upload step is gone. Not verifiable locally: whether Netlify picks up `apps/web/.netlify/v1/functions/` for the SSR handler — that is what #5's deploy preview is for.
+
+Note: `apps/web/.netlify/v1/functions/react-router-server.mjs` is generated output that is tracked in git, so it churns on every build. It was already stale (recorded plugin 2.0.1, lockfile had 2.1.3). Left tracked deliberately — gitignoring it touches deploy behaviour that cannot be tested before #5.
 
 ---
 
@@ -81,21 +123,35 @@ Blocked by #3. Three predictable breakages:
 
 Blocked by #4. **Do not start any other app until this passes.**
 
-- [ ] `pnpm install` from the root resolves
-- [ ] `pnpm --filter web dev` serves; pages render
-- [ ] `pnpm --filter web typecheck` clean (baseline pre-existing errors if any)
-- [ ] `pnpm --filter web build` succeeds
-- [ ] Netlify **deploy preview** builds, and auth + an event page + the dashboard all work
+- [x] `pnpm install` from the root resolves — `--frozen-lockfile` reports the lockfile up to date across both workspace projects, which is the step Netlify runs before the build command
+- [x] `pnpm --filter @luhive/web dev` serves — root `pnpm dev` delegates correctly and Vite comes up on `:5173`
+- [x] `pnpm --filter @luhive/web typecheck` — same 15 pre-existing errors, same files, same line numbers as before the move. That identity is the proof the `~/` alias survived; a broken alias would produce hundreds
+- [x] `pnpm --filter @luhive/web build` succeeds — exits 0, and now runs clean since the Sentry sourcemap upload step is gone
+- [ ] Netlify **branch deploy** builds, and auth + an event page + the dashboard all work
+
+Package directory set to `apps/web` in the Netlify UI (confirmed done). Production branch is `main`, so pushing `development` produces a branch deploy rather than touching live traffic.
+
+**Baseline for comparison:** the 15 type errors are pre-existing and unrelated to the migration — `community_waitlist` missing from the generated types (6), an unexported `DashboardStatsData`, a missing `google-auth-library`, and assorted `string | null` narrowing. They were 15 before task #1 and are 15 now. Track separately; do not let them block CI in #10.
 
 The MVP is live for Enhance Azerbaijan, Azerbaijan Startup Community and GDG Baku. A broken deploy here is a real outage, not an inconvenience.
 
+### What to check on the branch deploy
+
+The three things that cannot be verified locally, in the order they would fail:
+
+1. **The SSR handler.** `apps/web/.netlify/v1/functions/react-router-server.mjs` is generated relative to the Vite root. Netlify must find it via the package directory. If this is wrong, every page 404s or returns the bare shell.
+2. **The redirects.** Hit `/tools` and `/stats.js`. If `netlify.toml` was not picked up, these break while the build still reports success.
+3. **The umami edge function.** `edge_functions` is now an explicit path; confirm it deployed rather than silently vanishing.
+
+Then the functional checks: log in, open an event page, open the dashboard.
+
 ---
 
-## #6 · Bring in `apps/integration`
+## #6 · Bring in `apps/integration-api`
 
 Blocked by #5. Source: `/Users/alistein/Documents/Luhive/LuhiveIntegrationAPI` — 458 LOC, Hono on Cloudflare Workers, has tests and 17 architecture docs.
 
-- [ ] `git subtree add --prefix=apps/integration <remote> <branch>` — history comes along, not a file copy
+- [ ] `git subtree add --prefix=apps/integration-api <remote> <branch>` — history comes along, not a file copy
 - [ ] Decide where its `docs/` lands; do not leave two doc trees
 - [ ] Check `wrangler.jsonc` paths and the deploy script from the new location
 - [ ] Its `vitest.config.ts` should be picked up by root `pnpm -r test`
@@ -160,13 +216,13 @@ Blocked by #6. There is no `.github` directory in any repo today — nothing run
 - [ ] `pnpm -r typecheck` · `pnpm -r build` · `pnpm -r test`
 - [ ] Baseline pre-existing type errors rather than blocking the pipeline; track cleanup separately
 
-Only mechanism that will catch a `packages/db` change breaking `apps/integration` — a silent failure mode today, and a live one the moment both apps share a schema.
+Only mechanism that will catch a `packages/db` change breaking `apps/integration-api` — a silent failure mode today, and a live one the moment both apps share a schema.
 
 ---
 
 ## Out of scope for Stage 0
 
-- Creating `apps/core` — that is Stage 1
+- Creating `apps/core-api` — that is Stage 1
 - Any change to `app/modules/events/**` beyond what the move requires
 - Refactoring anything not required to make the workspace build
 - Provisioning GCP — the Supabase region must be identified first, since core's region must match it
