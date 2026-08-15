@@ -1,0 +1,31 @@
+---
+description: Migration context — which architecture applies where
+alwaysApply: true
+---
+
+# Platform Migration (read first)
+
+This repo is migrating from a single React Router app to a workspace:
+`apps/web` (this code) · `apps/core-api` (new private backend) · `apps/integration-api` (public customer API).
+
+**Current work: `docs/stage-0-tasks.md`** — ordered, dependency-aware checklist. Task #5 is a hard gate; do not start other apps until web deploys.
+
+**The spec is authoritative.** It is symlinked into this repo:
+
+- `docs/spec-moc.md` — decisions, stages, live risks. Start here.
+- `docs/spec/` — 17 numbered documents. `04` structure, `05` conventions, `05a` a full worked example, `15` stages and gates.
+
+Read the relevant spec document before proposing architecture, and follow it over any assumption from the existing code.
+
+## Scope of the other rules
+
+Every other rule in `.cursor/rules/**` describes **`apps/web` only** — the existing React Router app. They do not govern `apps/core-api` or `apps/integration-api`, which follow `docs/spec/04` and `docs/spec/05` instead (vertical slices, Hono, services, `Result<T>`, drizzle).
+
+Do not "fix" new backend code to match the web app's module/repo layout.
+
+## Standing constraints during migration
+
+- **`app/modules/events/**` is frozen.** Bug fixes only, no refactors, no restructuring. See `docs/spec/12`.
+- **Cleanup is only authorised on the path to a slice being migrated.** Do not refactor files you were not already changing.
+- **Business logic moves to `apps/core-api`, not sideways.** New rules never get added to `apps/web` server actions.
+- Never introduce new RLS policies. Tenant scoping lives in application code.

@@ -1,6 +1,6 @@
 .DS_Store
 .env
-/node_modules/
+node_modules/
 
 .env.development
 .env.production
@@ -9,8 +9,12 @@
 
 dbMigration.sh
 
-# React Router
-/.react-router/
-/build/
+# Symlinks into the Obsidian vault — machine-local, must not be committed
+docs/spec
+docs/spec-moc.md
+
+# React Router — unanchored so they match under apps/* and packages/*
+.react-router/
+build/
 package-lock.json
 .pnpm-store/
