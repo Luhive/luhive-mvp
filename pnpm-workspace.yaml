@@ -12,11 +12,20 @@ catalog:
   "@supabase/supabase-js": ^2.75.0
   drizzle-orm: ^0.44
 
-allowBuilds:
-  '@sentry/cli': true
-  '@tailwindcss/oxide': true
-  esbuild: true
-  sharp: true
-  supabase: true
-ignoredBuiltDependencies:
-  - '@sentry/cli'
+# @hookform/resolvers/zod imports `zod/v4/core` but declares no zod peer, so it
+# only resolves when zod happens to be hoisted above it. Moving the app into
+# apps/web changed that hoisting and broke the Netlify build. Declaring the peer
+# links zod into the package directly, independent of layout.
+packageExtensions:
+  "@hookform/resolvers":
+    peerDependencies:
+      zod: "*"
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
+onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - esbuild
+  - sharp
+  - supabase
