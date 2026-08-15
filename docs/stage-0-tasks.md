@@ -147,7 +147,9 @@ The first push failed with `Build script returned non-zero exit code: 2` because
 - **SSR alive** — `/` and `/c/luhive` return server-rendered HTML with data-driven titles, so `.netlify/v1/functions/` resolved correctly. That was the one thing that could not be checked locally.
 - **Task #1 holds in production shape** — `/api/events/email-debug` → 404, `attenders-list` with no id → 400, with an unknown id → 404 `{"error":"Event not found"}`.
 
-**Still needs a human with a browser:** log in, and open the dashboard with a real session. Cookie-based auth cannot be verified with curl.
+- **Auth, event page and dashboard** — verified manually in a browser against `dev.luhive.com`. Cookie-based auth could not be checked with curl.
+
+**Gate passed.** All five items green.
 
 Production is untouched — `luhive-mvp` builds `main`, which has none of these commits. Merging `development` → `main` is what ships it.
 
