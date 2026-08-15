@@ -9,6 +9,10 @@
 
 dbMigration.sh
 
+# Symlinks into the Obsidian vault — machine-local, must not be committed
+docs/spec
+docs/spec-moc.md
+
 # React Router
 /.react-router/
 /build/

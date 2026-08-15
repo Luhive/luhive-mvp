@@ -2,6 +2,16 @@ packages:
   - "packages/*"
   - "apps/*"
 
+# One version workspace-wide. Version skew across package boundaries breaks type
+# assignability, and the resulting error never says that is the cause.
+# zod and @supabase/supabase-js match apps/web's current specifiers, so adopting
+# `catalog:` there resolves to what it already has.
+catalog:
+  zod: ^4.1.12
+  hono: ^4
+  "@supabase/supabase-js": ^2.75.0
+  drizzle-orm: ^0.44
+
 allowBuilds:
   '@sentry/cli': true
   '@tailwindcss/oxide': true
