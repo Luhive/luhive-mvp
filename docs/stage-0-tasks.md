@@ -127,9 +127,29 @@ Blocked by #4. **Do not start any other app until this passes.**
 - [x] `pnpm --filter @luhive/web dev` serves — root `pnpm dev` delegates correctly and Vite comes up on `:5173`
 - [x] `pnpm --filter @luhive/web typecheck` — same 15 pre-existing errors, same files, same line numbers as before the move. That identity is the proof the `~/` alias survived; a broken alias would produce hundreds
 - [x] `pnpm --filter @luhive/web build` succeeds — exits 0, and now runs clean since the Sentry sourcemap upload step is gone
-- [ ] Netlify **branch deploy** builds, and auth + an event page + the dashboard all work
+- [x] Netlify **branch deploy** builds — `dev.luhive.com` is live on commit `154a57f`
 
-Package directory set to `apps/web` in the Netlify UI (confirmed done). Production branch is `main`, so pushing `development` produces a branch deploy rather than touching live traffic.
+### ⚠ There are TWO Netlify sites building this repo
+
+This was not in the plan and it broke the first deploy. Both need the package directory, not just one.
+
+| Site | URL | Prod branch | Package directory |
+|---|---|---|---|
+| `luhive-mvp` | luhive.com | `main` | `apps/web` |
+| `luhive-development` | dev.luhive.com | `development` | `apps/web` |
+
+The first push failed with `Build script returned non-zero exit code: 2` because only `luhive-mvp` had been updated. With no package directory, `luhive-development` never found `apps/web/netlify.toml` and fell back to its UI settings — publishing `build/client` at the repo root, which no longer exists, and losing `SECRETS_SCAN_OMIT_PATHS`, so the build tripped Netlify's secret scanner on the Supabase keys it had just emitted. Both sites are now set; base stays unset on both.
+
+### Verified against the live branch deploy
+
+- **New build is actually serving** — 0 Sentry mentions across all 57 entry assets. Before the fix the bundle still carried `SENTRY_RELEASE={id:"91a4b4a..."}`, which is the cleanest way to tell which commit Netlify is serving.
+- **Redirects intact** — `/stats.js` 200, `/tools` 302 → `/tools/ics-generator`, which proves `netlify.toml` is being read from the package directory.
+- **SSR alive** — `/` and `/c/luhive` return server-rendered HTML with data-driven titles, so `.netlify/v1/functions/` resolved correctly. That was the one thing that could not be checked locally.
+- **Task #1 holds in production shape** — `/api/events/email-debug` → 404, `attenders-list` with no id → 400, with an unknown id → 404 `{"error":"Event not found"}`.
+
+**Still needs a human with a browser:** log in, and open the dashboard with a real session. Cookie-based auth cannot be verified with curl.
+
+Production is untouched — `luhive-mvp` builds `main`, which has none of these commits. Merging `development` → `main` is what ships it.
 
 **Baseline for comparison:** the 15 type errors are pre-existing and unrelated to the migration — `community_waitlist` missing from the generated types (6), an unexported `DashboardStatsData`, a missing `google-auth-library`, and assorted `string | null` narrowing. They were 15 before task #1 and are 15 now. Track separately; do not let them block CI in #10.
 
