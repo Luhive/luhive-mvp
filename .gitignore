@@ -1,6 +1,6 @@
 .DS_Store
 .env
-/node_modules/
+node_modules/
 
 .env.development
 .env.production
@@ -13,8 +13,8 @@ dbMigration.sh
 docs/spec
 docs/spec-moc.md
 
-# React Router
-/.react-router/
-/build/
+# React Router — unanchored so they match under apps/* and packages/*
+.react-router/
+build/
 package-lock.json
 .pnpm-store/
