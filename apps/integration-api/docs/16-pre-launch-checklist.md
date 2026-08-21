@@ -1,0 +1,22 @@
+# Pre-launch checklist
+
+- [ ] `community_id` derived from the key on every endpoint, never from client input.
+- [ ] Every read and write scoped to the caller's community in the query itself.
+- [ ] Edge cache keyed by `community_id` + path; no cross-tenant cache bleed.
+- [ ] Keys stored as hashes only; raw key shown once; constant-time comparison.
+- [ ] Revocation and expiry checked on every request.
+- [ ] Secret key absent from any client bundle; all writes go through a server route.
+- [ ] All input validated with Zod, with enforced max lengths.
+- [ ] Output escaped where submissions render; input sanitized if rich text is allowed.
+- [ ] Turnstile verified server-side; honeypot present; WAF rate-limit rules live.
+- [ ] Approval requires owner/admin role in the target community.
+- [ ] Public DTOs exclude all internal and PII fields.
+- [ ] CORS locked down; no wildcard with credentials.
+- [ ] Secrets via `wrangler secret put`, never committed; separate per environment.
+- [ ] Authorization header redacted in logs; admin actions audited.
+- [ ] Consent notice on the form; retention window for submissions defined.
+- [ ] Startups scopes only issued to communities with the feature flag on.
+- [ ] Partner keys have null `community_id`, enforced by the CHECK constraint.
+- [ ] Partner middleware is mounted only under `/v1/public/*` and never reads `community_id`.
+- [ ] `/v1/public/events` returns `status = 'published'` only, and shares no handler with `/v1/events`.
+- [ ] Public feed DTO excludes all member, attendee, and registration data.

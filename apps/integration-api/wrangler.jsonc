@@ -1,0 +1,64 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "luhive-integration-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-19",
+  "compatibility_flags": [
+     "nodejs_compat"
+   ],
+  // Non-secret config. Single environment for the pilot (no staging/production split).
+  // Secret set separately: `wrangler secret put SUPABASE_SERVICE_ROLE_KEY`.
+  "vars": {
+    "SUPABASE_URL": "https://ncgqtxfchavfugucdnnh.supabase.co",
+    "ENVIRONMENT": "production"
+  },
+  // Custom domain for the deployed Worker (matches the Cloudflare dashboard).
+  "routes": [
+    {
+      "pattern": "api.luhive.com",
+      "custom_domain": true,
+      "enabled": true,
+      "previews_enabled": false
+    }
+  ],
+  // Keep the workers.dev subdomain and preview URLs off (as set remotely).
+  "workers_dev": false,
+  "preview_urls": false,
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "MY_KV_NAMESPACE",
+  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  //   }
+  // ],
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MY_BUCKET",
+  //     "bucket_name": "my-bucket"
+  //   }
+  // ],
+  // "d1_databases": [
+  //   {
+  //     "binding": "MY_DB",
+  //     "database_name": "my-database",
+  //     "database_id": ""
+  //   }
+  // ],
+  // "ai": {
+  //   "binding": "AI"
+  // },
+    "observability": {
+      "enabled": false,
+      "head_sampling_rate": 1,
+      "logs": {
+        "enabled": true,
+        "head_sampling_rate": 1,
+        "persist": true,
+        "invocation_logs": true
+      },
+      "traces": {
+        "enabled": false,
+        "persist": true,
+        "head_sampling_rate": 1
+      }
+    }
+  }
