@@ -8,6 +8,16 @@ Four rules, chosen so the repo stays small as it grows. The theme: the source of
 - Do not add Zod validation to internal data that was already validated at the boundary. That is runtime cost for no benefit.
 - One schema per concept. Derive variants with `.pick()`, `.omit()`, `.partial()`, `.extend()` from a base schema instead of writing several near-identical schemas. This is what prevents small types scattering across the repo.
 
+### Schema naming convention
+
+Schemas that model an HTTP boundary carry a direction suffix, and any visibility/scope qualifier (like `Public`) goes at the **front** of the name so it reads left-to-right as "which view, which entity, which direction":
+
+- **Request input** ends with `Request`: `[<Qualifier>]<Entity>[<Action>]Request` (for example `StartupSubmissionRequest`, `PublicEventsRequest`). This covers both request bodies and validated query params.
+- **Response DTO** ends with `Response`, qualifier first: `[<Qualifier>]<Entity>Response` (for example `PublicEventResponse`, `PublicStartupResponse`).
+- **Internal / domain types that never cross the HTTP boundary keep plain descriptive names, no suffix**: env (`EnvSchema`), auth context (`ApiKeyContext`), DB row schemas (`ApiKeyRow`, `EventRow`), service argument shapes. The suffix signals "this is the wire contract"; anything without it is internal.
+
+Derived variants still follow the suffix: a response built from a base row via `.omit()` is named for what it is on the wire (`PublicEventResponse`), not for the base it came from.
+
 ## 2. Classes for state, functions for stateless behavior
 
 - A class is warranted only when it holds state or injected dependencies. A service that wraps the Supabase client and a community context is a legitimate class, and gives the consistency and reuse a service-oriented style is after:

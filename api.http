@@ -1,0 +1,34 @@
+# 1. Define Variables
+@baseUrl = https://api.luhive.com
+@authToken = luh_pt_replace_with_a_key_from_pnpm_create_key
+@next_cursor = ""
+
+# 2. Checking the API key
+GET {{baseUrl}}/v1/whoami
+Authorization: {{authToken}}
+
+###
+
+# 3. Getting all public events
+GET {{baseUrl}}/v1/public/events?when=all
+Authorization: {{authToken}}
+
+###
+
+# 4. Getting next page of public events
+GET {{baseUrl}}/v1/public/events?when=all&cursor={{next_cursor}}
+Authorization: {{authToken}}
+
+###
+
+# 5. Getting upcoming public events
+GET {{baseUrl}}/v1/public/events?when=ssss
+Authorization: {{authToken}}
+
+###
+
+# 6. Getting past public events
+GET {{baseUrl}}/v1/public/events?when=past
+Authorization: {{authToken}}
+
+###

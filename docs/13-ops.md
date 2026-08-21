@@ -19,14 +19,18 @@ Set `Cache-Control` on public reads with a short TTL (for example 60s) and let C
 
 ## Secrets and environments
 
-- Secrets via `wrangler secret put`, set separately per environment. Local secrets in `.dev.vars` (gitignored).
-- Separate Supabase keys per environment; ideally separate Supabase projects for staging and production.
-- Three environments: local (`wrangler dev`), staging, production. Promote by deploying to each.
+For the pilot we run a **single environment** (no staging/production split), to keep things simple for the first ship.
+
+- Secrets via `wrangler secret put SUPABASE_SERVICE_ROLE_KEY`. Local dev values live in `.dev.vars` (gitignored).
+- One Supabase project and one service-role key.
+- Two contexts only: local (`wrangler dev`, reads `.dev.vars`) and the single deployed Worker.
+- If a staging/production split is ever needed, add `env` blocks in `wrangler.jsonc` and push secrets per env; not now.
 
 ## Deploy
 
-- `wrangler deploy` (or `--env staging`). Optionally a GitHub Action that runs typecheck, tests, then deploys on merge to main.
+- `wrangler deploy` (via `pnpm run deploy`). Optionally a GitHub Action that runs typecheck, tests, then deploys on merge to main.
 - Custom domain `api.luhive.com` via a Workers route on the `luhive.com` zone.
+- No staging safety net with one environment: test locally with `wrangler dev` before deploying, since a deploy goes straight to live.
 - Rollback is a redeploy of the previous version; keep deploys small and frequent.
 
 ## Observability

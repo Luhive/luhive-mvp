@@ -1,28 +1,29 @@
 # Runtime, config, and bindings
 
-Non-secret config goes in `wrangler.toml`; secrets are set with `wrangler secret put` and never committed. Local development reads `.dev.vars`.
+Non-secret config goes in `wrangler.jsonc`; secrets are set with `wrangler secret put` and never committed. Local development reads `.dev.vars`.
 
-```toml
-# wrangler.toml
-name = "luhive-integration-api"
-main = "src/index.ts"
-compatibility_date = "2025-01-01"
-compatibility_flags = ["nodejs_compat"]   # needed for node:crypto in api-key.ts
+For the pilot we run a **single environment** — no `env.staging` / `env.production` blocks. Local dev (`wrangler dev`, reading `.dev.vars`) and the one deployed Worker are the only two contexts.
 
-[vars]
-SUPABASE_URL = "https://xxxx.supabase.co"
-ENVIRONMENT  = "development"
+```jsonc
+// wrangler.jsonc
+{
+  "name": "luhive-integration-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-18",
+  "compatibility_flags": ["nodejs_compat"],   // needed for node:crypto in api-key.ts
 
-# Secrets (set via: wrangler secret put NAME):
-#   SUPABASE_SERVICE_ROLE_KEY
-#   SUPABASE_JWT_SECRET            # for verifying forwarded admin JWTs (optional path)
+  "vars": {
+    "SUPABASE_URL": "https://xxxx.supabase.co",
+    "ENVIRONMENT": "production"
+  },
 
-[env.staging]
-vars = { ENVIRONMENT = "staging", SUPABASE_URL = "https://staging.supabase.co" }
+  // Custom domain for the deployed Worker:
+  // "routes": [{ "pattern": "api.luhive.com/*", "zone_name": "luhive.com" }]
 
-[env.production]
-vars = { ENVIRONMENT = "production", SUPABASE_URL = "https://prod.supabase.co" }
-route = { pattern = "api.luhive.com/*", zone_name = "luhive.com" }
+  // Secrets (set via: wrangler secret put NAME):
+  //   SUPABASE_SERVICE_ROLE_KEY
+  //   SUPABASE_JWT_SECRET            // for verifying forwarded admin JWTs (optional path)
+}
 ```
 
 Type the bindings and validate them once at startup:
@@ -34,14 +35,14 @@ import { z } from 'zod';
 export type Env = {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
-  ENVIRONMENT: 'development' | 'staging' | 'production';
+  ENVIRONMENT: 'development' | 'production';   // local dev vs. the one deployed Worker
   RATE_LIMITER?: RateLimit;   // Cloudflare rate-limit binding, if used
 };
 
 const schema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
-  ENVIRONMENT: z.enum(['development', 'staging', 'production']),
+  ENVIRONMENT: z.enum(['development', 'production']),
 });
 
 export function assertEnv(env: Env) {

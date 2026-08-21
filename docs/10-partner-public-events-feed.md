@@ -32,7 +32,7 @@ Because it spans communities, the DTO includes which community owns each event, 
 
 ```ts
 // src/schemas/events.ts
-export const PublicEvent = z.object({
+export const PublicEventResponse = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullable(),
@@ -46,6 +46,8 @@ export const PublicEvent = z.object({
 ```
 
 Never include registration counts, attendee or member data, or contact fields.
+
+The feed returns the DTO array inside the standard envelope (see [API contracts](./09-api-contracts.md)): `{ ok: true, data: PublicEventResponse[], meta: { next_cursor } }`, where `next_cursor` is `null` on the last page.
 
 ## Caching (simpler than the scoped endpoints)
 
