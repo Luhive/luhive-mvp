@@ -1,17 +1,15 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    // Workers, not Node. The runtime globals this code uses — `caches` in
+    // src/lib/cache.ts — are declared in the generated worker-configuration.d.ts,
+    // which is why `typecheck` regenerates it before running tsc.
     "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "skipLibCheck": true,
-    "types": [
-      "node"
-    ],
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
+    // scripts/create-key.ts is the one Node entry point, run through tsx.
+    "types": ["node"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
-  },
+  }
 }

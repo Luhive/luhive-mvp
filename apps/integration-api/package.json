@@ -1,18 +1,22 @@
 {
-  "name": "luhive-integration-api",
+  "name": "@luhive/integration-api",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "typecheck": "pnpm run cf-typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
-    "test": "vitest",
     "create-key": "tsx scripts/create-key.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.0",
-    "@supabase/supabase-js": "^2.110.7",
-    "hono": "^4.12.30",
-    "zod": "^4.4.3"
+    "@supabase/supabase-js": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.6",
