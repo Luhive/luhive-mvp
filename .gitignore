@@ -18,3 +18,10 @@ docs/spec-moc.md
 build/
 package-lock.json
 .pnpm-store/
+
+# Cloudflare Workers — unanchored, same reason
+.wrangler/
+.dev.vars
+dist/
+# Generated from wrangler.jsonc by `pnpm cf-typegen`, which `typecheck` runs first
+worker-configuration.d.ts

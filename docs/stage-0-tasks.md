@@ -173,11 +173,22 @@ Then the functional checks: log in, open an event page, open the dashboard.
 
 Blocked by #5. Source: `/Users/alistein/Documents/Luhive/LuhiveIntegrationAPI` — 458 LOC, Hono on Cloudflare Workers, has tests and 17 architecture docs.
 
-- [ ] `git subtree add --prefix=apps/integration-api <remote> <branch>` — history comes along, not a file copy
-- [ ] Decide where its `docs/` lands; do not leave two doc trees
-- [ ] Check `wrangler.jsonc` paths and the deploy script from the new location
-- [ ] Its `vitest.config.ts` should be picked up by root `pnpm -r test`
-- [ ] Leave `db/0001_api_keys.sql` alone — reconciling migrations is #8
+- [x] **The source was not importable as written.** Only the 19 docs were ever committed; the Worker, its tests, config and lockfile were untracked on disk, and the repo had no remote. `git subtree` reads committed history, so the documented command would have imported the docs and none of the code. Fixed at the source: redacted the live partner key in `api.http`, ignored the generated `worker-configuration.d.ts`, and committed the rest as `45d808c` after confirming tests, typecheck and a `wrangler` dry-run all passed there first.
+- [x] `git subtree add --prefix=apps/integration-api "/Users/alistein/Documents/Luhive/LuhiveIntegrationAPI" main` — local path, since there is no remote. No `--squash`; both source commits (`af77c8a`, `45d808c`) are ancestors of the import commit, verified with `git merge-base --is-ancestor`.
+- [x] Ran on a **separate worktree branched from `origin/main`**. `git subtree add` refuses a dirty tree, and the main working tree had uncommitted work.
+- [x] Docs: `docs/spec/` is authoritative, so the imported `docs/01`–`17` and `docs/README.md` are **deleted**. They predate the workspace and already contradict the spec — `01` still says "single writer per table", superseded by "one implementation per business rule". Only `docs/partner/public-events-api.spec.md` survives, because it is customer-facing and has no equivalent in the spec.
+- [x] `wrangler.jsonc` needed **no path changes** — `main` and `$schema` are relative and the config sits beside `src/`. Verified by `wrangler deploy --dry-run` from `apps/integration-api`: 1359.92 KiB bundle, both `vars` bindings resolved.
+- [x] `vitest.config.ts` is picked up: root `pnpm test` reports `Scope: 2 of 3 workspace projects` and runs all 10 tests. **`test` is now `vitest run`** — the bare `vitest` it inherited watches forever, which would hang CI in #10. `test:watch` keeps the old behaviour.
+- [x] **Root passthroughs were skipping this package.** `pnpm -r --if-present typecheck|build` matched nothing, so the Stage 0 gate would have gone green without ever checking the Worker. Added `typecheck` (`tsc --noEmit`) and `build` (`wrangler deploy --dry-run --outdir dist`, so it validates the bundle without publishing).
+- [x] `typecheck` runs `cf-typegen` first, and that is not incidental. `worker-configuration.d.ts` declares the Workers runtime globals the code uses — without it `src/lib/cache.ts` fails on `caches`. It is generated from `wrangler.jsonc`, so it is gitignored and rebuilt rather than committed as a 570 KB artifact.
+- [x] Package renamed to `@luhive/integration-api`; adopted `catalog:` for `hono`, `zod` and `@supabase/supabase-js`. All three now resolve to one version across both apps (`zod@4.4.3`, `@supabase/supabase-js@2.108.1`, `hono@4.13.3`).
+- [x] Deleted the nested `pnpm-workspace.yaml` and `pnpm-lock.yaml`, which would compete with the real root. Its `allowBuilds` carried `workerd`, so `workerd` joined `onlyBuiltDependencies` at the root — `wrangler`'s postinstall needs it.
+- [x] Worker ignores folded into the root `.gitignore`, unanchored like the React Router entries: `.wrangler/`, `.dev.vars`, `dist/`, `worker-configuration.d.ts`.
+- [x] `db/0001_api_keys.sql` untouched, byte-for-byte — reconciling migrations is #8.
+- [x] Root `pnpm typecheck` reports the **same 15 errors as before the import**, all in `apps/web`. The Worker adds none. Baseline unchanged, so #6 did not expand into unrelated fixes.
+- [ ] **Deploy still unverified.** `wrangler whoami` reports an expired token and the shell is non-interactive, so the deploy was deferred rather than done here. The dry-run proves the bundle and config resolve from the nested directory; it does not prove the credentials or the `api.luhive.com` route. `https://api.luhive.com/health` currently returns `{"status":"ok"}` from the pre-import deployment. Run `wrangler login`, then `pnpm --filter @luhive/integration-api deploy` and re-check `/health`.
+
+Two things left deliberately alone, both outside this task's "move files, change no behaviour" line: the imported `README.md` is still the Cloudflare scaffold stub, which documents `npm run` commands that no longer apply; and `typescript` is pinned at `^7.0.2` here against `^5.9.2` in `apps/web`, so the workspace installs two compilers. Neither breaks anything today — nothing is shared between the apps yet — but both want fixing before `packages/db` makes the type boundary real. `@cloudflare/vitest-pool-workers` is also still an unused devDependency.
 
 ---
 
