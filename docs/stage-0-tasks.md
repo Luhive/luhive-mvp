@@ -4,6 +4,8 @@ Ground truth before anything else. Full context in `docs/spec-moc.md`; stage gat
 
 **Nothing here changes application behaviour.** It moves files, adds a workspace, and gets the database schema into git. If a task requires a product change, it is out of scope.
 
+**Revised 2026-08-21 — the query layer is Kysely, not Drizzle.** Decision and rationale in `docs/spec-moc.md` under *Data & runtime*: the database stays the source of truth, migrations are hand-written SQL, types are generated from the live schema. **Nothing already shipped is affected** — #1–#5 moved files and fixed build config and never touched the data layer. What changes is #7, #8 and #9, plus a one-line correction to the catalog written in #2.
+
 ## Order
 
 ```
@@ -15,7 +17,7 @@ Ground truth before anything else. Full context in `docs/spec-moc.md`; stage gat
          └─ #5  VERIFY web deploys  ◄── hard gate
              ├─ #6  apps/integration-api ── #10 CI
              └─ #7  packages/db skeleton
-                 └─ #8  drizzle pull + reconcile migrations
+                 └─ #8  schema baseline + reconcile migrations
                      └─ #9  web uses @luhive/db
 ```
 
@@ -28,7 +30,7 @@ Directory and package name match, so `--filter` is predictable and nothing has t
 | `apps/web` | `@luhive/web` | React Router app → Netlify |
 | `apps/core-api` | `@luhive/core-api` | private backend → GCP Cloud Run *(Stage 1)* |
 | `apps/integration-api` | `@luhive/integration-api` | public customer API → Cloudflare Workers |
-| `packages/db` | `@luhive/db` | drizzle schema, migrations, types |
+| `packages/db` | `@luhive/db` | SQL migrations, generated types |
 | `packages/domain` | `@luhive/domain` | zod contracts, `Result` *(Stage 1)* |
 | `packages/api-client` | `@luhive/api-client` | `ApiClient` *(Stage 1)* |
 
@@ -57,6 +59,7 @@ Independent of the workspace. Live risk right now — ship separately.
 
 - [x] `pnpm-workspace.yaml` — already existed with `packages/*` and `apps/*`; left as-is
 - [x] `catalog:` block pinning `zod ^4.1.12`, `hono ^4`, `@supabase/supabase-js ^2.75.0`, `drizzle-orm ^0.44`, per `docs/spec/03`. The zod and supabase pins match `apps/web`'s current specifiers exactly, so adopting `catalog:` there later resolves to what it already has. Nothing references the catalog yet, so `pnpm install --frozen-lockfile` still reports the lockfile up to date.
+- [ ] **Correction, 2026-08-21.** The catalog above pins `drizzle-orm ^0.44`; the decision is now Kysely. Swap it for `kysely ^0.29` in `pnpm-workspace.yaml`. Safe at any point — nothing references the catalog yet and no package depends on either, so the lockfile is unaffected.
 - [x] Carry existing `allowBuilds` / `ignoredBuiltDependencies` — already present in the same file, untouched
 - [ ] **Root `package.json` — deferred to #3, cannot be done here.** The root `package.json` *is* the web app right now (`luhive-web-app`, all 90 deps). A workspace root file can only be written at the moment `git mv package.json apps/web/package.json` happens, otherwise the repo has either two competing roots or none. Doing it in #2 would violate this stage's own "nothing has moved" gate. Content when #3 runs: private, no deps, scripts `typecheck`/`build`/`test`/`dev` as `pnpm -r` passthroughs, and the existing `packageManager: pnpm@10.22.0+sha512...` line carried over verbatim.
 - [x] `tsconfig.base.json` — created. Deliberately narrow: `target`, `module`, `moduleResolution`, `esModuleInterop`, `resolveJsonModule`, `skipLibCheck`, `strict`, `noEmit`. Every value is identical to what `apps/web/tsconfig.json` already sets, so wiring `extends` in #4 changes nothing. **No `paths`, no `baseUrl`, no `lib`, no `types`, no `jsx`, no `rootDirs`** — all app-specific, and `lib`/`types` are exactly what would break a Workers build if inherited.
@@ -194,16 +197,17 @@ Two things left deliberately alone, both outside this task's "move files, change
 
 ## #7 · Create `packages/db` skeleton
 
-Blocked by #5. Empty but wired, so drizzle has somewhere to land.
+Blocked by #5. Empty but wired, so the schema has somewhere to land.
 
 - [ ] `packages/db/package.json` — `@luhive/db`, private
 - [ ] **Exports map**, so a Workers build cannot reach the Node client:
-  - `.` → `./src/schema.ts` — drizzle schema + inferred types, universal
+  - `.` → `./src/types.ts` — generated DB types, universal (types only, so it erases at build)
   - `./http` → `./src/http.ts` — supabase-js, Workers-safe
   - `./node` → `./src/node.ts` — `pg` pool, Node only
 
   Without this, someone imports `pg` on a shared path and it surfaces at `wrangler deploy`, not at typecheck.
-- [ ] `drizzle.config.ts` pointing at the Supabase connection string
+- [ ] `kysely.config.ts` for `kysely-ctl` — migrations folder plus the Supabase connection string
+- [ ] `codegen` script — `kysely-codegen` reads `DATABASE_URL` and writes `src/types.ts`
 - [ ] Empty `migrations/`
 - [ ] tsconfig extending `tsconfig.base.json`
 
@@ -211,20 +215,20 @@ No schema content yet.
 
 ---
 
-## #8 · Pull the real schema and reconcile migrations
+## #8 · Baseline the real schema and reconcile migrations
 
 Blocked by #7. **This is the point of Stage 0.**
 
 7 of 15 tables have no migration anywhere — `communities`, `community_members`, `events`, `event_registrations`, `profiles`, `community_visits`, `community_waitlist`. They exist only in the Supabase dashboard, so production cannot be rebuilt and no schema change can be reviewed.
 
-- [ ] `drizzle-kit pull` against the live database → `packages/db/src/schema.ts`
-- [ ] Bring the 20 existing `supabase/migrations/*.sql` and integration's `db/0001_api_keys.sql` into one lineage under `packages/db/migrations/`
-- [ ] Carry existing RLS policies across as raw SQL migrations — drizzle supports custom SQL, and those policies still protect the MVP's browser-side queries
+- [ ] `pg_dump --schema-only` against the live database → `packages/db/migrations/0000_baseline.sql`. Use the dump rather than an ORM introspect: it also captures the RLS policies, triggers and functions an introspect drops, and those policies still protect the MVP's browser-side queries
+- [ ] Bring the 20 existing `supabase/migrations/*.sql` and integration's `db/0001_api_keys.sql` into the same lineage under `packages/db/migrations/`. Everything after the baseline is hand-written SQL
+- [ ] `kysely-codegen` → `packages/db/src/types.ts`, generated from the live database and never hand-edited
 - [ ] Sanity-check against `app/shared/models/database.types.ts`
 
 Note: the `events` table is **calendar** events. The behavioural table added later is `person_event` — the collision is deliberate to avoid.
 
-**Gate:** a fresh database built from `packages/db/migrations/` matches production.
+**Gate:** a fresh database built from `packages/db/migrations/` matches production, and `kysely-codegen` against that fresh database produces a `types.ts` identical to the one generated against production.
 
 ---
 
@@ -233,10 +237,12 @@ Note: the `events` table is **calendar** events. The behavioural table added lat
 Blocked by #8.
 
 - [ ] `app/shared/models/entity.types.ts` re-exports from `@luhive/db` instead of the local generated file
-- [ ] Delete `app/shared/models/database.types.ts` (892 lines) and the `supabase-types` script
+- [ ] Delete `app/shared/models/database.types.ts` (892 lines) and the `supabase-types` script — `kysely-codegen` in `packages/db` replaces it
 - [ ] Expect typecheck to surface drift between the generated file and the real schema — those are real findings, not noise
 
 First time both apps share one source of truth, and what makes a schema change break CI instead of production.
+
+**Watch — this bullet may not survive contact.** `apps/web` still queries Postgres through supabase-js, and `createClient<Database>` wants Supabase's own generated `Database` shape, which is not the shape `kysely-codegen` emits. (A Drizzle schema would not have matched it either — the plan glossed this before the decision changed.) So either keep `supabase gen types` purely for typing the client and use `@luhive/db` for entity types only, or drop the generic. Decide when #9 lands; it does not block #8.
 
 ---
 

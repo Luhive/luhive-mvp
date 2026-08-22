@@ -19,7 +19,7 @@ Read the relevant spec document before proposing architecture, and follow it ove
 
 ## Scope of the other rules
 
-Every other rule in `.cursor/rules/**` describes **`apps/web` only** — the existing React Router app. They do not govern `apps/core-api` or `apps/integration-api`, which follow `docs/spec/04` and `docs/spec/05` instead (vertical slices, Hono, services, `Result<T>`, drizzle).
+Every other rule in `.cursor/rules/**` describes **`apps/web` only** — the existing React Router app. They do not govern `apps/core-api` or `apps/integration-api`, which follow `docs/spec/04` and `docs/spec/05` instead (vertical slices, Hono, services, `Result<T>`, Kysely).
 
 Do not "fix" new backend code to match the web app's module/repo layout.
 
