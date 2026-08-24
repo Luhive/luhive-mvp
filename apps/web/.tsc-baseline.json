@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "baselineFileVersion": 1,
+    "ignoreMessages": false
+  },
+  "errors": {
+    "45f8fa5579ea94a5f83953bb4748a7b4257dafd3": {
+      "file": "app/modules/community/server/create-community-action.server.ts",
+      "code": "TS2769",
+      "count": 1,
+      "message": "No overload matches this call."
+    },
+    "33aa0d77ba57fc2c6f740451d88e784da3ce0f2d": {
+      "file": "app/modules/community/server/create-community-action.server.ts",
+      "code": "TS2322",
+      "count": 3,
+      "message": "Type 'string' is not assignable to type 'never'."
+    },
+    "782f56058c864fe578c96afddf8075cd78ce2c8d": {
+      "file": "app/modules/community/server/create-community-action.server.ts",
+      "code": "TS2322",
+      "count": 2,
+      "message": "Type 'string | null' is not assignable to type 'never'."
+    },
+    "04a8a1bd7841d6e9c3478d0ca10554ca4e069d5e": {
+      "file": "app/modules/dashboard/components/section-cards.tsx",
+      "code": "TS2459",
+      "count": 1,
+      "message": "Module '\"~/modules/dashboard/data/dashboard-repo.client\"' declares 'DashboardStatsData' locally, but it is not exported."
+    },
+    "811ed5aadc04943cdc874ec6ce2cb979d2c5794e": {
+      "file": "app/modules/dashboard/hooks/use-community-members.ts",
+      "code": "TS2345",
+      "count": 1,
+      "message": "Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'."
+    },
+    "83f6179409afc88165a738af3bfe63de70f0cef1": {
+      "file": "app/modules/events/components/collaboration/collaboration-invite-dialog.tsx",
+      "code": "TS2322",
+      "count": 1,
+      "message": "Type '{ id: string; name: string; slug: string; logo_url: string | null; }[]' is not assignable to type '{ cover_url: string | null; created_at: string | null; created_by: string; description: string | null; id: string; is_show: boolean; logo_url: string | null; name: string; page_config: Json; ... 7 more ...; verified: boolean | null; }[]'."
+    },
+    "ee2ec007ed068e3a4785fd400a6332e1d576a41b": {
+      "file": "app/modules/events/components/event-list/event-preview-sidebar.tsx",
+      "code": "TS2352",
+      "count": 1,
+      "message": "Conversion of type 'string | number | boolean | { [key: string]: Json | undefined; } | Json[] | null' to type 'CustomQuestionJson' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first."
+    },
+    "345bdcf4376e1b3c5ccc26f373f8d63cf4a29d18": {
+      "file": "app/modules/integrations/providers/google-forms/data/google-forms-repo.server.ts",
+      "code": "TS2307",
+      "count": 1,
+      "message": "Cannot find module 'google-auth-library' or its corresponding type declarations."
+    },
+    "c4903d81afdc48b9311621eec70d9acb1535d4d1": {
+      "file": "app/modules/integrations/providers/google-forms/server/form-detail-loader.server.ts",
+      "code": "TS2322",
+      "count": 2,
+      "message": "Type 'string | null | undefined' is not assignable to type 'string | undefined'."
+    },
+    "90745b7a5157dc11b98830c7fdbf7661660046fb": {
+      "file": "app/routes/dashboard/event-edit-external.tsx",
+      "code": "TS2345",
+      "count": 1,
+      "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'."
+    },
+    "578a5beeef635b28b81e6cf7a47753631b82b4bf": {
+      "file": "app/routes/dashboard/forms.tsx",
+      "code": "TS2322",
+      "count": 1,
+      "message": "Type 'IntegrationFormData[]' is not assignable to type 'FormItem[]'."
+    }
+  }
+}

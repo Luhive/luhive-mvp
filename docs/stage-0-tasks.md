@@ -4,6 +4,8 @@ Ground truth before anything else. Full context in `docs/spec-moc.md`; stage gat
 
 **Nothing here changes application behaviour.** It moves files, adds a workspace, and gets the database schema into git. If a task requires a product change, it is out of scope.
 
+**Revised 2026-08-21 — the query layer is Kysely, not Drizzle.** Decision and rationale in `docs/spec-moc.md` under *Data & runtime*: the database stays the source of truth, migrations are hand-written SQL, types are generated from the live schema. **Nothing already shipped is affected** — #1–#5 moved files and fixed build config and never touched the data layer. What changes is #7, #8 and #9, plus a one-line correction to the catalog written in #2.
+
 ## Order
 
 ```
@@ -15,7 +17,7 @@ Ground truth before anything else. Full context in `docs/spec-moc.md`; stage gat
          └─ #5  VERIFY web deploys  ◄── hard gate
              ├─ #6  apps/integration-api ── #10 CI
              └─ #7  packages/db skeleton
-                 └─ #8  drizzle pull + reconcile migrations
+                 └─ #8  schema baseline + reconcile migrations
                      └─ #9  web uses @luhive/db
 ```
 
@@ -28,7 +30,7 @@ Directory and package name match, so `--filter` is predictable and nothing has t
 | `apps/web` | `@luhive/web` | React Router app → Netlify |
 | `apps/core-api` | `@luhive/core-api` | private backend → GCP Cloud Run *(Stage 1)* |
 | `apps/integration-api` | `@luhive/integration-api` | public customer API → Cloudflare Workers |
-| `packages/db` | `@luhive/db` | drizzle schema, migrations, types |
+| `packages/db` | `@luhive/db` | SQL migrations, generated types |
 | `packages/domain` | `@luhive/domain` | zod contracts, `Result` *(Stage 1)* |
 | `packages/api-client` | `@luhive/api-client` | `ApiClient` *(Stage 1)* |
 
@@ -57,6 +59,7 @@ Independent of the workspace. Live risk right now — ship separately.
 
 - [x] `pnpm-workspace.yaml` — already existed with `packages/*` and `apps/*`; left as-is
 - [x] `catalog:` block pinning `zod ^4.1.12`, `hono ^4`, `@supabase/supabase-js ^2.75.0`, `drizzle-orm ^0.44`, per `docs/spec/03`. The zod and supabase pins match `apps/web`'s current specifiers exactly, so adopting `catalog:` there later resolves to what it already has. Nothing references the catalog yet, so `pnpm install --frozen-lockfile` still reports the lockfile up to date.
+- [x] **Correction, 2026-08-21.** The catalog above pins `drizzle-orm ^0.44`; the decision is now Kysely. Swap it for `kysely ^0.29` in `pnpm-workspace.yaml`. Done in #7, when `@luhive/db` became the first catalog consumer.
 - [x] Carry existing `allowBuilds` / `ignoredBuiltDependencies` — already present in the same file, untouched
 - [ ] **Root `package.json` — deferred to #3, cannot be done here.** The root `package.json` *is* the web app right now (`luhive-web-app`, all 90 deps). A workspace root file can only be written at the moment `git mv package.json apps/web/package.json` happens, otherwise the repo has either two competing roots or none. Doing it in #2 would violate this stage's own "nothing has moved" gate. Content when #3 runs: private, no deps, scripts `typecheck`/`build`/`test`/`dev` as `pnpm -r` passthroughs, and the existing `packageManager: pnpm@10.22.0+sha512...` line carried over verbatim.
 - [x] `tsconfig.base.json` — created. Deliberately narrow: `target`, `module`, `moduleResolution`, `esModuleInterop`, `resolveJsonModule`, `skipLibCheck`, `strict`, `noEmit`. Every value is identical to what `apps/web/tsconfig.json` already sets, so wiring `extends` in #4 changes nothing. **No `paths`, no `baseUrl`, no `lib`, no `types`, no `jsx`, no `rootDirs`** — all app-specific, and `lib`/`types` are exactly what would break a Workers build if inherited.
@@ -194,37 +197,75 @@ Two things left deliberately alone, both outside this task's "move files, change
 
 ## #7 · Create `packages/db` skeleton
 
-Blocked by #5. Empty but wired, so drizzle has somewhere to land.
+Blocked by #5. Empty but wired, so the schema has somewhere to land.
 
-- [ ] `packages/db/package.json` — `@luhive/db`, private
-- [ ] **Exports map**, so a Workers build cannot reach the Node client:
-  - `.` → `./src/schema.ts` — drizzle schema + inferred types, universal
+- [x] `packages/db/package.json` — `@luhive/db`, private
+- [x] **Exports map**, so a Workers build cannot reach the Node client:
+  - `.` → `./src/types.ts` — generated DB types, universal (types only, so it erases at build)
   - `./http` → `./src/http.ts` — supabase-js, Workers-safe
   - `./node` → `./src/node.ts` — `pg` pool, Node only
 
   Without this, someone imports `pg` on a shared path and it surfaces at `wrangler deploy`, not at typecheck.
-- [ ] `drizzle.config.ts` pointing at the Supabase connection string
-- [ ] Empty `migrations/`
-- [ ] tsconfig extending `tsconfig.base.json`
+- [x] `kysely.config.ts` for `kysely-ctl` — migrations folder plus the Supabase connection string
+- [x] `codegen` script — `kysely-codegen` writes `src/types.ts` (#8 pointed it at `PRODUCTION_DATABASE_URL`, read-only)
+- [x] Empty `migrations/`
+- [x] tsconfig extending `tsconfig.base.json`
 
 No schema content yet.
 
+**Verified.** `pnpm list -r --depth -1` now shows four projects (root, web, integration-api, `@luhive/db`). Catalog pin is `kysely ^0.29` (resolves to `0.29.5`); `kysely-ctl` is `^0.21.0` because `0.19` rejects the 0.29 peer range. `pnpm --filter @luhive/db typecheck` is clean. `kysely --help` and `kysely-codegen --help` both print without `DATABASE_URL`. An esbuild of `.` and `./http` has no `pg` in the input graph; only `./node` imports it. Root `pnpm -r typecheck` is still the same **15 web errors**; integration-api and `@luhive/db` add none. `pnpm -r test` still passes the 10 integration tests. `pnpm --filter @luhive/web build` and the integration dry-run both succeed. `codegen` was **not** run against production — that would write schema types, which is #8.
+
+**Deferred to #8 (first prerequisite).** `kysely-ctl`'s default `TSFileMigrationProvider` does not execute raw `.sql`. The empty `migrations/` folder and config are in place; a custom SQL provider must land before `0000_baseline.sql` can be applied.
+
+**User, before #8.** Copy Postgres URIs from Supabase Dashboard → Connect into a local, gitignored `packages/db/.env`. #8 split this in two: `PRODUCTION_DATABASE_URL` is read-only (dump and codegen) and `VALIDATION_DATABASE_URL` is a throwaway project that migrations write to. Session pooler for both, since the network is IPv4-only. Do not commit them or paste a password into chat.
+
+**Still open, before #9.** `apps/web` is `typescript@^5.9.2`, `apps/integration-api` is `^7.0.2`. `@luhive/db` follows web (`^5.9.2`) and is not imported by either app yet. Align the compilers before the package becomes a shared type boundary.
+
 ---
 
-## #8 · Pull the real schema and reconcile migrations
+## #8 · Baseline the real schema and reconcile migrations
 
-Blocked by #7. **This is the point of Stage 0.**
+Blocked by #7. **This is the point of Stage 0.** First implementation step: a `kysely-ctl` migration provider that applies raw `.sql` files — the default TypeScript provider will ignore the baseline dump.
 
-7 of 15 tables have no migration anywhere — `communities`, `community_members`, `events`, `event_registrations`, `profiles`, `community_visits`, `community_waitlist`. They exist only in the Supabase dashboard, so production cannot be rebuilt and no schema change can be reviewed.
+Production has **16 tables**; 9 of them were created by a migration (`announcement_views`, `api_keys`, `community_announcement_images`, `community_announcements`, `event_collaborations`, `event_reminders`, `event_visits`, `google_forms_tokens`, `sent_reminders`). The other **7 exist only in the Supabase dashboard** — `communities`, `community_members`, `community_visits`, `event_registrations`, `events`, `profiles`, `telegram_users` — so production cannot be rebuilt and no schema change can be reviewed.
 
-- [ ] `drizzle-kit pull` against the live database → `packages/db/src/schema.ts`
-- [ ] Bring the 20 existing `supabase/migrations/*.sql` and integration's `db/0001_api_keys.sql` into one lineage under `packages/db/migrations/`
-- [ ] Carry existing RLS policies across as raw SQL migrations — drizzle supports custom SQL, and those policies still protect the MVP's browser-side queries
-- [ ] Sanity-check against `app/shared/models/database.types.ts`
+- [x] `SqlFileMigrationProvider` in `packages/db/tooling/` — reads only root `*.sql` files in lexical order, runs each file as one unsplit raw query (empty parameter list, so `pg` uses the simple query protocol and function bodies survive), rejects psql meta-commands, and has no `down`
+- [x] **Migrations cannot reach production.** `kysely.config.ts` resolves `VALIDATION_DATABASE_URL` only, and refuses to connect if it matches `PRODUCTION_DATABASE_URL` by string or by Supabase project ref. There is no generic `migrate` script — only `migrate:validation` and `migrate:list`
+- [x] `pg_dump --schema-only` (local 17.10, production is 17.6) against production's `public` → `packages/db/migrations/0000_baseline.sql`. Dump over ORM introspect: it keeps the 53 RLS policies, 3 triggers, 5 functions and 5 enums an introspect drops, and those policies still protect the MVP's browser-side queries. Production inspection ran with `default_transaction_read_only=on`
+- [x] The 19 `supabase/migrations/*.sql` (the plan said 20) and integration's `db/0001_api_keys.sql` moved byte-for-byte — git records all 20 as renames — into `packages/db/migrations/archive/web/` and `archive/integration-api/`
+- [x] `kysely-codegen` → `packages/db/src/types.ts`, generated from production, never hand-edited
+- [x] Compared against `app/shared/models/database.types.ts`
 
 Note: the `events` table is **calendar** events. The behavioural table added later is `person_event` — the collision is deliberate to avoid.
 
-**Gate:** a fresh database built from `packages/db/migrations/` matches production.
+**Gate:** a fresh database built from `packages/db/migrations/` matches production, and `kysely-codegen` against that fresh database produces a `types.ts` identical to the one generated against production.
+
+### Decision: squash, then archive
+
+`0000_baseline.sql` is the executable current state; the 20 pre-baseline files are history and never run. Replaying them was not an option — they only account for 9 of 16 tables, so replay would produce a database that does not match production, and the provider deliberately ignores `archive/` so the two can never both apply. The boundary is documented in `packages/db/migrations/README.md`.
+
+### One production object deleted, two excluded from the dump
+
+`pg_dump` of `public` picks up platform objects as well as ours, and two of them made the dump unusable as-is:
+
+- **`event_published_webhook` on `public.events` — dropped from production.** A dashboard-configured Database Webhook posting every `events` insert/update/delete to a Railway bot. Its definition embedded the destination URL **and a live bearer token**, so `pg_dump` put a working credential in the dump file; it also called `supabase_functions.http_request()`, a schema that only exists where webhooks are enabled, which the validation project does not have. The endpoint is no longer used, so the trigger was dropped rather than carried: `DROP TRIGGER event_published_webhook ON public.events`. Production now has no `supabase_functions` triggers. Re-dumping afterwards produced a **byte-identical** baseline, which confirms the exclusion had been exactly equivalent to the trigger's absence. The exclusion stays in the tooling as a guard: it stops a future dashboard webhook from committing its token
+- **`public.rls_auto_enable()` — excluded.** Supabase platform code backing the `ensure_rls` event trigger, present identically on both projects. Not extension-owned and living in `public`, so `pg_dump` emits it — and applying it failed with `function "rls_auto_enable" already exists`
+- **Kysely's `kysely_migration` / `kysely_migration_lock` — excluded.** Bookkeeping, kept out of every dump and out of codegen so a migrated database still compares equal to production
+
+Both exclusions run over the comparison dumps too, so parity is proven on the same footing.
+
+### Production drift found
+
+- **`apps/web` types are stale.** `database.types.ts` describes 14 tables; production has 16. Missing entirely: `api_keys`, `event_visits`. Missing from `event_registrations`: `registration_city`, `registration_country`, `registration_ip`, `registration_session_id`, `time_to_register_seconds`, `utm_campaign`, `utm_content`, `utm_medium`, `utm_source`, `utm_term`. Nothing exists in the web types that is absent from production. Left alone here — **closed in #9** by regenerating into `packages/db`
+- **`community_waitlist` does not exist in production.** This document listed it among the un-migrated tables; the real seventh is `telegram_users`. Corrected above
+- **The projects are not identically provisioned.** Production still has `pg_net 0.19.5`, installed when Database Webhooks were enabled; the validation project does not. Now that the only webhook trigger is gone, nothing in `public` depends on it. Both are PostgreSQL 17.6 and otherwise carry the same extensions
+- Expected Supabase-vs-Kysely shape difference, not drift: Supabase emits `Row`/`Insert`/`Update` per table with inline enum unions; `kysely-codegen` emits one interface per table with `Generated<T>`, `Int8`, `Timestamp` and `Json` aliases. #9 had to reconcile these, not diff them — and found they disagree on more than layout, see #9
+
+**Verified.** `migrate:validation` applied `0000_baseline` to the disposable project in one transaction. `verify:schema` (both databases dumped with identical options, normalised, bookkeeping and platform objects removed) reports **`schema: identical`**. `verify:types` reports **`generated types: identical`** — 16 tables, 5 enums. Codegen is restricted to `public.*`: without it, production's `net.*` and `supabase_functions.*` tables leak into the output and the two databases can never match. Guards proven by running them: an empty `VALIDATION_DATABASE_URL` and one equal to production both refuse to connect. `packages/db` typecheck clean, 10 unit tests pass over the provider and the dump sanitisers. `pnpm install --frozen-lockfile` is up to date, `pnpm -r test` passes 20 tests, `pnpm -r build` succeeds, and `pnpm -r typecheck` is still the same **15 web errors** — `@luhive/db` adds none.
+
+**User, after #8.** Delete the temporary validation Supabase project. Keep `PRODUCTION_DATABASE_URL` and `VALIDATION_DATABASE_URL` in the gitignored `packages/db/.env` — the second is where future migrations get tested, so it wants a fresh disposable project each time. The dropped webhook's bearer token still authenticates against the Railway bot, so revoke it there if that service is still running.
+
+The comparison tooling described above was retired in #9 once the baseline it validated was committed; `dump:baseline`, `verify:schema` and `verify:types` no longer exist.
 
 ---
 
@@ -232,24 +273,61 @@ Note: the `events` table is **calendar** events. The behavioural table added lat
 
 Blocked by #8.
 
-- [ ] `app/shared/models/entity.types.ts` re-exports from `@luhive/db` instead of the local generated file
-- [ ] Delete `app/shared/models/database.types.ts` (892 lines) and the `supabase-types` script
-- [ ] Expect typecheck to surface drift between the generated file and the real schema — those are real findings, not noise
+- [x] `app/shared/models/entity.types.ts` derives named aliases (`Event`, `Community`, enums) from `@luhive/db/supabase` — `Tables<"events">`, `Enums<"event_status">`, and so on. The aliases stay in the web app because they describe the HTTP/PostgREST row shape
+- [x] The 892-line generated `app/shared/models/database.types.ts` is gone, along with the `supabase-types` script. Both generators now live in `packages/db`; the file remaining at that path is a 9-line re-export, kept as the app's import boundary
+- [x] Typecheck compared against the schema — drift is recorded below
 
 First time both apps share one source of truth, and what makes a schema change break CI instead of production.
+
+### The `Database` generic survived contact; `Selectable` did not
+
+The #8 note predicted `createClient<Database>` would resist `kysely-codegen`'s output, and it was right: `apps/web/app/shared/lib/supabase/server.ts` and `client.ts` need Supabase's `Row`/`Insert`/`Update` shape for `.from()` inference, and 14 server repos take `SupabaseClient<Database>`. So **both generators run**, off the same production schema, and both outputs live in `packages/db`:
+
+- `@luhive/db` — `kysely-codegen` output (`src/db.types.ts`), for code querying over `pg`
+- `@luhive/db/supabase` — `supabase gen types` output, for typing the supabase-js client
+
+**Named entities stay in the web app.** A first pass put `Event` / `Community` aliases in `@luhive/db/entities`, derived from Kysely `Selectable<...>`. That produced **58 typecheck errors, up from 15**: Kysely's `Timestamp` is `ColumnType<Date, …>` because that is what the `pg` driver returns, while PostgREST hands back ISO strings. A package-level `Event` type is therefore a lie — it cannot be both shapes at once. The alias file was deleted. `apps/web/app/shared/models/entity.types.ts` now derives the same public names from `@luhive/db/supabase`'s `Tables` / `Enums` helpers, which match the HTTP values at runtime. Future Node consumers should take `Selectable<Events>` from `@luhive/db` directly — that is Stage 1's shape.
+
+Resolved types at every existing call site are unchanged, so no module import moved.
+
+### The frozen events module stayed frozen
+
+21 of the 39 `database.types` importers are under `app/modules/events/**`, which is bug-fix-only. Rewriting those imports would have been a 21-file refactor of frozen code for no behavioural gain. Keeping `~/shared/models/database.types` as a re-export of `@luhive/db/supabase` removes the duplicated generated source — the actual goal — while leaving every importer untouched. Three files changed in `apps/web`: the two model files and `package.json`.
+
+It also preserves the boundary the architecture rules ask for: no web file imports `@luhive/db` except through `app/shared/models/` (`entity.types.ts` and `database.types.ts`).
+
+### Drift closed and drift remaining
+
+Regenerating from production **closed the #8 gap**: the Supabase types now describe all **16** tables, adding `api_keys` and `event_visits` and the ten missing `event_registrations` tracking/UTM columns. That change alone introduced no errors.
+
+Still open, and now provably unrelated to stale types: **`community_waitlist` accounts for 6 of the 15 errors** in `app/modules/community/server/create-community-action.server.ts`. #8 established the table does not exist in production, so regenerating cannot fix it — the code writes to a table that was never created. It is a genuine bug, left alone here because #9 changes types only.
+
+**Verified.** `pnpm --filter @luhive/web typecheck` reports **exactly the same 15 errors, file for file and line for line**, as the pre-#9 baseline; `pnpm -r typecheck` is also 15, so `@luhive/db` still contributes none. `pnpm install --frozen-lockfile` clean, `pnpm -r test` passes 13 tests, `pnpm -r build` succeeds for both apps including the web prerender. Both codegens run from `PRODUCTION_DATABASE_URL`, read-only.
+
+### Stage #8 tooling retired
+
+The dump and parity utilities existed to produce and prove one artefact, and that artefact is now committed, so 14 files were deleted: the `pg_dump` wrapper and baseline writer, the schema/type comparison scripts, the dump sanitiser and platform-object exclusions, the diff reporter, and their three tests. `dump:baseline`, `verify:schema` and `verify:types` went with them, and `0000_baseline.sql` is marked as a fixed snapshot rather than something to regenerate.
+
+Six files stayed, because every future schema change needs them: `SqlFileMigrationProvider`, the `VALIDATION_DATABASE_URL` guard and its project-ref parser, the codegen wrappers, and the two `bin/` entry points. The guard's behaviour is now covered by unit tests using synthetic connection strings rather than a manual run against real credentials — four cases, including a validation URL that reaches the production project through the direct connection instead of the pooler.
+
+**User, after #9.** Nothing required. If you re-run `codegen`, both generators need `PRODUCTION_DATABASE_URL`; `supabase gen types` takes about a minute against the pooler.
 
 ---
 
 ## #10 · CI
 
-Blocked by #6. There is no `.github` directory in any repo today — nothing runs before a merge.
+Blocked by #6.
 
-- [ ] `.github/workflows/ci.yml` on `pull_request` and pushes to `main` / `development`
-- [ ] pnpm install with lockfile cache
-- [ ] `pnpm -r typecheck` · `pnpm -r build` · `pnpm -r test`
-- [ ] Baseline pre-existing type errors rather than blocking the pipeline; track cleanup separately
+- [x] `.github/workflows/ci.yml` on `pull_request` and pushes to `main` / `development`
+- [x] pnpm install with lockfile cache
+- [x] `pnpm -r typecheck` · `pnpm -r build` · `pnpm -r test`
+- [x] Baseline pre-existing type errors rather than blocking the pipeline; track cleanup separately
 
-Only mechanism that will catch a `packages/db` change breaking `apps/integration-api` — a silent failure mode today, and a live one the moment both apps share a schema.
+**Verified.** Workflow runs a frozen cached install, then `pnpm -r --if-present typecheck|build|test` (web has no `test`, `@luhive/db` has no `build`). `@luhive/web` typecheck is gated by `tsc-baseline` against the committed 15-error snapshot in `apps/web/.tsc-baseline.json`; new or stale diagnostics fail. `@luhive/db` and `@luhive/integration-api` stay zero-error. Local run: typecheck 0 new / 15 baseline, both apps build, 17 tests pass. An extra web diagnostic fails CI as intended.
+
+Refresh the snapshot after fixing a listed error: `pnpm --filter @luhive/web typecheck:baseline`. See the unfixed 15 in #5 / #9 — they are not this task.
+
+Only mechanism that will catch a `packages/db` change breaking a consumer — a silent failure mode today, and a live one the moment both apps share a schema.
 
 ---
 

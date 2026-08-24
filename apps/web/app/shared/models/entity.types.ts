@@ -1,33 +1,29 @@
-import type { Database } from "~/shared/models/database.types";
+import type { Enums, Tables } from "@luhive/db/supabase";
 
 /**
  * Canonical shared base entities from database.
  * Modules should import these directly; extend only when needed.
+ *
+ * Derived from Supabase's `Row` / `Enums` shape because this app reads through
+ * supabase-js: timestamps arrive as ISO strings, not `Date`. Future Node
+ * consumers querying over `pg` should use `Selectable<...>` from `@luhive/db`.
  */
+export type Event = Tables<"events">;
 
-/** Event row from database */
-export type Event = Database["public"]["Tables"]["events"]["Row"];
+export type Community = Tables<"communities">;
 
-/** Community row from database */
-export type Community = Database["public"]["Tables"]["communities"]["Row"];
+export type Profile = Tables<"profiles">;
 
-/** Profile row from database */
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type EventRegistration = Tables<"event_registrations">;
 
-/** Event registration row from database */
-export type EventRegistration = Database["public"]["Tables"]["event_registrations"]["Row"];
+export type CommunityMember = Tables<"community_members">;
 
-/** Community member row from database */
-export type CommunityMember = Database["public"]["Tables"]["community_members"]["Row"];
+export type EventStatus = Enums<"event_status">;
 
-/** Event status enum */
-export type EventStatus = Database["public"]["Enums"]["event_status"];
+export type EventType = Enums<"event_type">;
 
-/** Event type enum */
-export type EventType = Database["public"]["Enums"]["event_type"];
+export type ReminderTime = Enums<"reminder_time">;
 
-/** RSVP status enum */
-export type RSVPStatus = Database["public"]["Enums"]["rsvp_status"];
+export type RSVPStatus = Enums<"rsvp_status">;
 
-/** Event approval status enum */
-export type EventApprovalStatus = Database["public"]["Enums"]["event_approval_statuses"];
+export type EventApprovalStatus = Enums<"event_approval_statuses">;

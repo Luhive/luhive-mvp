@@ -10,7 +10,7 @@ catalog:
   zod: ^4.1.12
   hono: ^4
   "@supabase/supabase-js": ^2.75.0
-  drizzle-orm: ^0.44
+  kysely: ^0.29
 
 # @hookform/resolvers/zod imports `zod/v4/core` but declares no zod peer, so it
 # only resolves when zod happens to be hoisted above it. Moving the app into

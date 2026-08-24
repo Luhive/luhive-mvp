@@ -1,0 +1,35 @@
+{
+  "name": "@luhive/db",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/db.types.ts",
+    "./supabase": "./src/supabase.types.ts",
+    "./http": "./src/http.ts",
+    "./node": "./src/node.ts"
+  },
+  "scripts": {
+    "codegen": "pnpm codegen:kysely && pnpm codegen:supabase",
+    "codegen:kysely": "tsx --env-file=.env tooling/bin/generate-production-types.ts",
+    "codegen:supabase": "tsx --env-file=.env tooling/bin/generate-supabase-types.ts",
+    "migrate:validation": "kysely migrate:latest",
+    "migrate:list": "kysely migrate:list",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "catalog:",
+    "kysely": "catalog:",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/pg": "^8.15.6",
+    "kysely-codegen": "^0.19.0",
+    "kysely-ctl": "^0.21.0",
+    "supabase": "^2.76.14",
+    "tsx": "^4.23.1",
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.10"
+  }
+}
