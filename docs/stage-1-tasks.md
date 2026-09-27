@@ -28,7 +28,7 @@ client lands. The OTP decomposition (#10) follows once that path is stable.
      └─ #4  DEPLOY hello-world  ◄── gate PASSED, ~3ms to the database
          └─ #6  lib/person + lib/person-event   done
              └─ #7  people API slice              done, not mounted
-                 └─ #8  api-client + web wiring
+                 └─ #8  api-client + web wiring       done
                      └─ #9  join + registration → core
                          └─ #9b one-time reconciliation backfill
                              └─ NEWSLETTER
@@ -151,7 +151,7 @@ is wired in #11 after the Azure resource exists.
 - [x] `GET /health` responds from the deployed URL
 - [x] **A real query runs**: one trivial `SELECT` against production through the pooler, from the deployed instance, with the latency logged
 - [x] Record the measured Dublin-to-Dublin latency in `docs/spec/09` — it should be low single digits, and if it is not, something is misconfigured
-- [x] **Throwaway smoke test from web:** `apps/web/app/routes/api/core-health.tsx`, a loader that fetches core's `/health` and reports the round trip. `/health` is unauthenticated, so it covers DNS, TLS and reachability but says nothing about bearer auth. Its real purpose is measuring the Netlify-to-Azure hop — the number that decides whether web moves to Azure (`docs/spec/16`). Delete it and its line in `app/routes.ts` when #8 lands
+- [x] **Throwaway smoke test from web:** removed with #8. It measured the Netlify-to-Azure hop (`docs/spec/16`) and is no longer a route.
 
 That last check is the one that matters. Container Apps plus Kysely plus the Supabase pooler across clouds is the combination most likely to surprise, and finding out after seven slices is expensive.
 
@@ -322,10 +322,18 @@ endpoint in Stage 3.
 
 ## #8 · `packages/api-client` and web wiring
 
-- [ ] `@luhive/api-client` — `ApiClient` class, `baseUrl` plus an auth resolver in the constructor, context per call. Normal `async` methods
-- [ ] Returns `Result<T>` parsed from the body **regardless of status** — a 409 carrying `error.code: "conflict"` must survive, not become a thrown string
-- [ ] `apps/web/app/shared/lib/api-client.ts` — one line: `export const apiClient = new ApiClient(env.CORE_URL, sessionToken)`. Generic, no module imports, so `shared` stays cross-domain
-- [ ] `sessionToken(request)` — reads the Supabase access token server-side and forwards it
+- [x] `@luhive/api-client` — `ApiClient` class, `baseUrl` plus request interceptors in the constructor, context per call. Normal `async` methods
+- [x] Returns `Result<T>` parsed from the body **regardless of status** — a 409 carrying `error.code: "conflict"` must survive, not become a thrown string
+- [x] `apps/web/app/shared/lib/api-client.ts` — `export const apiClient = new ApiClient(coreUrl, [addSessionToken])`. Generic, no module imports, so `shared` stays cross-domain
+- [x] `addSessionToken` — reads the Supabase access token server-side and forwards it; returns `unauthorized` without calling core when nobody is signed in
+
+**Interceptors, not a single token resolver.** Each one runs before the request, like an axios request interceptor: it adds headers, or returns a failure to stop the call. They are passed to the constructor rather than registered later with `.use()`, so the full list is visible where the client is built. A separate SPA dashboard could reuse the client with its own interceptor that reads the browser session.
+
+**Verified:** `@luhive/api-client` typecheck and its 4 tests pass. The web singleton is not imported yet; #9 is its first caller.
+
+**The env var is `CORE_API_URL`.** That is the name the smoke test and Netlify already use. The spec's `CORE_URL` is the same value. The module throws at import if it is unset, so a missing value fails at the first caller instead of sending requests to an empty host.
+
+**No caller until #9.** Join and registration are the first methods that use it. The client tests cover success, a surviving `conflict`, a failed request, and a missing token.
 
 ---
 
