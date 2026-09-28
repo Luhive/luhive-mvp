@@ -21,3 +21,13 @@ export type HubData = {
 export type HubLoaderData = {
   data: Promise<HubData>;
 };
+
+export type HubCommunityLogo = {
+  name: string;
+  logoUrl: string;
+};
+
+export type HubPreview = {
+  logos: HubCommunityLogo[];
+  communityCount: number;
+};
