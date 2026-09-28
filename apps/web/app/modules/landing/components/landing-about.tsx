@@ -1,10 +1,16 @@
 import { useTranslation } from "react-i18next";
 
+import type { LandingHubPreview } from "~/modules/landing/model/landing-hub-preview";
+
 import { BookACallButton } from "./book-a-call-button";
 import { DiscoverCommunitiesLink } from "./discover-communities-link";
 import { LandingHeroDashboard } from "./landing-hero-dashboard";
 
-export function LandingAbout() {
+type LandingAboutProps = {
+  hubPreview: LandingHubPreview | null;
+};
+
+export function LandingAbout({ hubPreview }: LandingAboutProps) {
   const { t } = useTranslation('landing');
 
   return (
@@ -39,7 +45,7 @@ export function LandingAbout() {
               {t("hero.ctaSeparator")}
               <span className="h-px w-12 bg-gradient-to-l from-transparent to-foreground/25" />
             </div>
-            <DiscoverCommunitiesLink />
+            <DiscoverCommunitiesLink hubPreview={hubPreview} />
           </div>
 
           <div className="mx-auto mt-5 md:mt-0 w-full overflow-hidden">

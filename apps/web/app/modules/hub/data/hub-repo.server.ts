@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "~/shared/models/database.types";
 import type { Community as BaseCommunity } from "~/shared/models/entity.types";
-import type { Community, UserData } from "~/modules/hub/model/hub-types";
+import type { Community, HubPreview, UserData } from "~/modules/hub/model/hub-types";
 
 export async function getVisibleCommunities(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
@@ -11,6 +11,42 @@ export async function getVisibleCommunities(supabase: SupabaseClient<Database>) 
     .order("created_at", { ascending: false });
 
   return { communities: data ?? [], error };
+}
+
+const HUB_PREVIEW_LOGO_LIMIT = 3;
+
+export async function getHubPreview(
+  supabase: SupabaseClient<Database>,
+): Promise<HubPreview | null> {
+  const [countResult, logoResult] = await Promise.all([
+    supabase
+      .from("communities")
+      .select("id", { count: "exact", head: true })
+      .eq("is_show", true),
+    supabase
+      .from("communities")
+      .select("name, logo_url")
+      .eq("is_show", true)
+      .not("logo_url", "is", null)
+      .neq("logo_url", "")
+      .order("created_at", { ascending: false })
+      .limit(HUB_PREVIEW_LOGO_LIMIT),
+  ]);
+
+  if (countResult.error || logoResult.error) {
+    console.error("Failed to load hub preview:", countResult.error ?? logoResult.error);
+    return null;
+  }
+
+  const logos = (logoResult.data ?? []).flatMap((community) => {
+    if (!community.logo_url) return [];
+    return [{ name: community.name, logoUrl: community.logo_url }];
+  });
+
+  return {
+    logos,
+    communityCount: countResult.count ?? 0,
+  };
 }
 
 export async function getCommunityCounts(

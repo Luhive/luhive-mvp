@@ -1,8 +1,12 @@
-export { meta } from "~/modules/landing/model/landing-meta";
-
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useLoaderData } from "react-router";
+
+import { loader } from "~/modules/landing/server/landing-loader.server";
 import "~/shared/lib/i18n";
+
+export { meta } from "~/modules/landing/model/landing-meta";
+export { loader };
 import { LandingNavbar } from "~/modules/landing/components/landing-navbar";
 import { LandingAbout } from "~/modules/landing/components/landing-about";
 import { LandingPartners } from "~/modules/landing/components/landing-partners";
@@ -13,7 +17,8 @@ import { LandingFAQ } from "~/modules/landing/components/landing-faq";
 import { LandingFooter } from "~/modules/landing/components/landing-footer";
 
 export default function LandingPage() {
-  const { i18n } = useTranslation();
+  const { hubPreview } = useLoaderData<typeof loader>();
+  useTranslation();
 
   useEffect(() => {
     document.documentElement.style.scrollBehavior = "smooth";
@@ -22,7 +27,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       <LandingNavbar />
-      <LandingAbout />
+      <LandingAbout hubPreview={hubPreview} />
       <LandingPartners />
       <LandingAcknowledgement />
       <LandingFeatures />
