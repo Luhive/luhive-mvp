@@ -11,6 +11,8 @@ type StartTicketPaymentInput = {
   registrationId: string;
   /** Present when the registration already has an order (a retry). */
   existingOrder?: TicketOrder | null;
+  /** The event page the partner sends the user back to after paying. */
+  eventReturnUrl?: string;
 };
 
 type StartTicketPaymentResult =
@@ -26,6 +28,7 @@ export async function startTicketPayment({
   event,
   registrationId,
   existingOrder,
+  eventReturnUrl,
 }: StartTicketPaymentInput): Promise<StartTicketPaymentResult> {
   if (existingOrder?.payment_url) {
     return { ok: true, paymentUrl: existingOrder.payment_url };
@@ -49,6 +52,7 @@ export async function startTicketPayment({
     registrationId,
     amountMinor: order.amount_minor,
     description: event.title,
+    redirectUrl: eventReturnUrl,
   });
 
   if (!payment.ok) {

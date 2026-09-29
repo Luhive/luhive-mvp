@@ -11,6 +11,8 @@ type CreateCheckilaPaymentInput = {
   registrationId: string;
   amountMinor: number;
   description: string;
+  /** Where Checkila sends the browser after a successful payment. */
+  redirectUrl?: string;
 };
 
 type CreateCheckilaPaymentResult =
@@ -72,6 +74,7 @@ export async function createCheckilaPayment(
           userId: input.registrationId,
           amount: minorToMajorUnits(input.amountMinor),
           description: input.description.slice(0, MAX_DESCRIPTION_LENGTH),
+          ...(input.redirectUrl ? { redirectUrl: input.redirectUrl } : {}),
         }),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       },
