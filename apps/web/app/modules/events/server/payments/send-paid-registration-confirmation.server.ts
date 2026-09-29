@@ -25,6 +25,7 @@ export type PaidRegistrationConfirmationResult =
 export async function sendPaidRegistrationConfirmation(
   registrationId: string,
   origin: string,
+  options?: { resend?: boolean },
 ): Promise<PaidRegistrationConfirmationResult> {
   const db = createServiceRoleClient();
 
@@ -47,7 +48,7 @@ export async function sendPaidRegistrationConfirmation(
   if (!order || order.status !== "paid") {
     return { sent: false, reason: "not_ready" };
   }
-  if (order.confirmation_email_sent_at) {
+  if (!options?.resend && order.confirmation_email_sent_at) {
     return { sent: false, reason: "already_sent" };
   }
 
@@ -96,17 +97,6 @@ export async function sendPaidRegistrationConfirmation(
     Routes.community.event(community?.slug ?? "unknown", publicEventSlug(event)),
   );
   const ticketPrice = formatMoney(order.amount_minor, order.currency);
-  const [{ data: paidOrders }, registrationCount] = await Promise.all([
-    db
-      .from("ticket_orders")
-      .select("amount_minor")
-      .eq("event_id", event.id)
-      .eq("status", "paid"),
-    getApprovedRegistrationCount(db, event.id),
-  ]);
-  const totalGainMinor =
-    paidOrders?.reduce((sum, paidOrder) => sum + paidOrder.amount_minor, 0) ?? 0;
-  const totalGain = formatMoney(totalGainMinor, order.currency);
 
   await sendRegistrationConfirmationEmail({
     eventTitle: event.title,
@@ -131,6 +121,23 @@ export async function sendPaidRegistrationConfirmation(
     checkinToken: registration.checkin_token,
     ticketPrice,
   });
+
+  // Resend is the attendee email only. The organiser was notified on the first send.
+  if (options?.resend) {
+    return { sent: true };
+  }
+
+  const [{ data: paidOrders }, registrationCount] = await Promise.all([
+    db
+      .from("ticket_orders")
+      .select("amount_minor")
+      .eq("event_id", event.id)
+      .eq("status", "paid"),
+    getApprovedRegistrationCount(db, event.id),
+  ]);
+  const totalGainMinor =
+    paidOrders?.reduce((sum, paidOrder) => sum + paidOrder.amount_minor, 0) ?? 0;
+  const totalGain = formatMoney(totalGainMinor, order.currency);
 
   const coHostCommunityNames =
     collaborations

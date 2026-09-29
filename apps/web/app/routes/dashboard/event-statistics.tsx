@@ -1,10 +1,13 @@
-import { useLoaderData, redirect } from "react-router";
+import { Suspense } from "react";
+import { Await, useLoaderData, redirect } from "react-router";
 
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
+import { EventRevenuePanel } from "~/modules/events/components/event-statistics/event-revenue-panel";
 import { StatisticsBreakdowns } from "~/modules/events/components/event-statistics/statistics-breakdowns";
 import { StatisticsHeader } from "~/modules/events/components/event-statistics/statistics-header";
 import { StatisticsViewsChart } from "~/modules/events/components/event-statistics/statistics-views-chart";
 import { useEventStatistics } from "~/modules/events/hooks/use-event-statistics";
+import type { EventRevenue } from "~/modules/events/model/event-revenue.types";
 import type {
   EventRegistrationStatRow,
   EventStatisticsPayload,
@@ -21,6 +24,7 @@ type EventStatisticsLoaderData = {
   };
   visits: EventVisitStatRow[];
   registrations: EventRegistrationStatRow[];
+  revenue: Promise<EventRevenue | null>;
 };
 
 async function clientLoader({
@@ -61,19 +65,27 @@ async function clientLoader({
   }
 
   const payload = (await response.json()) as EventStatisticsPayload;
+  const revenue = fetch(
+    `/api/events/event-revenue?eventId=${encodeURIComponent(eventId)}&communityId=${encodeURIComponent(community.id)}`,
+    { cache: "no-store" },
+  ).then(async (revenueResponse) => {
+    if (!revenueResponse.ok) return null;
+    return (await revenueResponse.json()) as EventRevenue;
+  });
 
   return {
     slug,
     event: payload.event,
     visits: payload.visits,
     registrations: payload.registrations,
+    revenue,
   };
 }
 
 export { clientLoader };
 
 export default function EventStatisticsPage() {
-  const { slug, event, visits, registrations } =
+  const { slug, event, visits, registrations, revenue } =
     useLoaderData<EventStatisticsLoaderData>();
   const { range, setRange, chartData, summary, sources, countries, cities } =
     useEventStatistics(visits, registrations);
@@ -102,6 +114,21 @@ export default function EventStatisticsPage() {
           countries={countries}
           cities={cities}
         />
+      </div>
+
+      <div className="px-4 lg:px-6">
+        <Suspense fallback={null}>
+          <Await resolve={revenue}>
+            {(resolved) =>
+              resolved &&
+              (resolved.priced ||
+                resolved.paidCount > 0 ||
+                resolved.pendingCount > 0) ? (
+                <EventRevenuePanel revenue={resolved} />
+              ) : null
+            }
+          </Await>
+        </Suspense>
       </div>
     </div>
   );

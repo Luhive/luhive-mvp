@@ -1,12 +1,15 @@
+import { Suspense, useEffect, useState } from "react";
 import { EventList } from "~/modules/events/components/event-list/event-list-admin";
 import { toast } from "sonner";
-import { useLoaderData, useRevalidator } from "react-router";
+import { Await, useLoaderData, useRevalidator } from "react-router";
+import { isPaidTicketingEnabled } from "@luhive/domain/v1/paid-ticketing-flag";
 import {
   deleteEventClient,
   getEventsWithRegistrationCountsClient,
   updateEventStatusClient,
 } from "~/modules/events/data/events-repo.client";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
+import type { EventListRevenue } from "~/modules/events/model/event-revenue.types";
 import type { Database } from "~/shared/models/database.types";
 
 type Community = Database["public"]["Tables"]["communities"]["Row"];
@@ -16,7 +19,22 @@ type EventWithCount = EventRow & { registration_count?: number };
 type EventsLoaderData = {
   events: EventWithCount[];
   community: Community;
+  revenue: Promise<EventListRevenue | null> | null;
 };
+
+function PublishListRevenue({
+  data,
+  onReady,
+}: {
+  data: EventListRevenue | null;
+  onReady: (data: EventListRevenue) => void;
+}) {
+  useEffect(() => {
+    if (data) onReady(data);
+  }, [data, onReady]);
+
+  return null;
+}
 
 async function clientLoader({
   params,
@@ -42,7 +60,17 @@ async function clientLoader({
     throw new Error(eventsError.message);
   }
 
-  return { events, community };
+  const revenue = isPaidTicketingEnabled(community.settings)
+    ? fetch(
+        `/api/events/community-ticket-revenue?communityId=${encodeURIComponent(community.id)}&eventIds=${encodeURIComponent(events.map((event) => event.id).join(","))}`,
+        { cache: "no-store" },
+      ).then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as EventListRevenue;
+      })
+    : null;
+
+  return { events, community, revenue };
 }
 
 export { clientLoader };
@@ -55,7 +83,8 @@ export function meta() {
 }
 
 export default function EventsPage() {
-  const { events, community } = useLoaderData<EventsLoaderData>();
+  const { events, community, revenue } = useLoaderData<EventsLoaderData>();
+  const [listRevenue, setListRevenue] = useState<EventListRevenue | null>(null);
   const revalidator = useRevalidator();
 
   const handleDelete = async (eventId: string) => {
@@ -110,9 +139,28 @@ export default function EventsPage() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="max-w-6xl mx-auto px-6 py-8">
+        {revenue && (
+          <Suspense fallback={null}>
+            <Await resolve={revenue}>
+              {(data) => (
+                <PublishListRevenue data={data} onReady={setListRevenue} />
+              )}
+            </Await>
+          </Suspense>
+        )}
         <EventList
           events={events}
           communitySlug={community.slug}
+          ticketRevenue={listRevenue?.byEventId}
+          showRevenue={isPaidTicketingEnabled(community.settings)}
+          totalRevenue={
+            listRevenue
+              ? {
+                  totalRevenueMinor: listRevenue.totalRevenueMinor,
+                  currency: listRevenue.currency,
+                }
+              : null
+          }
           onDelete={handleDelete}
           onStatusChange={handleStatusChange}
         />

@@ -1,4 +1,5 @@
-import { Eye, Users, UserCheck } from "lucide-react"
+import { formatMoney } from "@luhive/domain/v1/money"
+import { Banknote, Eye, Users, UserCheck } from "lucide-react"
 
 import {
   Card,
@@ -8,13 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "~/shared/components/ui/card"
+import { Skeleton } from "~/shared/components/ui/skeleton"
 import type { DashboardStatsData } from "~/modules/dashboard/data/dashboard-repo.client"
 
 interface SectionCardsProps {
   stats: DashboardStatsData
+  showRevenue?: boolean
+  revenue?: { totalRevenueMinor: number; currency: string } | null
 }
 
-export function SectionCards({ stats }: SectionCardsProps) {
+export function SectionCards({ stats, showRevenue = false, revenue = null }: SectionCardsProps) {
   const { totalVisits, uniqueVisitors, joinedUsers } = stats
 
   // Calculate conversion rate (handle division by zero)
@@ -23,7 +27,7 @@ export function SectionCards({ stats }: SectionCardsProps) {
     : '0.0'
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-3">
+    <div className={`*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 ${showRevenue ? "@5xl/main:grid-cols-4" : "@5xl/main:grid-cols-3"}`}>
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Total Visits</CardDescription>
@@ -91,6 +95,29 @@ export function SectionCards({ stats }: SectionCardsProps) {
           </div>
         </CardFooter>
       </Card>
+      {showRevenue && (
+        <Card className="@container/card">
+          <CardHeader>
+            <CardDescription>Revenue</CardDescription>
+            <CardTitle className="text-2xl font-semibold tabular-nums text-green-600 @[250px]/card:text-3xl dark:text-green-500">
+              {revenue ? (
+                formatMoney(revenue.totalRevenueMinor, revenue.currency)
+              ) : (
+                <Skeleton className="h-9 w-28 bg-green-600/25 dark:bg-green-500/25" />
+              )}
+            </CardTitle>
+            <CardAction />
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <div className="line-clamp-1 flex gap-2 font-medium">
+              Paid tickets <Banknote className="size-4" />
+            </div>
+            <div className="text-muted-foreground">
+              Collected from confirmed payments
+            </div>
+          </CardFooter>
+        </Card>
+      )}
     </div>
   )
 }
