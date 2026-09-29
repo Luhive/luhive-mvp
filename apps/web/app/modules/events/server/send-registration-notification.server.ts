@@ -11,6 +11,9 @@ export type SendRegistrationOrganizerNotificationsInput = {
 	eventDate: string;
 	eventTime: string;
 	eventLink: string;
+	ticketPrice?: string;
+	registrationCount?: number;
+	totalGain?: string;
 };
 
 export async function sendRegistrationOrganizerNotifications(
@@ -26,6 +29,9 @@ export async function sendRegistrationOrganizerNotifications(
 		eventDate,
 		eventTime,
 		eventLink,
+		ticketPrice,
+		registrationCount,
+		totalGain,
 	} = input;
 
 	const serviceClient = createServiceRoleClient();
@@ -91,6 +97,9 @@ export async function sendRegistrationOrganizerNotifications(
 					eventDate,
 					eventTime,
 					eventLink,
+					ticketPrice,
+					registrationCount,
+					totalGain,
 					recipientEmail: ownerData.user.email,
 					recipientName:
 						profile?.full_name || ownerData.user.email.split("@")[0],

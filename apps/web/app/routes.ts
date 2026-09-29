@@ -142,6 +142,10 @@ export default [
     "api/events/registration-confirmation",
     "routes/api/events/registration-confirmation.tsx",
   ),
+  route(
+    "api/internal/paid-registration-email",
+    "routes/api/internal/paid-registration-email.tsx",
+  ),
   route("api/events/check-in", "routes/api/events/check-in.tsx"),
   route(
     "api/announcements/new-announcement-notification",

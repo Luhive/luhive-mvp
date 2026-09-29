@@ -9,6 +9,7 @@ import { PaymentConfirmationService } from '../services/payment-confirmation';
 import { PAYMENT_REJECTION_STATUS } from '../lib/payment-callback-rules';
 import { createSupabase } from '../lib/supabase';
 import { fail, successBody } from '../lib/response';
+import { notifyPaidRegistration } from '../services/notify-paid-registration';
 
 const paymentRoutes = new Hono<{
   Bindings: Env;
@@ -70,6 +71,17 @@ paymentRoutes.post('/confirm', async (c) => {
 
   if (!result.ok) {
     return fail(c, PAYMENT_REJECTION_STATUS[result.outcome], result.outcome);
+  }
+
+  if (result.outcome === 'confirmed') {
+    const notify = notifyPaidRegistration(c.env, body.userId);
+    // The getter throws outside a Worker (tests). The payment response must
+    // not depend on the email call either way.
+    try {
+      c.executionCtx.waitUntil(notify);
+    } catch {
+      void notify;
+    }
   }
 
   return c.json(successBody({ registration_id: body.userId, status: 'paid' }));

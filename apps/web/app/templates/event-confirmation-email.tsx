@@ -26,6 +26,7 @@ interface EventConfirmationEmailProps {
 	locationMapUrl?: string;
 	onlineMeetingLink?: string;
 	hasQrCode?: boolean;
+	ticketPrice?: string;
 }
 
 export const EventConfirmationEmail = ({
@@ -39,11 +40,13 @@ export const EventConfirmationEmail = ({
 	locationMapUrl,
 	onlineMeetingLink,
 	hasQrCode = false,
+	ticketPrice,
 }: EventConfirmationEmailProps) => {
 	const rows: DetailRowData[] = [
 		{ label: "Date", value: eventDate },
 		{ label: "Time", value: eventTime },
 	];
+	if (ticketPrice) rows.push({ label: "Ticket", value: ticketPrice });
 	if (locationAddress)
 		rows.push({
 			label: "Location",
@@ -81,7 +84,10 @@ export const EventConfirmationEmail = ({
 			<EmailTitle>{eventTitle}</EmailTitle>
 			<Divider />
 			<Paragraph>
-				Hi {recipientName}, your spot at{" "}
+				Hi {recipientName},{" "}
+				{ticketPrice
+					? "your payment went through and your spot at "
+					: "your spot at "}
 				<strong style={{ color: emailColors.heading }}>{eventTitle}</strong> is
 				confirmed. A calendar invite is attached.
 			</Paragraph>

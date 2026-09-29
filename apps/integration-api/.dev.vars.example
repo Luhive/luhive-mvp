@@ -7,3 +7,6 @@
 SUPABASE_URL=https://<validation-project-ref>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=
 ENVIRONMENT=development
+# Where a confirmed payment asks the web app to send the emails.
+WEB_INTERNAL_URL=http://localhost:5173
+INTERNAL_API_SECRET=

@@ -574,6 +574,7 @@ interface ConfirmationEmailData {
   startTimeISO: string;
   endTimeISO: string;
   checkinToken?: string | null;
+  ticketPrice?: string;
 }
 
 interface StatusUpdateEmailData {
@@ -708,6 +709,9 @@ interface EventRegistrationNotificationEmailData {
   eventLink: string;
   recipientEmail: string;
   recipientName: string;
+  ticketPrice?: string;
+  registrationCount?: number;
+  totalGain?: string;
 }
 
 interface AnnouncementNotificationEmailData {
@@ -1133,6 +1137,7 @@ export async function sendRegistrationConfirmationEmail(
     startTimeISO,
     endTimeISO,
     checkinToken,
+    ticketPrice,
   } = data;
 
   const from = fromCommunity(communityName);
@@ -1194,6 +1199,7 @@ export async function sendRegistrationConfirmationEmail(
     locationMapUrl,
     onlineMeetingLink,
     hasQrCode,
+    ticketPrice,
   };
 
   const result = await sendEmail({
@@ -1821,6 +1827,9 @@ export async function sendEventRegistrationNotificationEmail(
       eventLink,
       recipientEmail,
       recipientName,
+      ticketPrice,
+      registrationCount,
+      totalGain,
     }) => {
       return {
         to: recipientEmail,
@@ -1836,6 +1845,9 @@ export async function sendEventRegistrationNotificationEmail(
           eventTime,
           eventLink,
           recipientName,
+          ticketPrice,
+          registrationCount,
+          totalGain,
         }),
         metadata: {
           template: "EventRegistrationNotificationEmail",
