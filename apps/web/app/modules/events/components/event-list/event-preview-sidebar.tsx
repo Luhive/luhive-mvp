@@ -48,6 +48,7 @@ import {
 import { EventLocationMapSection } from "~/modules/events/components/shared/event-location-map-section";
 import { toLocationValue } from "~/modules/events/utils/event-location";
 import { GoogleMaps } from "~/modules/events/utils/google-maps";
+import { getEventPriceLabel } from "~/modules/events/utils/event-price-label";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -812,11 +813,11 @@ export function EventPreviewSidebar({
             </div>
           </div>
 
-          {/* Footer CTA with Free text */}
+          {/* Footer CTA with price */}
           <div className="shrink-0 p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex items-center justify-between gap-4">
               <div className="shrink-0">
-                <p className="text-lg font-bold">Free</p>
+                <p className="text-lg font-bold">{getEventPriceLabel(event)}</p>
               </div>
               {isOwnerOrAdmin ? (
                 <Button asChild className="w-[20rem]" size="lg">

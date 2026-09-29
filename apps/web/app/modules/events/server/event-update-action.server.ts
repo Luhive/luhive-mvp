@@ -2,6 +2,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
 import { saveEventReminders } from "~/modules/events/server/event-reminders.server";
 import type { Database, Json } from "~/shared/models/database.types";
+import { resolveEventPrice } from "~/modules/events/server/resolve-event-price.server";
 
 type EventType = Database["public"]["Enums"]["event_type"];
 type EventStatus = Database["public"]["Enums"]["event_status"];
@@ -29,6 +30,7 @@ export interface EventUpdatePayload {
   coverUrl?: string | null;
   status: EventStatus;
   isApproveRequired: boolean;
+  priceMinor?: number | null;
   customQuestions?: Json | null;
   reminderTimes?: ReminderTime[];
   reminderMessage?: string | null;
@@ -88,6 +90,7 @@ export async function eventUpdateAction({
     coverUrl,
     status,
     isApproveRequired,
+    priceMinor: requestedPriceMinor,
     customQuestions,
     reminderTimes,
     reminderMessage,
@@ -105,6 +108,25 @@ export async function eventUpdateAction({
 
   if (!collaboration) {
     return { success: false, error: "Only host community can update event details" };
+  }
+
+  const { data: existingEvent } = await supabase
+    .from("events")
+    .select("price_minor")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  const price = await resolveEventPrice({
+    supabase,
+    communityId,
+    requestedPriceMinor,
+    existingEvent: {
+      id: eventId,
+      priceMinor: existingEvent?.price_minor ?? null,
+    },
+  });
+  if (!price.ok) {
+    return { success: false, error: price.error };
   }
 
   const { error: eventError } = await supabase
@@ -128,7 +150,9 @@ export async function eventUpdateAction({
       registration_deadline: registrationDeadline || null,
       cover_url: coverUrl || null,
       status,
-      is_approve_required: isApproveRequired,
+      // Payment is the gate for priced events, so manual approval is not used.
+      is_approve_required: price.priceMinor === null ? isApproveRequired : false,
+      price_minor: price.priceMinor,
       custom_questions: (customQuestions ?? null) as Json | null,
     })
     .eq("id", eventId);

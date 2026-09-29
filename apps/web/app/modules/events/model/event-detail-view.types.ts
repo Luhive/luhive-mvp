@@ -1,6 +1,7 @@
 import type { Community, Event, Profile } from "~/shared/models/entity.types";
 import type { Database } from "~/shared/models/database.types";
 import type { UserData } from "~/modules/events/server/event-detail-loader.server";
+import type { PendingTicketPayment } from "~/modules/events/model/ticket-order.types";
 
 /** Re-export base entities for convenience; prefer importing from ~/shared/models/entity.types */
 export type { Community, Event, Profile };
@@ -34,6 +35,8 @@ export interface EventPageUserState extends EventRegistrationState {
 	userProfile: Profile | null;
 	isCommunityMember: boolean;
 	canRegister: boolean;
+	/** Set while a paid registration is waiting for its payment. */
+	pendingTicketPayment: PendingTicketPayment | null;
 }
 
 /** Action response payload from event-detail action */

@@ -11,6 +11,8 @@ import type { TimeRemaining } from "~/modules/events/model/event-detail-view.typ
 import type { EventTrackingContext } from "~/modules/events/utils/event-session-tracker";
 import { EventStartCountdownBadge } from "./shared/event-start-countdown-badge";
 import { RegistrationIdentityRow } from "./shared/registration-identity-row";
+import { RegistrationPriceLine } from "./shared/registration-price-line";
+import { isPaidEvent } from "~/modules/events/utils/event-price-label";
 import { RegistrationStatusLine } from "./shared/registration-status-line";
 import { RegistrationTwoColumnLayout } from "./shared/registration-two-column-layout";
 import {
@@ -58,17 +60,19 @@ function RegisterButton({
   hasCustomQuestions,
   registerUrl,
   isRegistering,
+  isPaid,
   eventTrackingContext,
 }: {
   hasCustomQuestions: boolean;
   registerUrl: string;
   isRegistering: boolean;
+  isPaid: boolean;
   eventTrackingContext: EventTrackingContext;
 }) {
   if (hasCustomQuestions) {
     return (
       <Button asChild className="w-full" size="sm" disabled={isRegistering}>
-        <Link to={registerUrl}>Register</Link>
+        <Link to={registerUrl}>{isPaid ? "Buy ticket" : "Register"}</Link>
       </Button>
     );
   }
@@ -117,7 +121,13 @@ function RegisterButton({
         size="sm"
         disabled={isRegistering}
       >
-        {isRegistering ? "Registering..." : "Register"}
+        {isRegistering
+          ? isPaid
+            ? "Preparing payment..."
+            : "Registering..."
+          : isPaid
+            ? "Buy ticket"
+            : "Register"}
       </Button>
     </Form>
   );
@@ -200,10 +210,13 @@ export function NativeCanRegisterView({
           />
         </Activity>
 
+        <RegistrationPriceLine event={event} />
+
         <RegisterButton
           hasCustomQuestions={hasCustomQuestions}
           registerUrl={registerUrl}
           isRegistering={isRegistering}
+          isPaid={isPaidEvent(event)}
           eventTrackingContext={eventTrackingContext}
         />
       </div>
@@ -212,8 +225,11 @@ export function NativeCanRegisterView({
 
   return (
     <div className="space-y-3">
+      <RegistrationPriceLine event={event} />
       <Button asChild className="w-full" size="lg">
-        <Link to={registerUrl}>Register for Event</Link>
+        <Link to={registerUrl}>
+          {isPaidEvent(event) ? "Buy ticket" : "Register for Event"}
+        </Link>
       </Button>
       <p className="text-xs text-center text-muted-foreground">
         Already have an account?{" "}

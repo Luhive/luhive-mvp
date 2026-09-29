@@ -3,6 +3,8 @@ import type { Database } from "~/shared/models/database.types";
 import type { Profile } from "~/shared/models/entity.types";
 import type { EventPageUserState } from "~/modules/events/model/event-detail-view.types";
 import { getApprovedRegistrationCount } from "~/modules/events/data/registrations-repo.server";
+import { findPendingTicketPayment } from "~/modules/events/server/payments/find-pending-ticket-payment.server";
+import type { PendingTicketPayment } from "~/modules/events/model/ticket-order.types";
 
 type DbClient = SupabaseClient<Database>;
 
@@ -62,6 +64,7 @@ export async function fetchEventPageUserState(
 	let userCheckinToken: string | null = null;
 	let userProfile: Profile | null = null;
 	let isCommunityMember = false;
+	let pendingTicketPayment: PendingTicketPayment | null = null;
 	let authUser: { id: string; email?: string | null } | null = null;
 
 	if (user) {
@@ -93,6 +96,10 @@ export async function fetchEventPageUserState(
 			isUserRegistered = !!registration;
 			userRegistrationStatus = registration?.approval_status || null;
 			userCheckinToken = registration?.checkin_token || null;
+
+			if (registration?.approval_status === "pending") {
+				pendingTicketPayment = await findPendingTicketPayment(registration.id);
+			}
 		}
 
 		isCommunityMember = !!membership;
@@ -112,5 +119,6 @@ export async function fetchEventPageUserState(
 		userProfile,
 		isCommunityMember,
 		canRegister,
+		pendingTicketPayment,
 	};
 }

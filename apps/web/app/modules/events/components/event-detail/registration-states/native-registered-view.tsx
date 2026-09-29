@@ -1,4 +1,8 @@
 import { Activity } from "react";
+import { Form } from "react-router";
+import { Button } from "~/shared/components/ui/button";
+import type { PendingTicketPayment } from "~/modules/events/model/ticket-order.types";
+import { RegistrationPriceLine } from "./shared/registration-price-line";
 import { CalendarSubscriptionButton } from "~/modules/events/components/registration/calendar-subscription-dialog";
 import { CheckinQrDialog } from "~/modules/events/components/registration/checkin-qr-dialog";
 import { InviteSomeoneButton } from "~/modules/events/components/registration/invite-modal";
@@ -25,6 +29,7 @@ interface NativeRegisteredViewProps {
 	isUnregistering: boolean;
 	user: { id: string; email?: string | null } | null;
 	userProfile: { full_name: string | null; avatar_url: string | null } | null;
+	pendingTicketPayment?: PendingTicketPayment | null;
 }
 
 interface RegisteredStateViewProps {
@@ -214,6 +219,57 @@ function PendingRegisteredView({
 	);
 }
 
+function PendingPaymentView({
+	event,
+	isPastEvent,
+	isUnregistering,
+	user,
+	userProfile,
+	paymentUrl,
+}: RegisteredStateViewProps & { paymentUrl: string | null }) {
+	const timeUntilStart = useEventStartTimer(
+		event.start_time,
+		event.timezone,
+		isPastEvent,
+	);
+	const { displayName, avatarInitials } = useRegistrationIdentity(user, userProfile);
+
+	return (
+		<RegisteredAttendeeLayout
+			displayName={displayName}
+			avatarUrl={userProfile?.avatar_url}
+			avatarInitials={avatarInitials}
+			timeFormatted={timeUntilStart?.formatted}
+			isUnregistering={isUnregistering}
+			statusLine={
+				<div className="space-y-2">
+					<RegistrationStatusLine variant="amber">
+						Complete your payment to confirm your spot
+					</RegistrationStatusLine>
+					<RegistrationPriceLine event={event} />
+					<p className="text-xs text-muted-foreground">
+						Your ticket is confirmed by email as soon as the payment is received.
+					</p>
+				</div>
+			}
+			actions={
+				paymentUrl ? (
+					<Button asChild size="sm" className="w-full sm:w-auto">
+						<a href={paymentUrl}>Pay now</a>
+					</Button>
+				) : (
+					<Form method="post" className="w-full sm:w-auto">
+						<input type="hidden" name="intent" value="register" />
+						<Button type="submit" size="sm" className="w-full sm:w-auto">
+							Continue to payment
+						</Button>
+					</Form>
+				)
+			}
+		/>
+	);
+}
+
 function RejectedRegisteredView({
 	isPastEvent,
 	isUnregistering,
@@ -254,6 +310,7 @@ export function NativeRegisteredView({
 	isUnregistering,
 	user,
 	userProfile,
+	pendingTicketPayment,
 }: NativeRegisteredViewProps) {
 	const stateProps: RegisteredStateViewProps = {
 		event,
@@ -270,6 +327,15 @@ export function NativeRegisteredView({
 				{...stateProps}
 				userCheckinToken={userCheckinToken}
 				discussionLink={discussionLink}
+			/>
+		);
+	}
+
+	if (userRegistrationStatus === "pending" && pendingTicketPayment) {
+		return (
+			<PendingPaymentView
+				{...stateProps}
+				paymentUrl={pendingTicketPayment.paymentUrl}
 			/>
 		);
 	}

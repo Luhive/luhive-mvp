@@ -1,5 +1,6 @@
 import type { ActionFunctionArgs } from "react-router";
 import { createClient } from "~/shared/lib/supabase/server";
+import { releaseTicketOrderForCancellation } from "~/modules/events/server/release-ticket-order-for-cancellation.server";
 
 export async function action({ request }: ActionFunctionArgs) {
 	if (request.method !== "POST") {
@@ -61,6 +62,14 @@ export async function action({ request }: ActionFunctionArgs) {
 			if (!community || community.created_by !== user.id) {
 				return { success: false, error: "You do not have permission to manage this event" };
 			}
+		}
+
+		const released = await releaseTicketOrderForCancellation({
+			registrationId,
+			eventId,
+		});
+		if (!released.ok) {
+			return { success: false, error: released.error };
 		}
 
 		const { error: deleteError } = await supabase
