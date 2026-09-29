@@ -8,6 +8,7 @@ type RequestRegistrationPaymentInput = {
   registrationId: string;
   registrationCount: number;
   existingOrder?: TicketOrder | null;
+  eventReturnUrl?: string;
 };
 
 export type RegistrationPaymentOutcome =
@@ -35,6 +36,7 @@ export async function requestRegistrationPayment({
   registrationId,
   registrationCount,
   existingOrder,
+  eventReturnUrl,
 }: RequestRegistrationPaymentInput): Promise<RegistrationPaymentOutcome> {
   const registrationState: EventRegistrationState = {
     isUserRegistered: true,
@@ -47,6 +49,7 @@ export async function requestRegistrationPayment({
     event,
     registrationId,
     existingOrder,
+    eventReturnUrl,
   });
 
   if (!payment.ok) {

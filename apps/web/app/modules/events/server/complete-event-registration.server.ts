@@ -18,6 +18,7 @@ import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
 import { sendRegistrationAttendeeEmail } from "~/modules/events/server/send-registration-attendee-email.server";
 import { sendRegistrationOrganizerNotifications } from "~/modules/events/server/send-registration-notification.server";
 import { isPaidEvent } from "~/modules/events/utils/event-price-label";
+import { buildEventReturnUrl } from "~/modules/events/utils/event-return-url";
 import { findTicketOrderByRegistrationId } from "~/modules/events/data/ticket-orders-repo.server";
 import { isPaidTicketingEnabledForCommunity } from "~/modules/events/server/is-paid-ticketing-enabled-for-community.server";
 import { requestRegistrationPayment } from "~/modules/events/server/payments/request-registration-payment.server";
@@ -113,6 +114,18 @@ async function resolveCommunity(
   return (data as Community | null) ?? null;
 }
 
+async function getEventReturnUrl(
+  request: Request,
+  supabase: DbClient,
+  event: Event,
+  community?: Community | null,
+): Promise<string | undefined> {
+  const resolved = await resolveCommunity(supabase, event, community);
+  if (!resolved) return undefined;
+
+  return buildEventReturnUrl(new URL(request.url).origin, resolved.slug, event);
+}
+
 export async function completeEventRegistration({
   request,
   supabase,
@@ -174,6 +187,7 @@ export async function completeEventRegistration({
           registrationId: existingRegistration.id,
           registrationCount,
           existingOrder: order,
+          eventReturnUrl: await getEventReturnUrl(request, supabase, event, community),
         });
       }
     }
@@ -368,6 +382,7 @@ export async function completeEventRegistration({
       event,
       registrationId: createdRegistration.id,
       registrationCount,
+      eventReturnUrl: await getEventReturnUrl(request, supabase, event, community),
     });
   }
 

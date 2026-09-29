@@ -65,17 +65,20 @@ in a document or chat, rotate it before go-live.
 | `userId` | string | yes | Luhive registration UUID. Store it. Echo it later. |
 | `amount` | number | yes | AZN, greater than 0, at most 2 decimal places. Example: `25` or `12.5`. |
 | `description` | string | no | Event title, already trimmed to 255 characters. Show it on the Epoint page. |
+| `redirectUrl` | string | no | Absolute `https` URL of the Luhive event page, ending in `?registered=1`. Send the browser here after a **successful** payment. Store it with the payment. |
 
 ```json
 {
   "userId": "22222222-2222-4222-8222-222222222222",
   "amount": 25,
-  "description": "Paid Event test"
+  "description": "Paid Event test",
+  "redirectUrl": "https://luhive.com/c/checkila/mehsul-analizi-seminar-2?registered=1"
 }
 ```
 
 Luhive waits **8 seconds** and does not retry. Respond well inside that.
-There is no `currency` field and no return URL. Do not require either.
+There is no `currency` field. Do not require one. `redirectUrl` may be missing;
+if it is, show your own confirmation page.
 
 ### Success — `201 Created`
 
@@ -116,11 +119,12 @@ JSON body `{ "error": "<short message>" }`.
 
 ### Checkout page
 
-After paying, Epoint returns the browser to a **Checkila** page, not to Luhive.
-That page should say whether the payment succeeded, and should include a link
-back to the event. Luhive cannot pass a return URL today, so hardcode or store
-nothing from Luhive except `userId`. A generic "You can close this page. Your
-ticket will arrive by email." is acceptable for the pilot.
+After paying, Epoint returns the browser to a **Checkila** page. On success,
+Checkila should send the browser on to `redirectUrl` (the Luhive event page).
+Do this only after the payment is confirmed, and keep calling Luhive's callback
+in the background as described below; the redirect does not replace it. If the
+payment failed or `redirectUrl` is missing, stay on your own page and say what
+happened.
 
 The payment link should stay valid for at least 24 hours. If it expires, say so
 on the page. Luhive keeps showing the same link until it is paid.
