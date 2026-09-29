@@ -115,6 +115,10 @@ export const attenderSchema = z.object({
   invited_by_user_id: z.string().nullable(),
   invited_by_name: z.string().nullable(),
   invite_status: z.enum(["self", "pending_acceptance", "accepted"]),
+  ticket_order_status: z
+    .enum(["pending", "paid", "refunded"])
+    .nullable()
+    .optional(),
 });
 
 type Attender = z.infer<typeof attenderSchema>;
@@ -211,7 +215,21 @@ function buildPendingInviteAttender(invite: InviteSuccessResult): Attender {
     invited_by_user_id: invite.invitedByUserId,
     invited_by_name: invite.invitedByName,
     invite_status: "pending_acceptance",
+    ticket_order_status: null,
   };
+}
+
+function isUnpaidTicket(attender: Attender) {
+  return attender.ticket_order_status === "pending";
+}
+
+function approvalBadgeLabel(attender: Attender): string {
+  if (attender.invite_status === "pending_acceptance") return "Not accepted";
+  if (isUnpaidTicket(attender)) return "Unpaid";
+  return (
+    approvalStatusConfig[attender.approval_status as EventApprovalStatus]
+      ?.label || "Approved"
+  );
 }
 
 export type AttendersTableHandle = {
@@ -254,6 +272,7 @@ export const AttendersTable = React.forwardRef<
   const [isDeleting, setIsDeleting] = React.useState(false);
   const isMobile = useIsMobile();
   const fetcher = useFetcher();
+  const ticketFetcher = useFetcher();
 
   // Fetch attenders client-side
   const fetchAttenders = React.useCallback(async () => {
@@ -332,6 +351,24 @@ export const AttendersTable = React.forwardRef<
         .map((reg: any) => reg.user_id);
 
       // Fetch emails for authenticated users from API route
+      const orderStatusByRegistration = new Map<
+        string,
+        "pending" | "paid" | "refunded"
+      >();
+      try {
+        const ordersResponse = await fetch(
+          `/api/events/ticket-orders?eventId=${encodeURIComponent(eventId)}`,
+        );
+        if (ordersResponse.ok) {
+          const body = await ordersResponse.json();
+          for (const order of body.orders ?? []) {
+            orderStatusByRegistration.set(order.registrationId, order.status);
+          }
+        }
+      } catch (ordersError) {
+        console.error("Failed to load ticket orders", ordersError);
+      }
+
       const userEmailsMap = new Map<string, string>();
       if (authenticatedUserIds.length > 0) {
         try {
@@ -392,6 +429,8 @@ export const AttendersTable = React.forwardRef<
             invited_by_user_id: reg.invited_by_user_id ?? null,
             invited_by_name: inviterProfile?.full_name ?? null,
             invite_status: inviteStatus,
+            ticket_order_status:
+              orderStatusByRegistration.get(reg.id) ?? null,
           };
         },
       );
@@ -493,6 +532,41 @@ export const AttendersTable = React.forwardRef<
     // toast.info(`Updating status to ${status}...`);
   };
 
+  const handleTicketAction = (id: string, intent: "mark-paid" | "resend") => {
+    const formData = new FormData();
+    formData.append("registrationId", id);
+    formData.append("eventId", eventId);
+    formData.append("intent", intent);
+    ticketFetcher.submit(formData, {
+      method: "POST",
+      action: "/api/events/ticket-orders",
+    });
+    if (intent === "mark-paid") {
+      setData((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                approval_status: "approved",
+                ticket_order_status: "paid",
+              }
+            : item,
+        ),
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (ticketFetcher.state === "idle" && ticketFetcher.data) {
+      if (ticketFetcher.data.success) {
+        toast.success(ticketFetcher.data.message ?? "Saved");
+      } else if (ticketFetcher.data.error) {
+        toast.error(ticketFetcher.data.error);
+        fetchAttenders();
+      }
+    }
+  }, [ticketFetcher.state, ticketFetcher.data, fetchAttenders]);
+
   // Monitor fetcher response
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data) {
@@ -532,12 +606,7 @@ export const AttendersTable = React.forwardRef<
         "Invited By": row.invited_by_name || "-",
         "RSVP Status":
           rsvpStatusConfig[row.rsvp_status]?.label || row.rsvp_status,
-        "Approval Status": row.approval_status
-          ? approvalStatusConfig[row.approval_status as EventApprovalStatus]
-              ?.label
-          : row.invite_status === "pending_acceptance"
-            ? "Not accepted yet"
-            : "Approved",
+        "Approval Status": approvalBadgeLabel(row),
         "Checked In": row.is_attended ? "Yes" : "No",
         "Registered At": row.registered_at
           ? new Date(row.registered_at).toLocaleString()
@@ -680,7 +749,7 @@ export const AttendersTable = React.forwardRef<
                   "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
               )}
             >
-              {config?.label || status}
+              {approvalBadgeLabel(row.original)}
             </Badge>
           );
         },
@@ -725,14 +794,27 @@ export const AttendersTable = React.forwardRef<
         enableHiding: false,
         cell: ({ row }) => {
           const attender = row.original;
+          const isUnpaid = isUnpaidTicket(attender);
           const isPending =
             attender.approval_status === "pending" &&
-            attender.invite_status !== "pending_acceptance";
+            attender.invite_status !== "pending_acceptance" &&
+            !isUnpaid;
           const isPendingInvite =
             attender.invite_status === "pending_acceptance";
 
           return (
             <div className="flex items-center gap-2">
+              {isUnpaid && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  disabled={ticketFetcher.state !== "idle"}
+                  onClick={() => handleTicketAction(attender.id, "mark-paid")}
+                >
+                  Mark as paid
+                </Button>
+              )}
               {isPending && (
                 <>
                   <Button
@@ -788,7 +870,15 @@ export const AttendersTable = React.forwardRef<
                     Show Answers
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuSeparator />
+                  {attender.ticket_order_status === "paid" && (
+                    <DropdownMenuCheckboxItem
+                      onClick={() => handleTicketAction(attender.id, "resend")}
+                    >
+                      Resend confirmation
+                    </DropdownMenuCheckboxItem>
+                  )}
                   {!isPendingInvite &&
+                    !isUnpaid &&
                     !isPending &&
                     attender.approval_status !== "approved" && (
                       <DropdownMenuCheckboxItem
@@ -828,7 +918,7 @@ export const AttendersTable = React.forwardRef<
         },
       },
     ],
-    [handleDeleteClick],
+    [handleDeleteClick, handleTicketAction, ticketFetcher.state],
   );
 
   const table = useReactTable({
@@ -1161,11 +1251,7 @@ export const AttendersTable = React.forwardRef<
                             "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
                         )}
                       >
-                        {selectedAttender.invite_status === "pending_acceptance"
-                          ? "Not accepted"
-                          : approvalStatusConfig[
-                              selectedAttender.approval_status as EventApprovalStatus
-                            ]?.label || "Approved"}
+                        {approvalBadgeLabel(selectedAttender)}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
@@ -1300,11 +1386,7 @@ export const AttendersTable = React.forwardRef<
                             "bg-green-100 text-green-700 hover:bg-green-200 border-green-200",
                         )}
                       >
-                        {selectedAttender.invite_status === "pending_acceptance"
-                          ? "Not accepted"
-                          : approvalStatusConfig[
-                              selectedAttender.approval_status as EventApprovalStatus
-                            ]?.label || "Approved"}
+                        {approvalBadgeLabel(selectedAttender)}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">

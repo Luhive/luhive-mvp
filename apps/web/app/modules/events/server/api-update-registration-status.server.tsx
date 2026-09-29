@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
+import { findTicketOrderByRegistrationId } from "~/modules/events/data/ticket-orders-repo.server";
 import timezone from "dayjs/plugin/timezone";
 
 dayjs.extend(utc);
@@ -83,6 +84,16 @@ export async function action({ request }: ActionFunctionArgs) {
 				.single();
 			if (!community || community.created_by !== user.id) {
 				return { success: false, error: "You do not have permission to manage this event" };
+			}
+		}
+
+		if (status === "approved") {
+			const order = await findTicketOrderByRegistrationId(registrationId);
+			if (order?.status === "pending" && order.event_id === eventId) {
+				return {
+					success: false,
+					error: "This registration is waiting for payment. Use Mark as paid.",
+				};
 			}
 		}
 

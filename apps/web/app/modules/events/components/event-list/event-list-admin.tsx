@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Button } from '~/shared/components/ui/button';
+import { Skeleton } from '~/shared/components/ui/skeleton';
 import { Input } from '~/shared/components/ui/input';
 import {
   Select,
@@ -40,6 +41,8 @@ import type { ExternalPlatform } from '~/modules/events/model/event.types';
 import dayjs from 'dayjs';
 import { Routes } from '~/shared/lib/routing/routes';
 import { publicEventSlug } from '~/modules/events/utils/event-slug';
+import { isPaidEvent } from '~/modules/events/utils/event-price-label';
+import { formatMoney } from '@luhive/domain/v1/money';
 import { cn } from '~/shared/lib/utils';
 import {
   getExternalPlatformName,
@@ -51,11 +54,14 @@ type RegistrationTypeFilter = 'all' | 'luhive' | 'external';
 interface EventListProps {
   events: (Event & { registration_count?: number; communityRole?: "host" | "co-host" })[];
   communitySlug: string;
+  ticketRevenue?: Record<string, { revenueMinor: number }>;
+  showRevenue?: boolean;
+  totalRevenue?: { totalRevenueMinor: number; currency: string } | null;
   onDelete?: (eventId: string) => void;
   onStatusChange?: (eventId: string, newStatus: Extract<EventStatus, 'draft' | 'published'>) => void;
 }
 
-export function EventList({ events, communitySlug, onDelete, onStatusChange }: EventListProps) {
+export function EventList({ events, communitySlug, ticketRevenue, showRevenue = false, totalRevenue, onDelete, onStatusChange }: EventListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<EventStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all');
@@ -188,7 +194,7 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+      <div className={`grid grid-cols-2 gap-4 ${showRevenue ? "sm:grid-cols-3 lg:grid-cols-6" : "sm:grid-cols-5"}`}>
         <div className="bg-muted/50 rounded-lg p-4">
           <div className="text-2xl font-bold">{stats.total}</div>
           <div className="text-xs text-muted-foreground">Total Events</div>
@@ -209,6 +215,20 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
           <div className="text-2xl font-bold">{stats.external}</div>
           <div className="text-xs text-muted-foreground">Link</div>
         </div>
+        {showRevenue && (
+          <div className="bg-muted/50 rounded-lg p-4">
+            <div className="flex h-8 items-center">
+              {totalRevenue ? (
+                <div className="text-2xl font-bold text-green-600 dark:text-green-500">
+                  {formatMoney(totalRevenue.totalRevenueMinor, totalRevenue.currency)}
+                </div>
+              ) : (
+                <Skeleton className="h-6 w-28 rounded bg-green-600/25 dark:bg-green-500/25" />
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">Revenue</div>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -436,6 +456,13 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                             const date = eventDate.format('MMM D');
                             const time = eventDate.format('h:mm A');
                             const registrationCount = getRegistrationCount(event);
+                            const revenueLabel =
+                              ticketRevenue && isPaidEvent(event)
+                                ? formatMoney(
+                                    ticketRevenue[event.id]?.revenueMinor ?? 0,
+                                    event.currency,
+                                  )
+                                : null;
                             const capacity = event.capacity;
                             const location =
                               event.event_type === "in-person"
@@ -513,6 +540,11 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                                 /{capacity || '∞'}
                                               </span>
                                             </div>
+                                        )}
+                                        {revenueLabel && (
+                                          <span className="text-xs font-bold text-green-600 dark:text-green-500">
+                                            {revenueLabel}
+                                          </span>
                                         )}
                                       </div>
                                     </div>
@@ -604,6 +636,11 @@ export function EventList({ events, communitySlug, onDelete, onStatusChange }: E
                                             </span>
                                           </div>
                                         </div>
+                                    )}
+                                    {revenueLabel && (
+                                      <span className="text-sm font-bold text-green-600 dark:text-green-500">
+                                        {revenueLabel}
+                                      </span>
                                     )}
                                   </div>
                                 </div>

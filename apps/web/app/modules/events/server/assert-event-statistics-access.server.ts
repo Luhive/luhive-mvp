@@ -7,7 +7,7 @@ type SessionSupabase = SupabaseClient<Database>;
 type AccessSuccess = { event: EventStatisticsEvent };
 type AccessFailure = { error: string; status: 403 | 404 };
 
-async function isCommunityOwnerOrAdmin(
+export async function isCommunityOwnerOrAdmin(
   supabase: SessionSupabase,
   communityId: string,
   userId: string,
