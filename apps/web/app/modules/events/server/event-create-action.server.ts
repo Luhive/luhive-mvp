@@ -7,6 +7,7 @@ import type { Database, Json } from "~/shared/models/database.types";
 import { Routes } from "~/shared/lib/routing/routes";
 import { ensureUniqueEventSlug } from "~/modules/events/server/ensure-event-slug.server";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
+import { resolveEventPrice } from "~/modules/events/server/resolve-event-price.server";
 
 type EventType = Database["public"]["Enums"]["event_type"];
 type EventStatus = Database["public"]["Enums"]["event_status"];
@@ -33,6 +34,7 @@ export interface EventCreatePayload {
   coverUrl?: string | null;
   status: EventStatus;
   isApproveRequired: boolean;
+  priceMinor?: number | null;
   customQuestions?: Json | null;
   reminderTimes?: ReminderTime[];
   reminderMessage?: string | null;
@@ -94,6 +96,7 @@ export async function eventCreateAction({
     coverUrl,
     status,
     isApproveRequired,
+    priceMinor: requestedPriceMinor,
     customQuestions,
     reminderTimes,
     reminderMessage,
@@ -101,6 +104,15 @@ export async function eventCreateAction({
     eventTime,
     eventLinkBase,
   } = payload;
+
+  const price = await resolveEventPrice({
+    supabase,
+    communityId,
+    requestedPriceMinor,
+  });
+  if (!price.ok) {
+    return { success: false, error: price.error };
+  }
 
   const eventSlug = await ensureUniqueEventSlug(supabase, communityId, title);
 
@@ -127,7 +139,9 @@ export async function eventCreateAction({
       registration_deadline: registrationDeadline || null,
       cover_url: coverUrl || null,
       status,
-      is_approve_required: isApproveRequired,
+      // Payment is the gate for priced events, so manual approval is not used.
+      is_approve_required: price.priceMinor === null ? isApproveRequired : false,
+      price_minor: price.priceMinor,
       custom_questions: (customQuestions ?? null) as Json | null,
     })
     .select("id, slug")

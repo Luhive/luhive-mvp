@@ -199,6 +199,7 @@ export interface Events {
   cover_url: string | null;
   created_at: Generated<Timestamp | null>;
   created_by: string;
+  currency: Generated<string>;
   /**
    * Stores custom registration questions configuration
    */
@@ -242,6 +243,10 @@ export interface Events {
    */
   location_place_id: string | null;
   online_meeting_link: string | null;
+  /**
+   * Ticket price in minor units (qəpik). NULL means the event is free.
+   */
+  price_minor: number | null;
   registration_deadline: Timestamp | null;
   /**
    * Where users can register: native (Luhive), external (Google Forms etc), or both
@@ -294,6 +299,15 @@ export interface GoogleFormsTokens {
   token_type: Generated<string | null>;
   updated_at: Generated<Timestamp | null>;
   user_id: string;
+}
+
+export interface PaymentCallbacks {
+  id: Generated<string>;
+  key_id: string | null;
+  outcome: string;
+  payload: Json;
+  received_at: Generated<Timestamp>;
+  registration_id: string | null;
 }
 
 export interface People {
@@ -354,6 +368,31 @@ export interface TelegramUsers {
   username: string | null;
 }
 
+export interface TicketOrders {
+  amount_minor: number;
+  community_id: string;
+  confirmation_email_sent_at: Timestamp | null;
+  created_at: Generated<Timestamp>;
+  currency: string;
+  event_id: string;
+  id: Generated<string>;
+  marked_paid_by: string | null;
+  paid_at: Timestamp | null;
+  paid_via: string | null;
+  /**
+   * Checkila paymentId, stored when the payment link is created. The callback must echo it as checkilaRequestId.
+   */
+  partner_reference: string | null;
+  payment_url: string | null;
+  registration_id: string;
+  status: Generated<string>;
+  /**
+   * Epoint transaction id from the callback, for reconciliation. NULL for manual payments.
+   */
+  transaction_id: string | null;
+  updated_at: Generated<Timestamp>;
+}
+
 export interface DB {
   announcement_views: AnnouncementViews;
   api_keys: ApiKeys;
@@ -368,9 +407,11 @@ export interface DB {
   event_visits: EventVisits;
   events: Events;
   google_forms_tokens: GoogleFormsTokens;
+  payment_callbacks: PaymentCallbacks;
   people: People;
   person_events: PersonEvents;
   profiles: Profiles;
   sent_reminders: SentReminders;
   telegram_users: TelegramUsers;
+  ticket_orders: TicketOrders;
 }

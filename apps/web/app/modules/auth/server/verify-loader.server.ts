@@ -453,6 +453,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
           });
         }
 
+        if (registrationResult.paymentUrl) {
+          return redirect(registrationResult.paymentUrl, { headers });
+        }
+
         return redirect(appendQuery(eventPageUrl, "registered", "1"), {
           headers,
         });

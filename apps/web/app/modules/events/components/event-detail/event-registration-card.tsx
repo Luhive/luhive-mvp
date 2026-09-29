@@ -126,6 +126,7 @@ export function EventRegistrationCard({
 							isUnregistering={isUnregistering}
 							user={user}
 							userProfile={userProfile}
+							pendingTicketPayment={userData.pendingTicketPayment}
 						/>
 					</Activity>
 

@@ -72,6 +72,7 @@ function EventInner({ loaderData }: { loaderData: EventDetailLoaderData }) {
 		userProfile: loaderData.userData.userProfile,
 		isCommunityMember: loaderData.userData.isCommunityMember,
 		canRegister: loaderData.userData.canRegister,
+		pendingTicketPayment: loaderData.userData.pendingTicketPayment,
 	};
 
 	const pageData: EventDetailLoaderData = {

@@ -2,7 +2,7 @@ import { Activity, useEffect, useRef } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { Calendar, MapPin, Video, ExternalLink, BarChart3 } from "lucide-react";
+import { Calendar, MapPin, Video, ExternalLink, BarChart3, Ticket } from "lucide-react";
 import { Button } from "~/shared/components/ui/button";
 import { Separator } from "~/shared/components/ui/separator";
 import type { Community, Event } from "~/shared/models/entity.types";
@@ -18,6 +18,10 @@ import {
   deriveLocality,
 } from "~/modules/events/utils/event-location";
 import { GoogleMaps } from "~/modules/events/utils/google-maps";
+import {
+  getEventPriceLabel,
+  isPaidEvent,
+} from "~/modules/events/utils/event-price-label";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -174,6 +178,15 @@ export function EventInfoSection({
               </a>
             );
           })()}
+        </Activity>
+
+        <Activity mode={isPaidEvent(event) ? "visible" : "hidden"}>
+          <div className="flex items-start gap-3">
+            <div className="mt-1 shrink-0">
+              <Ticket className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="font-semibold text-base">{getEventPriceLabel(event)}</p>
+          </div>
         </Activity>
       </div>
 

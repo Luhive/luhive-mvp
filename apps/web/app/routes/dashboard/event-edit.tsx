@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
+import { isPaidTicketingEnabled } from '@luhive/domain/v1/paid-ticketing-flag';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -123,6 +124,7 @@ export default function EditEventPage() {
     coverUrl: event.cover_url ?? '',
     status: event.status,
     isApproveRequired: event.is_approve_required ?? false,
+    priceMinor: event.price_minor,
     customQuestions: (event.custom_questions ?? null) as CustomQuestionJson | null,
     reminderTimes,
     reminderMessage,
@@ -138,6 +140,9 @@ export default function EditEventPage() {
           eventSlug={event.slug ?? undefined}
           mode="edit"
           initialData={initialData}
+          isPaidTicketingEnabled={isPaidTicketingEnabled(
+            dashboardData.community.settings,
+          )}
         />
       </div>
     </div>

@@ -11,6 +11,8 @@ import type { ExternalPlatform } from "~/modules/events/model/event.types";
 import type { EventPageUserState } from "~/modules/events/model/event-detail-view.types";
 import { Community, Event, Profile } from "~/shared/models/entity.types";
 import { getEventCollaborations } from "~/modules/events/data/collaborations-repo.server";
+import { findPendingTicketPayment } from "~/modules/events/server/payments/find-pending-ticket-payment.server";
+import type { PendingTicketPayment } from "~/modules/events/model/ticket-order.types";
 import { resolvePublicEvent } from "~/modules/events/server/resolve-public-event.server";
 import { Routes } from "~/shared/lib/routing/routes";
 import { isUuid } from "~/modules/events/utils/event-slug";
@@ -43,6 +45,7 @@ export interface UserData {
   userProfile: Profile | null;
   isOwnerOrAdmin: boolean;
   isCommunityMember: boolean;
+  pendingTicketPayment: PendingTicketPayment | null;
 }
 
 export interface EventDetailLoaderData {
@@ -154,6 +157,7 @@ export async function loader({
   let isOwnerOrAdmin = false;
   let isCommunityMember = false;
   let userProfile: Profile | null = null;
+  let pendingTicketPayment: PendingTicketPayment | null = null;
 
   if (u) {
     const registrationQuery =
@@ -186,6 +190,10 @@ export async function loader({
       isUserRegistered = !!registration;
       userRegistrationStatus = registration?.approval_status || null;
       userCheckinToken = registration?.checkin_token || null;
+
+      if (registration?.approval_status === "pending") {
+        pendingTicketPayment = await findPendingTicketPayment(registration.id);
+      }
     }
 
     isOwnerOrAdmin =
@@ -219,6 +227,7 @@ export async function loader({
     userProfile,
     isOwnerOrAdmin,
     isCommunityMember,
+    pendingTicketPayment,
   };
 
   const pageUserState: EventPageUserState = {
@@ -232,6 +241,7 @@ export async function loader({
     canRegister: userData.isUserRegistered
       ? false
       : userData.canRegister,
+    pendingTicketPayment: userData.pendingTicketPayment,
   };
 
   const dehydratedState = await dehydrateSeed((queryClient) => {

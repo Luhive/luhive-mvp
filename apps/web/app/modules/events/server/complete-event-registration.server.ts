@@ -17,6 +17,10 @@ import { computeCanRegister } from "~/modules/events/server/fetch-event-page-use
 import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
 import { sendRegistrationAttendeeEmail } from "~/modules/events/server/send-registration-attendee-email.server";
 import { sendRegistrationOrganizerNotifications } from "~/modules/events/server/send-registration-notification.server";
+import { isPaidEvent } from "~/modules/events/utils/event-price-label";
+import { findTicketOrderByRegistrationId } from "~/modules/events/data/ticket-orders-repo.server";
+import { isPaidTicketingEnabledForCommunity } from "~/modules/events/server/is-paid-ticketing-enabled-for-community.server";
+import { requestRegistrationPayment } from "~/modules/events/server/payments/request-registration-payment.server";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -58,6 +62,8 @@ export type CompleteEventRegistrationResult = {
   error?: string;
   message?: string;
   alreadyRegistered?: boolean;
+  /** Set when the registration is waiting for payment; send the user here. */
+  paymentUrl?: string;
   registrationState?: EventRegistrationState & { canRegister?: boolean };
   registeredEventCommunityId?: string | null;
 };
@@ -128,6 +134,17 @@ export async function completeEventRegistration({
     };
   }
 
+  const isPaid = isPaidEvent(event);
+  if (
+    isPaid &&
+    !(await isPaidTicketingEnabledForCommunity(supabase, event.community_id))
+  ) {
+    return {
+      success: false,
+      error: "Paid tickets are not available for this event right now.",
+    };
+  }
+
   const serviceClient = createServiceRoleClient();
   const registrationCount = await getApprovedRegistrationCount(
     serviceClient,
@@ -148,6 +165,18 @@ export async function completeEventRegistration({
       userCheckinToken: existingRegistration.checkin_token,
       registrationCount,
     };
+
+    if (isPaid && existingRegistration.approval_status === "pending") {
+      const order = await findTicketOrderByRegistrationId(existingRegistration.id);
+      if (order?.status === "pending") {
+        return requestRegistrationPayment({
+          event,
+          registrationId: existingRegistration.id,
+          registrationCount,
+          existingOrder: order,
+        });
+      }
+    }
 
     if (duplicateMode === "success") {
       return {
@@ -221,7 +250,9 @@ export async function completeEventRegistration({
   }
 
   const resolvedCommunity = await resolveCommunity(supabase, event, community);
-  const approvalStatus = event.is_approve_required ? "pending" : "approved";
+  // Payment is the gate for paid events; approval is granted when it clears.
+  const approvalStatus =
+    isPaid || event.is_approve_required ? "pending" : "approved";
   const checkinToken = approvalStatus === "approved" ? crypto.randomUUID() : null;
   const registrationLocation = await getIpLocation(request);
 
@@ -316,6 +347,28 @@ export async function completeEventRegistration({
       success: false,
       error: "Failed to create registration. Please try again.",
     };
+  }
+
+  if (isPaid) {
+    const { data: createdRegistration } = await supabase
+      .from("event_registrations")
+      .select("id")
+      .eq("event_id", event.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!createdRegistration) {
+      return {
+        success: false,
+        error: "Failed to create registration. Please try again.",
+      };
+    }
+
+    return requestRegistrationPayment({
+      event,
+      registrationId: createdRegistration.id,
+      registrationCount,
+    });
   }
 
   if (joinCommunity && joinCommunityId) {

@@ -404,6 +404,12 @@ export function RegistrationFlow({
   const handleOtpSuccess = (result: OtpVerifySuccessResult) => {
     onOtpVerified?.(result);
 
+    const paymentUrl = result.registrationState?.pendingTicketPayment?.paymentUrl;
+    if (paymentUrl) {
+      window.location.assign(paymentUrl);
+      return;
+    }
+
     const isRegistered =
       Boolean(result.registeredEvent) ||
       Boolean(result.registrationState?.isUserRegistered);

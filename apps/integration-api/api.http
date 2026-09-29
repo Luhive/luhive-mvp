@@ -32,3 +32,19 @@ GET {{baseUrl}}/v1/public/events?when=past
 Authorization: {{authToken}}
 
 ###
+
+# 7. Payment callback (what Checkila sends). Needs a community key with the
+# payments:confirm scope; use @baseUrl = http://localhost:8787 for local runs.
+POST {{baseUrl}}/v1/payments/confirm
+x-api-key: {{authToken}}
+Content-Type: application/json
+
+{
+  "userId": "replace-with-a-registration-uuid",
+  "status": "success",
+  "amount": 25.0,
+  "checkilaRequestId": "replace-with-the-payment-id-stored-on-the-order",
+  "transactionId": "epoint-txn-local-1"
+}
+
+###

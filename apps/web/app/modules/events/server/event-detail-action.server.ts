@@ -2,7 +2,7 @@ import {
   createClient,
   createServiceRoleClient,
 } from "~/shared/lib/supabase/server";
-import type { ActionFunctionArgs } from "react-router";
+import { redirect, type ActionFunctionArgs } from "react-router";
 import { getIpLocation } from "~/shared/lib/ip-location.server";
 import { getUserAgent } from "~/modules/community/utils/user-agent";
 import { normalizeUtmSource } from "~/modules/events/utils/utm-source";
@@ -12,6 +12,7 @@ import { getApprovedRegistrationCount } from "~/modules/events/data/registration
 import { computeCanRegister } from "~/modules/events/server/fetch-event-page-user-state.server";
 import { completeEventRegistration } from "~/modules/events/server/complete-event-registration.server";
 import type { EventRegistrationState } from "~/modules/events/model/event-detail-view.types";
+import { releaseTicketOrderForCancellation } from "~/modules/events/server/release-ticket-order-for-cancellation.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { supabase } = createClient(request);
@@ -156,7 +157,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const joinCommunity = formData.get("joinCommunity") !== "false";
-    return completeEventRegistration({
+    const registrationResult = await completeEventRegistration({
       request,
       supabase,
       user,
@@ -178,11 +179,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
       duplicateMode: "error",
     });
+
+    if (registrationResult.paymentUrl) {
+      return redirect(registrationResult.paymentUrl);
+    }
+
+    return registrationResult;
   }
 
   if (intent === "unregister") {
     if (event.registration_type === "external") {
       return { success: false, error: "This event does not support registration on Luhive" };
+    }
+
+    const { data: ownRegistration } = await supabase
+      .from("event_registrations")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (ownRegistration) {
+      const released = await releaseTicketOrderForCancellation({
+        registrationId: ownRegistration.id,
+        eventId,
+      });
+      if (!released.ok) {
+        return { success: false, error: released.error };
+      }
     }
 
     const { error: unregisterError } = await supabase

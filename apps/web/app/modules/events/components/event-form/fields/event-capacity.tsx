@@ -13,6 +13,7 @@ interface EventCapacityProps {
   capacity?: number;
   registrationDeadline?: Date;
   isApproveRequired: boolean;
+  isApprovalLocked?: boolean;
   onCapacityChange: (capacity: number | undefined) => void;
   onRegistrationDeadlineChange: (deadline: Date | undefined) => void;
   onIsApproveRequiredChange: (isRequired: boolean) => void;
@@ -23,6 +24,7 @@ export function EventCapacity({
   capacity,
   registrationDeadline,
   isApproveRequired,
+  isApprovalLocked = false,
   onCapacityChange,
   onRegistrationDeadlineChange,
   onIsApproveRequiredChange,
@@ -90,12 +92,15 @@ export function EventCapacity({
         <div className="space-y-0.5">
           <Label htmlFor="approval-toggle">Require Approval</Label>
           <p className="text-sm text-muted-foreground">
-            Manually approve or reject registration requests
+            {isApprovalLocked
+              ? 'Payment confirms the registration for paid events'
+              : 'Manually approve or reject registration requests'}
           </p>
         </div>
         <Switch
           id="approval-toggle"
-          checked={isApproveRequired}
+          checked={isApprovalLocked ? false : isApproveRequired}
+          disabled={isApprovalLocked}
           onCheckedChange={onIsApproveRequiredChange}
         />
       </div>

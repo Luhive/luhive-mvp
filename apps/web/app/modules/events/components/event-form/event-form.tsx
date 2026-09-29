@@ -17,7 +17,14 @@ import {
 } from '~/shared/components/ui/sheet';
 import { Routes } from '~/shared/lib/routing/routes';
 import { Spinner } from '~/shared/components/ui/spinner';
-import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle, Users2, Bell, Sparkles } from 'lucide-react';
+import { Save, FileText, Calendar, MapPin, Users, Eye, MessageCircle, HelpCircle, Users2, Bell, Sparkles, Ticket } from 'lucide-react';
+import {
+  formatMoney,
+  isValidTicketPriceMinor,
+  minorToMajorUnits,
+  parsePriceInputToMinor,
+} from '@luhive/domain/v1/money';
+import { EventPrice } from '~/modules/events/components/event-form/fields/event-price';
 import { EventCoverUpload } from '~/modules/events/components/event-form/event-cover-upload';
 import { EventBasicInfo } from '~/modules/events/components/event-form/fields/event-basic-info';
 import { EventDateTime } from '~/modules/events/components/event-form/fields/event-datetime';
@@ -65,6 +72,7 @@ interface EventFormData {
   coverUrl?: string;
   status: EventStatus;
   isApproveRequired: boolean;
+  priceMinor?: number | null;
   customQuestions?: CustomQuestionJson | null;
   reminderTimes?: ReminderTime[];
   reminderMessage?: string | null;
@@ -77,7 +85,10 @@ interface EventFormProps {
   eventSlug?: string;
   mode: 'create' | 'edit';
   initialData?: Partial<EventFormData>;
+  isPaidTicketingEnabled?: boolean;
 }
+
+const TICKET_CURRENCY = 'AZN';
 
 export function EventForm({
   communitySlug,
@@ -86,6 +97,7 @@ export function EventForm({
   eventSlug,
   mode,
   initialData,
+  isPaidTicketingEnabled = false,
 }: EventFormProps) {
   const navigate = useNavigate();
   const initialRef = useRef<Partial<EventFormData> | undefined>(initialData);
@@ -115,6 +127,11 @@ export function EventForm({
   const [coverUrl, setCoverUrl] = useState(initialData?.coverUrl || '');
   const [status, setStatus] = useState<EventStatus>(initialData?.status || 'draft');
   const [isApproveRequired, setIsApproveRequired] = useState(initialData?.isApproveRequired || false);
+  const [priceInput, setPriceInput] = useState(
+    initialData?.priceMinor != null
+      ? minorToMajorUnits(initialData.priceMinor).toFixed(2)
+      : ''
+  );
   const [customQuestions, setCustomQuestions] = useState<CustomQuestionJson | null>(
     initialData?.customQuestions || null
   );
@@ -137,9 +154,22 @@ export function EventForm({
     logo_url?: string | null;
   }[]>([]);
 
+  const trimmedPriceInput = priceInput.trim();
+  const parsedPriceMinor = trimmedPriceInput
+    ? parsePriceInputToMinor(trimmedPriceInput)
+    : null;
+  const priceError =
+    trimmedPriceInput &&
+    (parsedPriceMinor === null || !isValidTicketPriceMinor(parsedPriceMinor))
+      ? 'Enter a price such as 25 or 12.50'
+      : null;
+  const priceMinor = priceError ? null : parsedPriceMinor;
+  const showPriceCard = isPaidTicketingEnabled || initialData?.priceMinor != null;
+
   // Validation
   const isValid = () => {
     if (!title.trim()) return false;
+    if (priceError) return false;
     if (!startDate) return false;
     if (!startTime) return false;
     
@@ -349,6 +379,7 @@ export function EventForm({
         registrationDeadline &&
         !sameDate(initial.registrationDeadline, registrationDeadline)) ||
       (initial.isApproveRequired || false) !== isApproveRequired ||
+      (initial.priceMinor ?? null) !== priceMinor ||
       JSON.stringify(initial.customQuestions ?? null) !==
         JSON.stringify(customQuestions ?? null);
 
@@ -419,6 +450,7 @@ export function EventForm({
           coverUrl: coverUrl || null,
           status: submitStatus,
           isApproveRequired,
+          priceMinor,
           customQuestions: customQuestions ?? null,
           reminderTimes,
           reminderMessage: reminderMessage || null,
@@ -470,6 +502,7 @@ export function EventForm({
           coverUrl: coverUrl || null,
           status: submitStatus,
           isApproveRequired,
+          priceMinor,
           customQuestions: customQuestions ?? null,
           reminderTimes,
           reminderMessage: reminderMessage || null,
@@ -630,6 +663,26 @@ export function EventForm({
         </CardContent>
       </Card>
 
+      {showPriceCard && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Ticket className="h-4 w-4" />
+              Tickets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EventPrice
+              priceInput={priceInput}
+              currency={TICKET_CURRENCY}
+              disabled={!isPaidTicketingEnabled}
+              errorMessage={priceError}
+              onPriceInputChange={setPriceInput}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Attendance Reminders */}
       <Card className="mt-10! pb-[14px]">
         <CardHeader>
@@ -694,6 +747,7 @@ export function EventForm({
                   capacity={capacity}
                   registrationDeadline={registrationDeadline}
                   isApproveRequired={isApproveRequired}
+                  isApprovalLocked={priceMinor !== null}
                   onCapacityChange={setCapacity}
                   onRegistrationDeadlineChange={setRegistrationDeadline}
                   onIsApproveRequiredChange={setIsApproveRequired}
@@ -962,6 +1016,13 @@ export function EventForm({
                   <p className="text-sm text-muted-foreground">No description yet</p>
                 )}
               </div>
+
+              {priceMinor !== null && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Ticket className="h-3.5 w-3.5 shrink-0" />
+                  <span>{formatMoney(priceMinor, TICKET_CURRENCY)}</span>
+                </div>
+              )}
 
               {capacity && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">

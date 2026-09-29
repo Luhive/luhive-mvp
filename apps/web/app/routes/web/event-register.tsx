@@ -54,6 +54,7 @@ function EventRegisterContent({
       userProfile: userData.userProfile,
       isCommunityMember: userData.isCommunityMember,
       canRegister: userData.canRegister,
+      pendingTicketPayment: userData.pendingTicketPayment,
     }),
   };
 
