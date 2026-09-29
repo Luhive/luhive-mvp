@@ -22,6 +22,9 @@ interface EventRegistrationNotificationEmailProps {
 	eventTime: string;
 	eventLink: string;
 	recipientName: string;
+	ticketPrice?: string;
+	registrationCount?: number;
+	totalGain?: string;
 }
 
 export const EventRegistrationNotificationEmail = ({
@@ -34,19 +37,46 @@ export const EventRegistrationNotificationEmail = ({
 	eventTime = "2:00 PM PST",
 	eventLink = "https://luhive.com/events/123",
 	recipientName = "there",
+	ticketPrice,
+	registrationCount,
+	totalGain,
 }: EventRegistrationNotificationEmailProps) => {
 	const rows: DetailRowData[] = [
 		{ label: "Name", value: registrantName },
 		{ label: "Email", value: registrantEmail },
-		{ label: "Date", value: eventDate },
-		{ label: "Time", value: eventTime },
-		{ label: "Host", value: hostCommunityName },
 	];
-	if (coHostCommunityNames.length > 0)
+	if (ticketPrice) {
+		rows.push({ label: "Ticket", value: ticketPrice });
+	}
+	if (registrationCount !== undefined) {
+		rows.push({ label: "Registrations", value: String(registrationCount) });
+	}
+	if (totalGain) {
+		rows.push({ label: "Total gain", value: totalGain });
+	}
+	rows.push({ label: "Date", value: eventDate });
+	rows.push({ label: "Time", value: eventTime });
+	rows.push({ label: "Host", value: hostCommunityName });
+	if (coHostCommunityNames.length > 0) {
 		rows.push({ label: "Co-hosts", value: coHostCommunityNames.join(", ") });
+	}
+
+	const registrationLabel =
+		registrationCount === undefined
+			? undefined
+			: registrationCount === 1
+				? "1 registration"
+				: `${registrationCount} registrations`;
+	const preview =
+		registrationLabel && totalGain
+			? `${registrationLabel} · ${totalGain} total — ${registrantName} bought a ticket for ${eventTitle}`
+			: ticketPrice
+				? `${registrantName} bought a ticket for ${eventTitle}`
+				: `${registrantName} registered for ${eventTitle}`;
+	const action = ticketPrice ? "bought a ticket for" : "registered for";
 
 	return (
-		<EmailLayout preview={`${registrantName} registered for ${eventTitle}`}>
+		<EmailLayout preview={preview}>
 			<Eyebrow>New registration</Eyebrow>
 			<EmailTitle>{eventTitle}</EmailTitle>
 			<Divider />
@@ -55,7 +85,10 @@ export const EventRegistrationNotificationEmail = ({
 				<strong style={{ color: emailColors.heading }}>
 					{registrantName}
 				</strong>{" "}
-				registered for {eventTitle}.
+				{action} {eventTitle}.
+				{registrationLabel && totalGain
+					? ` This event now has ${registrationLabel} and ${totalGain} in total.`
+					: ""}
 			</Paragraph>
 			<SectionLabel>Registration details</SectionLabel>
 			<DetailsCard rows={rows} />
