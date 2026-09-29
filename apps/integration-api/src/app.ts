@@ -6,6 +6,7 @@ import { verifyApiKey } from './lib/api-key';
 import { ApiError } from './lib/errors';
 import { fail, successBody } from './lib/response';
 import publicRoutes from './routes/public';
+import paymentRoutes from './routes/payments';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -25,6 +26,7 @@ app.get('/v1/whoami', async (c) => {
 });
 
 app.route('/v1/public', publicRoutes);
+app.route('/v1/payments', paymentRoutes);
 
 app.notFound((c) => fail(c, 404, 'not_found'));
 app.onError((err, c) => {

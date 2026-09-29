@@ -1,0 +1,9 @@
+# Local development only. Copy to `.dev.vars` (gitignored) and fill in.
+#
+# `wrangler dev` loads .dev.vars over the `vars` in wrangler.jsonc, which point
+# at PRODUCTION. Always point these at the disposable validation project, the
+# same one as VALIDATION_DATABASE_URL in packages/db/.env. `pnpm create-key`
+# reads this file too, so keys minted locally land in that project.
+SUPABASE_URL=https://<validation-project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=
+ENVIRONMENT=development
