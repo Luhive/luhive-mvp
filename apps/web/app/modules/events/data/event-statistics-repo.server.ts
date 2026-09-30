@@ -27,12 +27,12 @@ export async function getEventStatisticsPayload(
   }
 
   const [visitsResult, registrationsResult] = await Promise.all([
-    (serviceClient as unknown as { from: (table: string) => ReturnType<StatisticsSupabase["from"]> })
+    serviceClient
       .from("event_visits")
       .select("visited_at, session_id, utm_source, country, city")
       .eq("event_id", eventId)
       .order("visited_at", { ascending: true }),
-    (serviceClient as unknown as { from: (table: string) => ReturnType<StatisticsSupabase["from"]> })
+    serviceClient
       .from("event_registrations")
       .select(
         "registered_at, registration_session_id, utm_source, time_to_register_seconds",

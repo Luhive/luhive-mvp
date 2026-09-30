@@ -106,6 +106,13 @@ export type Database = {
             referencedRelation: "communities"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "api_keys_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
+            referencedColumns: ["id"]
+          },
         ]
       }
       communities: {
@@ -175,6 +182,13 @@ export type Database = {
             columns: ["parent_community_id"]
             isOneToOne: false
             referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communities_parent_community_id_fkey"
+            columns: ["parent_community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
             referencedColumns: ["id"]
           },
         ]
@@ -257,6 +271,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "community_announcements_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "community_announcements_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -308,6 +329,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "community_members_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "community_members_user_id_fkey1"
             columns: ["user_id"]
             isOneToOne: false
@@ -347,6 +375,13 @@ export type Database = {
             columns: ["community_id"]
             isOneToOne: false
             referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_visits_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
             referencedColumns: ["id"]
           },
         ]
@@ -394,6 +429,13 @@ export type Database = {
             columns: ["community_id"]
             isOneToOne: false
             referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_collaborations_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
             referencedColumns: ["id"]
           },
           {
@@ -538,6 +580,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_registrations_registration_source_community_id_fkey"
+            columns: ["registration_source_community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_registrations_user_id_fkey1"
             columns: ["user_id"]
             isOneToOne: false
@@ -666,6 +715,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_visits_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_visits_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -787,6 +843,13 @@ export type Database = {
             columns: ["community_id"]
             isOneToOne: false
             referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
             referencedColumns: ["id"]
           },
         ]
@@ -938,6 +1001,13 @@ export type Database = {
             referencedRelation: "communities"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "people_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
+            referencedColumns: ["id"]
+          },
         ]
       }
       person_events: {
@@ -971,6 +1041,13 @@ export type Database = {
             columns: ["community_id"]
             isOneToOne: false
             referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "person_events_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
             referencedColumns: ["id"]
           },
           {
@@ -1159,6 +1236,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ticket_orders_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ticket_orders_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
@@ -1176,7 +1260,90 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      hub_communities: {
+        Row: {
+          cover_url: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          event_count: number | null
+          id: string | null
+          is_show: boolean | null
+          logo_url: string | null
+          member_count: number | null
+          name: string | null
+          page_config: Json | null
+          parent_community_id: string | null
+          settings: Json | null
+          slug: string | null
+          social_links: Json | null
+          stats: Json | null
+          tagline: string | null
+          tracking_enabled: boolean | null
+          updated_at: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          event_count?: never
+          id?: string | null
+          is_show?: boolean | null
+          logo_url?: string | null
+          member_count?: never
+          name?: string | null
+          page_config?: Json | null
+          parent_community_id?: string | null
+          settings?: Json | null
+          slug?: string | null
+          social_links?: Json | null
+          stats?: Json | null
+          tagline?: string | null
+          tracking_enabled?: boolean | null
+          updated_at?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          event_count?: never
+          id?: string | null
+          is_show?: boolean | null
+          logo_url?: string | null
+          member_count?: never
+          name?: string | null
+          page_config?: Json | null
+          parent_community_id?: string | null
+          settings?: Json | null
+          slug?: string | null
+          social_links?: Json | null
+          stats?: Json | null
+          tagline?: string | null
+          tracking_enabled?: boolean | null
+          updated_at?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communities_parent_community_id_fkey"
+            columns: ["parent_community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communities_parent_community_id_fkey"
+            columns: ["parent_community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       confirm_ticket_order: {
