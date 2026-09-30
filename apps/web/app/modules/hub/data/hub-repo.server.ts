@@ -1,16 +1,56 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "~/shared/models/database.types";
-import type { Community as BaseCommunity } from "~/shared/models/entity.types";
+import type { HubCommunity } from "~/shared/models/entity.types";
 import type { Community, HubPreview, UserData } from "~/modules/hub/model/hub-types";
+
+function toCommunity(row: HubCommunity): Community | null {
+  if (
+    row.id == null ||
+    row.name == null ||
+    row.slug == null ||
+    row.created_by == null ||
+    row.is_show == null ||
+    row.tracking_enabled == null
+  ) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    created_by: row.created_by,
+    is_show: row.is_show,
+    tracking_enabled: row.tracking_enabled,
+    cover_url: row.cover_url,
+    created_at: row.created_at,
+    description: row.description,
+    logo_url: row.logo_url,
+    page_config: row.page_config,
+    parent_community_id: row.parent_community_id,
+    settings: row.settings,
+    social_links: row.social_links,
+    stats: row.stats,
+    tagline: row.tagline,
+    updated_at: row.updated_at,
+    verified: row.verified,
+    memberCount: row.member_count ?? 0,
+    eventCount: row.event_count ?? 0,
+  };
+}
 
 export async function getVisibleCommunities(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase
-    .from("communities")
+    .from("hub_communities")
     .select("*")
-    .eq("is_show", true)
     .order("created_at", { ascending: false });
 
-  return { communities: data ?? [], error };
+  const communities = (data ?? []).flatMap((row) => {
+    const community = toCommunity(row);
+    return community ? [community] : [];
+  });
+
+  return { communities, error };
 }
 
 const HUB_PREVIEW_LOGO_LIMIT = 3;
@@ -47,60 +87,6 @@ export async function getHubPreview(
     logos,
     communityCount: countResult.count ?? 0,
   };
-}
-
-export async function getCommunityCounts(
-  supabase: SupabaseClient<Database>,
-  communityIds: string[]
-) {
-  const [memberCountsResult, eventCountsResult] = await Promise.all([
-    supabase
-      .from("community_members")
-      .select("community_id")
-      .in("community_id", communityIds),
-    supabase
-      .from("events")
-      .select("community_id")
-      .in("community_id", communityIds)
-      .eq("status", "published"),
-  ]);
-
-  const memberCounts = new Map<string, number>();
-  (memberCountsResult.data || []).forEach((member) => {
-    const count = memberCounts.get(member.community_id!) || 0;
-    memberCounts.set(member.community_id!, count + 1);
-  });
-
-  const eventCounts = new Map<string, number>();
-  (eventCountsResult.data || []).forEach((event) => {
-    const count = eventCounts.get(event.community_id) || 0;
-    eventCounts.set(event.community_id, count + 1);
-  });
-
-  // Also count events where the community is an accepted co-host
-  try {
-    const { data: coHostRows } = await supabase
-      .from('event_collaborations')
-      .select(`community_id, role, event:events!event_collaborations_event_id_fkey (id, status, community_id)`)
-      .in('community_id', communityIds)
-      .eq('status', 'accepted');
-
-    (coHostRows || []).forEach((row: any) => {
-      const communityId = row.community_id;
-      // only count co-host rows (exclude host rows to avoid double-counting)
-      if (row.role !== 'co-host') return;
-      const event = row.event && (Array.isArray(row.event) ? row.event[0] : row.event);
-      // skip if event is not published or if this community is the host of the event
-      if (!event || event.status !== 'published' || event.community_id === communityId) return;
-
-      const count = eventCounts.get(communityId) || 0;
-      eventCounts.set(communityId, count + 1);
-    });
-  } catch (err) {
-    console.error('Failed to load co-host event counts for hub:', err);
-  }
-
-  return { memberCounts, eventCounts };
 }
 
 export async function getUserProfile(
@@ -141,16 +127,4 @@ export async function getAdminCommunityIds(
     if (m.community_id) ids.add(m.community_id);
   });
   return Array.from(ids);
-}
-
-export function withCounts(
-  communities: BaseCommunity[],
-  memberCounts: Map<string, number>,
-  eventCounts: Map<string, number>,
-): Community[] {
-  return communities.map((community) => ({
-    ...community,
-    memberCount: memberCounts.get(community.id) || 0,
-    eventCount: eventCounts.get(community.id) || 0,
-  }));
 }

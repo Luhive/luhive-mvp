@@ -2,9 +2,7 @@ import { createClient } from "~/shared/lib/supabase/server";
 import type { HubData } from "~/modules/hub/model/hub-types";
 import {
   getVisibleCommunities,
-  getCommunityCounts,
   getUserProfile,
-  withCounts,
   getAdminCommunityIds,
 } from "~/modules/hub/data/hub-repo.server";
 
@@ -31,14 +29,6 @@ export async function loader({ request }: { request: Request }) {
       };
     }
 
-    const communityIds = communities.map((c) => c.id);
-    const { memberCounts, eventCounts } = await getCommunityCounts(
-      supabase,
-      communityIds
-    );
-
-    const communitiesWithCounts = withCounts(communities, memberCounts, eventCounts);
-
     let userProfile: HubData["user"] = null;
     let adminIds = new Set<string>();
     if (user) {
@@ -50,7 +40,7 @@ export async function loader({ request }: { request: Request }) {
       adminIds = new Set(adminCommunityIds);
     }
 
-    const communitiesWithAdmin = communitiesWithCounts.map((c) => ({
+    const communitiesWithAdmin = communities.map((c) => ({
       ...c,
       isAdmin: adminIds.has(c.id),
     }));

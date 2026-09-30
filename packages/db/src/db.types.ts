@@ -301,6 +301,29 @@ export interface GoogleFormsTokens {
   user_id: string;
 }
 
+export interface HubCommunities {
+  cover_url: string | null;
+  created_at: Timestamp | null;
+  created_by: string | null;
+  description: string | null;
+  event_count: Int8 | null;
+  id: string | null;
+  is_show: boolean | null;
+  logo_url: string | null;
+  member_count: Int8 | null;
+  name: string | null;
+  page_config: Json | null;
+  parent_community_id: string | null;
+  settings: Json | null;
+  slug: string | null;
+  social_links: Json | null;
+  stats: Json | null;
+  tagline: string | null;
+  tracking_enabled: boolean | null;
+  updated_at: Timestamp | null;
+  verified: boolean | null;
+}
+
 export interface PaymentCallbacks {
   id: Generated<string>;
   key_id: string | null;
@@ -407,6 +430,7 @@ export interface DB {
   event_visits: EventVisits;
   events: Events;
   google_forms_tokens: GoogleFormsTokens;
+  hub_communities: HubCommunities;
   payment_callbacks: PaymentCallbacks;
   people: People;
   person_events: PersonEvents;
