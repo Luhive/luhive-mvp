@@ -2,6 +2,7 @@ import type {
   EventRegistrationStatRow,
   EventStatisticsBreakdownRow,
   EventStatisticsChartPoint,
+  EventStatisticsSourceRow,
   EventStatisticsTimeRange,
   EventVisitStatRow,
 } from "~/modules/events/model/event-statistics.types";
@@ -178,5 +179,36 @@ export function buildBreakdown(
       percent: total > 0 ? (count / total) * 100 : 0,
     }))
     .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+}
+
+export function buildSourcePerformance(
+  visitSources: string[],
+  registrationSources: string[],
+): EventStatisticsSourceRow[] {
+  const rowsBySource = new Map<string, { views: number; registrations: number }>();
+
+  const getRow = (source: string) => {
+    const existing = rowsBySource.get(source);
+    if (existing) return existing;
+    const created = { views: 0, registrations: 0 };
+    rowsBySource.set(source, created);
+    return created;
+  };
+
+  visitSources.forEach((source) => {
+    getRow(source).views += 1;
+  });
+  registrationSources.forEach((source) => {
+    getRow(source).registrations += 1;
+  });
+
+  return Array.from(rowsBySource, ([source, { views, registrations }]) => ({
+    source,
+    views,
+    registrations,
+    conversionRate: views > 0 ? (registrations / views) * 100 : null,
+  }))
+    .sort((a, b) => b.registrations - a.registrations || b.views - a.views)
     .slice(0, 8);
 }

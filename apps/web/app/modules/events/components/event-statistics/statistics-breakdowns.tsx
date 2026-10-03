@@ -76,25 +76,17 @@ function BreakdownList({
 }
 
 type StatisticsBreakdownsProps = {
-  sources: EventStatisticsBreakdownRow[];
   countries: EventStatisticsBreakdownRow[];
   cities: EventStatisticsBreakdownRow[];
 };
 
 export function StatisticsBreakdowns({
-  sources,
   countries,
   cities,
 }: StatisticsBreakdownsProps) {
   return (
     <Card>
-      <CardContent className="grid grid-cols-1 gap-x-10 gap-y-6 md:grid-cols-3">
-        <BreakdownList
-          title="Top Sources"
-          rows={sources}
-          emptyLabel="No source data yet."
-          tooltip="Create a custom tracking link by adding ?utm_source=your-link-name to your URL."
-        />
+      <CardContent className="grid grid-cols-1 gap-x-10 gap-y-6 md:grid-cols-2">
         <BreakdownList
           title="Top Countries"
           rows={countries}

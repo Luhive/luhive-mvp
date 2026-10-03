@@ -4,6 +4,7 @@ import { Await, useLoaderData, redirect } from "react-router";
 import { getCommunityBySlugClient } from "~/modules/dashboard/data/dashboard-repo.client";
 import { EventRevenuePanel } from "~/modules/events/components/event-statistics/event-revenue-panel";
 import { StatisticsBreakdowns } from "~/modules/events/components/event-statistics/statistics-breakdowns";
+import { StatisticsSourcePerformance } from "~/modules/events/components/event-statistics/statistics-source-performance";
 import { StatisticsHeader } from "~/modules/events/components/event-statistics/statistics-header";
 import { StatisticsViewsChart } from "~/modules/events/components/event-statistics/statistics-views-chart";
 import { useEventStatistics } from "~/modules/events/hooks/use-event-statistics";
@@ -109,8 +110,11 @@ export default function EventStatisticsPage() {
       </div>
 
       <div className="px-4 lg:px-6">
+        <StatisticsSourcePerformance sources={sources} />
+      </div>
+
+      <div className="px-4 lg:px-6">
         <StatisticsBreakdowns
-          sources={sources}
           countries={countries}
           cities={cities}
         />
