@@ -306,11 +306,17 @@ export async function completeEventRegistration({
     registrationIp = registrationIp || firstVisit.ip || null;
     registrationCountry = firstVisit.country || null;
     registrationCity = firstVisit.city || null;
-    utmSource = normalizeUtmSource(firstVisit.utm_source || utmSource);
-    utmMedium = firstVisit.utm_medium || utmMedium;
-    utmCampaign = firstVisit.utm_campaign || utmCampaign;
-    utmContent = firstVisit.utm_content || utmContent;
-    utmTerm = firstVisit.utm_term || utmTerm;
+    // Visits store a missing source as "direct", so a direct first visit must
+    // not mask a campaign the visitor arrived from later. Attribution fields
+    // are taken together from one touch to avoid mixing campaigns.
+    const firstVisitSource = normalizeUtmSource(firstVisit.utm_source);
+    if (firstVisitSource !== "direct") {
+      utmSource = firstVisitSource;
+      utmMedium = firstVisit.utm_medium || null;
+      utmCampaign = firstVisit.utm_campaign || null;
+      utmContent = firstVisit.utm_content || null;
+      utmTerm = firstVisit.utm_term || null;
+    }
 
     const visitedAt = new Date(firstVisit.visited_at);
     if (!Number.isNaN(visitedAt.getTime())) {

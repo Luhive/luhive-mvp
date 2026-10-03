@@ -9,6 +9,7 @@ import type {
 import {
   buildBreakdown,
   buildChartData,
+  buildSourcePerformance,
   countVisitsSince,
   getDays,
   inRange,
@@ -99,11 +100,11 @@ export function useEventStatistics(
 
   const sources = useMemo(
     () =>
-      buildBreakdown(
+      buildSourcePerformance(
         filteredVisits.map((row) => normalizeUtmSource(row.utm_source)),
-        "direct",
+        filteredRegistrations.map((row) => normalizeUtmSource(row.utm_source)),
       ),
-    [filteredVisits],
+    [filteredRegistrations, filteredVisits],
   );
 
   const countries = useMemo(

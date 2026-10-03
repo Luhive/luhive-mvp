@@ -41,6 +41,13 @@ export type EventStatisticsBreakdownRow = {
   percent: number;
 };
 
+export type EventStatisticsSourceRow = {
+  source: string;
+  views: number;
+  registrations: number;
+  conversionRate: number | null;
+};
+
 export type EventStatisticsSummary = {
   pageViews24h: number;
   pageViews7d: number;
@@ -54,7 +61,7 @@ export type EventStatisticsViewModel = {
   range: EventStatisticsTimeRange;
   chartData: EventStatisticsChartPoint[];
   summary: EventStatisticsSummary;
-  sources: EventStatisticsBreakdownRow[];
+  sources: EventStatisticsSourceRow[];
   countries: EventStatisticsBreakdownRow[];
   cities: EventStatisticsBreakdownRow[];
 };
