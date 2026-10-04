@@ -35,12 +35,15 @@ import {
   Link as LinkIcon,
   Eye,
   FileText,
+  Copy,
+  Check,
 } from 'lucide-react';
 import type { Event, EventStatus, EventType } from '~/shared/models/entity.types';
 import type { ExternalPlatform } from '~/modules/events/model/event.types';
 import dayjs from 'dayjs';
 import { Routes } from '~/shared/lib/routing/routes';
 import { publicEventSlug } from '~/modules/events/utils/event-slug';
+import { copyEventLink } from '~/modules/events/utils/copy-event-link';
 import { isPaidEvent } from '~/modules/events/utils/event-price-label';
 import { formatMoney } from '@luhive/domain/v1/money';
 import { cn } from '~/shared/lib/utils';
@@ -67,6 +70,13 @@ export function EventList({ events, communitySlug, ticketRevenue, showRevenue = 
   const [typeFilter, setTypeFilter] = useState<EventType | 'all'>('all');
   const [timeFilter, setTimeFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const [registrationTypeFilter, setRegistrationTypeFilter] = useState<RegistrationTypeFilter>('all');
+  const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
+
+  function handleCopyEventLink(event: Event) {
+    copyEventLink(communitySlug, event);
+    setCopiedEventId(event.id);
+    setTimeout(() => setCopiedEventId(null), 2000);
+  }
 
   // Filter events
   const filteredEvents = events.filter((event) => {
@@ -649,6 +659,20 @@ export function EventList({ events, communitySlug, ticketRevenue, showRevenue = 
                                 <div className="flex items-center gap-4 md:pl-6 md:border-l md:border-gray-50 md:justify-end">
                                   <div className="flex items-center gap-2">
                                     <div className="flex items-center border border-gray-100 bg-gray-50/50 rounded-lg p-1 gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
+                                        title={copiedEventId === event.id ? 'Copied!' : 'Copy Event Link'}
+                                        onClick={() => handleCopyEventLink(event)}
+                                      >
+                                        {copiedEventId === event.id ? (
+                                          <Check className="w-4 h-4 text-green-600" />
+                                        ) : (
+                                          <Copy className="w-4 h-4" />
+                                        )}
+                                      </Button>
+                                      <div className="w-px h-4 bg-gray-200"></div>
                                       <Button
                                         variant="ghost"
                                         size="icon"
