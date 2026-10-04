@@ -5,6 +5,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { Routes } from "~/shared/lib/routing/routes";
 import { publicEventSlug } from "~/modules/events/utils/event-slug";
+import { buildEventUrl, copyEventLink } from "~/modules/events/utils/copy-event-link";
 import {
   Calendar,
   MapPin,
@@ -501,11 +502,10 @@ export function EventPreviewSidebar({
       ? (userProfile.metadata as any).phone
       : null;
 
-  const eventUrl = `${window.location.origin}${Routes.community.event(community.slug, publicEventSlug(event))}`;
+  const eventUrl = buildEventUrl(community.slug, event);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(eventUrl);
-    toast.success("Event link copied to clipboard!");
+    copyEventLink(community.slug, event);
   };
 
   const handleNavigateToEvent = () => {
