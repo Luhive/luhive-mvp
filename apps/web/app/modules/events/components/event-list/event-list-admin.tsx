@@ -19,6 +19,11 @@ import {
 } from '~/shared/components/ui/dropdown-menu';
 import { Badge } from '~/shared/components/ui/badge';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '~/shared/components/ui/tooltip';
+import {
   Plus,
   Search,
   Calendar,
@@ -659,87 +664,122 @@ export function EventList({ events, communitySlug, ticketRevenue, showRevenue = 
                                 <div className="flex items-center gap-4 md:pl-6 md:border-l md:border-gray-50 md:justify-end">
                                   <div className="flex items-center gap-2">
                                     <div className="flex items-center border border-gray-100 bg-gray-50/50 rounded-lg p-1 gap-1">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
-                                        title={copiedEventId === event.id ? 'Copied!' : 'Copy Event Link'}
-                                        onClick={() => handleCopyEventLink(event)}
-                                      >
-                                        {copiedEventId === event.id ? (
-                                          <Check className="w-4 h-4 text-green-600" />
-                                        ) : (
-                                          <Copy className="w-4 h-4" />
-                                        )}
-                                      </Button>
-                                      <div className="w-px h-4 bg-gray-200"></div>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
-                                        title="View Event Page"
-                                        asChild
-                                      >
-                                        <Link to={Routes.community.event(communitySlug, publicEventSlug(event))}>
-                                          <ExternalLink className="w-4 h-4" />
-                                        </Link>
-                                      </Button>
-                                      {!isExternal && event.communityRole !== "co-host" && (
-                                        <>
-                                          <div className="w-px h-4 bg-gray-200"></div>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
                                           <Button
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
-                                            title="Manage Guests"
+                                            onClick={() => handleCopyEventLink(event)}
+                                          >
+                                            {copiedEventId === event.id ? (
+                                              <Check className="w-4 h-4 text-green-600" />
+                                            ) : (
+                                              <Copy className="w-4 h-4" />
+                                            )}
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          {copiedEventId === event.id ? 'Copied!' : 'Copy event link'}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      <div className="w-px h-4 bg-gray-200"></div>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
                                             asChild
                                           >
-                                            <Link
-                                              to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}
+                                            <a
+                                              href={Routes.community.event(communitySlug, publicEventSlug(event))}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
                                             >
-                                              <Users className="w-4 h-4" />
-                                            </Link>
+                                              <ExternalLink className="w-4 h-4" />
+                                            </a>
                                           </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>View event page</TooltipContent>
+                                      </Tooltip>
+                                      {!isExternal && event.communityRole !== "co-host" && (
+                                        <>
+                                          <div className="w-px h-4 bg-gray-200"></div>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
+                                                asChild
+                                              >
+                                                <Link
+                                                  to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}
+                                                >
+                                                  <Users className="w-4 h-4" />
+                                                </Link>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Manage guests</TooltipContent>
+                                          </Tooltip>
                                         </>
                                       )}
                                       <div className="w-px h-4 bg-gray-200"></div>
                                       {event.communityRole === "co-host" ? (
                                         <>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
-                                            title="View Event"
-                                            asChild
-                                          >
-                                            <Link to={Routes.community.event(communitySlug, publicEventSlug(event))}>
-                                              <Eye className="w-4 h-4" />
-                                            </Link>
-                                          </Button>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
+                                                asChild
+                                              >
+                                                <a
+                                                  href={Routes.community.event(communitySlug, publicEventSlug(event))}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                >
+                                                  <Eye className="w-4 h-4" />
+                                                </a>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>View event</TooltipContent>
+                                          </Tooltip>
                                           <div className="w-px h-4 bg-gray-200"></div>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
-                                            title="View Participants"
-                                            asChild
-                                          >
-                                            <Link to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}>
-                                              <Users className="w-4 h-4" />
-                                            </Link>
-                                          </Button>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
+                                                asChild
+                                              >
+                                                <Link to={`/dashboard/${communitySlug}/attenders?eventId=${event.id}`}>
+                                                  <Users className="w-4 h-4" />
+                                                </Link>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>View participants</TooltipContent>
+                                          </Tooltip>
                                         </>
                                       ) : (
                                         <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
-                                            >
-                                              <MoreHorizontal className="w-4 h-4" />
-                                            </Button>
-                                          </DropdownMenuTrigger>
+                                          <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <DropdownMenuTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-white hover:shadow-sm rounded-md"
+                                              >
+                                                <MoreHorizontal className="w-4 h-4" />
+                                              </Button>
+                                            </DropdownMenuTrigger>
+                                          </TooltipTrigger>
+                                          <TooltipContent>More actions</TooltipContent>
+                                        </Tooltip>
                                           <DropdownMenuContent align="end" className="w-48">
                                             {onStatusChange && (
                                               <DropdownMenuItem
