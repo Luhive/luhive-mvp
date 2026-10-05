@@ -54,6 +54,9 @@ export default [
     // ),
   ]),
 
+  // Hub redesign, standalone with its own navigation for side-by-side comparison
+  route("hubv2", "routes/web/hubv2.tsx"),
+
   route("login", "routes/auth/login.tsx"),
   route("signup", "routes/auth/register.tsx"),
 

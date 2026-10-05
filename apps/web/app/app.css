@@ -51,6 +51,9 @@
     Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
   --font-nunito: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-inter: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-geologica: "Geologica", ui-sans-serif, system-ui, sans-serif;
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 html,
@@ -277,6 +280,32 @@ body {
 
 .animate-gradient-flow {
   animation: gradient-flow 3s ease infinite;
+}
+
+/* Hub v2: cards rise in with a short stagger set through --rise-delay */
+@keyframes hub-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes hub-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.animate-hub-rise {
+  animation: hub-rise 520ms var(--ease-out-strong) both;
+  animation-delay: var(--rise-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hub-rise {
+    animation-name: hub-fade;
+    animation-duration: 200ms;
+  }
 }
 
 /* Gradient text for hero section */
