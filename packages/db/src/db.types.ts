@@ -324,6 +324,22 @@ export interface HubCommunities {
   verified: boolean | null;
 }
 
+export interface HubEvents {
+  community_id: string | null;
+  community_name: string | null;
+  community_slug: string | null;
+  cover_url: string | null;
+  end_time: Timestamp | null;
+  event_type: EventType | null;
+  id: string | null;
+  location_address: string | null;
+  location_name: string | null;
+  slug: string | null;
+  start_time: Timestamp | null;
+  timezone: string | null;
+  title: string | null;
+}
+
 export interface PaymentCallbacks {
   id: Generated<string>;
   key_id: string | null;
@@ -431,6 +447,7 @@ export interface DB {
   events: Events;
   google_forms_tokens: GoogleFormsTokens;
   hub_communities: HubCommunities;
+  hub_events: HubEvents;
   payment_callbacks: PaymentCallbacks;
   people: People;
   person_events: PersonEvents;

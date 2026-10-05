@@ -113,6 +113,13 @@ export type Database = {
             referencedRelation: "hub_communities"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "api_keys_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
+          },
         ]
       }
       communities: {
@@ -190,6 +197,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "hub_communities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communities_parent_community_id_fkey"
+            columns: ["parent_community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
           },
         ]
       }
@@ -278,6 +292,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "community_announcements_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
+          },
+          {
             foreignKeyName: "community_announcements_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
@@ -336,6 +357,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "community_members_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
+          },
+          {
             foreignKeyName: "community_members_user_id_fkey1"
             columns: ["user_id"]
             isOneToOne: false
@@ -383,6 +411,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "hub_communities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_visits_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
           },
         ]
       }
@@ -439,10 +474,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_collaborations_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
+          },
+          {
             foreignKeyName: "event_collaborations_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_collaborations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
             referencedColumns: ["id"]
           },
           {
@@ -566,6 +615,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_registrations_invited_by_user_id_fkey"
             columns: ["invited_by_user_id"]
             isOneToOne: false
@@ -585,6 +641,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "hub_communities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_registrations_registration_source_community_id_fkey"
+            columns: ["registration_source_community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
           },
           {
             foreignKeyName: "event_registrations_user_id_fkey1"
@@ -626,6 +689,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: true
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "hub_events"
             referencedColumns: ["id"]
           },
         ]
@@ -722,10 +792,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_visits_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
+          },
+          {
             foreignKeyName: "event_visits_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_visits_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
             referencedColumns: ["id"]
           },
           {
@@ -851,6 +935,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "hub_communities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
           },
         ]
       }
@@ -1008,6 +1099,13 @@ export type Database = {
             referencedRelation: "hub_communities"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "people_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
+          },
         ]
       }
       person_events: {
@@ -1049,6 +1147,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "hub_communities"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "person_events_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
           },
           {
             foreignKeyName: "person_events_person_id_fkey"
@@ -1126,6 +1231,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sent_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
             referencedColumns: ["id"]
           },
           {
@@ -1243,10 +1355,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ticket_orders_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
+          },
+          {
             foreignKeyName: "ticket_orders_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
             referencedColumns: ["id"]
           },
           {
@@ -1342,7 +1468,32 @@ export type Database = {
             referencedRelation: "hub_communities"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "communities_parent_community_id_fkey"
+            columns: ["parent_community_id"]
+            isOneToOne: false
+            referencedRelation: "hub_events"
+            referencedColumns: ["community_id"]
+          },
         ]
+      }
+      hub_events: {
+        Row: {
+          community_id: string | null
+          community_name: string | null
+          community_slug: string | null
+          cover_url: string | null
+          end_time: string | null
+          event_type: Database["public"]["Enums"]["event_type"] | null
+          id: string | null
+          location_address: string | null
+          location_name: string | null
+          slug: string | null
+          start_time: string | null
+          timezone: string | null
+          title: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
