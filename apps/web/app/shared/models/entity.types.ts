@@ -14,6 +14,8 @@ export type Community = Tables<"communities">;
 
 export type HubCommunity = Tables<"hub_communities">;
 
+export type HubEvent = Tables<"hub_events">;
+
 export type Profile = Tables<"profiles">;
 
 export type EventRegistration = Tables<"event_registrations">;
