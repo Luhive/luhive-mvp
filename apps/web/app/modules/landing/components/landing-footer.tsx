@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowUpRight01Icon } from '@hugeicons/core-free-icons';
 
-import { AnalyticsEvents } from '~/shared/lib/analytics';
+import * as LandingAnalytics from '~/modules/landing/utils/landing-analytics';
 import { FooterLanguageMenu } from '~/shared/components/footer-language-menu';
 
 const LINK_ALI_ALIYEV = 'https://www.linkedin.com/in/alyaliyev/';
@@ -72,7 +72,7 @@ function FooterSocialsColumn() {
         target="_blank"
         rel="noopener noreferrer"
         className={footerFounderLinkClassName}
-        onClick={() => AnalyticsEvents.socialLinkClick('LinkedIn')}
+        onClick={() => LandingAnalytics.trackSocialLinkClicked('linkedin')}
       >
         LinkedIn
         <FooterExternalArrowIcon />
@@ -90,7 +90,7 @@ function FooterFreeToolsColumn() {
           {/* Plain anchor, not Link: /tools/* is a proxied Next.js app outside the router. */}
           <a
             href="/tools/ics-generator"
-            data-umami-event="footer_tool_clicked"
+            onClick={() => LandingAnalytics.trackToolClicked('ics_generator')}
             className={footerFounderLinkClassName}
           >
             Free ICS File Generator

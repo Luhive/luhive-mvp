@@ -9,7 +9,7 @@ import {
 } from "react-router";
 import { useEffect } from "react";
 
-import { initGA, trackPageView } from "~/shared/lib/analytics";
+import { analytics } from "~/shared/lib/analytics/analytics";
 import { readFirstTouchSource } from "~/shared/lib/first-touch.server";
 
 import type { Route } from "./+types/root";
@@ -41,14 +41,8 @@ export const links: Route.LinksFunction = () => [
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
-  // Initialize Google Analytics on mount
   useEffect(() => {
-    initGA();
-  }, []);
-
-  // Track page views on route changes
-  useEffect(() => {
-    trackPageView(location.pathname);
+    analytics.trackPageView(location.pathname);
   }, [location.pathname]);
 
   return (

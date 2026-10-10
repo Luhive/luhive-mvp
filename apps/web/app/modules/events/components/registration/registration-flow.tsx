@@ -29,8 +29,14 @@ import {
 } from "~/modules/events/utils/custom-questions";
 import { cn } from "~/shared/lib/utils/cn";
 import { useIsInAppBrowser } from "~/shared/hooks/use-is-in-app-browser";
-import { GoogleInAppBrowserHint } from "~/shared/components/google-in-app-browser-hint";
+import { OpenInExternalBrowserLink } from "~/shared/components/open-in-external-browser-link";
 import type { OtpVerifySuccessResult } from "~/modules/auth/model/otp.types";
+import {
+  clearRegistrationOtpDraft,
+  findRegistrationOtpDraft,
+  saveRegistrationOtpDraft,
+} from "~/modules/events/utils/registration-otp-draft";
+import * as RegistrationAnalytics from "~/modules/events/utils/registration-analytics";
 
 const EMAIL_EXPAND_EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
 const EMAIL_CONTENT_EASE = "cubic-bezier(0.23, 1, 0.32, 1)";
@@ -171,14 +177,44 @@ export function RegistrationFlow({
     [eventId, trackingContext],
   );
 
+  const showOtpStep = React.useCallback(
+    (email: string, isExistingUser: boolean) => {
+      setOtpEmail(email);
+      setStep("otp");
+      saveRegistrationOtpDraft(eventId, {
+        email,
+        fullName: form.getValues("fullName")?.trim() || "",
+        userExists: isExistingUser,
+        customAnswers,
+      });
+      RegistrationAnalytics.trackOtpViewed(eventId);
+    },
+    [customAnswers, eventId, form],
+  );
+
+  // In-app browsers often reload the page when the visitor comes back from
+  // their mail app, so resume the OTP step instead of starting over.
+  React.useEffect(() => {
+    const draft = findRegistrationOtpDraft(eventId);
+    if (!draft) {
+      RegistrationAnalytics.trackFormViewed(eventId);
+      return;
+    }
+
+    form.setValue("fullName", draft.fullName);
+    setUserExists(draft.userExists);
+    setCustomAnswers(draft.customAnswers);
+    setOtpEmail(draft.email);
+    setStep("otp");
+  }, [eventId, form]);
+
   React.useEffect(() => {
     const data = checkEmailFetcher.data;
     if (!data || checkEmailFetcher.state !== "idle") return;
 
     if (data.userExists) {
       setUserExists(true);
-      setOtpEmail((data.email || form.getValues("email") || "").trim());
-      setStep("otp");
+      showOtpStep((data.email || form.getValues("email") || "").trim(), true);
       return;
     }
 
@@ -211,6 +247,7 @@ export function RegistrationFlow({
     communityId,
     eventId,
     form,
+    showOtpStep,
     signupFetcher.submit,
   ]);
 
@@ -219,16 +256,14 @@ export function RegistrationFlow({
     if (!data || signupFetcher.state !== "idle") return;
 
     if (data.success && data.otpSent) {
-      const email = (data.email || form.getValues("email") || "").trim();
-      setOtpEmail(email);
-      setStep("otp");
+      showOtpStep((data.email || form.getValues("email") || "").trim(), false);
       return;
     }
 
     if (data.error) {
       toast.error(data.error);
     }
-  }, [signupFetcher.data, signupFetcher.state, form]);
+  }, [signupFetcher.data, signupFetcher.state, form, showOtpStep]);
 
   React.useEffect(() => {
     const oauthReturnKey = "luhive_event_oauth_return";
@@ -256,6 +291,7 @@ export function RegistrationFlow({
 
   const handleContinueWithGoogle = () => {
     if (isInAppBrowser) return;
+    RegistrationAnalytics.trackGoogleClicked(eventId);
 
     const formData = new FormData();
     formData.append("intent", "oauth");
@@ -393,6 +429,7 @@ export function RegistrationFlow({
 
     pendingSignupRef.current = validated;
     signupTriggeredRef.current = false;
+    RegistrationAnalytics.trackFormSubmitted(eventId);
 
     const formData = new FormData();
     formData.append("intent", "check-email");
@@ -402,6 +439,7 @@ export function RegistrationFlow({
   };
 
   const handleOtpSuccess = (result: OtpVerifySuccessResult) => {
+    clearRegistrationOtpDraft(eventId);
     onOtpVerified?.(result);
 
     const paymentUrl = result.registrationState?.pendingTicketPayment?.paymentUrl;
@@ -415,6 +453,7 @@ export function RegistrationFlow({
       Boolean(result.registrationState?.isUserRegistered);
 
     if (isRegistered) {
+      RegistrationAnalytics.trackCompleted(eventId);
       toast.success("Successfully registered for the event!");
       onSuccess(result);
       return;
@@ -425,13 +464,16 @@ export function RegistrationFlow({
     setStep("form");
   };
 
+  // Google OAuth is blocked in in-app browsers, so email is the only path there.
+  const isEmailFormOpen = showEmailSection || isInAppBrowser;
+
   const formStepContent = (
     <form onSubmit={handleFormSubmit} className="space-y-5">
-      <div className="space-y-2">
+      {!isInAppBrowser && (
         <Button
           type="button"
           onClick={handleContinueWithGoogle}
-          disabled={isSubmittingForm || isOAuthLoading || isInAppBrowser}
+          disabled={isSubmittingForm || isOAuthLoading}
           variant="outline"
           className="w-full hover:bg-muted hover:text-foreground"
           size={isOverlay ? "lg" : "default"}
@@ -445,29 +487,26 @@ export function RegistrationFlow({
             </>
           )}
         </Button>
-        {isInAppBrowser ? (
-          <GoogleInAppBrowserHint className="text-center text-sm text-muted-foreground" />
-        ) : null}
-      </div>
+      )}
 
       <div className="space-y-0">
         <div
           className={cn(
             "grid motion-reduce:transition-none",
-            showEmailSection ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
+            isEmailFormOpen ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
           )}
           style={{
             transitionProperty: "grid-template-rows",
             transitionDuration: `${EMAIL_EXPAND_MS}ms`,
             transitionTimingFunction: EMAIL_EXPAND_EASE,
           }}
-          aria-hidden={showEmailSection}
+          aria-hidden={isEmailFormOpen}
         >
           <div className="min-h-0 overflow-hidden">
             <p
               className={cn(
                 "text-center text-sm text-muted-foreground transition-[opacity,transform] duration-200 motion-reduce:transition-none",
-                showEmailSection
+                isEmailFormOpen
                   ? "pointer-events-none -translate-y-1 opacity-0"
                   : "translate-y-0 opacity-100",
               )}
@@ -489,20 +528,20 @@ export function RegistrationFlow({
         <div
           className={cn(
             "grid motion-reduce:transition-none",
-            showEmailSection ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+            isEmailFormOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
           )}
           style={{
             transitionProperty: "grid-template-rows",
             transitionDuration: `${EMAIL_EXPAND_MS}ms`,
             transitionTimingFunction: EMAIL_EXPAND_EASE,
           }}
-          aria-hidden={!showEmailSection}
+          aria-hidden={!isEmailFormOpen}
         >
           <div className="min-h-0 overflow-hidden">
             <div
               className={cn(
                 "space-y-5 motion-reduce:transition-none",
-                showEmailSection
+                isEmailFormOpen
                   ? "translate-y-0 opacity-100"
                   : "pointer-events-none -translate-y-2 opacity-0",
               )}
@@ -510,14 +549,16 @@ export function RegistrationFlow({
                 transitionProperty: "opacity, transform",
                 transitionDuration: "300ms",
                 transitionTimingFunction: EMAIL_CONTENT_EASE,
-                transitionDelay: showEmailSection ? "80ms" : "0ms",
+                transitionDelay: isEmailFormOpen ? "80ms" : "0ms",
               }}
             >
-          <div className="flex items-center gap-4">
-            <div className="h-px flex-1 bg-border" />
-            <span className="shrink-0 text-xs text-muted-foreground">or</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
+          {!isInAppBrowser && (
+            <div className="flex items-center gap-4">
+              <div className="h-px flex-1 bg-border" />
+              <span className="shrink-0 text-xs text-muted-foreground">or</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+          )}
 
           <div className="space-y-2 px-1">
             <Label htmlFor="rsvp-email">
@@ -582,6 +623,16 @@ export function RegistrationFlow({
           >
             {isSubmittingForm ? <Spinner /> : "Register"}
           </Button>
+
+          {isInAppBrowser && (
+            <OpenInExternalBrowserLink
+              prompt="Prefer Google?"
+              label="Open in your browser"
+              onOpen={() =>
+                RegistrationAnalytics.trackOpenInBrowserClicked(eventId)
+              }
+            />
+          )}
             </div>
           </div>
         </div>

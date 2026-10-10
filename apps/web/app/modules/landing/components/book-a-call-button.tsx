@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '~/shared/components/ui/avatar';
 import { useCalBookingUrl } from '~/shared/hooks/use-cal-booking-url';
-import { AnalyticsEvents } from '~/shared/lib/analytics';
+import * as LandingAnalytics from '~/modules/landing/utils/landing-analytics';
 
 import styles from './book-a-call-button.module.css';
 
@@ -11,7 +11,7 @@ interface BookACallButtonProps {
 
 export function BookACallButton({
   size = 'md',
-  analyticsSource = 'About V2',
+  analyticsSource = 'about',
 }: BookACallButtonProps) {
   const bookingUrl = useCalBookingUrl();
   const isSmall = size === 'sm';
@@ -23,7 +23,7 @@ export function BookACallButton({
       rel="noopener noreferrer"
       className={styles.btn}
       style={isSmall ? { padding: '4px 20px 4px 4px', fontSize: '0.875rem', gap: '8px' } : undefined}
-      onClick={() => AnalyticsEvents.bookDemoClick(analyticsSource)}
+      onClick={() => LandingAnalytics.trackBookDemoClicked(analyticsSource)}
     >
       <span className={styles.teaser}>Let's go!</span>
       <Avatar className={`ring-2 ring-white/80 ${styles.avatar} ${isSmall ? 'size-8' : 'size-10'}`}>

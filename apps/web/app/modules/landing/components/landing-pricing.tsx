@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { GlowBorder } from "~/shared/components/core/glowing-border";
 import { Button } from '~/shared/components/ui/button';
 import { useCalBookingUrl } from '~/shared/hooks/use-cal-booking-url';
-import { AnalyticsEvents } from '~/shared/lib/analytics';
+import * as LandingAnalytics from '~/modules/landing/utils/landing-analytics';
 
 const FREE_FEATURE_KEYS = ['feature1', 'feature2', 'feature3'] as const;
 const BUSINESS_FEATURE_KEYS = ['feature1', 'feature2', 'feature3'] as const;
@@ -69,7 +69,7 @@ export function LandingPricing() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() =>
-                    AnalyticsEvents.bookDemoClick("Pricing Free")
+                    LandingAnalytics.trackBookDemoClicked("pricing_free")
                   }
                 >
                   {t("pricingV2.free.cta")}
@@ -126,7 +126,7 @@ export function LandingPricing() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() =>
-                      AnalyticsEvents.bookDemoClick("Pricing Business")
+                      LandingAnalytics.trackBookDemoClicked("pricing_business")
                     }
                   >
                     {t("pricingV2.business.cta")}
