@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 import type { LandingHubPreview } from "~/modules/landing/model/landing-hub-preview";
-import { AnalyticsEvents } from "~/shared/lib/analytics";
+import * as LandingAnalytics from "~/modules/landing/utils/landing-analytics";
 import { Routes } from "~/shared/lib/routing/routes";
 
 const FALLBACK_AVATARS = [
@@ -39,8 +39,7 @@ export function DiscoverCommunitiesLink({ hubPreview }: DiscoverCommunitiesLinkP
     <Link
       to={Routes.hub}
       prefetch="render"
-      data-umami-event="hero_hub_clicked"
-      onClick={() => AnalyticsEvents.discoverHubClick("Hero")}
+      onClick={() => LandingAnalytics.trackHubClicked("hero")}
       className="group inline-flex items-center gap-2.5 rounded-full border border-primary/15 bg-primary/[0.06] py-1 pl-1 pr-1.5 text-sm font-medium text-foreground/70 transition-[color,background-color,border-color,transform] duration-150 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-foreground active:scale-[0.97]"
     >
       <span className="flex -space-x-2" aria-hidden>

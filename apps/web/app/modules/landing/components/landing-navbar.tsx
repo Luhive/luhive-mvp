@@ -11,7 +11,7 @@ import {
 } from "~/shared/components/ui/avatar";
 import { createClient } from '~/shared/lib/supabase/client';
 import { useCalBookingUrl } from "~/shared/hooks/use-cal-booking-url";
-import { AnalyticsEvents } from "~/shared/lib/analytics";
+import * as LandingAnalytics from "~/modules/landing/utils/landing-analytics";
 import { cn } from "~/shared/lib/utils/cn";
 
 interface UserData {
@@ -221,7 +221,7 @@ export function LandingNavbar() {
               href={bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => AnalyticsEvents.bookDemoClick("Header V2")}
+              onClick={() => LandingAnalytics.trackBookDemoClicked("header")}
               className={cn(
                 "inline-flex items-center gap-1.5 font-medium py-2 px-3 md:ml-1 rounded-full border border-foreground/6 hover:bg-foreground/5 transition-colors text-sm whitespace-nowrap select-none text-foreground",
                 scrolled &&
@@ -328,7 +328,7 @@ export function LandingNavbar() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => {
-                    AnalyticsEvents.bookDemoClick("Mobile Menu V2");
+                    LandingAnalytics.trackBookDemoClicked("mobile_menu");
                     setIsMobileMenuOpen(false);
                   }}
                 >
